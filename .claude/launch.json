@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wallet-backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@vdp/wallet-backend", "run", "dev"],
+      "port": 4001,
+      "env": {
+        "DATABASE_URL": "postgresql://localhost:5432/vdp"
+      }
+    },
+    {
+      "name": "wallet-frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@vdp/wallet-frontend", "run", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@vdp/landing", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

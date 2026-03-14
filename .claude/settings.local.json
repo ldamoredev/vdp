@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pg_isready)",
+      "Bash(psql -l)",
+      "Bash(brew services:*)",
+      "Bash(createdb vdp:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm exec drizzle-kit migrate)",
+      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/db run seed)",
+      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/wallet-backend run dev)",
+      "Bash(curl -s http://localhost:4001/api/v1/accounts)",
+      "Bash(curl -s http://localhost:4001/api/v1/categories)",
+      "Bash(python3 -m json.tool)",
+      "Bash(pnpm --filter @vdp/wallet-frontend run dev)",
+      "Bash(curl -s http://localhost:3001)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"fintech personal finance dashboard wallet dark modern\" --design-system --persist -p \"VDP Wallet\")",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"glassmorphism dark finance\" --domain style -n 3)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"animation micro-interaction loading\" --domain ux -n 5)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"glassmorphism sidebar dashboard\" --stack nextjs)",
+      "Bash(for mod:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/lautarodamore/Documents/vdp/apps/$mod/frontend/**)",
+      "Bash(done)"
+    ]
+  }
+}
