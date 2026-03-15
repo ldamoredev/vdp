@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Activity, CalendarClock, Pill, Repeat, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, Activity, CalendarClock, Pill, Repeat, Scale, ChevronLeft } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/metrics", label: "Metricas", icon: Activity },
-  { href: "/appointments", label: "Citas", icon: CalendarClock },
-  { href: "/medications", label: "Medicamentos", icon: Pill },
   { href: "/habits", label: "Habitos", icon: Repeat },
+  { href: "/medications", label: "Medicamentos", icon: Pill },
+  { href: "/appointments", label: "Citas", icon: CalendarClock },
+  { href: "/body", label: "Medidas", icon: Scale },
 ];
 
 export function Sidebar() {
@@ -45,7 +46,7 @@ export function Sidebar() {
       </nav>
       <div className="p-4 border-t border-[var(--sidebar-border)]">
         <div className="glass-card-static p-3 rounded-xl">
-          <p className="text-[11px] text-[var(--muted)] leading-relaxed">Vista previa del modulo. Datos de ejemplo.</p>
+          <p className="text-[11px] text-[var(--muted)] leading-relaxed">Modulo de salud y bienestar</p>
         </div>
       </div>
     </aside>

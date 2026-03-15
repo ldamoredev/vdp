@@ -1,91 +1,155 @@
 "use client";
 
-import { Footprints, Moon, Droplets, Flame, CalendarClock, Pill, Activity } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { formatMetricValue, formatRelative } from "@/lib/format";
+import { Footprints, Moon, Droplets, Flame, Zap, Smile, CalendarClock, Pill, Activity, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-const weeklySteps = [
-  { day: "Lun", steps: 7200 },
-  { day: "Mar", steps: 9100 },
-  { day: "Mie", steps: 6800 },
-  { day: "Jue", steps: 11200 },
-  { day: "Vie", steps: 8432 },
-  { day: "Sab", steps: 5600 },
-  { day: "Dom", steps: 3200 },
-];
+const metricConfig: Record<string, { label: string; icon: any; color: string; target?: number; unit: string }> = {
+  steps: { label: "Pasos", icon: Footprints, color: "emerald", target: 10000, unit: "steps" },
+  sleep_hours: { label: "Sueno", icon: Moon, color: "blue", target: 8, unit: "hours" },
+  water_ml: { label: "Agua", icon: Droplets, color: "cyan", target: 2500, unit: "ml" },
+  calories: { label: "Calorias", icon: Flame, color: "amber", target: 2200, unit: "kcal" },
+  energy: { label: "Energia", icon: Zap, color: "yellow", target: 5, unit: "scale" },
+  mood: { label: "Animo", icon: Smile, color: "purple", target: 5, unit: "scale" },
+};
 
-const appointments = [
-  { doctor: "Dr. Gonzalez", specialty: "Clinico", date: "18 Mar", time: "10:30" },
-  { doctor: "Dra. Mendez", specialty: "Dermatologa", date: "25 Mar", time: "15:00" },
-  { doctor: "Dr. Alvarez", specialty: "Odontologo", date: "5 Abr", time: "09:00" },
-];
-
-const medications = [
-  { name: "Vitamina D", dose: "1000 UI", time: "Manana", taken: true },
-  { name: "Omega 3", dose: "1g", time: "Almuerzo", taken: true },
-  { name: "Magnesio", dose: "400mg", time: "Noche", taken: false },
-];
+const colorMap: Record<string, string> = {
+  emerald: "bg-emerald-500/15 text-emerald-400",
+  blue: "bg-blue-500/15 text-blue-400",
+  cyan: "bg-cyan-500/15 text-cyan-400",
+  amber: "bg-amber-500/15 text-amber-400",
+  yellow: "bg-yellow-500/15 text-yellow-400",
+  purple: "bg-purple-500/15 text-purple-400",
+};
 
 export default function HealthDashboard() {
+  const { data: today } = useQuery({
+    queryKey: ["health", "today"],
+    queryFn: api.getTodaySummary,
+  });
+
+  const { data: weeklyStats } = useQuery({
+    queryKey: ["health", "weekly-stats"],
+    queryFn: api.getWeeklyStats,
+  });
+
+  const { data: appointments } = useQuery({
+    queryKey: ["health", "appointments"],
+    queryFn: () => api.getAppointments("upcoming"),
+  });
+
+  const { data: medications } = useQuery({
+    queryKey: ["health", "medications"],
+    queryFn: () => api.getMedications(),
+  });
+
+  const { data: habits } = useQuery({
+    queryKey: ["health", "habits"],
+    queryFn: () => api.getHabits(),
+  });
+
+  const todayMetrics = today?.metrics || {};
+
+  const metricCards = Object.entries(metricConfig).map(([type, config]) => {
+    const metric = todayMetrics[type];
+    const value = metric ? parseFloat(metric.value) : 0;
+    const pct = config.target ? Math.min(100, Math.round((value / config.target) * 100)) : 0;
+    return {
+      type,
+      ...config,
+      value: metric ? formatMetricValue(metric.value, config.unit) : "--",
+      targetLabel: config.target ? `/ ${formatMetricValue(config.target, config.unit)}` : "",
+      pct,
+      hasData: !!metric,
+    };
+  });
+
+  const weeklyChartData = weeklyStats?.map((s: any) => ({
+    type: metricConfig[s.metricType]?.label || s.metricType,
+    avg: parseFloat(s.avg),
+    count: s.count,
+  })) || [];
+
   return (
     <div className="space-y-8 max-w-5xl animate-fade-in">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-        <p className="text-sm text-[var(--muted)] mt-1">Tu salud de hoy, viernes 14 de marzo</p>
+        <p className="text-sm text-[var(--muted)] mt-1">Tu salud de hoy</p>
       </div>
 
       {/* Today metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 stagger-children">
-        {[
-          { label: "Pasos", value: "8,432", target: "/ 10,000", icon: Footprints, pct: 84, color: "emerald" },
-          { label: "Sueno", value: "7h 23m", target: "/ 8h", icon: Moon, pct: 92, color: "blue" },
-          { label: "Agua", value: "1.8 L", target: "/ 2.5 L", icon: Droplets, pct: 72, color: "cyan" },
-          { label: "Calorias", value: "1,850", target: "/ 2,200", icon: Flame, pct: 84, color: "amber" },
-        ].map((m) => (
-          <div key={m.label} className="glass-card p-5 cursor-pointer">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-[var(--foreground-muted)]">{m.label}</span>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                m.color === "emerald" ? "bg-emerald-500/15 text-emerald-400" :
-                m.color === "blue" ? "bg-blue-500/15 text-blue-400" :
-                m.color === "cyan" ? "bg-cyan-500/15 text-cyan-400" :
-                "bg-amber-500/15 text-amber-400"
-              }`}>
-                <m.icon size={15} />
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 stagger-children">
+        {metricCards.map((m) => {
+          const Icon = m.icon;
+          return (
+            <div key={m.type} className="glass-card p-4 cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-[var(--foreground-muted)]">{m.label}</span>
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${colorMap[m.color]}`}>
+                  <Icon size={13} />
+                </div>
               </div>
+              <div className="flex items-baseline gap-1">
+                <span className={`text-lg font-semibold tracking-tight ${!m.hasData ? "text-[var(--muted)]" : ""}`}>
+                  {m.value}
+                </span>
+              </div>
+              {m.targetLabel && (
+                <>
+                  <span className="text-[10px] text-[var(--muted)]">{m.targetLabel}</span>
+                  <div className="progress-bar mt-2">
+                    <div className="progress-bar-fill green" style={{ width: `${m.pct}%` }} />
+                  </div>
+                </>
+              )}
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-semibold tracking-tight">{m.value}</span>
-              <span className="text-xs text-[var(--muted)]">{m.target}</span>
-            </div>
-            <div className="progress-bar mt-3">
-              <div className="progress-bar-fill green" style={{ width: `${m.pct}%` }} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Weekly activity chart */}
+        {/* Weekly summary chart */}
         <div className="lg:col-span-2 glass-card-static p-5">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-              <Activity size={15} className="text-emerald-400" />
+              <TrendingUp size={15} className="text-emerald-400" />
             </div>
-            <h3 className="font-medium">Actividad semanal</h3>
+            <div>
+              <h3 className="font-medium">Resumen semanal</h3>
+              <p className="text-xs text-[var(--muted)]">Promedio de los ultimos 7 dias</p>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={weeklySteps}>
-              <XAxis dataKey="day" stroke="var(--muted)" fontSize={12} tickLine={false} axisLine={{ stroke: "var(--glass-border)" }} />
-              <YAxis stroke="var(--muted)" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ background: "rgba(15, 23, 42, 0.9)", backdropFilter: "blur(16px)", border: "1px solid rgba(148, 163, 184, 0.1)", borderRadius: "12px", fontSize: "12px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }} cursor={{ fill: "rgba(255, 255, 255, 0.02)" }} />
-              <Bar dataKey="steps" fill="#10B981" name="Pasos" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {weeklyChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={weeklyChartData}>
+                <XAxis dataKey="type" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{ stroke: "var(--glass-border)" }} />
+                <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(15, 23, 42, 0.9)",
+                    backdropFilter: "blur(16px)",
+                    border: "1px solid rgba(148, 163, 184, 0.1)",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                  }}
+                  cursor={{ fill: "rgba(255, 255, 255, 0.02)" }}
+                />
+                <Bar dataKey="avg" fill="#10B981" name="Promedio" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[240px] text-sm text-[var(--muted)]">
+              No hay datos de la ultima semana
+            </div>
+          )}
         </div>
 
         {/* Right column */}
         <div className="space-y-6">
-          {/* Appointments */}
+          {/* Upcoming appointments */}
           <div className="glass-card-static overflow-hidden">
             <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
@@ -94,42 +158,80 @@ export default function HealthDashboard() {
               </div>
             </div>
             <div className="divide-y divide-[var(--glass-border)]">
-              {appointments.map((a) => (
-                <div key={a.doctor} className="p-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
-                  <div className="text-sm font-medium">{a.doctor}</div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-[var(--muted)]">{a.specialty}</span>
-                    <span className="text-xs text-[var(--foreground-muted)]">{a.date} - {a.time}</span>
+              {appointments && appointments.length > 0 ? (
+                appointments.slice(0, 3).map((a: any) => (
+                  <div key={a.id} className="p-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                    <div className="text-sm font-medium">{a.title}</div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-[var(--muted)]">
+                        {a.doctorName || a.specialty || ""}
+                      </span>
+                      <span className="text-xs text-[var(--foreground-muted)]">
+                        {formatRelative(a.scheduledAt)}
+                      </span>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-4 text-xs text-[var(--muted)] text-center">
+                  No hay citas programadas
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Medications */}
+          {/* Active medications */}
           <div className="glass-card-static overflow-hidden">
             <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
                 <Pill size={16} className="text-emerald-400" />
-                <h3 className="font-medium text-sm">Medicamentos hoy</h3>
+                <h3 className="font-medium text-sm">Medicamentos activos</h3>
               </div>
             </div>
             <div className="divide-y divide-[var(--glass-border)]">
-              {medications.map((med) => (
-                <div key={med.name} className="p-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer">
-                  <div>
-                    <div className="text-sm font-medium">{med.name}</div>
-                    <div className="text-xs text-[var(--muted)]">{med.dose} - {med.time}</div>
+              {medications && medications.length > 0 ? (
+                medications.slice(0, 4).map((med: any) => (
+                  <div key={med.id} className="p-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer">
+                    <div>
+                      <div className="text-sm font-medium">{med.name}</div>
+                      <div className="text-xs text-[var(--muted)]">
+                        {med.dosage} - {med.timeOfDay || med.frequency}
+                      </div>
+                    </div>
+                    <div className="badge badge-green text-[10px]">{med.frequency}</div>
                   </div>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${med.taken ? "bg-emerald-500/20 text-emerald-400" : "bg-white/[0.04] text-[var(--muted)]"}`}>
-                    {med.taken ? "✓" : "○"}
-                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-xs text-[var(--muted)] text-center">
+                  No hay medicamentos activos
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Active habits summary */}
+      {habits && habits.length > 0 && (
+        <div className="glass-card-static p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
+              <Activity size={15} className="text-purple-400" />
+            </div>
+            <h3 className="font-medium">Habitos activos</h3>
+            <span className="text-xs text-[var(--muted)]">{habits.length} habitos</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {habits.slice(0, 8).map((h: any) => (
+              <div key={h.id} className="glass-card p-3 text-center">
+                <div className="text-lg mb-1">{h.icon || "📋"}</div>
+                <div className="text-sm font-medium truncate">{h.name}</div>
+                <div className="text-xs text-[var(--muted)]">{h.frequency}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

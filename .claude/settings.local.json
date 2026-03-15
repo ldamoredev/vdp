@@ -24,7 +24,12 @@
       "Bash(for mod:*)",
       "Bash(do echo:*)",
       "Read(//Users/lautarodamore/Documents/vdp/apps/$mod/frontend/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin/pnpm install:*)",
+      "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:$PATH\")",
+      "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin:$PATH\")",
+      "Bash(curl -s http://localhost:4001/api/health)",
+      "Bash(curl -s http://localhost:4001/api/v1/transactions?limit=2)"
     ]
   }
 }
