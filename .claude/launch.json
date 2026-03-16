@@ -12,6 +12,15 @@
       }
     },
     {
+      "name": "web",
+      "runtimeExecutable": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin/pnpm",
+      "runtimeArgs": ["--filter", "@vdp/web", "run", "dev"],
+      "port": 3000,
+      "env": {
+        "PATH": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin/pnpm",
       "runtimeArgs": ["--filter", "@vdp/landing", "run", "dev"],

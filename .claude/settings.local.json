@@ -45,7 +45,20 @@
       "Bash(curl -s http://localhost:4001/api/v1/exchange-rates/latest)",
       "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''rates''''\\)}\\)\")",
       "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.status\\)}\\)\")",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(find /Users/lautarodamore/Documents/vdp/packages/shared -type f -name *.tsx -o -name *.ts)",
+      "Bash(grep -r port /Users/lautarodamore/Documents/vdp/apps/*/frontend/package.json /Users/lautarodamore/Documents/vdp/apps/landing/package.json)",
+      "Bash(source ~/.zshrc)",
+      "Bash(ls -d /Users/lautarodamore/Documents/vdp/apps/*/frontend)",
+      "Bash(for dir:*)",
+      "Read(//Users/lautarodamore/Documents/vdp/apps/web/$dir/**)",
+      "Bash(grep -E \"\\\\.\\(json|js|ts|mjs\\)$\")",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"personal dashboard life OS modules dark theme\" --design-system -p \"VDP Life OS\")",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"dark mode light mode theme toggle accessibility\" --domain ux -n 10)",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"dashboard landing hero CTA\" --domain landing -n 5)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"personal dashboard life OS modules dark light theme\" --design-system -p \"VDP Life OS\")",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dark mode light mode theme toggle\" --domain ux -n 10)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dashboard hero CTA card\" --domain landing -n 5)"
     ]
   }
 }

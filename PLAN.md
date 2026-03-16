@@ -157,8 +157,9 @@ vdp/
 │       │   │   ├── shell/             # Shared shell components
 │       │   │   │   ├── icon-rail.tsx  # Left icon rail (domain switcher)
 │       │   │   │   ├── sidebar-panel.tsx  # Expandable domain-specific nav
-│       │   │   │   ├── header.tsx
+│       │   │   │   ├── header.tsx     # Top bar with theme toggle + chat button
 │       │   │   │   └── chat-panel.tsx # Domain-aware AI chat
+│       │   │   ├── theme-toggle.tsx   # Sun/Moon theme switch with animation
 │       │   │   ├── shared/            # Reusable UI components
 │       │   │   │   ├── loading-skeleton.tsx
 │       │   │   │   ├── glass-card.tsx
@@ -173,6 +174,7 @@ vdp/
 │       │       │   ├── wallet.ts      # Wallet endpoints
 │       │       │   ├── health.ts      # Health endpoints
 │       │       │   └── index.ts       # Re-exports: api.wallet.*, api.health.*
+│       │       ├── theme.tsx           # ThemeProvider context + useTheme() hook
 │       │       ├── chat-store.ts      # Chat panel state (one per domain)
 │       │       ├── use-chat-store.ts  # React hook for chat state
 │       │       ├── format.ts          # Formatting utils (money, dates, metrics)
@@ -1544,23 +1546,26 @@ learning_goals table:
 | 0.12 | Wire registries | ✅ DONE | Register agents, one skill, one event subscriber, one scheduler job |
 | 0.13 | Dead code cleanup | ✅ DONE | Delete `packages/db/`, update workspace config, clean stale references |
 | | **Tasks module (first complete domain)** | | |
-| 0.14 | Tasks schema | 🔲 TODO | `tasks` pgSchema with tasks + task_notes tables |
-| 0.15 | Tasks service | 🔲 TODO | `tasksService` — CRUD, daily review, carry-over/discard, completion stats |
-| 0.16 | Tasks routes | 🔲 TODO | Thin HTTP routes calling service |
-| 0.17 | Tasks agent | 🔲 TODO | 3-line config + thin tools calling service |
-| 0.18 | Tasks events | 🔲 TODO | daily.all_completed, task.stuck, daily.empty, overloaded |
-| 0.19 | Tasks Zod schemas | 🔲 TODO | Add task validation to `@vdp/shared` |
-| 0.20 | Verify Tasks e2e | 🔲 TODO | Routes work, agent chat works via generic SSE, events fire |
+| 0.14 | Tasks schema | ✅ DONE | `tasks` pgSchema with tasks + task_notes tables, 3 indexes |
+| 0.15 | Tasks service | ✅ DONE | `tasksService` — CRUD, daily review, carry-over/discard, completion stats (~290 lines) |
+| 0.16 | Tasks routes | ✅ DONE | Thin HTTP routes + stats routes calling service |
+| 0.17 | Tasks agent | ✅ DONE | 3-line config + 14 thin tools calling service |
+| 0.18 | Tasks events | ✅ DONE | daily.all_completed, task.stuck, daily.empty, overloaded |
+| 0.19 | Tasks Zod schemas | ✅ DONE | Add task validation to `@vdp/shared` |
+| 0.20 | Verify Tasks e2e | ✅ DONE | Routes work, agent chat works via generic SSE, events fire |
 | | **Frontend consolidation** | | |
-| 0.21 | Create unified frontend | 🔲 TODO | `apps/web/` with two-level sidebar, route groups, modular API client |
-| 0.22 | Tasks frontend | 🔲 TODO | Today's list, quick-add, domain tags, end-of-day review under `(domain)/tasks/` |
-| 0.23 | Migrate wallet frontend | 🔲 TODO | Move wallet pages to `(domain)/wallet/*`, adapt to shared shell |
-| 0.24 | Migrate health frontend | 🔲 TODO | Move health pages to `(domain)/health/*`, adapt to shared shell |
-| 0.25 | Build home dashboard | 🔲 TODO | Cross-domain life overview at `/` with full-width layout |
-| 0.26 | Remove old frontend apps | 🔲 TODO | Delete 6 old apps, simplify workspace to `apps/web` + `server` + `packages/*` |
+| 0.21 | Create unified frontend | ✅ DONE | `apps/web/` with two-level sidebar, route groups, modular API client |
+| 0.22 | Migrate tasks frontend | ✅ DONE | Tasks pages migrated to `(domain)/tasks/*` with `tasksApi` imports |
+| 0.23 | Migrate wallet frontend | ✅ DONE | 6 wallet pages migrated to `(domain)/wallet/*` with `walletApi` imports |
+| 0.24 | Migrate health frontend | ✅ DONE | 6 health pages migrated to `(domain)/health/*` with `healthApi` imports |
+| 0.25 | Build home dashboard | ✅ DONE | Cross-domain overview at `/home` — tasks, wallet, health summaries |
+| 0.26 | Remove old frontend apps | ✅ DONE | Deleted 6 old frontend dirs + landing app, cleaned pnpm-workspace.yaml |
+| | **UI/UX polish** | | |
+| 0.27 | Landing page reorganization | ✅ DONE | Dashboard hero card (full-width CTA) + "Modulos" divider + responsive 2-3 col grid. Tasks first in grid. |
+| 0.28 | Light/dark theme system | ✅ DONE | 50+ CSS custom properties, `[data-theme]` toggle, ThemeProvider with localStorage → prefers-color-scheme → dark cascade, anti-flash script, WCAG AA light theme, domain accent adjustments for light mode |
 | | **Infrastructure** | | |
-| 0.27 | Docker compose | 🔲 TODO | PostgreSQL + Redis containers |
-| 0.28 | Verify end-to-end | 🔲 TODO | Single `pnpm dev` starts web + server, all flows work |
+| 0.29 | Docker compose | 🔲 TODO | PostgreSQL + Redis containers |
+| 0.30 | Verify end-to-end | 🔲 TODO | Single `pnpm dev` starts web + server, all flows work |
 
 ### Phase 1: Health Domain (Weeks 3-5)
 
