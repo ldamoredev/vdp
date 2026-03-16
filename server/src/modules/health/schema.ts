@@ -140,28 +140,3 @@ export const bodyMeasurements = healthSchema.table(
   ]
 );
 
-// ─── Agent Conversations (Health-specific) ────────────────
-export const healthAgentConversations = healthSchema.table("agent_conversations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: varchar("title", { length: 200 }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const healthAgentMessages = healthSchema.table(
-  "agent_messages",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    conversationId: uuid("conversation_id")
-      .notNull()
-      .references(() => healthAgentConversations.id),
-    role: varchar("role", { length: 10 }).notNull(),
-    content: text("content"),
-    toolCalls: text("tool_calls"),
-    toolResult: text("tool_result"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("health_msg_conversation_idx").on(table.conversationId),
-  ]
-);

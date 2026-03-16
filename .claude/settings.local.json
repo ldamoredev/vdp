@@ -9,8 +9,7 @@
       "Bash(npx drizzle-kit:*)",
       "Bash(pnpm exec:*)",
       "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm exec drizzle-kit migrate)",
-      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/db run seed)",
-      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/wallet-backend run dev)",
+      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/server run dev)",
       "Bash(curl -s http://localhost:4001/api/v1/accounts)",
       "Bash(curl -s http://localhost:4001/api/v1/categories)",
       "Bash(python3 -m json.tool)",
@@ -29,7 +28,24 @@
       "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:$PATH\")",
       "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin:$PATH\")",
       "Bash(curl -s http://localhost:4001/api/health)",
-      "Bash(curl -s http://localhost:4001/api/v1/transactions?limit=2)"
+      "Bash(curl -s http://localhost:4001/api/v1/transactions?limit=2)",
+      "Bash(ls -la /Users/lautarodamore/Documents/vdp/apps/*/frontend/package.json)",
+      "Bash(npx tsc:*)",
+      "Bash(source /Users/lautarodamore/.nvm/nvm.sh)",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''accounts''''\\);console.log\\(j.map\\(a=>a.name+'''' \\(''''+a.currency+''''\\) bal:''''+a.currentBalance\\).join\\('''', ''''\\)\\)}\\)\")",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''categories''''\\)}\\)\")",
+      "Bash(curl -s \"http://localhost:4001/api/v1/transactions?limit=3\")",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.total,''''total,'''',j.data.length,''''returned''''\\)}\\)\")",
+      "Bash(curl -s \"http://localhost:4001/api/v1/stats/summary\")",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK: balances:'''',j.balances?.length||0,'''', incomeExpense:'''',j.incomeExpense?.length||0\\)}\\)\")",
+      "Bash(curl -s http://localhost:4001/api/v1/savings)",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''savings goals''''\\)}\\)\")",
+      "Bash(curl -s http://localhost:4001/api/v1/investments)",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''investments''''\\)}\\)\")",
+      "Bash(curl -s http://localhost:4001/api/v1/exchange-rates/latest)",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''rates''''\\)}\\)\")",
+      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.status\\)}\\)\")",
+      "Bash(npx next:*)"
     ]
   }
 }

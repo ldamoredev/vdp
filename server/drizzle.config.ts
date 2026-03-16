@@ -2,8 +2,10 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   schema: [
-    "./src/domains/wallet/schema.ts",
-    "./src/domains/health/schema.ts",
+    "./src/core/schema.ts",
+    "./src/modules/wallet/schema.ts",
+    "./src/modules/health/schema.ts",
+    "./src/modules/tasks/schema.ts",
   ],
   out: "./src/migrations",
   dialect: "postgresql",

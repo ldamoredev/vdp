@@ -1,6 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { EventBus, DomainEvent, DomainName } from "../core/event-bus/index.js";
 import type { SkillRegistry } from "../skills/registry.js";
+import { db } from "../core/db/client.js";
+import { agentConversations, agentMessages } from "../core/schema.js";
+import { eq, asc } from "drizzle-orm";
 
 export interface AgentTool {
   name: string;
@@ -25,16 +28,8 @@ export interface ChatCallbacks {
 /**
  * Base agent class that all domain agents extend.
  *
- * Provides:
- * - Chat interface with tool use loop
- * - Event handling
- * - Proactive evaluation
- * - Access to event bus, skills, and memory
- *
- * Each domain agent must implement:
- * - domain: which domain it belongs to
- * - systemPrompt: the agent's personality and instructions
- * - tools: the tools the agent can use
+ * Owns ALL conversation persistence via the shared core schema.
+ * Domain agents only provide: domain, systemPrompt, tools.
  */
 export abstract class BaseAgent {
   abstract readonly domain: DomainName;
@@ -82,6 +77,94 @@ export abstract class BaseAgent {
   }
 
   /**
+   * Full chat flow with conversation persistence.
+   * Creates/loads conversation, saves messages, runs the agent loop.
+   */
+  async chat(options: {
+    message: string;
+    conversationId?: string;
+    callbacks: ChatCallbacks;
+  }): Promise<void> {
+    const { message, callbacks } = options;
+
+    try {
+      // Get or create conversation
+      let conversationId = options.conversationId;
+      if (!conversationId) {
+        const [conv] = await db
+          .insert(agentConversations)
+          .values({
+            domain: this.domain,
+            title: message.slice(0, 100),
+          })
+          .returning();
+        conversationId = conv.id;
+      }
+
+      // Save user message
+      await db.insert(agentMessages).values({
+        conversationId,
+        role: "user",
+        content: message,
+      });
+
+      // Load conversation history
+      const history = await db
+        .select()
+        .from(agentMessages)
+        .where(eq(agentMessages.conversationId, conversationId))
+        .orderBy(asc(agentMessages.createdAt));
+
+      // Build messages array for Anthropic
+      const messages: Anthropic.MessageParam[] = [];
+      for (const msg of history) {
+        if (msg.role === "user") {
+          messages.push({ role: "user", content: msg.content || "" });
+        } else if (msg.role === "assistant") {
+          const content: Array<Anthropic.TextBlock | Anthropic.ToolUseBlock> = [];
+          if (msg.content) {
+            content.push({ type: "text", text: msg.content, citations: null });
+          }
+          if (msg.toolCalls) {
+            const calls = msg.toolCalls as any[];
+            for (const tc of calls) {
+              content.push({
+                type: "tool_use",
+                id: tc.id,
+                name: tc.name,
+                input: tc.input,
+              });
+            }
+          }
+          if (content.length > 0) {
+            messages.push({ role: "assistant", content });
+          }
+        } else if (msg.role === "tool") {
+          const result = msg.toolResult as any;
+          messages.push({
+            role: "user",
+            content: [
+              {
+                type: "tool_result",
+                tool_use_id: result.tool_use_id,
+                content: result.content,
+              },
+            ],
+          });
+        }
+      }
+
+      // Run the agent loop
+      await this.runLoop(messages, {
+        conversationId,
+        ...callbacks,
+      });
+    } catch (err: any) {
+      callbacks.onError(err.message || "Agent error");
+    }
+  }
+
+  /**
    * Run the agent chat loop with tool use.
    * Takes pre-built messages array and callbacks.
    */
@@ -117,12 +200,13 @@ export abstract class BaseAgent {
           }
         }
 
-        // Yield the assistant content + tool calls for persistence
-        await this.onAssistantMessage(
-          callbacks.conversationId,
-          assistantText,
-          toolCalls
-        );
+        // Persist assistant message
+        await db.insert(agentMessages).values({
+          conversationId: callbacks.conversationId,
+          role: "assistant",
+          content: assistantText || null,
+          toolCalls: toolCalls.length > 0 ? toolCalls : null,
+        });
 
         if (toolCalls.length > 0) {
           messages.push({ role: "assistant", content: response.content });
@@ -134,7 +218,15 @@ export abstract class BaseAgent {
               const result = await this.executeTool(tc.name, tc.input);
               callbacks.onToolResult(tc.name, result);
 
-              await this.onToolResult(callbacks.conversationId, tc.id, result);
+              // Persist tool result
+              await db.insert(agentMessages).values({
+                conversationId: callbacks.conversationId,
+                role: "tool",
+                toolResult: {
+                  tool_use_id: tc.id,
+                  content: result,
+                },
+              });
 
               toolResults.push({
                 type: "tool_result",
@@ -145,12 +237,14 @@ export abstract class BaseAgent {
               const errorMsg = err.message || "Tool execution failed";
               callbacks.onToolResult(tc.name, JSON.stringify({ error: errorMsg }));
 
-              await this.onToolResult(
-                callbacks.conversationId,
-                tc.id,
-                JSON.stringify({ error: errorMsg }),
-                true
-              );
+              await db.insert(agentMessages).values({
+                conversationId: callbacks.conversationId,
+                role: "tool",
+                toolResult: {
+                  tool_use_id: tc.id,
+                  content: JSON.stringify({ error: errorMsg }),
+                },
+              });
 
               toolResults.push({
                 type: "tool_result",
@@ -173,31 +267,6 @@ export abstract class BaseAgent {
     } catch (err: any) {
       callbacks.onError(err.message || "Agent error");
     }
-  }
-
-  /**
-   * Hook for subclasses to persist assistant messages.
-   * Override in domain agent to save to DB.
-   */
-  protected async onAssistantMessage(
-    _conversationId: string,
-    _text: string,
-    _toolCalls: Array<{ id: string; name: string; input: any }>
-  ): Promise<void> {
-    // Override in subclass
-  }
-
-  /**
-   * Hook for subclasses to persist tool results.
-   * Override in domain agent to save to DB.
-   */
-  protected async onToolResult(
-    _conversationId: string,
-    _toolUseId: string,
-    _result: string,
-    _isError?: boolean
-  ): Promise<void> {
-    // Override in subclass
   }
 
   /**

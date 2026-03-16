@@ -1,16 +1,5 @@
 import type { AgentTool } from "../../../agents/base-agent.js";
-import { db } from "../../../core/db/client.js";
-import {
-  accounts,
-  categories,
-  transactions,
-  savingsGoals,
-  savingsContributions,
-  investments,
-  exchangeRates,
-} from "../schema.js";
-import { walletEvents } from "../events.js";
-import { eq, and, gte, lte, desc, sql, like } from "drizzle-orm";
+import { walletService } from "../service.js";
 
 export function createWalletTools(): AgentTool[] {
   return [
@@ -36,24 +25,11 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const conditions = [];
-        if (input.accountId)
-          conditions.push(eq(transactions.accountId, input.accountId));
-        if (input.categoryId)
-          conditions.push(eq(transactions.categoryId, input.categoryId));
-        if (input.type) conditions.push(eq(transactions.type, input.type));
-        if (input.from) conditions.push(gte(transactions.date, input.from));
-        if (input.to) conditions.push(lte(transactions.date, input.to));
-        if (input.search)
-          conditions.push(like(transactions.description, `%${input.search}%`));
-
-        const result = await db
-          .select()
-          .from(transactions)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .orderBy(desc(transactions.date))
-          .limit(input.limit || 10);
-        return JSON.stringify(result);
+        const result = await walletService.listTransactions({
+          ...input,
+          limit: input.limit || 10,
+        });
+        return JSON.stringify(result.data);
       },
     },
     {
@@ -89,45 +65,16 @@ export function createWalletTools(): AgentTool[] {
         required: ["type", "amount"],
       },
       execute: async (input) => {
-        const currency = input.currency || "ARS";
-        let accountId = input.accountId;
-
-        if (!accountId) {
-          const accs = await db
-            .select()
-            .from(accounts)
-            .where(
-              and(eq(accounts.currency, currency), eq(accounts.isActive, true))
-            )
-            .limit(1);
-          if (accs.length > 0) accountId = accs[0].id;
-          else throw new Error(`No active account found for currency ${currency}`);
-        }
-
-        const [tx] = await db
-          .insert(transactions)
-          .values({
-            accountId,
-            categoryId: input.categoryId || null,
-            type: input.type,
-            amount: input.amount,
-            currency,
-            description: input.description || null,
-            date: input.date || new Date().toISOString().slice(0, 10),
-            tags: input.tags || [],
-          })
-          .returning();
-
-        // Emit domain event
-        await walletEvents.transactionCreated({
-          id: tx.id,
-          type: tx.type,
-          amount: tx.amount,
-          currency: tx.currency,
-          categoryId: tx.categoryId,
-          description: tx.description,
+        const tx = await walletService.createTransaction({
+          accountId: input.accountId,
+          categoryId: input.categoryId,
+          type: input.type,
+          amount: input.amount,
+          currency: input.currency,
+          description: input.description,
+          date: input.date,
+          tags: input.tags,
         });
-
         return JSON.stringify(tx);
       },
     },
@@ -140,26 +87,7 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async () => {
-        const balanceSub = sql`
-          COALESCE((
-            SELECT
-              SUM(CASE WHEN t.type = 'income' THEN t.amount::numeric ELSE 0 END) -
-              SUM(CASE WHEN t.type = 'expense' THEN t.amount::numeric ELSE 0 END)
-            FROM wallet.transactions t
-            WHERE t.account_id = wallet.accounts.id
-          ), 0)
-        `;
-        const result = await db
-          .select({
-            id: accounts.id,
-            name: accounts.name,
-            currency: accounts.currency,
-            type: accounts.type,
-            initialBalance: accounts.initialBalance,
-            currentBalance: sql<string>`(${accounts.initialBalance}::numeric + ${balanceSub})::text`,
-          })
-          .from(accounts)
-          .where(eq(accounts.isActive, true));
+        const result = await walletService.getAccountsWithBalances();
         return JSON.stringify(result);
       },
     },
@@ -178,12 +106,7 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const result = input.type
-          ? await db
-              .select()
-              .from(categories)
-              .where(eq(categories.type, input.type))
-          : await db.select().from(categories);
+        const result = await walletService.listCategories(input.type);
         return JSON.stringify(result);
       },
     },
@@ -200,22 +123,8 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const result = await db.execute(sql`
-          SELECT
-            c.name AS category,
-            c.icon,
-            SUM(t.amount::numeric)::text AS total,
-            COUNT(t.id)::int AS count
-          FROM wallet.transactions t
-          LEFT JOIN wallet.categories c ON c.id = t.category_id
-          WHERE t.type = 'expense'
-            ${input.from ? sql`AND t.date >= ${input.from}` : sql``}
-            ${input.to ? sql`AND t.date <= ${input.to}` : sql``}
-            ${input.currency ? sql`AND t.currency = ${input.currency}` : sql``}
-          GROUP BY c.name, c.icon
-          ORDER BY SUM(t.amount::numeric) DESC
-        `);
-        return JSON.stringify(result.rows);
+        const result = await walletService.getSpendingByCategory(input);
+        return JSON.stringify(result);
       },
     },
     {
@@ -230,30 +139,8 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const now = new Date();
-        const month = input.month || now.getMonth() + 1;
-        const year = input.year || now.getFullYear();
-        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-        const endMonth = month === 12 ? 1 : month + 1;
-        const endYear = month === 12 ? year + 1 : year;
-        const endDate = `${endYear}-${String(endMonth).padStart(2, "0")}-01`;
-
-        const result = await db
-          .select({
-            currency: transactions.currency,
-            totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount}::numeric ELSE 0 END), 0)::text`,
-            totalExpense: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount}::numeric ELSE 0 END), 0)::text`,
-            net: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount}::numeric ELSE 0 END) - SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount}::numeric ELSE 0 END), 0)::text`,
-          })
-          .from(transactions)
-          .where(
-            and(
-              gte(transactions.date, startDate),
-              lte(transactions.date, endDate)
-            )
-          )
-          .groupBy(transactions.currency);
-        return JSON.stringify({ month, year, data: result });
+        const result = await walletService.getMonthlySummary(input.month, input.year);
+        return JSON.stringify(result);
       },
     },
     {
@@ -265,7 +152,7 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async () => {
-        const result = await db.select().from(savingsGoals);
+        const result = await walletService.listSavingsGoals();
         return JSON.stringify(result);
       },
     },
@@ -283,30 +170,12 @@ export function createWalletTools(): AgentTool[] {
         required: ["goalId", "amount"],
       },
       execute: async (input) => {
-        const date = input.date || new Date().toISOString().slice(0, 10);
-        const [contribution] = await db
-          .insert(savingsContributions)
-          .values({
-            goalId: input.goalId,
-            amount: input.amount,
-            date,
-            note: input.note || null,
-          })
-          .returning();
-
-        // Update goal current amount
-        await db.execute(sql`
-          UPDATE wallet.savings_goals
-          SET current_amount = (
-            SELECT COALESCE(SUM(amount::numeric), 0)
-            FROM wallet.savings_contributions
-            WHERE goal_id = ${input.goalId}
-          )::text,
-          updated_at = NOW()
-          WHERE id = ${input.goalId}
-        `);
-
-        return JSON.stringify(contribution);
+        const result = await walletService.contributeToSavings(input.goalId, {
+          amount: input.amount,
+          date: input.date,
+          note: input.note,
+        });
+        return JSON.stringify(result);
       },
     },
     {
@@ -318,10 +187,7 @@ export function createWalletTools(): AgentTool[] {
         required: [],
       },
       execute: async () => {
-        const result = await db
-          .select()
-          .from(investments)
-          .where(eq(investments.isActive, true));
+        const result = await walletService.listInvestments();
         return JSON.stringify(result);
       },
     },
@@ -343,19 +209,14 @@ export function createWalletTools(): AgentTool[] {
         required: ["fromCurrency", "toCurrency", "rate", "type"],
       },
       execute: async (input) => {
-        const date = new Date().toISOString().slice(0, 10);
-        const [rate] = await db
-          .insert(exchangeRates)
-          .values({
-            fromCurrency: input.fromCurrency,
-            toCurrency: input.toCurrency,
-            rate: input.rate,
-            type: input.type,
-            date,
-          })
-          .onConflictDoNothing()
-          .returning();
-        return JSON.stringify(rate || { message: "Rate already exists for today" });
+        const result = await walletService.upsertExchangeRate({
+          fromCurrency: input.fromCurrency,
+          toCurrency: input.toCurrency,
+          rate: input.rate,
+          type: input.type,
+          date: new Date().toISOString().slice(0, 10),
+        });
+        return JSON.stringify(result);
       },
     },
   ];

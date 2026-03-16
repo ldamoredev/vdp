@@ -8,7 +8,7 @@ VDP is a modular personal AI platform designed as a "Life Operating System." The
 
 ## 1. System Vision
 
-VDP is not a dashboard — it's an **agent-orchestrated life management system**. Each life domain (Wallet, Health, People, Work, Study) operates semi-autonomously through its own AI agent, while a central orchestration layer enables cross-domain intelligence.
+VDP is not a dashboard — it's an **agent-orchestrated life management system**. Each life domain (Tasks, Wallet, Health, People, Work, Study) operates semi-autonomously through its own AI agent, while a central orchestration layer enables cross-domain intelligence.
 
 **Key differentiators:**
 - Agents are **proactive** (they initiate actions, not just respond)
@@ -120,6 +120,8 @@ vdp/
 │       │   │   │
 │       │   │   └── (domain)/         # Route group: shared shell layout
 │       │   │       ├── layout.tsx    # Shell: icon rail + sidebar panel + header + chat panel
+│       │   │       ├── tasks/
+│       │   │       │   └── page.tsx            # /tasks (today's todo list + history)
 │       │   │       ├── wallet/
 │       │   │       │   ├── page.tsx            # /wallet (dashboard)
 │       │   │       │   ├── transactions/
@@ -212,6 +214,12 @@ vdp/
 │   │   │       └── jobs.ts        # Registered jobs
 │   │   │
 │   │   ├── modules/               # Domain modules (each follows: schema → service → adapters → events)
+│   │   │   ├── tasks/
+│   │   │   │   ├── schema.ts      # Drizzle tables: tasks, task_notes
+│   │   │   │   ├── service.ts     # CRUD, daily review, carry-over, completion stats
+│   │   │   │   ├── events.ts      # daily.all_completed, task.stuck, overloaded
+│   │   │   │   ├── routes/        # Thin HTTP handlers
+│   │   │   │   └── agent/         # 3-line agent config + thin tools
 │   │   │   ├── wallet/
 │   │   │   │   ├── schema.ts      # Drizzle table definitions (source of truth for types)
 │   │   │   │   ├── service.ts     # ALL business logic: queries, calculations, event emission
@@ -684,7 +692,7 @@ This step applies the module pattern (schema → service → thin adapters → e
 // server/src/core/event-bus/types.ts
 type DomainEvent = {
   id: string;
-  domain: "wallet" | "health" | "people" | "work" | "study" | "system";
+  domain: "tasks" | "wallet" | "health" | "people" | "work" | "study" | "system";
   type: string;          // e.g. "transaction.created", "sleep.poor_quality"
   payload: Record<string, unknown>;
   timestamp: Date;
@@ -1004,23 +1012,108 @@ interface MCPIntegration {
 ## 9. Domain Development Order
 
 ```
-1. Wallet    ████████████████████ (DONE - refactor to new arch)
-2. Health    ░░░░░░░░░░░░░░░░░░░░ (NEXT - most tangible metrics)
-3. Work      ░░░░░░░░░░░░░░░░░░░░ (calendar/task data is structured)
-4. People    ░░░░░░░░░░░░░░░░░░░░ (requires messaging MCPs)
-5. Study     ░░░░░░░░░░░░░░░░░░░░ (most subjective, least urgent)
+0. Tasks    ████████████████████ (FIRST - simplest, proves the architecture)
+1. Wallet   ████████████████████ (DONE - refactor to service layer)
+2. Health   ▓▓▓▓▓▓▓▓░░░░░░░░░░░ (Backend DONE - needs service layer + frontend migration)
+3. Work     ░░░░░░░░░░░░░░░░░░░░ (calendar/task data is structured)
+4. People   ░░░░░░░░░░░░░░░░░░░░ (requires messaging MCPs)
+5. Study    ░░░░░░░░░░░░░░░░░░░░ (most subjective, least urgent)
 ```
 
 **Rationale:**
-- **Wallet first** (already done): Finances are the most quantifiable domain
-- **Health second**: Clear metrics (sleep, steps, weight), Apple Health provides data, high cross-domain impact (sleep affects everything)
-- **Work third**: Calendar integration gives structure, GitHub gives activity data
-- **People fourth**: Requires messaging integrations which are harder to build
-- **Study last**: Most subjective metrics, least external data sources
+- **Tasks first** (new): Simplest possible domain — pure CRUD with no external dependencies. First module built end-to-end on the new architecture (service layer, thin routes, thin tools, shared agent persistence). Proves the pattern works before applying it to existing modules. Immediately useful as a daily driver.
+- **Wallet** (refactor): Already working, needs service layer extraction and migration to new patterns
+- **Health** (refactor + complete): Backend exists, needs same service layer treatment plus frontend migration
+- **Work**: Calendar integration gives structure, GitHub gives activity data. Daily tasks from Tasks module can graduate here.
+- **People**: Requires messaging integrations which are harder to build
+- **Study**: Most subjective metrics, least external data sources
 
 ---
 
 ## 10. Detailed Blueprint Per Domain
+
+### 10.0 TASKS (First complete module)
+
+**Purpose:** A lightweight daily todo list. Not project management — just "things I need to get done today." Tasks can optionally link to a domain (wallet, health, people, etc.) and can later be promoted to full Work project tasks when they grow in scope.
+
+**Domain Model:**
+
+```
+tasks table:
+  id, title, description, status (pending/done/carried_over/discarded),
+  priority (1-3: low/medium/high), scheduled_date (defaults to today),
+  domain (nullable: "wallet"|"health"|"work"|"people"|"study"|null),
+  completed_at, created_at, updated_at
+
+task_notes table:
+  id, task_id, content, created_at
+```
+
+Deliberately simple. No projects, no dependencies, no estimated hours, no assignees. That's Work domain territory.
+
+**Key Metrics:**
+- Tasks completed today / total scheduled
+- Daily completion rate trend (last 7/30 days)
+- Carry-over rate (how often tasks slip)
+- Average tasks per day
+- Completion by domain (which areas generate most todos)
+
+**Rules & Triggers:**
+- All tasks completed for the day → emit `tasks.daily.all_completed`
+- Task carried over 3+ times → emit `tasks.task.stuck` (something is blocked)
+- Zero tasks created today → emit `tasks.daily.empty` (no plan for the day)
+- High carry-over rate (>50% over a week) → emit `tasks.overloaded` (taking on too much)
+
+**UI Pages** (at `(domain)/tasks/` in unified app):
+- Dashboard: Today's todo list with checkboxes, priority indicators, domain tags
+- Quick-add input always visible at the top
+- Filter by status (pending, done, all) and by domain
+- End-of-day review: shows incomplete tasks with carry-over / discard buttons
+- History: past days with completion stats
+
+**Agent Responsibilities:**
+- Create, complete, and list tasks via natural language
+- Suggest daily task priorities based on deadlines and domain context
+- At end of day: prompt user to review incomplete tasks
+- Flag stuck tasks (carried over multiple times)
+- Daily completion summary
+- Suggest tasks based on events from other domains ("you have a dentist appointment tomorrow — add a reminder?")
+
+**Skills Required:** summarize, send-notification
+
+**MCP Integrations:** None (standalone, self-contained)
+
+**Automations:**
+- Morning: Show today's task list (including carried-over items)
+- Evening: Prompt end-of-day review for incomplete tasks
+- Weekly: Completion rate summary, identify stuck tasks
+
+**Acceptance Criteria:**
+- [ ] Task CRUD (create, list, update status, delete)
+- [ ] Schedule tasks for a specific date (default: today)
+- [ ] Optional domain tagging
+- [ ] Priority levels (low/medium/high)
+- [ ] End-of-day review flow (carry over or discard)
+- [ ] Task history with daily completion stats
+- [ ] Tasks agent with tool use
+- [ ] Proactive stuck-task detection
+- [ ] Service layer pattern (schema → service → thin routes → thin tools → events)
+- [ ] Shared agent persistence via core schema
+- [ ] Registered in agent registry, accessible via generic SSE route
+
+**Why build this first:**
+
+Tasks is the simplest possible domain — pure CRUD, no external integrations, no complex calculations, no multi-currency math. Building it end-to-end proves the entire architecture works:
+1. The service layer pattern holds up
+2. Thin routes and thin tools actually stay thin
+3. Shared agent persistence works across domains
+4. The generic SSE agent route resolves correctly
+5. Domain events emit and can be subscribed to
+6. The frontend shell (sidebar, chat panel) works with a new domain
+
+Once Tasks works, we have a verified template for every future domain.
+
+---
 
 ### 10.1 WALLET (Refactor existing)
 
@@ -1443,22 +1536,31 @@ learning_goals table:
 | 0.5 | Build skill registry | ✅ DONE | Registration + execution framework |
 | 0.6 | Build scheduler | ✅ DONE | node-cron based job scheduler |
 | | **Backend refactor** | | |
-| 0.7 | Shared agent persistence | 🔲 TODO | Core schema for conversations/messages, BaseAgent owns persistence, remove per-domain tables |
-| 0.8 | Wallet service layer | 🔲 TODO | Extract `walletService` — all queries, calculations, event emission in one place |
-| 0.9 | Health service layer | 🔲 TODO | Extract `healthService` — same pattern, fix toolCalls text/jsonb inconsistency |
-| 0.10 | Shared SSE agent route | 🔲 TODO | Generic `POST /api/v1/:domain/agent/chat` resolving agent from registry |
-| 0.11 | Health Zod schemas | 🔲 TODO | Add health validation to `@vdp/shared`, routes use `safeParse()` |
-| 0.12 | Wire registries | 🔲 TODO | Register agents, one skill, one event subscriber, one scheduler job |
-| 0.13 | Dead code cleanup | 🔲 TODO | Delete `apps/wallet/backend/`, `packages/db/`, update workspace config |
+| 0.7 | Shared agent persistence | ✅ DONE | Core schema for conversations/messages, BaseAgent owns persistence, remove per-domain tables |
+| 0.8 | Wallet service layer | ✅ DONE | Extract `walletService` — all queries, calculations, event emission in one place |
+| 0.9 | Health service layer | ✅ DONE | Extract `healthService` — same pattern, fix toolCalls text/jsonb inconsistency |
+| 0.10 | Shared SSE agent route | ✅ DONE | Generic `POST /api/v1/:domain/agent/chat` resolving agent from registry |
+| 0.11 | Health Zod schemas | ✅ DONE | Add health validation to `@vdp/shared`, routes use `safeParse()` |
+| 0.12 | Wire registries | ✅ DONE | Register agents, one skill, one event subscriber, one scheduler job |
+| 0.13 | Dead code cleanup | ✅ DONE | Delete `packages/db/`, update workspace config, clean stale references |
+| | **Tasks module (first complete domain)** | | |
+| 0.14 | Tasks schema | 🔲 TODO | `tasks` pgSchema with tasks + task_notes tables |
+| 0.15 | Tasks service | 🔲 TODO | `tasksService` — CRUD, daily review, carry-over/discard, completion stats |
+| 0.16 | Tasks routes | 🔲 TODO | Thin HTTP routes calling service |
+| 0.17 | Tasks agent | 🔲 TODO | 3-line config + thin tools calling service |
+| 0.18 | Tasks events | 🔲 TODO | daily.all_completed, task.stuck, daily.empty, overloaded |
+| 0.19 | Tasks Zod schemas | 🔲 TODO | Add task validation to `@vdp/shared` |
+| 0.20 | Verify Tasks e2e | 🔲 TODO | Routes work, agent chat works via generic SSE, events fire |
 | | **Frontend consolidation** | | |
-| 0.14 | Create unified frontend | 🔲 TODO | `apps/web/` with two-level sidebar, route groups, modular API client |
-| 0.15 | Migrate wallet frontend | 🔲 TODO | Move wallet pages to `(domain)/wallet/*`, adapt to shared shell |
-| 0.16 | Migrate health frontend | 🔲 TODO | Move health pages to `(domain)/health/*`, adapt to shared shell |
-| 0.17 | Build home dashboard | 🔲 TODO | Cross-domain life overview at `/` with full-width layout |
-| 0.18 | Remove old frontend apps | 🔲 TODO | Delete 6 old apps, simplify workspace to `apps/web` + `server` + `packages/*` |
+| 0.21 | Create unified frontend | 🔲 TODO | `apps/web/` with two-level sidebar, route groups, modular API client |
+| 0.22 | Tasks frontend | 🔲 TODO | Today's list, quick-add, domain tags, end-of-day review under `(domain)/tasks/` |
+| 0.23 | Migrate wallet frontend | 🔲 TODO | Move wallet pages to `(domain)/wallet/*`, adapt to shared shell |
+| 0.24 | Migrate health frontend | 🔲 TODO | Move health pages to `(domain)/health/*`, adapt to shared shell |
+| 0.25 | Build home dashboard | 🔲 TODO | Cross-domain life overview at `/` with full-width layout |
+| 0.26 | Remove old frontend apps | 🔲 TODO | Delete 6 old apps, simplify workspace to `apps/web` + `server` + `packages/*` |
 | | **Infrastructure** | | |
-| 0.19 | Docker compose | 🔲 TODO | PostgreSQL + Redis containers |
-| 0.20 | Verify end-to-end | 🔲 TODO | Single `pnpm dev` starts web + server, all flows work |
+| 0.27 | Docker compose | 🔲 TODO | PostgreSQL + Redis containers |
+| 0.28 | Verify end-to-end | 🔲 TODO | Single `pnpm dev` starts web + server, all flows work |
 
 ### Phase 1: Health Domain (Weeks 3-5)
 

@@ -1,16 +1,5 @@
 import type { AgentTool } from "../../../agents/base-agent.js";
-import { db } from "../../../core/db/client.js";
-import {
-  healthMetrics,
-  habits,
-  habitCompletions,
-  medications,
-  medicationLogs,
-  appointments,
-  bodyMeasurements,
-} from "../schema.js";
-import { healthEvents } from "../events.js";
-import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
+import { healthService } from "../service.js";
 
 export function createHealthTools(): AgentTool[] {
   return [
@@ -41,41 +30,13 @@ export function createHealthTools(): AgentTool[] {
         required: ["metricType", "value"],
       },
       execute: async (input) => {
-        const unitMap: Record<string, string> = {
-          sleep_hours: "hours", steps: "steps", weight: "kg",
-          heart_rate: "bpm", water_ml: "ml", calories: "kcal",
-          mood: "scale", energy: "scale",
-        };
-        const unit = input.unit || unitMap[input.metricType] || "unit";
-        const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date();
-
-        const [metric] = await db
-          .insert(healthMetrics)
-          .values({
-            metricType: input.metricType,
-            value: String(input.value),
-            unit,
-            recordedAt,
-            source: "manual",
-            notes: input.notes || null,
-          })
-          .returning();
-
-        // Emit events for significant metrics
-        if (input.metricType === "sleep_hours") {
-          if (input.value < 6) {
-            await healthEvents.poorSleep({
-              hours: input.value,
-              date: recordedAt.toISOString().slice(0, 10),
-            });
-          } else if (input.value >= 7) {
-            await healthEvents.goodSleep({
-              hours: input.value,
-              date: recordedAt.toISOString().slice(0, 10),
-            });
-          }
-        }
-
+        const metric = await healthService.createMetric({
+          metricType: input.metricType,
+          value: input.value,
+          unit: input.unit,
+          recordedAt: input.recordedAt,
+          notes: input.notes,
+        });
         return JSON.stringify(metric);
       },
     },
@@ -97,21 +58,12 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const conditions = [];
-        if (input.metricType)
-          conditions.push(eq(healthMetrics.metricType, input.metricType));
-        if (input.from)
-          conditions.push(gte(healthMetrics.recordedAt, new Date(input.from)));
-        if (input.to)
-          conditions.push(lte(healthMetrics.recordedAt, new Date(input.to + "T23:59:59")));
-
-        const result = await db
-          .select()
-          .from(healthMetrics)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .orderBy(desc(healthMetrics.recordedAt))
-          .limit(input.limit || 30);
-
+        const result = await healthService.listMetrics({
+          metricType: input.metricType,
+          from: input.from,
+          to: input.to,
+          limit: input.limit || 30,
+        });
         return JSON.stringify(result);
       },
     },
@@ -124,56 +76,8 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async () => {
-        const today = new Date().toISOString().slice(0, 10);
-        const startOfDay = new Date(today + "T00:00:00");
-        const endOfDay = new Date(today + "T23:59:59");
-
-        const metrics = await db
-          .select()
-          .from(healthMetrics)
-          .where(
-            and(
-              gte(healthMetrics.recordedAt, startOfDay),
-              lte(healthMetrics.recordedAt, endOfDay)
-            )
-          )
-          .orderBy(desc(healthMetrics.recordedAt));
-
-        // Get today's habit completions
-        const todayHabits = await db
-          .select({
-            habitId: habitCompletions.habitId,
-            habitName: habits.name,
-            value: habitCompletions.value,
-          })
-          .from(habitCompletions)
-          .innerJoin(habits, eq(habits.id, habitCompletions.habitId))
-          .where(eq(habitCompletions.completedAt, today));
-
-        // Get active medications due today
-        const activeMeds = await db
-          .select()
-          .from(medications)
-          .where(eq(medications.isActive, true));
-
-        // Get today's med logs
-        const todayMedLogs = await db
-          .select()
-          .from(medicationLogs)
-          .where(
-            and(
-              gte(medicationLogs.takenAt, startOfDay),
-              lte(medicationLogs.takenAt, endOfDay)
-            )
-          );
-
-        return JSON.stringify({
-          date: today,
-          metrics,
-          habitsCompleted: todayHabits,
-          medications: activeMeds,
-          medicationsTaken: todayMedLogs,
-        });
+        const result = await healthService.getTodaySummaryFull();
+        return JSON.stringify(result);
       },
     },
 
@@ -189,43 +93,8 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const condition = input.includeInactive ? undefined : eq(habits.isActive, true);
-        const result = await db.select().from(habits).where(condition);
-
-        // Calculate streaks for each habit
-        const habitsWithStreaks = await Promise.all(
-          result.map(async (habit) => {
-            const completions = await db
-              .select({ completedAt: habitCompletions.completedAt })
-              .from(habitCompletions)
-              .where(eq(habitCompletions.habitId, habit.id))
-              .orderBy(desc(habitCompletions.completedAt))
-              .limit(90);
-
-            let streak = 0;
-            const today = new Date();
-            const checkDate = new Date(today);
-
-            for (let i = 0; i < 90; i++) {
-              const dateStr = checkDate.toISOString().slice(0, 10);
-              const found = completions.some((c) => c.completedAt === dateStr);
-              if (found) {
-                streak++;
-                checkDate.setDate(checkDate.getDate() - 1);
-              } else if (i === 0) {
-                // Today might not be completed yet, check yesterday
-                checkDate.setDate(checkDate.getDate() - 1);
-                continue;
-              } else {
-                break;
-              }
-            }
-
-            return { ...habit, currentStreak: streak };
-          })
-        );
-
-        return JSON.stringify(habitsWithStreaks);
+        const result = await healthService.listHabitsWithStreaks(input.includeInactive);
+        return JSON.stringify(result);
       },
     },
     {
@@ -249,18 +118,15 @@ export function createHealthTools(): AgentTool[] {
         required: ["name"],
       },
       execute: async (input) => {
-        const [habit] = await db
-          .insert(habits)
-          .values({
-            name: input.name,
-            description: input.description || null,
-            frequency: input.frequency || "daily",
-            targetValue: input.targetValue ? String(input.targetValue) : null,
-            unit: input.unit || null,
-            icon: input.icon || null,
-            color: input.color || null,
-          })
-          .returning();
+        const habit = await healthService.createHabit({
+          name: input.name,
+          description: input.description,
+          frequency: input.frequency,
+          targetValue: input.targetValue,
+          unit: input.unit,
+          icon: input.icon,
+          color: input.color,
+        });
         return JSON.stringify(habit);
       },
     },
@@ -278,18 +144,11 @@ export function createHealthTools(): AgentTool[] {
         required: ["habitId"],
       },
       execute: async (input) => {
-        const completedAt = input.date || new Date().toISOString().slice(0, 10);
-
-        const [completion] = await db
-          .insert(habitCompletions)
-          .values({
-            habitId: input.habitId,
-            completedAt,
-            value: input.value ? String(input.value) : null,
-            notes: input.notes || null,
-          })
-          .returning();
-
+        const completion = await healthService.completeHabit(input.habitId, {
+          date: input.date,
+          value: input.value,
+          notes: input.notes,
+        });
         return JSON.stringify(completion);
       },
     },
@@ -306,8 +165,7 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const condition = input.includeInactive ? undefined : eq(medications.isActive, true);
-        const result = await db.select().from(medications).where(condition);
+        const result = await healthService.listMedications(input.includeInactive);
         return JSON.stringify(result);
       },
     },
@@ -334,18 +192,15 @@ export function createHealthTools(): AgentTool[] {
         required: ["name", "frequency"],
       },
       execute: async (input) => {
-        const [med] = await db
-          .insert(medications)
-          .values({
-            name: input.name,
-            dosage: input.dosage || null,
-            frequency: input.frequency,
-            timeOfDay: input.timeOfDay || null,
-            startDate: input.startDate || new Date().toISOString().slice(0, 10),
-            endDate: input.endDate || null,
-            notes: input.notes || null,
-          })
-          .returning();
+        const med = await healthService.createMedication({
+          name: input.name,
+          dosage: input.dosage,
+          frequency: input.frequency,
+          timeOfDay: input.timeOfDay,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          notes: input.notes,
+        });
         return JSON.stringify(med);
       },
     },
@@ -363,31 +218,11 @@ export function createHealthTools(): AgentTool[] {
         required: ["medicationId"],
       },
       execute: async (input) => {
-        const takenAt = input.takenAt ? new Date(input.takenAt) : new Date();
-        const [log] = await db
-          .insert(medicationLogs)
-          .values({
-            medicationId: input.medicationId,
-            takenAt,
-            skipped: input.skipped || false,
-            notes: input.notes || null,
-          })
-          .returning();
-
-        if (input.skipped) {
-          const [med] = await db
-            .select()
-            .from(medications)
-            .where(eq(medications.id, input.medicationId));
-          if (med) {
-            await healthEvents.medicationMissed({
-              medicationId: med.id,
-              medicationName: med.name,
-              scheduledTime: takenAt.toISOString(),
-            });
-          }
-        }
-
+        const log = await healthService.logMedication(input.medicationId, {
+          skipped: input.skipped,
+          takenAt: input.takenAt,
+          notes: input.notes,
+        });
         return JSON.stringify(log);
       },
     },
@@ -408,20 +243,7 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const conditions = [];
-        if (input.status) {
-          conditions.push(eq(appointments.status, input.status));
-        } else {
-          conditions.push(eq(appointments.status, "upcoming"));
-        }
-
-        const result = await db
-          .select()
-          .from(appointments)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .orderBy(asc(appointments.scheduledAt))
-          .limit(input.limit || 20);
-
+        const result = await healthService.listAppointments(input.status || "upcoming");
         return JSON.stringify(result);
       },
     },
@@ -442,18 +264,15 @@ export function createHealthTools(): AgentTool[] {
         required: ["title", "scheduledAt"],
       },
       execute: async (input) => {
-        const [apt] = await db
-          .insert(appointments)
-          .values({
-            title: input.title,
-            doctorName: input.doctorName || null,
-            specialty: input.specialty || null,
-            location: input.location || null,
-            scheduledAt: new Date(input.scheduledAt),
-            durationMinutes: input.durationMinutes || null,
-            notes: input.notes || null,
-          })
-          .returning();
+        const apt = await healthService.createAppointment({
+          title: input.title,
+          doctorName: input.doctorName,
+          specialty: input.specialty,
+          location: input.location,
+          scheduledAt: input.scheduledAt,
+          durationMinutes: input.durationMinutes,
+          notes: input.notes,
+        });
         return JSON.stringify(apt);
       },
     },
@@ -470,15 +289,10 @@ export function createHealthTools(): AgentTool[] {
         required: ["appointmentId", "status"],
       },
       execute: async (input) => {
-        const [updated] = await db
-          .update(appointments)
-          .set({
-            status: input.status,
-            notes: input.notes || undefined,
-            updatedAt: new Date(),
-          })
-          .where(eq(appointments.id, input.appointmentId))
-          .returning();
+        const updated = await healthService.updateAppointment(input.appointmentId, {
+          status: input.status,
+          notes: input.notes,
+        });
         return JSON.stringify(updated || { error: "Appointment not found" });
       },
     },
@@ -503,24 +317,13 @@ export function createHealthTools(): AgentTool[] {
         required: ["measurementType", "value"],
       },
       execute: async (input) => {
-        const unitMap: Record<string, string> = {
-          weight: "kg", height: "cm", body_fat: "%",
-          blood_pressure_sys: "mmHg", blood_pressure_dia: "mmHg", glucose: "mg/dL",
-        };
-        const unit = input.unit || unitMap[input.measurementType] || "unit";
-        const recordedAt = input.date || new Date().toISOString().slice(0, 10);
-
-        const [measurement] = await db
-          .insert(bodyMeasurements)
-          .values({
-            measurementType: input.measurementType,
-            value: String(input.value),
-            unit,
-            recordedAt,
-            notes: input.notes || null,
-          })
-          .returning();
-
+        const measurement = await healthService.createBodyMeasurement({
+          measurementType: input.measurementType,
+          value: input.value,
+          unit: input.unit,
+          date: input.date,
+          notes: input.notes,
+        });
         return JSON.stringify(measurement);
       },
     },
@@ -539,17 +342,10 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async (input) => {
-        const conditions = [];
-        if (input.measurementType)
-          conditions.push(eq(bodyMeasurements.measurementType, input.measurementType));
-
-        const result = await db
-          .select()
-          .from(bodyMeasurements)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .orderBy(desc(bodyMeasurements.recordedAt))
-          .limit(input.limit || 30);
-
+        const result = await healthService.listBodyMeasurements({
+          type: input.measurementType,
+          limit: input.limit || 30,
+        });
         return JSON.stringify(result);
       },
     },
@@ -564,44 +360,8 @@ export function createHealthTools(): AgentTool[] {
         required: [],
       },
       execute: async () => {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-
-        const metrics = await db
-          .select({
-            metricType: healthMetrics.metricType,
-            avgValue: sql<string>`AVG(${healthMetrics.value}::numeric)::text`,
-            minValue: sql<string>`MIN(${healthMetrics.value}::numeric)::text`,
-            maxValue: sql<string>`MAX(${healthMetrics.value}::numeric)::text`,
-            count: sql<number>`COUNT(*)::int`,
-          })
-          .from(healthMetrics)
-          .where(gte(healthMetrics.recordedAt, weekAgo))
-          .groupBy(healthMetrics.metricType);
-
-        // Habit completion rate
-        const activeHabits = await db
-          .select()
-          .from(habits)
-          .where(eq(habits.isActive, true));
-
-        const weekCompletions = await db
-          .select({
-            habitId: habitCompletions.habitId,
-            count: sql<number>`COUNT(*)::int`,
-          })
-          .from(habitCompletions)
-          .where(gte(habitCompletions.completedAt, weekAgo.toISOString().slice(0, 10)))
-          .groupBy(habitCompletions.habitId);
-
-        return JSON.stringify({
-          period: "last_7_days",
-          metrics,
-          habitCompletionRate: {
-            totalHabits: activeHabits.length,
-            completions: weekCompletions,
-          },
-        });
+        const result = await healthService.getWeeklySummary();
+        return JSON.stringify(result);
       },
     },
   ];

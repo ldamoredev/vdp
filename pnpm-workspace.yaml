@@ -3,8 +3,6 @@ packages:
   - "server"
   - "apps/landing"
   - "apps/*/frontend"
-  - "apps/*/backend"
-  - "apps/*/mcp-server"
 onlyBuiltDependencies:
   - "esbuild"
   - "sharp"

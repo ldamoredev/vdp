@@ -1,16 +1,11 @@
 import { FastifyInstance } from "fastify";
-import { db } from "../../../core/db/client.js";
-import { investments } from "../schema.js";
 import { createInvestmentSchema, updateInvestmentSchema } from "@vdp/shared";
-import { eq } from "drizzle-orm";
+import { walletService } from "../service.js";
 
 export async function investmentsRoutes(app: FastifyInstance) {
   app.get("/api/v1/investments", async (_request, reply) => {
     try {
-      const result = await db
-        .select()
-        .from(investments)
-        .where(eq(investments.isActive, true));
+      const result = await walletService.listInvestments();
       return reply.send(result);
     } catch (err) {
       app.log.error(err);
@@ -20,12 +15,9 @@ export async function investmentsRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { id: string } }>("/api/v1/investments/:id", async (request, reply) => {
     try {
-      const { id } = request.params;
-      const result = await db.select().from(investments).where(eq(investments.id, id));
-      if (result.length === 0) {
-        return reply.status(404).send({ error: "Investment not found" });
-      }
-      return reply.send(result[0]);
+      const result = await walletService.getInvestment(request.params.id);
+      if (!result) return reply.status(404).send({ error: "Investment not found" });
+      return reply.send(result);
     } catch (err) {
       app.log.error(err);
       return reply.status(500).send({ error: "Failed to fetch investment" });
@@ -35,10 +27,8 @@ export async function investmentsRoutes(app: FastifyInstance) {
   app.post("/api/v1/investments", async (request, reply) => {
     try {
       const parsed = createInvestmentSchema.safeParse(request.body);
-      if (!parsed.success) {
-        return reply.status(400).send({ error: parsed.error.flatten() });
-      }
-      const [investment] = await db.insert(investments).values(parsed.data).returning();
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+      const investment = await walletService.createInvestment(parsed.data);
       return reply.status(201).send(investment);
     } catch (err) {
       app.log.error(err);
@@ -48,19 +38,10 @@ export async function investmentsRoutes(app: FastifyInstance) {
 
   app.put<{ Params: { id: string } }>("/api/v1/investments/:id", async (request, reply) => {
     try {
-      const { id } = request.params;
       const parsed = updateInvestmentSchema.safeParse(request.body);
-      if (!parsed.success) {
-        return reply.status(400).send({ error: parsed.error.flatten() });
-      }
-      const [updated] = await db
-        .update(investments)
-        .set({ ...parsed.data, updatedAt: new Date() })
-        .where(eq(investments.id, id))
-        .returning();
-      if (!updated) {
-        return reply.status(404).send({ error: "Investment not found" });
-      }
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+      const updated = await walletService.updateInvestment(request.params.id, parsed.data);
+      if (!updated) return reply.status(404).send({ error: "Investment not found" });
       return reply.send(updated);
     } catch (err) {
       app.log.error(err);
@@ -70,15 +51,8 @@ export async function investmentsRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { id: string } }>("/api/v1/investments/:id", async (request, reply) => {
     try {
-      const { id } = request.params;
-      const [updated] = await db
-        .update(investments)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(investments.id, id))
-        .returning();
-      if (!updated) {
-        return reply.status(404).send({ error: "Investment not found" });
-      }
+      const updated = await walletService.deactivateInvestment(request.params.id);
+      if (!updated) return reply.status(404).send({ error: "Investment not found" });
       return reply.send({ message: "Investment deactivated" });
     } catch (err) {
       app.log.error(err);

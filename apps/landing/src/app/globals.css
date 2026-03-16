@@ -74,6 +74,15 @@ body::after {
 .stagger-children > *:nth-child(3) { animation-delay: 160ms; }
 .stagger-children > *:nth-child(4) { animation-delay: 240ms; }
 .stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.animate-pulse-subtle {
+  animation: pulseSubtle 2.5s ease-in-out infinite;
+}
 
 /* Focus */
 :focus-visible {

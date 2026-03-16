@@ -6,6 +6,7 @@
     "moduleResolution": "bundler",
     "allowJs": true,
     "noEmit": true,
+    "rootDir": ".",
     "incremental": true,
     "plugins": [
       {

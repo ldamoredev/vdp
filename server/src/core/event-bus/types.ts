@@ -1,4 +1,4 @@
-export type DomainName = "wallet" | "health" | "people" | "work" | "study" | "system";
+export type DomainName = "wallet" | "health" | "tasks" | "people" | "work" | "study" | "system";
 
 export interface DomainEvent<T = Record<string, unknown>> {
   id: string;

@@ -7,7 +7,6 @@ import {
   timestamp,
   date,
   text,
-  jsonb,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -150,29 +149,3 @@ export const exchangeRates = walletSchema.table(
   ]
 );
 
-// Agent Conversations
-export const agentConversations = walletSchema.table("agent_conversations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: varchar("title", { length: 200 }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-// Agent Messages
-export const agentMessages = walletSchema.table(
-  "agent_messages",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    conversationId: uuid("conversation_id")
-      .notNull()
-      .references(() => agentConversations.id),
-    role: varchar("role", { length: 10 }).notNull(),
-    content: text("content"),
-    toolCalls: jsonb("tool_calls"),
-    toolResult: jsonb("tool_result"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    index("msg_conversation_idx").on(table.conversationId),
-  ]
-);
