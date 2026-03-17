@@ -6,3 +6,9 @@ dist/
 .env.local
 *.tsbuildinfo
 .DS_Store
+
+# Agent tooling (local)
+.agents/
+.junie/
+.kiro/
+skills-lock.json
