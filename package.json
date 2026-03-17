@@ -1,19 +1,19 @@
 {
   "name": "vdp",
   "private": true,
+  "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
-    "dev:server": "pnpm --filter @vdp/server run dev",
-    "dev:landing": "pnpm --filter @vdp/landing run dev",
-    "dev:wallet": "pnpm --filter @vdp/wallet-frontend run dev & pnpm --filter @vdp/server run dev",
-    "dev:people": "pnpm --filter @vdp/people-frontend run dev",
-    "dev:health": "pnpm --filter @vdp/health-frontend run dev",
-    "dev:work": "pnpm --filter @vdp/work-frontend run dev",
-    "dev:study": "pnpm --filter @vdp/study-frontend run dev",
-    "build": "pnpm -r run build",
-    "db:generate": "pnpm --filter @vdp/server run db:generate",
-    "db:migrate": "pnpm --filter @vdp/server run db:migrate",
-    "db:studio": "pnpm --filter @vdp/server run db:studio",
-    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache apps/**/**/.next"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "db:generate": "turbo db:generate",
+    "db:migrate": "turbo db:migrate",
+    "db:studio": "turbo db:studio",
+    "infra:start": "docker compose up -d",
+    "infra:stop": "docker compose down",
+    "infra:reset": "docker compose down -v && docker compose up -d",
+    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache apps/**/.next"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.17"
   }
 }

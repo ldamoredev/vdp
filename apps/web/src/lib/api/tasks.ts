@@ -1,36 +1,37 @@
 import { request } from "./client";
+import type { Task, TaskStats, TaskTrendDay, TaskReview, DomainStat, PaginatedResult } from "./types";
 
 export const tasksApi = {
   // ─── CRUD ────────────────────────────────────────────────
   getTasks: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<{ data: any[]; total: number }>(`/tasks${qs}`);
+    return request<PaginatedResult<Task>>(`/tasks${qs}`);
   },
-  getTask: (id: string) => request<any>(`/tasks/${id}`),
+  getTask: (id: string) => request<Task>(`/tasks/${id}`),
   createTask: (data: {
     title: string;
     description?: string;
     priority?: number;
     scheduledDate?: string;
     domain?: string;
-  }) => request<any>("/tasks", { method: "POST", body: JSON.stringify(data) }),
-  updateTask: (id: string, data: any) =>
-    request<any>(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  }) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
+  updateTask: (id: string, data: Partial<Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain" | "status">>) =>
+    request<Task>(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteTask: (id: string) =>
-    request<any>(`/tasks/${id}`, { method: "DELETE" }),
+    request<void>(`/tasks/${id}`, { method: "DELETE" }),
 
   // ─── Status Transitions ─────────────────────────────────
   completeTask: (id: string) =>
-    request<any>(`/tasks/${id}/complete`, { method: "POST" }),
+    request<Task>(`/tasks/${id}/complete`, { method: "POST" }),
   carryOverTask: (id: string, toDate?: string) =>
-    request<any>(`/tasks/${id}/carry-over`, {
+    request<Task>(`/tasks/${id}/carry-over`, {
       method: "POST",
       body: JSON.stringify({ toDate }),
     }),
   discardTask: (id: string) =>
-    request<any>(`/tasks/${id}/discard`, { method: "POST" }),
+    request<Task>(`/tasks/${id}/discard`, { method: "POST" }),
   carryOverAll: (fromDate: string, toDate?: string) =>
-    request<any>("/tasks/carry-over-all", {
+    request<{ carried: number }>("/tasks/carry-over-all", {
       method: "POST",
       body: JSON.stringify({ fromDate, toDate }),
     }),
@@ -38,26 +39,26 @@ export const tasksApi = {
   // ─── Review & Notes ─────────────────────────────────────
   getReview: (date?: string) => {
     const qs = date ? `?date=${date}` : "";
-    return request<any>(`/tasks/review${qs}`);
+    return request<TaskReview>(`/tasks/review${qs}`);
   },
   addNote: (taskId: string, content: string) =>
-    request<any>(`/tasks/${taskId}/notes`, {
+    request<{ id: string }>(`/tasks/${taskId}/notes`, {
       method: "POST",
       body: JSON.stringify({ content }),
     }),
 
   // ─── Stats ──────────────────────────────────────────────
-  getTodayStats: () => request<any>("/tasks/stats/today"),
+  getTodayStats: () => request<TaskStats>("/tasks/stats/today"),
   getTrend: (days?: number) => {
     const qs = days ? `?days=${days}` : "";
-    return request<any[]>(`/tasks/stats/trend${qs}`);
+    return request<TaskTrendDay[]>(`/tasks/stats/trend${qs}`);
   },
   getByDomain: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<any[]>(`/tasks/stats/by-domain${qs}`);
+    return request<DomainStat[]>(`/tasks/stats/by-domain${qs}`);
   },
   getCarryOverRate: (days?: number) => {
     const qs = days ? `?days=${days}` : "";
-    return request<any>(`/tasks/stats/carry-over${qs}`);
+    return request<{ rate: number; total: number }>(`/tasks/stats/carry-over${qs}`);
   },
 };

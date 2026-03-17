@@ -15,13 +15,13 @@ const metricConfig: Record<string, { label: string; icon: any; color: string; ta
   mood: { label: "Animo", icon: Smile, color: "purple", target: 5, unit: "scale" },
 };
 
-const colorMap: Record<string, string> = {
-  emerald: "bg-emerald-500/15 text-emerald-400",
-  blue: "bg-blue-500/15 text-blue-400",
-  cyan: "bg-cyan-500/15 text-cyan-400",
-  amber: "bg-amber-500/15 text-amber-400",
-  yellow: "bg-yellow-500/15 text-yellow-400",
-  purple: "bg-purple-500/15 text-purple-400",
+const colorStyles: Record<string, { background: string; color: string }> = {
+  emerald: { background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)" },
+  blue: { background: "var(--blue-soft-bg)", color: "var(--blue-soft-text)" },
+  cyan: { background: "var(--blue-soft-bg)", color: "var(--blue-soft-text)" },
+  amber: { background: "var(--amber-soft-bg)", color: "var(--amber-soft-text)" },
+  yellow: { background: "var(--amber-soft-bg)", color: "var(--amber-soft-text)" },
+  purple: { background: "var(--purple-soft-bg)", color: "var(--purple-soft-text)" },
 };
 
 export default function HealthDashboard() {
@@ -87,7 +87,7 @@ export default function HealthDashboard() {
             <div key={m.type} className="glass-card p-4 cursor-pointer">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-[var(--foreground-muted)]">{m.label}</span>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${colorMap[m.color]}`}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={colorStyles[m.color]}>
                   <Icon size={13} />
                 </div>
               </div>
@@ -113,8 +113,8 @@ export default function HealthDashboard() {
         {/* Weekly summary chart */}
         <div className="lg:col-span-2 glass-card-static p-5">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-              <TrendingUp size={15} className="text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--emerald-soft-bg)" }}>
+              <TrendingUp size={15} style={{ color: "var(--emerald-soft-text)" }} />
             </div>
             <div>
               <h3 className="font-medium">Resumen semanal</h3>
@@ -153,14 +153,14 @@ export default function HealthDashboard() {
           <div className="glass-card-static overflow-hidden">
             <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
-                <CalendarClock size={16} className="text-blue-400" />
+                <CalendarClock size={16} style={{ color: "var(--blue-soft-text)" }} />
                 <h3 className="font-medium text-sm">Proximas citas</h3>
               </div>
             </div>
             <div className="divide-y divide-[var(--glass-border)]">
               {appointments && appointments.length > 0 ? (
                 appointments.slice(0, 3).map((a: any) => (
-                  <div key={a.id} className="p-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <div key={a.id} className="p-3 hover:bg-[var(--hover-overlay)] transition-colors cursor-pointer">
                     <div className="text-sm font-medium">{a.title}</div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-xs text-[var(--muted)]">
@@ -184,14 +184,14 @@ export default function HealthDashboard() {
           <div className="glass-card-static overflow-hidden">
             <div className="p-4 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
-                <Pill size={16} className="text-emerald-400" />
+                <Pill size={16} style={{ color: "var(--emerald-soft-text)" }} />
                 <h3 className="font-medium text-sm">Medicamentos activos</h3>
               </div>
             </div>
             <div className="divide-y divide-[var(--glass-border)]">
               {medications && medications.length > 0 ? (
                 medications.slice(0, 4).map((med: any) => (
-                  <div key={med.id} className="p-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <div key={med.id} className="p-3 flex items-center justify-between hover:bg-[var(--hover-overlay)] transition-colors cursor-pointer">
                     <div>
                       <div className="text-sm font-medium">{med.name}</div>
                       <div className="text-xs text-[var(--muted)]">
@@ -215,8 +215,8 @@ export default function HealthDashboard() {
       {habits && habits.length > 0 && (
         <div className="glass-card-static p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
-              <Activity size={15} className="text-purple-400" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--purple-soft-bg)" }}>
+              <Activity size={15} style={{ color: "var(--purple-soft-text)" }} />
             </div>
             <h3 className="font-medium">Habitos activos</h3>
             <span className="text-xs text-[var(--muted)]">{habits.length} habitos</span>

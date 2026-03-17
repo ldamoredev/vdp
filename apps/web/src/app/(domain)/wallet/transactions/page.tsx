@@ -144,7 +144,7 @@ export default function TransactionsPage() {
           </div>
         ) : transactions.length === 0 ? (
           <div className="p-16 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--hover-overlay)] flex items-center justify-center mx-auto mb-3">
               <ArrowLeftRight size={20} className="text-[var(--muted)]" />
             </div>
             <p className="text-[var(--muted)] text-sm">

@@ -2,6 +2,7 @@ export { request, chatStream } from "./client";
 export { tasksApi } from "./tasks";
 export { walletApi } from "./wallet";
 export { healthApi } from "./health";
+export type * from "./types";
 
 // Convenience namespace
 export const api = {

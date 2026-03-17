@@ -73,9 +73,10 @@ export default function BodyPage() {
             onClick={() => setSelectedType(t.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               selectedType === t.value
-                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                ? "border"
                 : "glass-card text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
+            style={selectedType === t.value ? { background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)", borderColor: "var(--emerald-soft-border)" } : undefined}
           >
             {t.label}
           </button>
@@ -88,14 +89,14 @@ export default function BodyPage() {
           <div className="glass-card p-5">
             <span className="text-xs text-[var(--muted)]">Ultimo registro</span>
             <div className="text-3xl font-semibold mt-2">
-              {formatMetricValue(latest.value, latest.unit)}
+              {formatMetricValue(latest.value, latest.unit || "")}
             </div>
-            <span className="text-xs text-[var(--muted)]">{formatDate(latest.recordedAt)}</span>
+            <span className="text-xs text-[var(--muted)]">{formatDate(latest.date)}</span>
           </div>
           {diff !== null && (
             <div className="glass-card p-5">
               <span className="text-xs text-[var(--muted)]">Cambio</span>
-              <div className={`text-3xl font-semibold mt-2 ${diff > 0 ? "text-amber-400" : diff < 0 ? "text-emerald-400" : "text-[var(--foreground)]"}`}>
+              <div className="text-3xl font-semibold mt-2" style={{ color: diff > 0 ? "var(--amber-soft-text)" : diff < 0 ? "var(--emerald-soft-text)" : "var(--foreground)" }}>
                 {diff > 0 ? "+" : ""}{diff.toFixed(1)} {latest.unit}
               </div>
               <span className="text-xs text-[var(--muted)]">vs registro anterior</span>
@@ -114,8 +115,8 @@ export default function BodyPage() {
       {/* Chart */}
       <div className="glass-card-static p-5">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
-            <Scale size={15} className="text-purple-400" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--purple-soft-bg)" }}>
+            <Scale size={15} style={{ color: "var(--purple-soft-text)" }} />
           </div>
           <h3 className="font-medium">Tendencia - {selectedMeta.label}</h3>
         </div>
@@ -182,7 +183,7 @@ export default function BodyPage() {
           <div className="glass-card-static p-6 w-full max-w-md mx-4 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Registrar medida</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-white/[0.04] cursor-pointer">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-[var(--hover-overlay)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>

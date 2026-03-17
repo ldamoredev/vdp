@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect } from "react";
 import { MessageCircle, Sparkles } from "lucide-react";
 import { chatStore } from "@/lib/chat-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
+  // Wire Ctrl+K / Cmd+K keyboard shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        chatStore.toggle();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
+
   return (
     <header className="h-16 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-8">
       <div className="flex items-center gap-3">
@@ -25,7 +40,7 @@ export function Header() {
           </div>
           <span>Chat IA</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--hover-overlay)] border border-[var(--glass-border)] text-[var(--muted)]">
-            Ctrl K
+            {isMac ? "⌘" : "Ctrl"} K
           </kbd>
         </button>
       </div>

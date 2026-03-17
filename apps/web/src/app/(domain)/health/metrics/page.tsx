@@ -69,9 +69,10 @@ export default function MetricsPage() {
             onClick={() => setSelectedType(t.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               selectedType === t.value
-                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                ? "border"
                 : "glass-card text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
+            style={selectedType === t.value ? { background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)", borderColor: "var(--emerald-soft-border)" } : undefined}
           >
             {t.label}
           </button>
@@ -81,8 +82,8 @@ export default function MetricsPage() {
       {/* Chart */}
       <div className="glass-card-static p-5">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-            <Activity size={15} className="text-emerald-400" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--emerald-soft-bg)" }}>
+            <Activity size={15} style={{ color: "var(--emerald-soft-text)" }} />
           </div>
           <h3 className="font-medium">{selectedMeta.label}</h3>
           {metrics && <span className="text-xs text-[var(--muted)]">{metrics.length} registros</span>}
@@ -152,7 +153,7 @@ export default function MetricsPage() {
           <div className="glass-card-static p-6 w-full max-w-md mx-4 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Registrar metrica</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-white/[0.04] cursor-pointer">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-[var(--hover-overlay)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>

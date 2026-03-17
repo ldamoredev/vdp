@@ -168,15 +168,19 @@ export default function Home() {
           MODULES GRID — Secondary cards (2-3 cols)
           ============================================ */}
       <div className="grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-        {modules.map((mod) => (
-          <Link
+        {modules.map((mod) => {
+          const cardClasses = `group relative rounded-2xl border border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl p-6 transition-all duration-300 ${
+            mod.active
+              ? "hover:border-[var(--glass-border-hover)] hover:shadow-lg cursor-pointer"
+              : "opacity-50 cursor-not-allowed"
+          }`;
+          const Wrapper = mod.active ? Link : "div";
+          const wrapperProps = mod.active ? { href: mod.href } : {};
+          return (
+          <Wrapper
             key={mod.name}
-            href={mod.active ? mod.href : "#"}
-            className={`group relative rounded-2xl border border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl p-6 transition-all duration-300 ${
-              mod.active
-                ? "hover:border-[var(--glass-border-hover)] hover:shadow-lg cursor-pointer"
-                : "opacity-50 cursor-not-allowed"
-            }`}
+            {...wrapperProps as any}
+            className={cardClasses}
           >
             {/* Hover gradient overlay */}
             {mod.active && (
@@ -237,8 +241,9 @@ export default function Home() {
                 )}
               </div>
             </div>
-          </Link>
-        ))}
+          </Wrapper>
+          );
+        })}
       </div>
 
       {/* Footer */}

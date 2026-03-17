@@ -30,7 +30,7 @@ export default function AppointmentsPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: "upcoming" | "completed" | "cancelled" }) =>
       healthApi.updateAppointment(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["health", "appointments"] });
@@ -81,9 +81,10 @@ export default function AppointmentsPage() {
             onClick={() => setStatusFilter(f.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               statusFilter === f.value
-                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                ? "border"
                 : "glass-card text-[var(--muted)] hover:text-[var(--foreground)]"
             }`}
+            style={statusFilter === f.value ? { background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)", borderColor: "var(--emerald-soft-border)" } : undefined}
           >
             {f.label}
           </button>
@@ -106,8 +107,8 @@ export default function AppointmentsPage() {
             <div key={apt.id} className="glass-card p-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mt-0.5">
-                    <CalendarClock size={18} className="text-blue-400" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mt-0.5" style={{ background: "var(--blue-soft-bg)" }}>
+                    <CalendarClock size={18} style={{ color: "var(--blue-soft-text)" }} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -150,13 +151,14 @@ export default function AppointmentsPage() {
                   <>
                     <button
                       onClick={() => updateStatusMutation.mutate({ id: apt.id, status: "completed" })}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      className="text-xs hover:opacity-80 transition-colors cursor-pointer"
+                      style={{ color: "var(--emerald-soft-text)" }}
                     >
                       Marcar completada
                     </button>
                     <button
                       onClick={() => updateStatusMutation.mutate({ id: apt.id, status: "cancelled" })}
-                      className="text-xs text-[var(--muted)] hover:text-red-400 transition-colors cursor-pointer"
+                      className="text-xs text-[var(--muted)] hover:text-[var(--red-soft-text)] transition-colors cursor-pointer"
                     >
                       Cancelar
                     </button>
@@ -164,7 +166,7 @@ export default function AppointmentsPage() {
                 )}
                 <button
                   onClick={() => deleteMutation.mutate(apt.id)}
-                  className="text-xs text-[var(--muted)] hover:text-red-400 transition-colors cursor-pointer ml-auto"
+                  className="text-xs text-[var(--muted)] hover:text-[var(--red-soft-text)] transition-colors cursor-pointer ml-auto"
                 >
                   Eliminar
                 </button>
@@ -185,7 +187,7 @@ export default function AppointmentsPage() {
           <div className="glass-card-static p-6 w-full max-w-md mx-4 animate-fade-in-up max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Nueva cita</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-white/[0.04] cursor-pointer">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-[var(--hover-overlay)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>

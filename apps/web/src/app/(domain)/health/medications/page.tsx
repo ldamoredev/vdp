@@ -94,11 +94,11 @@ export default function MedicationsPage() {
       ) : medications && medications.length > 0 ? (
         <div className="space-y-4 stagger-children">
           {medications.map((med: any) => (
-            <div key={med.id} className={`glass-card p-5 ${selectedMed === med.id ? "border-emerald-500/30" : ""}`}>
+            <div key={med.id} className="glass-card p-5" style={selectedMed === med.id ? { borderColor: "var(--emerald-soft-border)" } : undefined}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                    <Pill size={18} className="text-emerald-400" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--emerald-soft-bg)" }}>
+                    <Pill size={18} style={{ color: "var(--emerald-soft-text)" }} />
                   </div>
                   <div>
                     <h3 className="font-medium">{med.name}</h3>
@@ -117,14 +117,16 @@ export default function MedicationsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => logTakenMutation.mutate({ id: med.id })}
-                    className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                    className="p-2 rounded-lg hover:opacity-80 transition-all cursor-pointer"
+                    style={{ background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)" }}
                     title="Marcar como tomado"
                   >
                     <Check size={16} />
                   </button>
                   <button
                     onClick={() => logSkippedMutation.mutate({ id: med.id })}
-                    className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all cursor-pointer"
+                    className="p-2 rounded-lg hover:opacity-80 transition-all cursor-pointer"
+                    style={{ background: "var(--amber-soft-bg)", color: "var(--amber-soft-text)" }}
                     title="Marcar como omitido"
                   >
                     <SkipForward size={16} />
@@ -134,13 +136,13 @@ export default function MedicationsPage() {
               <div className="flex items-center gap-4 mt-3">
                 <button
                   onClick={() => setSelectedMed(selectedMed === med.id ? null : med.id)}
-                  className="text-xs text-[var(--muted)] hover:text-emerald-400 transition-colors cursor-pointer"
+                  className="text-xs text-[var(--muted)] hover:text-[var(--emerald-soft-text)] transition-colors cursor-pointer"
                 >
                   {selectedMed === med.id ? "Ocultar historial" : "Ver historial"}
                 </button>
                 <button
                   onClick={() => deactivateMutation.mutate(med.id)}
-                  className="text-xs text-[var(--muted)] hover:text-red-400 transition-colors cursor-pointer"
+                  className="text-xs text-[var(--muted)] hover:text-[var(--red-soft-text)] transition-colors cursor-pointer"
                 >
                   Desactivar
                 </button>
@@ -183,7 +185,7 @@ export default function MedicationsPage() {
           <div className="glass-card-static p-6 w-full max-w-md mx-4 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Nuevo medicamento</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-white/[0.04] cursor-pointer">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-[var(--hover-overlay)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>

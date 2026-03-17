@@ -80,7 +80,8 @@ export default function HabitsPage() {
                 <button
                   onClick={() => completeMutation.mutate({ id: habit.id })}
                   disabled={completeMutation.isPending}
-                  className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center transition-all cursor-pointer"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+                  style={{ background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)" }}
                   title="Completar hoy"
                 >
                   <Check size={18} />
@@ -98,7 +99,7 @@ export default function HabitsPage() {
                 )}
                 <button
                   onClick={() => deleteMutation.mutate(habit.id)}
-                  className="ml-auto text-xs text-[var(--muted)] hover:text-red-400 transition-colors cursor-pointer"
+                  className="ml-auto text-xs text-[var(--muted)] hover:text-[var(--red-soft-text)] transition-colors cursor-pointer"
                 >
                   Desactivar
                 </button>
@@ -119,7 +120,7 @@ export default function HabitsPage() {
           <div className="glass-card-static p-6 w-full max-w-md mx-4 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Nuevo habito</h3>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-white/[0.04] cursor-pointer">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--muted)] hover:bg-[var(--hover-overlay)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -175,9 +176,10 @@ export default function HabitsPage() {
                       onClick={() => setForm({ ...form, icon })}
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all cursor-pointer ${
                         form.icon === icon
-                          ? "bg-emerald-500/20 border border-emerald-500/40"
-                          : "bg-white/[0.04] hover:bg-white/[0.08]"
+                          ? "border"
+                          : "bg-[var(--hover-overlay)] hover:bg-[var(--hover-overlay-strong)]"
                       }`}
+                      style={form.icon === icon ? { background: "var(--emerald-soft-bg)", borderColor: "var(--emerald-soft-border)" } : undefined}
                     >
                       {icon}
                     </button>

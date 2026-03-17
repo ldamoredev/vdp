@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: vdp-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: vdp
+      POSTGRES_PASSWORD: vdp
+      POSTGRES_DB: vdp
+    ports:
+      - "5432:5432"
+    volumes:
+      - vdp_postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: vdp-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - vdp_redis:/data
+
+volumes:
+  vdp_postgres:
+  vdp_redis:

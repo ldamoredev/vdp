@@ -155,7 +155,7 @@ export default function SavingsPage() {
       {/* Goals grid */}
       {goals.length === 0 ? (
         <div className="glass-card-static p-16 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--hover-overlay)] flex items-center justify-center mx-auto mb-4">
             <Target size={24} className="text-[var(--muted)]" />
           </div>
           <p className="text-[var(--muted)] text-sm">
@@ -280,7 +280,7 @@ export default function SavingsPage() {
                   ) : (
                     <button
                       onClick={() => setContributeId(goal.id)}
-                      className="text-xs font-medium text-[var(--accent)] hover:text-blue-400 transition-colors cursor-pointer"
+                      className="text-xs font-medium text-[var(--accent)] hover:text-[var(--blue-soft-text)] transition-colors cursor-pointer"
                     >
                       + Contribuir
                     </button>

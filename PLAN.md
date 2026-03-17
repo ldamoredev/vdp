@@ -1564,8 +1564,9 @@ learning_goals table:
 | 0.27 | Landing page reorganization | ✅ DONE | Dashboard hero card (full-width CTA) + "Modulos" divider + responsive 2-3 col grid. Tasks first in grid. |
 | 0.28 | Light/dark theme system | ✅ DONE | 50+ CSS custom properties, `[data-theme]` toggle, ThemeProvider with localStorage → prefers-color-scheme → dark cascade, anti-flash script, WCAG AA light theme, domain accent adjustments for light mode |
 | | **Infrastructure** | | |
-| 0.29 | Docker compose | 🔲 TODO | PostgreSQL + Redis containers |
-| 0.30 | Verify end-to-end | 🔲 TODO | Single `pnpm dev` starts web + server, all flows work |
+| 0.29 | Docker compose | ✅ DONE | `docker-compose.yml` with PostgreSQL 16 + Redis 7, `infra:start/stop/reset` scripts |
+| 0.30 | Verify end-to-end | ✅ DONE | `pnpm dev` starts web + server + shared via Turbo, `pnpm build` fully cached |
+| 0.31 | Turborepo | ✅ DONE | `turbo.json` pipeline config, cached builds, `packageManager` field, `.turbo/` gitignored |
 
 ### Phase 1: Health Domain (Weeks 3-5)
 

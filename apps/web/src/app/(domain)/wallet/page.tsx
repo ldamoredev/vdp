@@ -136,7 +136,7 @@ export default function DashboardPage() {
               <span className="text-sm text-[var(--foreground-muted)]">
                 Neto
               </span>
-              <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[var(--hover-overlay)] flex items-center justify-center">
                 <Minus size={15} className="text-[var(--foreground-muted)]" />
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
           <h3 className="font-medium">Transacciones recientes</h3>
           <Link
             href="/wallet/transactions"
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--accent)] hover:text-blue-400 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-medium text-[var(--accent)] hover:text-[var(--blue-soft-text)] transition-colors cursor-pointer"
           >
             Ver todas
             <ArrowRight size={12} />
@@ -170,7 +170,7 @@ export default function DashboardPage() {
             </>
           ) : recentTx.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--hover-overlay)] flex items-center justify-center mx-auto mb-3">
                 <ArrowUpRight size={20} className="text-[var(--muted)]" />
               </div>
               <p className="text-[var(--muted)] text-sm">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
             recentTx.map((tx: any) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                className="flex items-center justify-between p-4 hover:bg-[var(--hover-overlay)] transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div
