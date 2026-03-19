@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { TestApp } from './TestApp';
 import { TestDatabase } from '../integration/test-database';
 
@@ -50,6 +50,8 @@ describe('Tasks API — E2E', () => {
             });
 
             expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+            expect(res.json().message).toBe('Invalid request body');
         });
     });
 
@@ -107,6 +109,8 @@ describe('Tasks API — E2E', () => {
             });
 
             expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+            expect(res.json().message).toBe('Invalid request params');
         });
     });
 
@@ -119,6 +123,39 @@ describe('Tasks API — E2E', () => {
             });
 
             expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+            expect(res.json().message).toBe('Invalid request body');
+        });
+
+        it('streams text, tool events, and done from the tasks agent', async () => {
+            const agent = testApp.core.agentRegistry.get('tasks');
+            if (!agent) throw new Error('Tasks agent not registered');
+
+            const conversationId = '11111111-1111-1111-1111-111111111111';
+            const chatSpy = vi.spyOn(agent, 'chat').mockImplementation(async ({ callbacks }) => {
+                callbacks.onText('Primer bloque');
+                callbacks.onToolUse('list_tasks', { scheduledDate: '2026-03-18' });
+                callbacks.onToolResult('list_tasks', JSON.stringify({ tasks: [{ id: 'task-1' }] }));
+                callbacks.onDone(conversationId);
+            });
+
+            try {
+                const res = await testApp.app.inject({
+                    method: 'POST',
+                    url: '/api/v1/tasks/agent/chat',
+                    payload: { message: 'Que tengo hoy?' },
+                });
+
+                expect(res.statusCode).toBe(200);
+                expect(res.headers['content-type']).toContain('text/event-stream');
+                expect(res.body).toContain('"event":"text","text":"Primer bloque"');
+                expect(res.body).toContain('"event":"tool_use","tool":"list_tasks"');
+                expect(res.body).toContain('"event":"tool_result","tool":"list_tasks","summary":"1 tareas"');
+                expect(res.body).toContain(`"event":"done","conversationId":"${conversationId}"`);
+                expect(res.body).toContain('data: [DONE]');
+            } finally {
+                chatSpy.mockRestore();
+            }
         });
     });
 

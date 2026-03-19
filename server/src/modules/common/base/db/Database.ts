@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as walletSchema from '../../../wallet/schema';
 import * as healthSchema from '../../../health/schema';
-import * as tasksSchema from '../../../tasks/infraestructure/db/schema';
+import * as tasksSchema from '../../../tasks/infrastructure/db/schema';
 
 export class Database {
   public query;
@@ -20,4 +20,3 @@ export class Database {
     this.query = drizzle(pool, { schema: this.schema });
   }
 }
-

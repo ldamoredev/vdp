@@ -1,5 +1,25 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api/v1";
 
+type ApiErrorPayload = {
+  error?: string;
+  message?: string;
+  details?: unknown;
+};
+
+export class ApiError extends Error {
+  code?: string;
+  status: number;
+  details?: unknown;
+
+  constructor(message: string, options: { code?: string; status: number; details?: unknown }) {
+    super(message);
+    this.name = "ApiError";
+    this.code = options.code;
+    this.status = options.status;
+    this.details = options.details;
+  }
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {};
   if (options?.body) headers["Content-Type"] = "application/json";
@@ -9,8 +29,14 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     ...options,
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(error.error || "Request failed");
+    const error = await res
+      .json()
+      .catch((): ApiErrorPayload => ({ message: res.statusText }));
+    throw new ApiError(error.message || "Request failed", {
+      code: error.error,
+      status: res.status,
+      details: error.details,
+    });
   }
   return res.json();
 }
@@ -21,7 +47,16 @@ export async function* chatStream(endpoint: string, message: string, conversatio
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, conversationId }),
   });
-  if (!res.ok) throw new Error("Chat request failed");
+  if (!res.ok) {
+    const error = await res
+      .json()
+      .catch((): ApiErrorPayload => ({ message: res.statusText }));
+    throw new ApiError(error.message || "Chat request failed", {
+      code: error.error,
+      status: res.status,
+      details: error.details,
+    });
+  }
   const reader = res.body?.getReader();
   if (!reader) return;
   const decoder = new TextDecoder();

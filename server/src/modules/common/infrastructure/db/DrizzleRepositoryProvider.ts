@@ -1,8 +1,8 @@
 import { Database } from '../../base/db/Database';
 import { TaskRepository } from '../../../tasks/domain/TaskRepository';
-import { DrizzleTaskRepository } from '../../../tasks/infraestructure/db/DrizzleTaskRepository';
+import { DrizzleTaskRepository } from '../../../tasks/infrastructure/db/DrizzleTaskRepository';
 import { TaskNoteRepository } from '../../../tasks/domain/TaskNoteRepository';
-import { DrizzleTaskNoteRepository } from '../../../tasks/infraestructure/db/DrizzleTaskNoteRepository';
+import { DrizzleTaskNoteRepository } from '../../../tasks/infrastructure/db/DrizzleTaskNoteRepository';
 import { RepositoryProvider } from '../../base/db/RepositoryProvider';
 import { AgentRepository } from '../../base/agents/AgentRepository';
 import { DrizzleAgentRepository } from '../agents/DrizzleAgentRepository';

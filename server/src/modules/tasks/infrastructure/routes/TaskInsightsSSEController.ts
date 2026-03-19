@@ -1,5 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
+import { HttpController } from '../../../common/http/HttpController';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 
 /**
@@ -10,16 +11,20 @@ import { TaskInsightsStore } from '../../services/TaskInsightsStore';
  * - Live insights as they are generated (task completed, stuck, overloaded, etc.)
  * - Periodic heartbeats to keep the connection alive
  */
-export class TaskInsightsSSEController {
+export class TaskInsightsSSEController implements HttpController {
     constructor(
         private broadcaster: SSEBroadcaster,
         private insightsStore: TaskInsightsStore,
     ) {}
 
-    plugin = (app: FastifyInstance, _opts: any, done: () => void) => {
-        app.get('/stream', this.stream.bind(this));
-        done();
-    };
+    register(app: FastifyInstance): void {
+        const plugin: FastifyPluginCallback = (insightsApp, _opts, done) => {
+            insightsApp.get('/stream', this.stream.bind(this));
+            done();
+        };
+
+        app.register(plugin, { prefix: '/api/v1/tasks/insights' });
+    }
 
     private async stream(request: FastifyRequest, reply: FastifyReply): Promise<void> {
         // Prevent Fastify from managing the response lifecycle

@@ -12,7 +12,7 @@ import {
 export const tasksSchema = pgSchema("tasks");
 
 // ─── Tasks ───────────────────────────────────────────────
-// Deliberately simple daily todo list. Not project management.
+// Deliberately simple daily list. Not project management.
 export const tasks = tasksSchema.table(
   "tasks",
   {

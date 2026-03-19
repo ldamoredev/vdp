@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DrizzleTaskRepository } from '../../infraestructure/db/DrizzleTaskRepository';
+import { DrizzleTaskRepository } from '../../infrastructure/db/DrizzleTaskRepository';
 import { testDb } from './test-database';
 
 const repo = new DrizzleTaskRepository(testDb as any);

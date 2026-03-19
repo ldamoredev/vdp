@@ -1,9 +1,11 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
-import { TasksAgentController } from '../../infraestructure/routes/TasksAgentController';
-import { TasksController } from '../../infraestructure/routes/TasksController';
-import { TaskInsightsSSEController } from '../../infraestructure/routes/TaskInsightsSSEController';
+import { HttpController } from '../../../common/http/HttpController';
+import { httpErrorHandler } from '../../../common/http/errors';
+import { TasksAgentController } from '../../infrastructure/routes/TasksAgentController';
+import { TasksController } from '../../infrastructure/routes/TasksController';
+import { TaskInsightsSSEController } from '../../infrastructure/routes/TaskInsightsSSEController';
 
 /**
  * Lightweight Fastify app wired to the test database.
@@ -21,18 +23,17 @@ export class TestApp {
         this.app = Fastify({ logger: false });
 
         await this.app.register(cors, { origin: true });
+        this.app.setErrorHandler(httpErrorHandler);
 
-        const tasksController = new TasksController(this.app, this.core);
-        await this.app.register(tasksController.plugin, { prefix: '/api/v1/tasks' });
+        const controllers: HttpController[] = [
+            new TasksController(this.core),
+            new TasksAgentController(this.core),
+            new TaskInsightsSSEController(this.core.sseBroadcaster, this.core.taskModule.insightsStore),
+        ];
 
-        const tasksAgentController = new TasksAgentController(this.core);
-        await this.app.register(tasksAgentController.plugin, { prefix: '/api/v1/tasks/agent' });
-
-        const taskInsightsSSE = new TaskInsightsSSEController(
-            this.core.sseBroadcaster,
-            this.core.taskModule.insightsStore,
-        );
-        await this.app.register(taskInsightsSSE.plugin, { prefix: '/api/v1/tasks/insights' });
+        for (const controller of controllers) {
+            await controller.register(this.app);
+        }
 
         await this.app.ready();
     }

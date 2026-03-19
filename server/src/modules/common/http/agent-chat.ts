@@ -1,29 +1,34 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
-import { Core } from '../../../Core';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { z, ZodType } from 'zod';
+import type { BaseAgent } from '../base/agents/BaseAgent';
+import { ServiceUnavailableHttpError } from './errors';
+import { parseBody } from './validation';
 
-const chatBodySchema = z.object({
+export const agentChatBodySchema = z.object({
     message: z.string().trim().min(1),
     conversationId: z.string().uuid().optional(),
 });
 
-export class TasksAgentController {
-    constructor(private core: Core) {}
+type AgentChatBody = z.infer<typeof agentChatBodySchema>;
 
-    plugin = (app: FastifyInstance, _opts: unknown, done: () => void) => {
-        app.post('/chat', this.chat.bind(this));
-        done();
-    };
+type AgentChatHandlerOptions<TBody extends AgentChatBody> = {
+    schema?: ZodType<TBody>;
+    resolveAgent: (request: FastifyRequest, body: TBody) => BaseAgent | undefined;
+    summarizeToolResult?: (result: string) => string;
+};
 
-    private async chat(request: FastifyRequest, reply: FastifyReply) {
-        const body = chatBodySchema.safeParse(request.body);
-        if (!body.success) {
-            return reply.status(400).send({ error: body.error.flatten() });
-        }
+export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBody>(
+    options: AgentChatHandlerOptions<TBody>,
+) {
+    const schema = options.schema ?? (agentChatBodySchema as ZodType<TBody>);
+    const summarizeToolResult = options.summarizeToolResult ?? summarizeAgentToolResult;
 
-        const agent = this.core.agentRegistry.get('tasks');
+    return async function agentChatHandler(request: FastifyRequest, reply: FastifyReply) {
+        const body = parseBody(schema, request.body);
+        const agent = options.resolveAgent(request, body);
+
         if (!agent) {
-            return reply.status(503).send({ error: 'Tasks agent is not registered' });
+            throw new ServiceUnavailableHttpError('Agent is not registered');
         }
 
         reply.hijack();
@@ -44,10 +49,17 @@ export class TasksAgentController {
             }
         };
 
+        const close = () => {
+            if (!res.writableEnded) {
+                res.write('data: [DONE]\n\n');
+                res.end();
+            }
+        };
+
         try {
             await agent.chat({
-                message: body.data.message,
-                conversationId: body.data.conversationId,
+                message: body.message,
+                conversationId: body.conversationId,
                 callbacks: {
                     onText: (text) => send('text', { text }),
                     onToolUse: (tool, input) => send('tool_use', { tool, input }),
@@ -56,31 +68,22 @@ export class TasksAgentController {
                     },
                     onDone: (conversationId) => {
                         send('done', { conversationId });
-                        if (!res.writableEnded) {
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        }
+                        close();
                     },
                     onError: (error) => {
                         send('error', { error });
-                        if (!res.writableEnded) {
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        }
+                        close();
                     },
                 },
             });
         } catch (error: any) {
             send('error', { error: error.message || 'Agent error' });
-            if (!res.writableEnded) {
-                res.write('data: [DONE]\n\n');
-                res.end();
-            }
+            close();
         }
-    }
+    };
 }
 
-function summarizeToolResult(result: string): string {
+export function summarizeAgentToolResult(result: string): string {
     try {
         const parsed = JSON.parse(result) as {
             error?: string;

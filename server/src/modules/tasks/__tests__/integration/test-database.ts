@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as tasksSchema from '../../infraestructure/db/schema';
+import * as tasksSchema from '../../infrastructure/db/schema';
 
 const SETUP_SQL = `
 CREATE SCHEMA IF NOT EXISTS tasks;
