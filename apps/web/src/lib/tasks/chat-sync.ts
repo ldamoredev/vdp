@@ -227,6 +227,7 @@ function invalidateTaskDerivedData(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: ["tasks", "review"] });
   void queryClient.invalidateQueries({ queryKey: ["tasks", "trend"] });
   void queryClient.invalidateQueries({ queryKey: ["tasks", "domain-stats"] });
+  void queryClient.invalidateQueries({ queryKey: ["tasks", "carry-over-rate"] });
   void queryClient.invalidateQueries({ queryKey: ["home", "task-stats"] });
   void queryClient.invalidateQueries({ queryKey: ["home", "review"] });
   void queryClient.invalidateQueries({ queryKey: ["home", "trend"] });

@@ -1,25 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
   CalendarClock,
+  Compass,
   Check,
   CheckCheck,
   Clock3,
   Flame,
   History,
+  ListTodo,
   Plus,
   Sparkles,
   Target,
   Trash2,
 } from "lucide-react";
 import { tasksApi } from "@/lib/api/tasks";
-import type { Task } from "@/lib/api/types";
+import type { Task, TaskNote } from "@/lib/api/types";
 import {
   domainBadge,
   domainLabel,
@@ -27,11 +29,20 @@ import {
   priorityBadge,
   priorityLabel,
 } from "@/lib/format";
+import {
+  analyzeTaskDraft,
+  buildClarifiedDescription,
+} from "@/lib/tasks/clarify-task";
+import {
+  buildBreakdownSuggestions,
+  normalizeBreakdownStep,
+} from "@/lib/tasks/breakdown-task";
 import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
 
 const today = getTodayISO();
 
 type TaskFilter = "focus" | "pending" | "done" | "all";
+type PlanningTone = "success" | "info" | "warning" | "error";
 
 const domainOptions = [
   { value: "", label: "Sin dominio" },
@@ -90,12 +101,95 @@ function getTaskTone(task: Task) {
   return "border-[var(--glass-border)] bg-[var(--hover-overlay)]";
 }
 
+function getPlanningToneClasses(tone: PlanningTone) {
+  if (tone === "success") {
+    return "border-[var(--emerald-soft-border)] bg-[var(--emerald-soft-bg)]";
+  }
+
+  if (tone === "warning") {
+    return "border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)]";
+  }
+
+  if (tone === "error") {
+    return "border-[var(--red-soft-border)] bg-[var(--red-soft-bg)]";
+  }
+
+  return "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]";
+}
+
+function buildPlanningSignals(args: {
+  pendingTasks: Task[];
+  urgentTasks: Task[];
+  stuckTasks: Task[];
+  carryOverRate?: number;
+}) {
+  const { pendingTasks, urgentTasks, stuckTasks, carryOverRate = 0 } = args;
+  const focusTasks = pendingTasks
+    .filter((task) => task.priority >= 2 || task.carryOverCount > 0)
+    .slice(0, 3);
+
+  const tone: PlanningTone =
+    stuckTasks.length > 0 || carryOverRate >= 50 || pendingTasks.length >= 8
+      ? "error"
+      : urgentTasks.length >= 4 || carryOverRate >= 35 || pendingTasks.length >= 5
+        ? "warning"
+        : pendingTasks.length === 0
+          ? "success"
+          : "info";
+
+  const headline =
+    tone === "error"
+      ? "Plan cargado al limite"
+      : tone === "warning"
+        ? "Plan con presion"
+        : tone === "success"
+          ? "Plan liviano"
+          : "Plan controlable";
+
+  const summary =
+    tone === "error"
+      ? "Conviene bajar la carga antes de seguir agregando tareas. El arrastre ya esta afectando la ejecucion."
+      : tone === "warning"
+        ? "Todavia es recuperable, pero necesitas elegir mejor que entra en foco y que no."
+        : tone === "success"
+          ? "La carga de hoy es baja. Puedes ejecutar sin entrar en modo reactivo."
+          : "Hay trabajo real, pero la cola aun puede sostenerse si respetas el foco.";
+
+  const recommendations = [
+    pendingTasks.length === 0
+      ? "No agregues volumen artificial. Usa el chat o captura rapida solo si aparece trabajo concreto."
+      : `Limita el foco a ${Math.max(1, Math.min(3, focusTasks.length || 3))} tarea${focusTasks.length === 1 ? "" : "s"} de impacto inmediato.`,
+    carryOverRate >= 35
+      ? `El carry-over de 7 dias va en ${carryOverRate}%. Prioriza cierre o descarte antes de seguir moviendo tareas.`
+      : "El arrastre semanal esta bajo control. Mantener el foco hoy vale mas que replanificar de mas.",
+    stuckTasks.length > 0
+      ? `${stuckTasks.length} tarea${stuckTasks.length === 1 ? "" : "s"} ya estan bloqueadas por carry-over. Necesitan decision explicita, no mas espera.`
+      : urgentTasks.length > 0
+        ? `${urgentTasks.length} tarea${urgentTasks.length === 1 ? "" : "s"} caliente${urgentTasks.length === 1 ? "" : "s"} merecen resolucion antes del resto.`
+        : "No hay señales fuertes de atasco. Puedes sostener el plan si evitas abrir demasiados frentes.",
+  ];
+
+  return {
+    tone,
+    headline,
+    summary,
+    recommendations,
+    focusTasks,
+  };
+}
+
 export default function TasksDashboard() {
   const queryClient = useQueryClient();
   const [newTitle, setNewTitle] = useState("");
   const [newPriority, setNewPriority] = useState(2);
   const [newDomain, setNewDomain] = useState("");
   const [filter, setFilter] = useState<TaskFilter>("focus");
+  const [clarificationOutcome, setClarificationOutcome] = useState("");
+  const [clarificationNextStep, setClarificationNextStep] = useState("");
+  const [showClarificationGate, setShowClarificationGate] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>();
+  const [newBreakdownStep, setNewBreakdownStep] = useState("");
+  const breakdownStudioRef = useRef<HTMLDivElement>(null);
 
   const { data: tasksResult } = useQuery({
     queryKey: ["tasks", today, "all"],
@@ -117,6 +211,17 @@ export default function TasksDashboard() {
     queryFn: () => tasksApi.getTrend(7),
   });
 
+  const { data: carryOverRate } = useQuery({
+    queryKey: ["tasks", "carry-over-rate", 7],
+    queryFn: () => tasksApi.getCarryOverRate(7),
+  });
+
+  const { data: selectedTaskNotes } = useQuery({
+    queryKey: ["tasks", "notes", selectedTaskId],
+    queryFn: () => tasksApi.getTaskNotes(selectedTaskId!),
+    enabled: !!selectedTaskId,
+  });
+
   const createMutation = useMutation({
     mutationFn: tasksApi.createTask,
     onSuccess: (task) => {
@@ -128,6 +233,10 @@ export default function TasksDashboard() {
       setNewTitle("");
       setNewPriority(2);
       setNewDomain("");
+      setClarificationOutcome("");
+      setClarificationNextStep("");
+      setShowClarificationGate(false);
+      setSelectedTaskId(task.id);
       setFilter("focus");
     },
   });
@@ -197,6 +306,21 @@ export default function TasksDashboard() {
         trend.reduce((acc, day) => acc + day.completionRate, 0) / trend.length,
       )
     : 0;
+  const planning = buildPlanningSignals({
+    pendingTasks,
+    urgentTasks,
+    stuckTasks,
+    carryOverRate: carryOverRate?.rate,
+  });
+  const draftClarification = analyzeTaskDraft(newTitle);
+  const defaultSelectedTaskId = planning.focusTasks[0]?.id || pendingTasks[0]?.id;
+  const activeSelectedTaskId = selectedTaskId || defaultSelectedTaskId;
+  const selectedTask = tasks.find((task) => task.id === activeSelectedTaskId);
+  const breakdownSuggestions = selectedTask
+    ? buildBreakdownSuggestions(selectedTask)
+    : [];
+  const persistedSteps =
+    (selectedTaskNotes || []).filter((note) => note.content.trim().startsWith("- "));
 
   const isTaskBusy = (taskId: string) =>
     (completeMutation.isPending && completeMutation.variables === taskId) ||
@@ -204,16 +328,63 @@ export default function TasksDashboard() {
     (discardMutation.isPending && discardMutation.variables === taskId) ||
     (deleteMutation.isPending && deleteMutation.variables === taskId);
 
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
+  const addBreakdownStepMutation = useMutation({
+    mutationFn: ({ taskId, content }: { taskId: string; content: string }) =>
+      tasksApi.addNote(taskId, normalizeBreakdownStep(content)),
+    onSuccess: async () => {
+      setNewBreakdownStep("");
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks", "notes", activeSelectedTaskId],
+      });
+    },
+  });
+
+  function submitTask(force = false, includeClarification = true) {
+    const title = newTitle.trim();
+    if (!title) return;
+
+    const clarification = analyzeTaskDraft(title);
+    if (clarification.needsClarification && !force) {
+      setShowClarificationGate(true);
+      return;
+    }
 
     createMutation.mutate({
-      title: newTitle.trim(),
+      title,
+      description: includeClarification
+        ? buildClarifiedDescription(
+            clarificationOutcome,
+            clarificationNextStep,
+          )
+        : undefined,
       priority: newPriority,
       domain: newDomain || undefined,
     });
   }
+
+  function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    submitTask(false);
+  }
+
+  function openBreakdownStudio(taskId: string) {
+    setSelectedTaskId(taskId);
+    breakdownStudioRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  useEffect(() => {
+    if (!selectedTaskId && defaultSelectedTaskId) {
+      setSelectedTaskId(defaultSelectedTaskId);
+      return;
+    }
+
+    if (selectedTaskId && !tasks.some((task) => task.id === selectedTaskId)) {
+      setSelectedTaskId(defaultSelectedTaskId);
+    }
+  }, [defaultSelectedTaskId, selectedTaskId, tasks]);
 
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
@@ -415,7 +586,129 @@ export default function TasksDashboard() {
             La tarea entra directo en la cola de ejecucion y el chat la ve al
             instante.
           </p>
+
         </form>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+        <div className={`rounded-[30px] border p-6 ${getPlanningToneClasses(planning.tone)}`}>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+                <Compass size={12} />
+                Plan del dia
+              </div>
+              <h3 className="mt-4 text-2xl font-semibold text-[var(--foreground)]">
+                {planning.headline}
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+                {planning.summary}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3 xl:max-w-[29rem] xl:justify-end">
+              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Pendientes
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                  {pendingTasks.length}
+                </div>
+              </div>
+              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Calientes
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                  {urgentTasks.length}
+                </div>
+              </div>
+              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Carry semanal
+                </div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]/80">
+                  7d
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                  {carryOverRate?.rate ?? 0}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {planning.recommendations.map((recommendation) => (
+              <div
+                key={recommendation}
+                className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4"
+              >
+                <p className="text-sm leading-relaxed text-[var(--foreground)]">
+                  {recommendation}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-card-static p-6">
+          <div className="flex items-center gap-2">
+            <Sparkles size={15} style={{ color: "var(--violet-soft-text)" }} />
+            <h3 className="text-sm font-medium text-[var(--foreground)]">
+              Focus recomendado
+            </h3>
+          </div>
+
+          {planning.focusTasks.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {planning.focusTasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  className={`rounded-[24px] border p-4 ${
+                    task.id === activeSelectedTaskId
+                      ? "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]"
+                      : "border-[var(--glass-border)] bg-[var(--hover-overlay)]"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-xs font-semibold text-white">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-[var(--foreground)]">
+                        {task.title}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
+                          {priorityLabel(task.priority)}
+                        </span>
+                        {task.domain && (
+                          <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
+                            {domainLabel(task.domain)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
+                        {task.carryOverCount > 0
+                          ? `Arrastra ${task.carryOverCount} carry-over. Conviene resolverla temprano.`
+                          : "Tiene el mejor balance entre prioridad y urgencia para entrar en foco hoy."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[24px] border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-5 py-10 text-center">
+              <p className="text-sm font-medium text-[var(--foreground)]">
+                No hay foco forzado para hoy.
+              </p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                La cola esta liviana. Puedes capturar trabajo nuevo sin romper el plan.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.5fr_0.9fr]">
@@ -488,76 +781,75 @@ export default function TasksDashboard() {
                   key={task.id}
                   className={`rounded-[28px] border p-4 transition-all ${getTaskTone(task)}`}
                 >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start gap-3">
-                        <button
-                          type="button"
-                          onClick={() => task.status !== "done" && completeMutation.mutate(task.id)}
-                          disabled={task.status === "done" || busy}
-                          className={`task-checkbox mt-0.5 ${task.status === "done" ? "checked" : ""}`}
-                        >
-                          {task.status === "done" && (
-                            <Check size={14} className="text-white" />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => task.status !== "done" && completeMutation.mutate(task.id)}
+                        disabled={task.status === "done" || busy}
+                        className={`task-checkbox mt-0.5 shrink-0 ${task.status === "done" ? "checked" : ""}`}
+                      >
+                        {task.status === "done" && (
+                          <Check size={14} className="text-white" />
+                        )}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`text-base font-medium leading-tight ${
+                              task.status === "done"
+                                ? "text-[var(--muted)] line-through"
+                                : "text-[var(--foreground)]"
+                            }`}
+                          >
+                            {task.title}
+                          </span>
+
+                          {task.carryOverCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--amber-soft-text)]">
+                              <AlertTriangle size={10} />
+                              {task.carryOverCount} carry-over
+                            </span>
                           )}
-                        </button>
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`text-sm font-medium ${
-                                task.status === "done"
-                                  ? "text-[var(--muted)] line-through"
-                                  : "text-[var(--foreground)]"
-                              }`}
-                            >
-                              {task.title}
+                          {task.carryOverCount >= 3 && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--red-soft-text)]">
+                              Bloqueada
                             </span>
+                          )}
+                        </div>
 
-                            {task.carryOverCount > 0 && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--amber-soft-text)]">
-                                <AlertTriangle size={10} />
-                                {task.carryOverCount} carry-over
-                              </span>
-                            )}
-
-                            {task.carryOverCount >= 3 && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--red-soft-text)]">
-                                Bloqueada
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                              {priorityLabel(task.priority)}
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
+                            {priorityLabel(task.priority)}
+                          </span>
+                          {task.domain && (
+                            <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
+                              {domainLabel(task.domain)}
                             </span>
-                            {task.domain && (
-                              <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
-                                {domainLabel(task.domain)}
-                              </span>
-                            )}
-                            <span className="inline-flex items-center gap-1 text-[11px] text-[var(--muted)]">
-                              <Clock3 size={11} />
-                              {task.status === "done"
-                                ? "Cerrada hoy"
-                                : task.carryOverCount > 0
-                                  ? "Necesita cierre o replanificacion"
-                                  : "Lista para ejecutar"}
-                            </span>
-                          </div>
+                          )}
+                          <span className="inline-flex items-center gap-1 text-[11px] text-[var(--muted)]">
+                            <Clock3 size={11} />
+                            {task.status === "done"
+                              ? "Cerrada hoy"
+                              : task.carryOverCount > 0
+                                ? "Necesita cierre o replanificacion"
+                                : "Lista para ejecutar"}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <div className="border-t border-[var(--glass-border)]/80 pt-3">
+                      <div className="flex flex-wrap gap-2">
                       {task.status !== "done" && (
                         <>
                           <button
                             type="button"
                             onClick={() => completeMutation.mutate(task.id)}
                             disabled={busy}
-                            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-3 py-2 text-xs font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Check size={13} />
                             Hecha
@@ -566,16 +858,24 @@ export default function TasksDashboard() {
                             type="button"
                             onClick={() => carryOverMutation.mutate(task.id)}
                             disabled={busy}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-3 py-2 text-xs font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <ArrowRight size={13} />
                             Manana
                           </button>
                           <button
                             type="button"
+                            onClick={() => openBreakdownStudio(task.id)}
+                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--violet-soft-text)] transition-all hover:translate-y-[-1px]"
+                          >
+                            <ListTodo size={13} />
+                            Desglosar
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => discardMutation.mutate(task.id)}
                             disabled={busy}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-3 py-2 text-xs font-medium text-[var(--red-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--red-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Trash2 size={13} />
                             Descartar
@@ -587,11 +887,12 @@ export default function TasksDashboard() {
                         type="button"
                         onClick={() => deleteMutation.mutate(task.id)}
                         disabled={busy}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2 text-xs font-medium text-[var(--muted)] transition-all hover:translate-y-[-1px] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-xs font-medium text-[var(--muted)] transition-all hover:translate-y-[-1px] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Trash2 size={13} />
                         Borrar
                       </button>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -639,6 +940,155 @@ export default function TasksDashboard() {
               <p className="mt-4 text-sm text-[var(--muted)]">
                 No hay tareas cargadas para hoy.
               </p>
+            )}
+          </div>
+
+          <div ref={breakdownStudioRef} className="glass-card-static p-5 scroll-mt-24">
+            <div className="flex items-center gap-2">
+              <ListTodo size={15} style={{ color: "var(--violet-soft-text)" }} />
+              <h3 className="text-sm font-medium text-[var(--foreground)]">
+                Breakdown studio
+              </h3>
+            </div>
+
+            {selectedTask ? (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Tarea seleccionada
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                    {selectedTask.title}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className={`badge text-[10px] ${priorityBadge(selectedTask.priority)}`}>
+                      {priorityLabel(selectedTask.priority)}
+                    </span>
+                    {selectedTask.domain && (
+                      <span className={`badge text-[10px] ${domainBadge(selectedTask.domain)}`}>
+                        {domainLabel(selectedTask.domain)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Elegir tarea
+                  </div>
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {pendingTasks.slice(0, 6).map((task) => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => openBreakdownStudio(task.id)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                          task.id === activeSelectedTaskId
+                            ? "bg-[var(--accent)] text-white shadow-lg"
+                            : "bg-[var(--hover-overlay)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                        }`}
+                      >
+                        {task.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Pasos sugeridos
+                  </div>
+                  <div className="space-y-2">
+                    {breakdownSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.title}
+                        className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3"
+                      >
+                        <div className="text-xs font-medium text-[var(--foreground)]">
+                          {suggestion.title}
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {suggestion.steps.map((step) => (
+                            <button
+                              key={step}
+                              type="button"
+                              onClick={() =>
+                                addBreakdownStepMutation.mutate({
+                                  taskId: selectedTask.id,
+                                  content: step,
+                                })
+                              }
+                              disabled={addBreakdownStepMutation.isPending}
+                              className="block w-full rounded-xl border border-[var(--glass-border)] bg-white/40 px-3 py-2 text-left text-xs text-[var(--foreground)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {step}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Agregar siguiente paso
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={newBreakdownStep}
+                      onChange={(e) => setNewBreakdownStep(e.target.value)}
+                      placeholder="Ej: abrir documento y definir entregable"
+                      className="glass-input flex-1 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        selectedTask &&
+                        addBreakdownStepMutation.mutate({
+                          taskId: selectedTask.id,
+                          content: newBreakdownStep,
+                        })
+                      }
+                      disabled={
+                        !selectedTask ||
+                        !newBreakdownStep.trim() ||
+                        addBreakdownStepMutation.isPending
+                      }
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus size={14} />
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Pasos persistidos
+                  </div>
+                  {persistedSteps.length > 0 ? (
+                    <div className="space-y-2">
+                      {persistedSteps.map((note: TaskNote) => (
+                        <div
+                          key={note.id}
+                          className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2 text-sm text-[var(--foreground)]"
+                        >
+                          {note.content}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-6 text-center text-xs text-[var(--muted)]">
+                      Todavia no hay pasos guardados para esta tarea.
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-8 text-center text-sm text-[var(--muted)]">
+                Selecciona una tarea pendiente para desglosarla.
+              </div>
             )}
           </div>
 
@@ -713,6 +1163,100 @@ export default function TasksDashboard() {
           </div>
         </div>
       </section>
+
+      {showClarificationGate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-[32px] border border-[var(--amber-soft-border)] bg-[var(--sidebar)] p-6 shadow-2xl">
+            <div className="flex items-center gap-2 text-[var(--foreground)]">
+              <Sparkles size={15} style={{ color: "var(--amber-soft-text)" }} />
+              <h4 className="text-sm font-medium">Aclara la tarea antes de cargarla</h4>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {draftClarification.reasons.map((reason) => (
+                <p key={reason} className="text-xs leading-relaxed text-[var(--muted)]">
+                  {reason}
+                </p>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                  Resultado esperado
+                </label>
+                <input
+                  value={clarificationOutcome}
+                  onChange={(e) => setClarificationOutcome(e.target.value)}
+                  placeholder="Que tiene que quedar resuelto?"
+                  className="glass-input w-full px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                  Siguiente paso concreto
+                </label>
+                <input
+                  value={clarificationNextStep}
+                  onChange={(e) => setClarificationNextStep(e.target.value)}
+                  placeholder="Cual es la siguiente accion visible?"
+                  className="glass-input w-full px-4 py-2.5 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                Ejemplos
+              </div>
+              <div className="grid gap-2 md:grid-cols-3">
+                {draftClarification.examples.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => {
+                      setNewTitle(example);
+                      setShowClarificationGate(false);
+                    }}
+                    className="block w-full rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-3 text-left text-xs text-[var(--foreground)] transition-all hover:translate-y-[-1px]"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => submitTask(true)}
+                disabled={
+                  !clarificationOutcome.trim() && !clarificationNextStep.trim()
+                }
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Check size={14} />
+                Guardar clarificada
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClarificationGate(false)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px]"
+              >
+                Seguir editando
+              </button>
+              <button
+                type="button"
+                onClick={() => submitTask(true, false)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px]"
+              >
+                Crear igual
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

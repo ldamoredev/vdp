@@ -47,8 +47,11 @@ export interface TaskReview {
   total: number;
   completed: number;
   pending: number;
+  carriedOver: number;
+  discarded: number;
   completionRate: number;
-  tasks: Task[];
+  pendingTasks: Task[];
+  allTasks: Task[];
   note?: string;
 }
 
@@ -62,6 +65,18 @@ export interface DomainStat {
 export interface CarryOverAllResult {
   carriedOver: number;
   tasks: Task[];
+}
+
+export interface TaskNote {
+  id: string;
+  taskId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TaskDetailsResponse {
+  task: Task;
+  notes: TaskNote[];
 }
 
 export interface AgentConversation {

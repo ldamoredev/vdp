@@ -21,7 +21,9 @@ export class TasksTools {
       // ─── CRUD ──────────────────────────────────────────────
       {
         name: "create_task",
-        description: "Create a new task for today (or a specific date). Returns the created task.",
+        description:
+          "Create a new task for today (or a specific date). Only use this after the task is clear enough to execute. " +
+          "If the user message is vague, ask a follow-up first. Returns the created task.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -90,7 +92,8 @@ export class TasksTools {
       },
       {
         name: "get_task",
-        description: "Get a task by ID with its notes.",
+        description:
+          "Get a task by ID with its notes. Use this before proposing a breakdown or adding clarification notes to an existing task.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -105,7 +108,8 @@ export class TasksTools {
       },
       {
         name: "update_task",
-        description: "Update a task's title, description, priority, date, or domain.",
+        description:
+          "Update a task's title, description, priority, date, or domain. Use description to store clarified outcome or execution context when the user provides it.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -195,7 +199,9 @@ export class TasksTools {
       // ─── Notes ─────────────────────────────────────────────
       {
         name: "add_task_note",
-        description: "Add a note to a task.",
+        description:
+          "Add a note to a task. Use this to save breakdown steps, blockers, or clarified next actions. " +
+          "For breakdowns, prefer one note per concrete step and phrase it as an executable action.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -214,7 +220,8 @@ export class TasksTools {
       {
         name: "get_end_of_day_review",
         description:
-            "Get end-of-day review: completed, pending, completion rate. Shows pending tasks for carry-over/discard.",
+            "Get end-of-day review: completed, pending, completion rate. Shows pending tasks for carry-over/discard. " +
+            "Use this when the user asks to close, review, or clean up the day.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -229,7 +236,8 @@ export class TasksTools {
       },
       {
         name: "carry_over_all_pending",
-        description: "Carry over ALL pending tasks from a date to tomorrow (or another date).",
+        description:
+            "Carry over ALL pending tasks from a date to tomorrow (or another date). Use this only when the user explicitly wants to move everything.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -245,7 +253,8 @@ export class TasksTools {
       },
       {
         name: "get_today_stats",
-        description: "Get today's task stats: completed, pending, completion rate.",
+        description:
+          "Get today's task stats: completed, pending, completion rate. Useful when helping the user plan the day or assess load.",
         inputSchema: {
           type: "object" as const,
           properties: {},
@@ -258,7 +267,8 @@ export class TasksTools {
       },
       {
         name: "get_completion_trend",
-        description: "Get daily completion rates for the last N days (default 7).",
+        description:
+          "Get daily completion rates for the last N days (default 7). Use this when planning or reviewing to detect overload or carry-over patterns.",
         inputSchema: {
           type: "object" as const,
           properties: {

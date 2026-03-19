@@ -3,7 +3,9 @@ import type {
   CarryOverAllResult,
   DomainStat,
   Task,
+  TaskDetailsResponse,
   TaskListResponse,
+  TaskNote,
   TaskReview,
   TaskStats,
   TaskTrendDay,
@@ -15,7 +17,7 @@ export const tasksApi = {
     const qs = params ? `?${new URLSearchParams(params)}` : "";
     return request<TaskListResponse>(`/tasks${qs}`);
   },
-  getTask: (id: string) => request<Task>(`/tasks/${id}`),
+  getTask: (id: string) => request<TaskDetailsResponse>(`/tasks/${id}`),
   createTask: (data: {
     title: string;
     description?: string;
@@ -49,6 +51,7 @@ export const tasksApi = {
     const qs = date ? `?date=${date}` : "";
     return request<TaskReview>(`/tasks/review${qs}`);
   },
+  getTaskNotes: (taskId: string) => request<TaskNote[]>(`/tasks/${taskId}/notes`),
   addNote: (taskId: string, content: string) =>
     request<{ id: string }>(`/tasks/${taskId}/notes`, {
       method: "POST",
