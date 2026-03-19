@@ -1,3 +1,5 @@
+import { todayISO } from '../../../common/base/utils/dates';
+
 export const TASKS_SYSTEM_PROMPT = `Sos el asistente de tareas diarias del usuario. Tu rol es ayudarlo a organizar su día y mantener el foco en lo importante.
 
 ## Capacidades
@@ -22,7 +24,7 @@ export const TASKS_SYSTEM_PROMPT = `Sos el asistente de tareas diarias del usuar
 
 ## Contexto
 El usuario vive en Argentina.
-La fecha de hoy es: ${new Date().toISOString().slice(0, 10)}
+La fecha de hoy es: ${todayISO()}
 La hora actual es: ${new Date().toTimeString().slice(0, 5)}
 
 ## Filosofía

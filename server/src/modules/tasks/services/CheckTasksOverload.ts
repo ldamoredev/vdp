@@ -1,6 +1,7 @@
 import { TaskRepository } from '../domain/TaskRepository';
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { TasksOverloaded } from '../domain/events/TasksOverloaded';
+import { todayISO, localDateISO } from '../../common/base/utils/dates';
 
 export type OverloadCheckResult = {
     total: number;
@@ -19,8 +20,8 @@ export class CheckTasksOverload {
     async execute(days: number = 7): Promise<OverloadCheckResult> {
         const fromDate = new Date();
         fromDate.setDate(fromDate.getDate() - days);
-        const fromStr = fromDate.toISOString().slice(0, 10);
-        const toStr = new Date().toISOString().slice(0, 10);
+        const fromStr = localDateISO(fromDate);
+        const toStr = todayISO();
 
         const { total, carriedOver } = await this.repository.getCarryOverStats(fromStr, toStr);
         const rate = total > 0 ? Math.round((carriedOver / total) * 100) : 0;

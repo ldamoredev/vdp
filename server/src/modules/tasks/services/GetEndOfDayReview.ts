@@ -1,5 +1,6 @@
 import { Task } from '../domain/Task';
 import { TaskRepository } from '../domain/TaskRepository';
+import { todayISO } from '../../common/base/utils/dates';
 
 export type DayReview = {
     date: string;
@@ -17,7 +18,7 @@ export class GetEndOfDayReview {
     constructor(private repository: TaskRepository) {}
 
     async execute(date?: string): Promise<DayReview> {
-        const reviewDate = date || new Date().toISOString().slice(0, 10);
+        const reviewDate = date || todayISO();
         const dayTasks = await this.repository.getTasksByDate(reviewDate);
 
         const completed = dayTasks.filter((t) => t.status === "done");

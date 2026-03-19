@@ -64,7 +64,7 @@ export default function TasksDashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
-  const tasks = tasksResult?.data || [];
+  const tasks = tasksResult?.tasks || [];
   const stats = todayStats;
 
   function handleCreate(e: React.FormEvent) {

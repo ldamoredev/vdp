@@ -1,4 +1,5 @@
 import { Task } from '../../domain/Task';
+import { todayISO } from '../../../common/base/utils/dates';
 import {
     TaskRepository,
     PagedTasks,
@@ -63,7 +64,7 @@ export class DrizzleTaskRepository extends TaskRepository {
     }
 
     async createTask(data: CreateTaskData): Promise<Task> {
-        const scheduledDate = data.scheduledDate || new Date().toISOString().slice(0, 10);
+        const scheduledDate = data.scheduledDate || todayISO();
 
         const [row] = await this.db.query
             .insert(tasks)

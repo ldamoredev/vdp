@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GetDayStats } from '../../services/GetDayStats';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
+import { todayISO, localDateISO } from '../../../common/base/utils/dates';
 
 describe('GetDayStats', () => {
     let repo: FakeTaskRepository;
@@ -37,7 +38,7 @@ describe('GetDayStats', () => {
     });
 
     it('executeToday uses current date', async () => {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayISO();
         repo.seed([createTask({ scheduledDate: today, status: 'done' })]);
 
         const stats = await service.executeToday();
@@ -50,7 +51,7 @@ describe('GetDayStats', () => {
         for (let i = 0; i < 3; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().slice(0, 10);
+            const dateStr = localDateISO(d);
             repo.seed([createTask({ scheduledDate: dateStr, status: 'done' })]);
         }
 

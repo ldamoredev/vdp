@@ -1,5 +1,6 @@
 import { Task } from '../../domain/Task';
 import { randomUUID } from 'crypto';
+import { todayISO } from '../../../common/base/utils/dates';
 
 type TaskOverrides = Partial<{
     id: string;
@@ -26,7 +27,7 @@ export function createTask(overrides: TaskOverrides = {}): Task {
         overrides.title ?? "Test task",
         overrides.status ?? "pending",
         overrides.priority ?? 2,
-        overrides.scheduledDate ?? now.toISOString().slice(0, 10),
+        overrides.scheduledDate ?? todayISO(),
         overrides.domain ?? null,
         overrides.carryOverCount ?? 0,
     );

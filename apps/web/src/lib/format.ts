@@ -41,14 +41,24 @@ export function formatDayOfWeek(date: string | Date): string {
   return format(d, "EEEE", { locale: es });
 }
 
+/** Returns today's date as YYYY-MM-DD in the user's local timezone. */
 export function getTodayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateISO(new Date());
 }
 
+/** Returns tomorrow's date as YYYY-MM-DD in the user's local timezone. */
 export function getTomorrowISO(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return localDateISO(d);
+}
+
+/** Formats a Date as YYYY-MM-DD using local timezone (not UTC). */
+function localDateISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 // ─── Tasks ───────────────────────────────────────────────

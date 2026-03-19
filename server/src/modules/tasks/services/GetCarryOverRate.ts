@@ -1,4 +1,5 @@
 import { TaskRepository } from '../domain/TaskRepository';
+import { todayISO, localDateISO } from '../../common/base/utils/dates';
 
 export type CarryOverRate = {
     total: number;
@@ -13,8 +14,8 @@ export class GetCarryOverRate {
     async execute(days: number = 7): Promise<CarryOverRate> {
         const fromDate = new Date();
         fromDate.setDate(fromDate.getDate() - days);
-        const fromStr = fromDate.toISOString().slice(0, 10);
-        const toStr = new Date().toISOString().slice(0, 10);
+        const fromStr = localDateISO(fromDate);
+        const toStr = todayISO();
 
         const { total, carriedOver } = await this.repository.getCarryOverStats(fromStr, toStr);
         const rate = total > 0 ? Math.round((carriedOver / total) * 100) : 0;

@@ -13,6 +13,7 @@ import { GetDayStats } from '../../services/GetDayStats';
 import { AgentTool } from '../../../common/base/agents/BaseAgent';
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
+import { todayISO } from '../../../common/base/utils/dates';
 
 export class TasksTools {
   static createTasksTools(services: ServiceProvider, insightsStore?: TaskInsightsStore): AgentTool[] {
@@ -79,7 +80,7 @@ export class TasksTools {
         },
         execute: async (input) => {
           const result = await services.get(GetTasks).execute({
-            scheduledDate: input.scheduledDate || new Date().toISOString().slice(0, 10),
+            scheduledDate: input.scheduledDate || todayISO(),
             status: input.status,
             domain: input.domain,
             priority: input.priority,

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GetEndOfDayReview } from '../../services/GetEndOfDayReview';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
+import { todayISO } from '../../../common/base/utils/dates';
 
 describe('GetEndOfDayReview', () => {
     let repo: FakeTaskRepository;
@@ -55,7 +56,7 @@ describe('GetEndOfDayReview', () => {
     });
 
     it('defaults to today when no date given', async () => {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayISO();
         repo.seed([createTask({ scheduledDate: today, status: 'done' })]);
 
         const review = await service.execute();

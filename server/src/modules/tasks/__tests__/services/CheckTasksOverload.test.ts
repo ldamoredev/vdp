@@ -4,6 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
+import { todayISO } from '../../../common/base/utils/dates';
 
 describe('CheckTasksOverload', () => {
     let repo: FakeTaskRepository;
@@ -11,7 +12,7 @@ describe('CheckTasksOverload', () => {
     let service: CheckTasksOverload;
     let emittedEvents: DomainEvent[];
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
 
     beforeEach(() => {
         repo = new FakeTaskRepository();

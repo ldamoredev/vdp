@@ -1,7 +1,9 @@
 // ─── Shared ──────────────────────────────────────────────
 export interface PaginatedResult<T> {
-  data: T[];
+  tasks: T[];
   total: number;
+  limit: number;
+  offset: number;
 }
 
 // ─── Tasks ───────────────────────────────────────────────

@@ -26,9 +26,11 @@ export class TaskInsightsSSEController {
         reply.hijack();
 
         const res = reply.raw;
+        const origin = request.headers.origin;
 
-        // Register client in broadcaster (sets SSE headers + initial heartbeat)
-        this.broadcaster.addClient(res);
+        // reply.hijack() bypasses Fastify's plugin pipeline (including CORS),
+        // so we must set CORS headers manually on the raw response.
+        this.broadcaster.addClient(res, origin);
 
         // Send current unread insights as initial payload
         const snapshot = this.insightsStore.getSnapshot();

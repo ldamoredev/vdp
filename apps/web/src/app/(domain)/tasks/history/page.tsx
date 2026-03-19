@@ -13,8 +13,9 @@ function toISO(d: Date) {
 }
 
 export default function HistoryPage() {
-  const [selectedDate, setSelectedDate] = useState(() => subDays(new Date(), 1));
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const dateISO = toISO(selectedDate);
+  console.log(dateISO)
 
   const { data: reviewResult } = useQuery({
     queryKey: ["tasks", "review", dateISO],
@@ -37,12 +38,15 @@ export default function HistoryPage() {
   });
 
   const review = reviewResult;
-  const tasks = tasksResult?.data || [];
+  const tasks = tasksResult?.tasks || [];
+  console.log(toISO(new Date()))
   const isToday = dateISO === toISO(new Date());
+  console.log(isToday)
 
   function goBack() {
     setSelectedDate((d) => subDays(d, 1));
   }
+
   function goForward() {
     if (!isToday) setSelectedDate((d) => addDays(d, 1));
   }

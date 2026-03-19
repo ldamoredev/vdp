@@ -1,4 +1,5 @@
 import { TaskRepository } from '../domain/TaskRepository';
+import { todayISO, localDateISO } from '../../common/base/utils/dates';
 
 export type DayStats = {
     date: string;
@@ -31,7 +32,7 @@ export class GetDayStats {
     }
 
     async executeToday(): Promise<DayStats> {
-        return this.execute(new Date().toISOString().slice(0, 10));
+        return this.execute(todayISO());
     }
 
     async executeTrend(days: number = 7): Promise<DayStats[]> {
@@ -39,8 +40,7 @@ export class GetDayStats {
         const date = new Date();
 
         for (let i = 0; i < days; i++) {
-            const dateStr = date.toISOString().slice(0, 10);
-            results.push(await this.execute(dateStr));
+            results.push(await this.execute(localDateISO(date)));
             date.setDate(date.getDate() - 1);
         }
 

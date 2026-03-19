@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GetCarryOverRate } from '../../services/GetCarryOverRate';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
+import { todayISO } from '../../../common/base/utils/dates';
 
 describe('GetCarryOverRate', () => {
     let repo: FakeTaskRepository;
     let service: GetCarryOverRate;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
 
     beforeEach(() => {
         repo = new FakeTaskRepository();

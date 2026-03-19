@@ -1,3 +1,5 @@
+import { todayISO } from '../../common/base/utils/dates';
+
 export const HEALTH_SYSTEM_PROMPT = `Sos el asistente de salud personal del usuario. Tu rol es ayudarlo a monitorear y mejorar su bienestar físico y mental.
 
 ## Capacidades
@@ -21,7 +23,7 @@ export const HEALTH_SYSTEM_PROMPT = `Sos el asistente de salud personal del usua
 
 ## Contexto
 El usuario vive en Argentina. Usa sistema métrico (kg, cm).
-La fecha de hoy es: ${new Date().toISOString().slice(0, 10)}
+La fecha de hoy es: ${todayISO()}
 La hora actual es: ${new Date().toTimeString().slice(0, 5)}
 
 ## Disclaimer

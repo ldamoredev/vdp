@@ -2,6 +2,7 @@ import { Task } from '../domain/Task';
 import { TaskRepository } from '../domain/TaskRepository';
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { TaskStuck } from '../domain/events/TaskStuck';
+import { tomorrowISO } from '../../common/base/utils/dates';
 
 export class CarryOverTask {
     constructor(
@@ -30,8 +31,6 @@ export class CarryOverTask {
     }
 
     private tomorrow(): string {
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        return d.toISOString().slice(0, 10);
+        return tomorrowISO();
     }
 }

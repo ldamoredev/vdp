@@ -18,8 +18,6 @@ afterAll(async () => {
     await testApp.teardown();
 });
 
-// ─── Helpers ───────────────────────────────────────
-
 async function createTask(data: Record<string, unknown> = {}) {
     const res = await testApp.app.inject({
         method: 'POST',
@@ -28,8 +26,6 @@ async function createTask(data: Record<string, unknown> = {}) {
     });
     return { status: res.statusCode, body: res.json() };
 }
-
-// ─── Tests ─────────────────────────────────────────
 
 describe('Tasks API — E2E', () => {
 
@@ -225,14 +221,12 @@ describe('Tasks API — E2E', () => {
                 payload: { content: 'Started working on it' },
             });
 
-            // 4. Complete
             const completeRes = await testApp.app.inject({
                 method: 'POST',
                 url: `/api/v1/tasks/${task.id}/complete`,
             });
             expect(completeRes.json().status).toBe('done');
 
-            // 5. Verify full state
             const getRes = await testApp.app.inject({ method: 'GET', url: `/api/v1/tasks/${task.id}` });
             const final = getRes.json();
 

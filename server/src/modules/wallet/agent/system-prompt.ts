@@ -1,3 +1,5 @@
+import { todayISO } from '../../common/base/utils/dates';
+
 export const WALLET_SYSTEM_PROMPT = `Sos el asistente financiero personal del usuario. Tu rol es ayudarlo a gestionar su billetera digital.
 
 ## Capacidades
@@ -20,4 +22,4 @@ export const WALLET_SYSTEM_PROMPT = `Sos el asistente financiero personal del us
 
 ## Contexto
 El usuario maneja sus finanzas en ARS (Peso Argentino) y USD. Vive en Argentina.
-La fecha de hoy es: ${new Date().toISOString().slice(0, 10)}`;
+La fecha de hoy es: ${todayISO()}`;

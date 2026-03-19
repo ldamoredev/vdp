@@ -1,4 +1,5 @@
 import { Task, type TaskSnapshot } from '../../domain/Task';
+import { todayISO } from '../../../common/base/utils/dates';
 import {
     TaskRepository,
     type TaskFilters,
@@ -67,7 +68,7 @@ export class FakeTaskRepository extends TaskRepository {
             data.title,
             "pending",
             data.priority ?? 2,
-            data.scheduledDate ?? now.toISOString().slice(0, 10),
+            data.scheduledDate ?? todayISO(),
             data.domain ?? null,
             0,
         );

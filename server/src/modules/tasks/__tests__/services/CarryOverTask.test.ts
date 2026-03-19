@@ -4,6 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
+import { localDateISO } from '../../../common/base/utils/dates';
 
 describe('CarryOverTask', () => {
     let repo: FakeTaskRepository;
@@ -47,7 +48,7 @@ describe('CarryOverTask', () => {
         // Should be tomorrow's date
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const expectedDate = tomorrow.toISOString().slice(0, 10);
+        const expectedDate = localDateISO(tomorrow);
 
         expect(result!.scheduledDate).toBe(expectedDate);
         expect(result!.carryOverCount).toBe(1);

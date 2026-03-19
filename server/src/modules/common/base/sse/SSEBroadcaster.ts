@@ -26,13 +26,22 @@ export class SSEBroadcaster {
      * Add a new SSE client connection.
      * Writes SSE headers and sends initial heartbeat.
      */
-    addClient(res: ServerResponse): void {
-        res.writeHead(200, {
+    addClient(res: ServerResponse, origin?: string): void {
+        const headers: Record<string, string> = {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
             'X-Accel-Buffering': 'no', // Disable nginx buffering
-        });
+        };
+
+        // When used with reply.hijack(), Fastify's CORS plugin is bypassed,
+        // so we set CORS headers manually.
+        if (origin) {
+            headers['Access-Control-Allow-Origin'] = origin;
+            headers['Access-Control-Allow-Credentials'] = 'true';
+        }
+
+        res.writeHead(200, headers);
 
         // Initial heartbeat so the client knows the connection is alive
         res.write(': heartbeat\n\n');
