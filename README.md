@@ -36,6 +36,24 @@ pnpm --filter @vdp/server dev
 pnpm --filter @vdp/web dev
 ```
 
+## Local agent provider
+
+The chat runtime now supports provider selection through env vars.
+
+For local Ollama with your current setup:
+
+```bash
+AGENT_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+AGENT_MODEL=qwen3:4b
+```
+
+Behavior:
+
+- if `AGENT_PROVIDER=anthropic`, `ANTHROPIC_API_KEY` is required
+- if no provider is set and no Anthropic key exists, the server defaults to `ollama`
+- if no `AGENT_MODEL` is set, Anthropic defaults to `claude-sonnet-4-20250514` and Ollama defaults to `qwen3:4b`
+
 ## Tasks-only verification
 
 ```bash
@@ -68,4 +86,6 @@ pnpm --filter @vdp/server test:e2e
 - API health: `http://localhost:4001/api/health`
 - Tasks API: `http://localhost:4001/api/v1/tasks`
 - Tasks chat: `http://localhost:4001/api/v1/tasks/agent/chat`
+- Tasks conversations: `http://localhost:4001/api/v1/tasks/agent/conversations`
+- Tasks conversation messages: `http://localhost:4001/api/v1/tasks/agent/conversations/:id/messages`
 - Tasks insights SSE: `http://localhost:4001/api/v1/tasks/insights/stream`

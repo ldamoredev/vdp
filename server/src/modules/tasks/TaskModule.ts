@@ -1,5 +1,6 @@
 import { TaskRepository } from './domain/TaskRepository';
 import { TaskNoteRepository } from './domain/TaskNoteRepository';
+import { AgentRepository } from '../common/base/agents/AgentRepository';
 
 // Services
 import { GetTasks } from './services/GetTasks';
@@ -89,7 +90,7 @@ export class TaskModule extends BaseModule {
     getControllers(): HttpController[] {
         return [
             new TasksController(this.services),
-            new TasksAgentController(this.agentRegistry),
+            new TasksAgentController(this.agentRegistry, this.repositories.get(AgentRepository)),
             new TaskInsightsSSEController(this.sseBroadcaster, this.insightsStore),
         ];
     }

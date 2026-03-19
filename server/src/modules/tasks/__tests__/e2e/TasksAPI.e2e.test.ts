@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { TestApp } from './TestApp';
 import { TestDatabase } from '../integration/test-database';
+import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -156,6 +157,72 @@ describe('Tasks API — E2E', () => {
             } finally {
                 chatSpy.mockRestore();
             }
+        });
+    });
+
+    describe('GET /api/v1/tasks/agent/conversations', () => {
+        it('returns persisted task conversations ordered by recency', async () => {
+            const agentRepository = testApp.core.getRepository(AgentRepository);
+            const older = await agentRepository.createConversation('tasks', 'Primera conversacion');
+            await agentRepository.createMessage(older.id, 'user', 'hola');
+
+            const newer = await agentRepository.createConversation('tasks', 'Segunda conversacion');
+            await agentRepository.createMessage(newer.id, 'user', 'que tengo hoy');
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/agent/conversations',
+            });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body).toHaveLength(2);
+            expect(body[0].title).toBe('Segunda conversacion');
+            expect(body[1].title).toBe('Primera conversacion');
+        });
+    });
+
+    describe('GET /api/v1/tasks/agent/conversations/:id/messages', () => {
+        it('returns persisted conversation messages', async () => {
+            const agentRepository = testApp.core.getRepository(AgentRepository);
+            const conversation = await agentRepository.createConversation('tasks', 'Historial');
+            await agentRepository.createMessage(conversation.id, 'user', 'que hice hoy');
+            await agentRepository.createAgentMessage(
+                conversation.id,
+                'assistant',
+                'Completaste dos tareas',
+                [{ id: 'tool-1', name: 'list_tasks', input: { status: 'done' } }],
+            );
+            await agentRepository.saveToolResult(conversation.id, 'tool', {
+                tool_use_id: 'tool-1',
+                content: JSON.stringify({ tasks: [{ id: 'task-1' }, { id: 'task-2' }] }),
+            });
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/tasks/agent/conversations/${conversation.id}/messages`,
+            });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body).toHaveLength(3);
+            expect(body[0].role).toBe('user');
+            expect(body[1].role).toBe('assistant');
+            expect(body[2].role).toBe('tool');
+        });
+
+        it('returns 404 for a conversation outside the tasks domain', async () => {
+            const agentRepository = testApp.core.getRepository(AgentRepository);
+            const conversation = await agentRepository.createConversation('health', 'Otra conversacion');
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/tasks/agent/conversations/${conversation.id}/messages`,
+            });
+
+            expect(res.statusCode).toBe(404);
+            expect(res.json().error).toBe('NOT_FOUND');
+            expect(res.json().message).toBe('Conversation not found');
         });
     });
 

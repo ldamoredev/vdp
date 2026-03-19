@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as walletSchema from '../../../wallet/schema';
 import * as healthSchema from '../../../health/schema';
+import * as agentSchema from '../../infrastructure/agents/schema';
 import * as tasksSchema from '../../../tasks/infrastructure/db/schema';
 
 export class Database {
@@ -10,6 +11,7 @@ export class Database {
   private schema = {
     ...walletSchema,
     ...healthSchema,
+    ...agentSchema,
     ...tasksSchema
   };
 

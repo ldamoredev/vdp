@@ -1,7 +1,7 @@
 import { Database } from './common/base/db/Database';
 import { DomainModule } from './common/base/modules/DomainModule';
 import { DomainModuleDescriptor } from './common/base/modules/DomainModuleDescriptor';
-import { SConstructor, ServiceProvider } from './common/base/services/ServiceProvider';
+import { ServiceProvider } from './common/base/services/ServiceProvider';
 import { HttpController } from './common/http/HttpController';
 import { ModuleContext } from './common/base/modules/ModuleContext';
 import { TaskModule } from './tasks/TaskModule';
@@ -34,6 +34,10 @@ export class Core {
 
     private initTaskModule(): TaskModule {
         return new TaskModule(this.moduleContext).bootstrap();
+    }
+
+    getRepository<T>(token: abstract new (...args: any[]) => T): T {
+        return this.repositories.get(token);
     }
 
     getControllers(): HttpController[] {

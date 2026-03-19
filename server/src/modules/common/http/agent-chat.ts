@@ -64,7 +64,11 @@ export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBo
                     onText: (text) => send('text', { text }),
                     onToolUse: (tool, input) => send('tool_use', { tool, input }),
                     onToolResult: (tool, result) => {
-                        send('tool_result', { tool, summary: summarizeToolResult(result) });
+                        send('tool_result', {
+                            tool,
+                            summary: summarizeToolResult(result),
+                            result,
+                        });
                     },
                     onDone: (conversationId) => {
                         send('done', { conversationId });

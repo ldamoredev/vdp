@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { DomainEvent, DomainName } from '../event-bus/DomainEvent';
 import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
@@ -6,11 +5,14 @@ import { Skill, SkillRegistry } from './skills/SkillRegistry';
 import { SummarizeSkill } from './skills/SummarizeSkill';
 import { AgentRepository } from './AgentRepository';
 import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
+import { AgentProvider } from './providers/AgentProvider';
+import { createAgentProvider } from './providers/createAgentProvider';
+import { AgentMessage, AgentToolCall, AgentToolDefinition, AgentToolResult } from './providers/types';
 
 export interface AgentTool {
     name: string;
     description: string;
-    inputSchema: Anthropic.Tool['input_schema'];
+    inputSchema: Record<string, unknown>;
     execute: (input: Record<string, any>) => Promise<string>;
 }
 
@@ -38,17 +40,23 @@ export abstract class BaseAgent {
     abstract readonly systemPrompt: string;
     abstract readonly tools: AgentTool[];
 
-    protected anthropic: Anthropic;
     protected skills: SkillRegistry = new SkillRegistry();
     protected repositories: DrizzleRepositoryProvider;
     protected services: ServiceProvider;
-    protected model = 'claude-sonnet-4-20250514';
+    protected provider: AgentProvider;
+    protected model: string;
     protected maxTokens = 4096;
 
-    constructor(eventBus: EventBus, services: ServiceProvider, repositories: DrizzleRepositoryProvider) {
-        this.anthropic = new Anthropic();
+    constructor(
+        eventBus: EventBus,
+        services: ServiceProvider,
+        repositories: DrizzleRepositoryProvider,
+        provider: AgentProvider = createAgentProvider(),
+    ) {
         this.services = services;
         this.repositories = repositories;
+        this.provider = provider;
+        this.model = process.env.AGENT_MODEL || provider.defaultModel;
         this.registerSkill(new SummarizeSkill());
     }
 
@@ -63,11 +71,11 @@ export abstract class BaseAgent {
     /**
      * Get the Anthropic tool definitions from the agent's tools.
      */
-    get toolDefinitions(): Anthropic.Tool[] {
+    get toolDefinitions(): AgentToolDefinition[] {
         return this.tools.map((t) => ({
             name: t.name,
             description: t.description,
-            input_schema: t.inputSchema,
+            inputSchema: t.inputSchema,
         }));
     }
 
@@ -114,44 +122,7 @@ export abstract class BaseAgent {
             // Load conversation history
             const history = await this.repositories.get(AgentRepository).loadHistory(conversationId);
 
-            // Build messages array for Anthropic
-            const messages: Anthropic.MessageParam[] = [];
-            for (const msg of history) {
-                if (msg.role === 'user') {
-                    messages.push({ role: 'user', content: msg.content || '' });
-                } else if (msg.role === 'assistant') {
-                    const content: Array<Anthropic.TextBlock | Anthropic.ToolUseBlock> = [];
-                    if (msg.content) {
-                        content.push({ type: 'text', text: msg.content, citations: null });
-                    }
-                    if (msg.toolCalls) {
-                        const calls = msg.toolCalls as any[];
-                        for (const tc of calls) {
-                            content.push({
-                                type: 'tool_use',
-                                id: tc.id,
-                                name: tc.name,
-                                input: tc.input,
-                            });
-                        }
-                    }
-                    if (content.length > 0) {
-                        messages.push({ role: 'assistant', content });
-                    }
-                } else if (msg.role === 'tool') {
-                    const result = msg.toolResult as any;
-                    messages.push({
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'tool_result',
-                                tool_use_id: result.tool_use_id,
-                                content: result.content,
-                            },
-                        ],
-                    });
-                }
-            }
+            const messages = this.buildMessages(history);
 
             // Run the agent loop
             await this.runLoop(messages, {
@@ -168,90 +139,58 @@ export abstract class BaseAgent {
      * Takes pre-built messages array and callbacks.
      */
     async runLoop(
-        messages: Anthropic.MessageParam[],
+        messages: AgentMessage[],
         callbacks: ChatCallbacks & { conversationId: string },
     ): Promise<void> {
         try {
             let continueLoop = true;
 
             while (continueLoop) {
-                const response = await this.anthropic.messages.create({
+                const response = await this.provider.generate({
                     model: this.model,
-                    max_tokens: this.maxTokens,
-                    system: this.systemPrompt,
+                    maxTokens: this.maxTokens,
+                    systemPrompt: this.systemPrompt,
                     tools: this.toolDefinitions,
                     messages,
                 });
 
-                let assistantText = '';
-                const toolCalls: Array<{ id: string; name: string; input: any }> = [];
+                if (response.text) {
+                    callbacks.onText(response.text);
+                }
 
-                for (const block of response.content) {
-                    if (block.type === 'text') {
-                        assistantText += block.text;
-                        callbacks.onText(block.text);
-                    } else if (block.type === 'tool_use') {
-                        toolCalls.push({
-                            id: block.id,
-                            name: block.name,
-                            input: block.input,
+                await this.repositories.get(AgentRepository).createAgentMessage(
+                    callbacks.conversationId,
+                    'assistant',
+                    response.text || null,
+                    response.toolCalls.length > 0 ? response.toolCalls : null,
+                );
+
+                messages.push({
+                    role: 'assistant',
+                    content: response.text || null,
+                    ...(response.toolCalls.length > 0 ? { toolCalls: response.toolCalls } : {}),
+                });
+
+                if (response.toolCalls.length > 0) {
+                    for (const tc of response.toolCalls) {
+                        callbacks.onToolUse(tc.name, tc.input);
+                        const toolResult = await this.executeToolCall(tc);
+                        callbacks.onToolResult(tc.name, toolResult.content);
+
+                        await this.repositories.get(AgentRepository).saveToolResult(
+                            callbacks.conversationId,
+                            'tool',
+                            toolResult,
+                        );
+
+                        messages.push({
+                            role: 'tool',
+                            toolResult,
                         });
                     }
                 }
 
-                // Persist assistant message
-                await this.repositories.get(AgentRepository).createAgentMessage(
-                    callbacks.conversationId,
-                    'assistant',
-                    assistantText || null,
-                    toolCalls.length > 0 ? toolCalls : null,
-                );
-
-                if (toolCalls.length > 0) {
-                    messages.push({ role: 'assistant', content: response.content });
-                    const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-                    for (const tc of toolCalls) {
-                        callbacks.onToolUse(tc.name, tc.input);
-                        try {
-                            const result = await this.executeTool(tc.name, tc.input);
-                            callbacks.onToolResult(tc.name, result);
-
-                            // Persist tool result
-                            await this.repositories.get(AgentRepository).saveToolResult(
-                                callbacks.conversationId,
-                                'tool',
-                                { tool_use_id: tc.id, content: result },
-                            );
-
-                            toolResults.push({
-                                type: 'tool_result',
-                                tool_use_id: tc.id,
-                                content: result,
-                            });
-                        } catch (err: any) {
-                            const errorMsg = err.message || 'Tool execution failed';
-                            callbacks.onToolResult(tc.name, JSON.stringify({ error: errorMsg }));
-
-                            await this.repositories.get(AgentRepository).saveToolResult(
-                                callbacks.conversationId,
-                                'tool',
-                                { tool_use_id: tc.id, content: JSON.stringify({ error: errorMsg }), }
-                            );
-
-                            toolResults.push({
-                                type: 'tool_result',
-                                tool_use_id: tc.id,
-                                content: JSON.stringify({ error: errorMsg }),
-                                is_error: true,
-                            });
-                        }
-                    }
-
-                    messages.push({ role: 'user', content: toolResults });
-                }
-
-                if (response.stop_reason === 'end_turn' || toolCalls.length === 0) {
+                if (response.toolCalls.length === 0 || response.stopReason === 'end_turn' || response.stopReason === 'stop') {
                     continueLoop = false;
                 }
             }
@@ -277,5 +216,53 @@ export abstract class BaseAgent {
      */
     async evaluate(_context: AgentContext): Promise<void> {
         // Override in subclass
+    }
+
+    private buildMessages(history: Awaited<ReturnType<AgentRepository['loadHistory']>>): AgentMessage[] {
+        const messages: AgentMessage[] = [];
+
+        for (const msg of history) {
+            if (msg.role === 'user') {
+                messages.push({ role: 'user', content: msg.content || '' });
+                continue;
+            }
+
+            if (msg.role === 'assistant') {
+                const toolCalls = Array.isArray(msg.toolCalls) ? msg.toolCalls as AgentToolCall[] : [];
+
+                messages.push({
+                    role: 'assistant',
+                    content: msg.content,
+                    ...(toolCalls.length > 0 ? { toolCalls } : {}),
+                });
+                continue;
+            }
+
+            if (msg.role === 'tool' && msg.toolResult) {
+                messages.push({
+                    role: 'tool',
+                    toolResult: msg.toolResult as AgentToolResult,
+                });
+            }
+        }
+
+        return messages;
+    }
+
+    private async executeToolCall(toolCall: AgentToolCall): Promise<AgentToolResult> {
+        try {
+            const result = await this.executeTool(toolCall.name, toolCall.input);
+            return {
+                tool_use_id: toolCall.id,
+                content: result,
+            };
+        } catch (err: any) {
+            const errorMsg = err.message || 'Tool execution failed';
+            return {
+                tool_use_id: toolCall.id,
+                content: JSON.stringify({ error: errorMsg }),
+                is_error: true,
+            };
+        }
     }
 }
