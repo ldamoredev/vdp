@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { MessageCircle, Sparkles } from "lucide-react";
+import { Menu, MessageCircle, Sparkles } from "lucide-react";
 import { chatStore } from "@/lib/chat-store";
+import { shellStore } from "@/lib/shell-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
@@ -21,8 +22,14 @@ export function Header() {
   const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
 
   return (
-    <header className="h-16 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-8">
+    <header className="h-16 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-4 md:px-8">
       <div className="flex items-center gap-3">
+        <button
+          onClick={shellStore.toggle}
+          className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay)] transition-all cursor-pointer"
+        >
+          <Menu size={18} strokeWidth={1.8} />
+        </button>
         <div className="hidden sm:flex items-center gap-2 text-xs text-[var(--muted)]">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)]" />
           <span>Conectado</span>
@@ -38,7 +45,7 @@ export function Header() {
             <MessageCircle size={16} strokeWidth={1.8} />
             <Sparkles size={8} className="absolute -top-1 -right-1 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span>Chat IA</span>
+          <span className="hidden md:inline">Chat IA</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--hover-overlay)] border border-[var(--glass-border)] text-[var(--muted)]">
             {isMac ? "⌘" : "Ctrl"} K
           </kbd>

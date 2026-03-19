@@ -58,7 +58,14 @@
       "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"dashboard landing hero CTA\" --domain landing -n 5)",
       "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"personal dashboard life OS modules dark light theme\" --design-system -p \"VDP Life OS\")",
       "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dark mode light mode theme toggle\" --domain ux -n 10)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dashboard hero CTA card\" --domain landing -n 5)"
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dashboard hero CTA card\" --domain landing -n 5)",
+      "Bash(docker compose:*)",
+      "Bash(/usr/local/bin/docker compose:*)",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(nvm use:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)",
+      "WebSearch"
     ]
   }
 }

@@ -170,7 +170,7 @@ vdp/
 │       │   │
 │       │   └── lib/
 │       │       ├── api/               # Modular API client
-│       │       │   ├── client.ts      # Base fetch wrapper
+│       │       │   ├── Database.ts      # Base fetch wrapper
 │       │       │   ├── wallet.ts      # Wallet endpoints
 │       │       │   ├── health.ts      # Health endpoints
 │       │       │   └── index.ts       # Re-exports: api.wallet.*, api.health.*
@@ -187,12 +187,12 @@ vdp/
 │
 ├── server/                         # Unified Fastify backend
 │   ├── src/
-│   │   ├── app.ts                 # Fastify app setup
+│   │   ├── App.ts                 # Fastify app setup
 │   │   ├── server.ts              # Entry point
 │   │   ├── core/                  # Core infrastructure
 │   │   │   ├── event-bus/
-│   │   │   │   ├── bus.ts         # EventEmitter-based bus
-│   │   │   │   ├── types.ts       # Event type definitions
+│   │   │   │   ├── EventBus.ts         # EventEmitter-based bus
+│   │   │   │   ├── DomainEvent.ts       # Event type definitions
 │   │   │   │   └── handlers.ts    # Cross-domain event handlers
 │   │   │   ├── goals/
 │   │   │   │   ├── engine.ts      # Goal tracking & progress
@@ -248,19 +248,19 @@ vdp/
 │   │   │
 │   │   ├── agents/                # Agent orchestration
 │   │   │   ├── orchestrator.ts    # Cross-domain agent coordinator
-│   │   │   ├── base-agent.ts      # Base agent class
-│   │   │   └── registry.ts        # Agent registry
+│   │   │   ├── BaseAgent.ts      # Base agent class
+│   │   │   └── AgentRegistry.ts        # Agent registry
 │   │   │
 │   │   ├── skills/                # Reusable agent capabilities
-│   │   │   ├── registry.ts        # Skill registry
+│   │   │   ├── AgentRegistry.ts        # Skill registry
 │   │   │   ├── analyze-trends.ts
 │   │   │   ├── detect-anomaly.ts
 │   │   │   ├── create-plan.ts
 │   │   │   ├── send-notification.ts
-│   │   │   └── summarize.ts
+│   │   │   └── SummarizeSkill.ts
 │   │   │
 │   │   └── mcps/                  # External integrations
-│   │       ├── registry.ts        # MCP registry
+│   │       ├── AgentRegistry.ts        # MCP registry
 │   │       ├── gmail/
 │   │       ├── calendar/
 │   │       ├── telegram/
@@ -372,7 +372,7 @@ Adding a new domain to the frontend = adding an entry to this config + creating 
 #### API client pattern
 
 ```typescript
-// lib/api/client.ts — base fetch wrapper
+// lib/api/Database.ts — base fetch wrapper
 async function request<T>(path: string, options?: RequestInit): Promise<T>
 
 // lib/api/wallet.ts
@@ -590,7 +590,7 @@ BaseAgent handles all persistence in `chat()`, `onAssistantMessage()`, `onToolRe
 External integrations (bank APIs, Gmail, calendar) are the only place where we use port/adapter interfaces, because these are unstable external systems that might change:
 
 ```typescript
-// server/src/mcps/types.ts
+// server/src/mcps/DomainEvent.ts
 interface ExternalTransactionSource {
   fetchTransactions(since: Date): Promise<ImportedTransaction[]>;
 }
@@ -615,8 +615,8 @@ Adding a new domain module (e.g., "work") requires:
 5. `agent/tools.ts` — Thin tool definitions calling service
 6. `agent/system-prompt.ts` — Agent personality and instructions
 7. `agent/work-agent.ts` — 3 lines: `domain`, `systemPrompt`, `tools`
-8. Register agent in agent registry (`app.ts`)
-9. Register routes in app (`app.ts`)
+8. Register agent in agent registry (`App.ts`)
+9. Register routes in app (`App.ts`)
 10. Add Zod schemas to `@vdp/shared` (if needed for frontend form validation)
 11. Add domain config entry to frontend `navigation.ts`
 12. Create route pages under `(domain)/work/`
@@ -645,7 +645,7 @@ Steps 1-7 are the module. Steps 8-12 are wiring. No framework code needs to chan
 - Route structure: `(domain)/` route group for shared shell, `/` for cross-domain home dashboard
 - Home page (`/`) uses its own full-width layout without domain sidebar
 - Chat panel: domain-aware, one agent per domain, context-switches on navigation
-- Modular API client: `lib/api/client.ts` + per-domain modules (`wallet.ts`, `health.ts`, etc.)
+- Modular API client: `lib/api/Database.ts` + per-domain modules (`wallet.ts`, `health.ts`, etc.)
 - Shared components live in `apps/web/src/components/shared/` (no separate `packages/ui`)
 - After migration: remove `apps/landing/`, `apps/wallet/frontend/`, `apps/health/frontend/`, `apps/people/frontend/`, `apps/work/frontend/`, `apps/study/frontend/`
 - Update `pnpm-workspace.yaml` to: `apps/web`, `server`, `packages/*`
@@ -653,8 +653,8 @@ Steps 1-7 are the module. Steps 8-12 are wiring. No framework code needs to chan
 
 **Step 3: Build core infrastructure** ✅ DONE
 - Implemented event bus (`server/src/core/event-bus/`) — typed events, wildcard subscriptions, circular buffer log
-- Implemented base agent class (`server/src/agents/base-agent.ts`) — chat loop, tool execution, event handling hooks
-- Implemented skill registry (`server/src/skills/registry.ts`) — register/execute/list pattern ✅
+- Implemented base agent class (`server/src/agents/BaseAgent.ts`) — chat loop, tool execution, event handling hooks
+- Implemented skill registry (`server/src/skills/AgentRegistry.ts`) — register/execute/list pattern ✅
 - Implemented scheduler (`server/src/core/scheduler/`) — node-cron based with enable/disable ✅
 - Docker compose for PostgreSQL + Redis (pending — using local PostgreSQL for now)
 
@@ -691,7 +691,7 @@ This step applies the module pattern (schema → service → thin adapters → e
 ### 5.1 Event Bus
 
 ```typescript
-// server/src/core/event-bus/types.ts
+// server/src/core/event-bus/DomainEvent.ts
 type DomainEvent = {
   id: string;
   domain: "tasks" | "wallet" | "health" | "people" | "work" | "study" | "system";
@@ -777,7 +777,7 @@ Use `node-cron` or `bullmq` with Redis for reliable job scheduling.
 BaseAgent handles the entire chat lifecycle: conversation management, message persistence, tool execution loop, and SSE streaming. Domain agents only provide configuration.
 
 ```typescript
-// server/src/agents/base-agent.ts
+// server/src/agents/BaseAgent.ts
 abstract class BaseAgent {
   abstract readonly domain: DomainName;
   abstract readonly systemPrompt: string;
@@ -936,7 +936,7 @@ Example flow:
 Skills are **stateless, reusable functions** that agents compose to accomplish tasks.
 
 ```typescript
-// server/src/skills/registry.ts
+// server/src/skills/AgentRegistry.ts
 interface Skill {
   name: string;
   description: string;
@@ -1641,11 +1641,11 @@ learning_goals table:
 **Already done (server-side):**
 - `apps/wallet/backend/src/` → `server/src/modules/wallet/` ✅
 - `packages/db/src/schema/wallet.ts` → `server/src/modules/wallet/schema.ts` ✅
-- `packages/db/src/client.ts` → `server/src/core/db/client.ts` ✅
+- `packages/db/src/Database.ts` → `server/src/core/db/Database.ts` ✅
 - `packages/db/drizzle.config.ts` → `server/drizzle.config.ts` ✅
 - `server/src/core/event-bus/` — Event system ✅
-- `server/src/agents/base-agent.ts` — Base agent class ✅
-- `server/src/skills/registry.ts` — Skill framework ✅
+- `server/src/agents/BaseAgent.ts` — Base agent class ✅
+- `server/src/skills/AgentRegistry.ts` — Skill framework ✅
 - `server/src/core/scheduler/` — Job scheduler ✅
 
 **Backend architecture refactor (next):**
@@ -1658,14 +1658,14 @@ Create:
 - `packages/shared/src/schemas/health.ts` — Health Zod validation schemas
 
 Refactor:
-- `server/src/agents/base-agent.ts` — Add conversation persistence (chat, onAssistantMessage, onToolResult use core schema)
+- `server/src/agents/BaseAgent.ts` — Add conversation persistence (chat, onAssistantMessage, onToolResult use core schema)
 - `server/src/modules/wallet/agent/wallet-agent.ts` — Reduce to 3 lines (domain + prompt + tools), remove persistence overrides
 - `server/src/modules/health/agent/health-agent.ts` — Same reduction
 - `server/src/modules/wallet/agent/tools.ts` — Tools call `walletService.*` instead of writing SQL
 - `server/src/modules/health/agent/tools.ts` — Tools call `healthService.*` instead of writing SQL
 - `server/src/modules/wallet/routes/*.ts` — Routes call `walletService.*` instead of writing SQL
 - `server/src/modules/health/routes/*.ts` — Routes call `healthService.*` instead of writing SQL
-- `server/src/app.ts` — Register agents in registry, wire event subscribers, register scheduler jobs, use generic agent route
+- `server/src/App.ts` — Register agents in registry, wire event subscribers, register scheduler jobs, use generic agent route
 
 Delete:
 - `server/src/modules/wallet/schema.ts` — Remove `agentConversations` + `agentMessages` tables (moved to core)
@@ -1682,7 +1682,7 @@ Create:
 - `apps/web/src/components/shell/icon-rail.tsx` — Domain switcher rail
 - `apps/web/src/components/shell/sidebar-panel.tsx` — Expandable domain-specific nav
 - `apps/web/src/components/shell/chat-panel.tsx` — Domain-aware chat (replaces per-app chat panels)
-- `apps/web/src/lib/api/` — Modular API client (client.ts + per-domain modules)
+- `apps/web/src/lib/api/` — Modular API client (Database.ts + per-domain modules)
 - `apps/web/src/lib/navigation.ts` — Domain nav config (routes, icons, labels per domain)
 
 Migrate:

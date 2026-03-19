@@ -2,9 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { IconRail } from "@/components/shell/icon-rail";
-import { SidebarPanel } from "@/components/shell/sidebar-panel";
+import { SidebarDrawer } from "@/components/shell/sidebar-drawer";
 import { Header } from "@/components/shell/header";
 import { ChatPanel } from "@/components/shell/chat-panel";
+import { MobileTabBar } from "@/components/shell/mobile-tab-bar";
+import { InsightsProvider } from "@/components/shell/insights-provider";
 import { getDomainFromPathname } from "@/lib/navigation";
 
 export default function DomainLayout({
@@ -17,13 +19,26 @@ export default function DomainLayout({
 
   return (
     <div className={`flex h-screen relative z-10 ${domainKey ? `domain-${domainKey}` : ""}`}>
-      <IconRail />
-      <SidebarPanel />
+      {/* Desktop-only icon rail */}
+      <div className="hidden md:flex">
+        <IconRail />
+      </div>
+
+      {/* Sidebar: inline on desktop, drawer on mobile */}
+      <SidebarDrawer />
+
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto p-8">{children}</main>
+        <main className="flex-1 overflow-auto p-4 pb-20 md:p-8 md:pb-8">{children}</main>
       </div>
+
       <ChatPanel />
+
+      {/* Mobile-only bottom tab bar */}
+      <MobileTabBar />
+
+      {/* Real-time insights via SSE */}
+      <InsightsProvider />
     </div>
   );
 }

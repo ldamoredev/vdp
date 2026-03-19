@@ -12,7 +12,7 @@ export function SidebarPanel() {
   if (!domain) return null;
 
   return (
-    <aside className="w-52 flex flex-col bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] backdrop-blur-xl">
+    <aside className="w-full md:w-52 h-full flex flex-col bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] backdrop-blur-xl">
       {/* Domain header */}
       <div className="p-5 border-b border-[var(--sidebar-border)]">
         <div className="flex items-center gap-3">

@@ -6,8 +6,9 @@ import { useChatOpen } from "@/lib/use-chat-store";
 import { chatStore } from "@/lib/chat-store";
 import { chatStream } from "@/lib/api/client";
 import { getDomainFromPathname, getDomainConfig } from "@/lib/navigation";
-import { X, Send, Bot, Wrench, Loader2, Sparkles } from "lucide-react";
+import { X, Send, Bot, Wrench, Loader2, Sparkles, ArrowLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-breakpoint";
 
 interface Message {
   id: string;
@@ -21,6 +22,7 @@ const domainConversations = new Map<string, { messages: Message[]; conversationI
 
 export function ChatPanel() {
   const isOpen = useChatOpen();
+  const isMobile = useIsMobile();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const domainKey = getDomainFromPathname(pathname);
@@ -147,10 +149,24 @@ export function ChatPanel() {
   if (!isOpen || !domain) return null;
 
   return (
-    <div className="w-96 border-l border-[var(--glass-border)] bg-[var(--sidebar)] backdrop-blur-xl flex flex-col h-full animate-slide-in-right">
+    <div
+      className={
+        isMobile
+          ? "fixed inset-0 z-50 bg-[var(--sidebar)] backdrop-blur-xl flex flex-col animate-slide-in-up"
+          : "w-96 border-l border-[var(--glass-border)] bg-[var(--sidebar)] backdrop-blur-xl flex flex-col h-full animate-slide-in-right"
+      }
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[var(--glass-border)]">
         <div className="flex items-center gap-3">
+          {isMobile && (
+            <button
+              onClick={chatStore.close}
+              className="p-2 -ml-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay)] transition-all cursor-pointer"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, var(--accent), var(--accent-secondary))` }}
@@ -165,12 +181,14 @@ export function ChatPanel() {
             </div>
           </div>
         </div>
-        <button
-          onClick={chatStore.close}
-          className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay)] transition-all cursor-pointer"
-        >
-          <X size={16} />
-        </button>
+        {!isMobile && (
+          <button
+            onClick={chatStore.close}
+            className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay)] transition-all cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Messages */}
