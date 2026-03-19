@@ -5,9 +5,6 @@ import { Core } from './modules/Core';
 import { HttpController } from './modules/common/http/HttpController';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
-import { TasksController } from './modules/tasks/infrastructure/routes/TasksController';
-import { TasksAgentController } from './modules/tasks/infrastructure/routes/TasksAgentController';
-import { TaskInsightsSSEController } from './modules/tasks/infrastructure/routes/TaskInsightsSSEController';
 
 export class App {
     public app = Fastify({ logger: true });
@@ -25,10 +22,8 @@ export class App {
 
     private registerControllers() {
         const controllers: HttpController[] = [
-            new StatusController(this.core),
-            new TasksController(this.core),
-            new TasksAgentController(this.core),
-            new TaskInsightsSSEController(this.core.sseBroadcaster, this.core.taskModule.insightsStore),
+            new StatusController(this.core.agentRegistry, this.core.getModuleDescriptors()),
+            ...this.core.getControllers(),
         ];
 
         for (const controller of controllers) {

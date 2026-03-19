@@ -1,5 +1,8 @@
 import { Database } from './common/base/db/Database';
+import { DomainModule } from './common/base/modules/DomainModule';
+import { DomainModuleDescriptor } from './common/base/modules/DomainModuleDescriptor';
 import { SConstructor, ServiceProvider } from './common/base/services/ServiceProvider';
+import { HttpController } from './common/http/HttpController';
 import { ModuleContext } from './common/base/modules/ModuleContext';
 import { TaskModule } from './tasks/TaskModule';
 import { DrizzleRepositoryProvider } from './common/infrastructure/db/DrizzleRepositoryProvider';
@@ -13,6 +16,7 @@ export class Core {
     public readonly agentRegistry = new AgentRegistry();
     public readonly sseBroadcaster = new SSEBroadcaster();
     public readonly taskModule: TaskModule;
+    private readonly modules: DomainModule[];
     private repositories: DrizzleRepositoryProvider = new DrizzleRepositoryProvider(this.database);
     private services: ServiceProvider = new ServiceProvider();
     private moduleContext: ModuleContext = {
@@ -24,14 +28,19 @@ export class Core {
     };
 
     constructor() {
-        this.taskModule = this.initModules();
+        this.taskModule = this.initTaskModule();
+        this.modules = [this.taskModule];
     }
 
-    private initModules(): TaskModule {
+    private initTaskModule(): TaskModule {
         return new TaskModule(this.moduleContext).bootstrap();
     }
 
-    getService<T>(service: SConstructor<T>): T {
-        return this.services.get(service);
+    getControllers(): HttpController[] {
+        return this.modules.flatMap((module) => module.getControllers());
+    }
+
+    getModuleDescriptors(): DomainModuleDescriptor[] {
+        return this.modules.map((module) => module.getDescriptor());
     }
 }

@@ -11,8 +11,14 @@ import {
     trendFiltersSchema,
     updateTaskSchema,
 } from '@vdp/shared';
-import { Core } from '../../../Core';
 import { HttpController } from '../../../common/http/HttpController';
+import {
+    carryOverResponse,
+    paginatedCollection,
+    sendCreated,
+    sendMessage,
+} from '../../../common/http/responses';
+import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { assertFound } from '../../../common/http/errors';
 import { parseBody, parseParams, parseQuery } from '../../../common/http/validation';
 
@@ -35,7 +41,7 @@ import { GetCarryOverRate } from '../../services/GetCarryOverRate';
 type IdParams = { Params: { id: string } };
 
 export class TasksController implements HttpController {
-    constructor(private core: Core) {}
+    constructor(private services: ServiceResolver) {}
 
     register(app: FastifyInstance): void {
         const plugin: FastifyPluginCallback = (tasksApp, _opts, done) => {
@@ -75,14 +81,14 @@ export class TasksController implements HttpController {
 
     private async listTasks(request: FastifyRequest, reply: FastifyReply) {
         const query = parseQuery(taskFiltersSchema, request.query);
-        const result = await this.core.getService(GetTasks).execute(query);
-        return reply.send(result);
+        const result = await this.services.get(GetTasks).execute(query);
+        return reply.send(paginatedCollection('tasks', result.tasks, result));
     }
 
     private async getTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const task = assertFound(
-            await this.core.getService(GetTask).executeWithNotes(params.id),
+            await this.services.get(GetTask).executeWithNotes(params.id),
             'Task not found',
         );
         return reply.send(task);
@@ -90,15 +96,15 @@ export class TasksController implements HttpController {
 
     private async createTask(request: FastifyRequest, reply: FastifyReply) {
         const body = parseBody(createTaskSchema, request.body);
-        const task = await this.core.getService(CreateTask).execute(body);
-        return reply.status(201).send(task);
+        const task = await this.services.get(CreateTask).execute(body);
+        return sendCreated(reply, task);
     }
 
     private async updateTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const body = parseBody(updateTaskSchema, request.body);
         const updated = assertFound(
-            await this.core.getService(UpdateTask).execute(params.id, body),
+            await this.services.get(UpdateTask).execute(params.id, body),
             'Task not found',
         );
         return reply.send(updated);
@@ -106,8 +112,8 @@ export class TasksController implements HttpController {
 
     private async deleteTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
-        assertFound(await this.core.getService(DeleteTask).execute(params.id), 'Task not found');
-        return reply.send({ message: 'Task deleted' });
+        assertFound(await this.services.get(DeleteTask).execute(params.id), 'Task not found');
+        return sendMessage(reply, 'Task deleted');
     }
 
     // ─── Status Transitions ──────────────────────────────
@@ -115,7 +121,7 @@ export class TasksController implements HttpController {
     private async completeTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const completed = assertFound(
-            await this.core.getService(CompleteTask).execute(params.id),
+            await this.services.get(CompleteTask).execute(params.id),
             'Task not found',
         );
         return reply.send(completed);
@@ -125,7 +131,7 @@ export class TasksController implements HttpController {
         const params = parseParams(taskIdParamsSchema, request.params);
         const body = parseBody(carryOverSchema, request.body ?? {});
         const carried = assertFound(
-            await this.core.getService(CarryOverTask).execute(params.id, body.toDate),
+            await this.services.get(CarryOverTask).execute(params.id, body.toDate),
             'Task not found',
         );
         return reply.send(carried);
@@ -134,7 +140,7 @@ export class TasksController implements HttpController {
     private async discardTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const discarded = assertFound(
-            await this.core.getService(DiscardTask).execute(params.id),
+            await this.services.get(DiscardTask).execute(params.id),
             'Task not found',
         );
         return reply.send(discarded);
@@ -142,8 +148,8 @@ export class TasksController implements HttpController {
 
     private async carryOverAllPending(request: FastifyRequest, reply: FastifyReply) {
         const body = parseBody(carryOverAllSchema, request.body);
-        const results = await this.core.getService(CarryOverAllPending).execute(body.fromDate, body.toDate);
-        return reply.send({ carriedOver: results.length, tasks: results });
+        const results = await this.services.get(CarryOverAllPending).execute(body.fromDate, body.toDate);
+        return reply.send(carryOverResponse(results));
     }
 
     // ─── Notes ───────────────────────────────────────────
@@ -151,7 +157,7 @@ export class TasksController implements HttpController {
     private async listNotes(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const result = assertFound(
-            await this.core.getService(GetTask).executeWithNotes(params.id),
+            await this.services.get(GetTask).executeWithNotes(params.id),
             'Task not found',
         );
         return reply.send(result.notes);
@@ -160,40 +166,40 @@ export class TasksController implements HttpController {
     private async addNote(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const body = parseBody(createTaskNoteSchema, request.body);
-        const note = await this.core.getService(AddTaskNote).execute(params.id, body.content);
-        return reply.status(201).send(note);
+        const note = await this.services.get(AddTaskNote).execute(params.id, body.content);
+        return sendCreated(reply, note);
     }
 
     // ─── Review ──────────────────────────────────────────
 
     private async getEndOfDayReview(request: FastifyRequest, reply: FastifyReply) {
         const query = parseQuery(reviewFiltersSchema, request.query);
-        const result = await this.core.getService(GetEndOfDayReview).execute(query.date);
+        const result = await this.services.get(GetEndOfDayReview).execute(query.date);
         return reply.send(result);
     }
 
     // ─── Stats ───────────────────────────────────────────
 
     private async getTodayStats(_request: FastifyRequest, reply: FastifyReply) {
-        const result = await this.core.getService(GetDayStats).executeToday();
+        const result = await this.services.get(GetDayStats).executeToday();
         return reply.send(result);
     }
 
     private async getCompletionTrend(request: FastifyRequest, reply: FastifyReply) {
         const query = parseQuery(trendFiltersSchema, request.query);
-        const result = await this.core.getService(GetDayStats).executeTrend(query.days);
+        const result = await this.services.get(GetDayStats).executeTrend(query.days);
         return reply.send(result);
     }
 
     private async getCompletionByDomain(request: FastifyRequest, reply: FastifyReply) {
         const query = parseQuery(domainStatsFiltersSchema, request.query);
-        const result = await this.core.getService(GetCompletionByDomain).execute(query.from, query.to);
+        const result = await this.services.get(GetCompletionByDomain).execute(query.from, query.to);
         return reply.send(result);
     }
 
     private async getCarryOverRate(request: FastifyRequest, reply: FastifyReply) {
         const query = parseQuery(trendFiltersSchema, request.query);
-        const result = await this.core.getService(GetCarryOverRate).execute(query.days);
+        const result = await this.services.get(GetCarryOverRate).execute(query.days);
         return reply.send(result);
     }
 }

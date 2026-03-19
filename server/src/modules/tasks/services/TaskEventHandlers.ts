@@ -1,5 +1,6 @@
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { DomainEvent } from '../../common/base/event-bus/DomainEvent';
+import { EventSubscriber } from '../../common/base/event-bus/EventSubscriber';
 import { TaskInsightsStore } from './TaskInsightsStore';
 
 /**
@@ -12,7 +13,7 @@ import { TaskInsightsStore } from './TaskInsightsStore';
  * Insights are stored in TaskInsightsStore and surfaced to the user
  * via the agent's `get_insights` tool.
  */
-export class TaskEventHandlers {
+export class TaskEventHandlers implements EventSubscriber {
     constructor(
         private eventBus: EventBus,
         private insightsStore: TaskInsightsStore,

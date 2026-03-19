@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  dateRangeSchema,
+  dateStringSchema,
+  nullableDateStringSchema,
+  optionalDateStringSchema,
+} from "./common";
 
 // ─── Enums ───────────────────────────────────────────────
 const metricTypeEnum = z.enum([
@@ -26,15 +32,13 @@ export const createMetricSchema = z.object({
   metricType: metricTypeEnum,
   value: z.coerce.number(),
   unit: z.string().max(20).optional(),
-  recordedAt: z.string().optional(),
+  recordedAt: optionalDateStringSchema,
   source: z.string().max(30).optional(),
   notes: z.string().nullable().optional(),
 });
 
-export const metricFiltersSchema = z.object({
+export const metricFiltersSchema = dateRangeSchema.extend({
   metricType: metricTypeEnum.optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
@@ -65,13 +69,13 @@ export const habitFiltersSchema = z.object({
 });
 
 export const completeHabitSchema = z.object({
-  date: z.string().optional(),
+  date: optionalDateStringSchema,
   value: z.coerce.number().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
 export const completionFiltersSchema = z.object({
-  from: z.string().optional(),
+  from: optionalDateStringSchema,
 });
 
 // ─── Medications ─────────────────────────────────────────
@@ -80,8 +84,8 @@ export const createMedicationSchema = z.object({
   dosage: z.string().max(50).nullable().optional(),
   frequency: medicationFrequencyEnum,
   timeOfDay: timeOfDayEnum.nullable().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().nullable().optional(),
+  startDate: optionalDateStringSchema,
+  endDate: nullableDateStringSchema,
   notes: z.string().nullable().optional(),
 });
 
@@ -90,7 +94,7 @@ export const updateMedicationSchema = z.object({
   dosage: z.string().max(50).nullable().optional(),
   frequency: medicationFrequencyEnum.optional(),
   timeOfDay: timeOfDayEnum.nullable().optional(),
-  endDate: z.string().nullable().optional(),
+  endDate: nullableDateStringSchema,
   isActive: z.boolean().optional(),
   notes: z.string().nullable().optional(),
 });
@@ -101,14 +105,11 @@ export const medicationFiltersSchema = z.object({
 
 export const logMedicationSchema = z.object({
   skipped: z.boolean().default(false),
-  takenAt: z.string().optional(),
+  takenAt: optionalDateStringSchema,
   notes: z.string().nullable().optional(),
 });
 
-export const medicationLogFiltersSchema = z.object({
-  from: z.string().optional(),
-  to: z.string().optional(),
-});
+export const medicationLogFiltersSchema = dateRangeSchema;
 
 // ─── Appointments ────────────────────────────────────────
 export const createAppointmentSchema = z.object({
@@ -116,7 +117,7 @@ export const createAppointmentSchema = z.object({
   doctorName: z.string().max(100).nullable().optional(),
   specialty: z.string().max(60).nullable().optional(),
   location: z.string().max(200).nullable().optional(),
-  scheduledAt: z.string(),
+  scheduledAt: dateStringSchema,
   durationMinutes: z.coerce.number().int().positive().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
@@ -126,7 +127,7 @@ export const updateAppointmentSchema = z.object({
   doctorName: z.string().max(100).nullable().optional(),
   specialty: z.string().max(60).nullable().optional(),
   location: z.string().max(200).nullable().optional(),
-  scheduledAt: z.string().optional(),
+  scheduledAt: optionalDateStringSchema,
   durationMinutes: z.coerce.number().int().positive().nullable().optional(),
   notes: z.string().nullable().optional(),
   status: appointmentStatusEnum.optional(),
@@ -141,13 +142,11 @@ export const createBodyMeasurementSchema = z.object({
   measurementType: bodyMeasurementTypeEnum,
   value: z.coerce.number(),
   unit: z.string().max(20).optional(),
-  date: z.string().optional(),
+  date: optionalDateStringSchema,
   notes: z.string().nullable().optional(),
 });
 
-export const bodyMeasurementFiltersSchema = z.object({
+export const bodyMeasurementFiltersSchema = dateRangeSchema.extend({
   type: bodyMeasurementTypeEnum.optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });

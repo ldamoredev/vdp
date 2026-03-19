@@ -21,10 +21,20 @@ import { CheckDailyCompletion } from './services/CheckDailyCompletion';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
 import { TaskInsightsStore } from './services/TaskInsightsStore';
 import { TaskAgent } from './infrastructure/agent/TaskAgent';
+import { HttpController } from '../common/http/HttpController';
 import { BaseModule } from '../common/base/modules/BaseModule';
+import { DomainModuleDescriptor } from '../common/base/modules/DomainModuleDescriptor';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { TasksController } from './infrastructure/routes/TasksController';
+import { TasksAgentController } from './infrastructure/routes/TasksAgentController';
+import { TaskInsightsSSEController } from './infrastructure/routes/TaskInsightsSSEController';
 
 export class TaskModule extends BaseModule {
+    private static readonly descriptor: DomainModuleDescriptor = {
+        domain: 'tasks',
+        label: 'Tasks',
+    };
+
     readonly insightsStore = new TaskInsightsStore();
 
     constructor(context: ModuleContext) {
@@ -60,8 +70,10 @@ export class TaskModule extends BaseModule {
     protected registerEventHandlers() {
         const taskRepo = () => this.repositories.get(TaskRepository);
 
-        new CheckDailyCompletion(taskRepo(), this.eventBus).subscribe();
-        new TaskEventHandlers(this.eventBus, this.insightsStore).subscribe();
+        this.registerSubscribers(
+            new CheckDailyCompletion(taskRepo(), this.eventBus),
+            new TaskEventHandlers(this.eventBus, this.insightsStore),
+        );
 
         this.insightsStore.onInsight((insight) => {
             this.sseBroadcaster.broadcast('insight', insight);
@@ -72,5 +84,17 @@ export class TaskModule extends BaseModule {
         this.agentRegistry.register(
             new TaskAgent(this.eventBus, this.services, this.repositories, this.insightsStore),
         );
+    }
+
+    getControllers(): HttpController[] {
+        return [
+            new TasksController(this.services),
+            new TasksAgentController(this.agentRegistry),
+            new TaskInsightsSSEController(this.sseBroadcaster, this.insightsStore),
+        ];
+    }
+
+    getDescriptor(): DomainModuleDescriptor {
+        return TaskModule.descriptor;
     }
 }

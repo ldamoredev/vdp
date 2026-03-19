@@ -24,6 +24,8 @@ Each module boots through a shared lifecycle:
 1. `registerServices()`
 2. `registerEventHandlers()`
 3. `registerAgents()`
+4. `getControllers()`
+5. `getDescriptor()`
 
 Shared runtime dependencies are passed through a single module context:
 
@@ -32,6 +34,20 @@ Shared runtime dependencies are passed through a single module context:
 - eventBus
 - agentRegistry
 - sseBroadcaster
+
+Event subscribers follow one shared contract:
+
+- `subscribe()`
+
+Modules register event subscribers through the shared module helper instead of wiring ad hoc subscriptions inline.
+
+Shared request schema primitives live in `packages/shared/src/schemas/common.ts`.
+Use them for repeated concerns like UUID params, date strings, date ranges, and bounded day windows before creating domain-specific schemas.
+
+Modules also expose a small descriptor for shared application concerns like status reporting and module discovery.
+
+Shared HTTP response helpers live in `server/src/modules/common/http/responses.ts`.
+Use them for stable patterns like created resources, message payloads, paginated collections, carry-over summaries, and status responses.
 
 ## Rules
 
@@ -82,7 +98,7 @@ Backend HTTP controllers follow one common shape:
 
 - `register(app)`
 
-`App` is the composition root that registers controllers and the global HTTP error handler.
+`App` is the composition root that registers common controllers, asks modules for their controllers, and wires the global HTTP error handler.
 
 ## Test template
 

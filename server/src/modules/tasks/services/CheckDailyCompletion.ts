@@ -2,12 +2,13 @@ import { TaskRepository } from '../domain/TaskRepository';
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { DailyAllCompleted } from '../domain/events/DailyAllCompleted';
 import { DomainEvent } from '../../common/base/event-bus/DomainEvent';
+import { EventSubscriber } from '../../common/base/event-bus/EventSubscriber';
 
 /**
  * Event subscriber: listens for task.completed events and checks
  * if all tasks for that date are done. If so, emits DailyAllCompleted.
  */
-export class CheckDailyCompletion {
+export class CheckDailyCompletion implements EventSubscriber {
     constructor(
         private repository: TaskRepository,
         private eventBus: EventBus,

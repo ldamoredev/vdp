@@ -1,11 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
-import { HttpController } from '../../../common/http/HttpController';
 import { httpErrorHandler } from '../../../common/http/errors';
-import { TasksAgentController } from '../../infrastructure/routes/TasksAgentController';
-import { TasksController } from '../../infrastructure/routes/TasksController';
-import { TaskInsightsSSEController } from '../../infrastructure/routes/TaskInsightsSSEController';
 
 /**
  * Lightweight Fastify app wired to the test database.
@@ -25,13 +21,7 @@ export class TestApp {
         await this.app.register(cors, { origin: true });
         this.app.setErrorHandler(httpErrorHandler);
 
-        const controllers: HttpController[] = [
-            new TasksController(this.core),
-            new TasksAgentController(this.core),
-            new TaskInsightsSSEController(this.core.sseBroadcaster, this.core.taskModule.insightsStore),
-        ];
-
-        for (const controller of controllers) {
+        for (const controller of this.core.getControllers()) {
             await controller.register(this.app);
         }
 
