@@ -4,7 +4,7 @@ import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { Skill, SkillRegistry } from './skills/SkillRegistry';
 import { SummarizeSkill } from './skills/SummarizeSkill';
-import { DrizzleAgentRepository } from '../../infrastructure/agents/DrizzleAgentRepository';
+import { AgentRepository } from './AgentRepository';
 import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
 
 export interface AgentTool {
@@ -100,19 +100,19 @@ export abstract class BaseAgent {
             // Get or create conversation
             let conversationId = options.conversationId;
             if (!conversationId) {
-                const conv = await this.repositories.get(DrizzleAgentRepository).createConversation(this.domain, message.slice(0, 100));
+                const conv = await this.repositories.get(AgentRepository).createConversation(this.domain, message.slice(0, 100));
                 conversationId = conv.id;
             }
 
             // Save user message
-            await this.repositories.get(DrizzleAgentRepository).createMessage(
+            await this.repositories.get(AgentRepository).createMessage(
                 conversationId,
                 'user',
                 message,
             );
 
             // Load conversation history
-            const history = await this.repositories.get(DrizzleAgentRepository).loadHistory(conversationId);
+            const history = await this.repositories.get(AgentRepository).loadHistory(conversationId);
 
             // Build messages array for Anthropic
             const messages: Anthropic.MessageParam[] = [];
@@ -200,7 +200,7 @@ export abstract class BaseAgent {
                 }
 
                 // Persist assistant message
-                await this.repositories.get(DrizzleAgentRepository).createAgentMessage(
+                await this.repositories.get(AgentRepository).createAgentMessage(
                     callbacks.conversationId,
                     'assistant',
                     assistantText || null,
@@ -218,7 +218,7 @@ export abstract class BaseAgent {
                             callbacks.onToolResult(tc.name, result);
 
                             // Persist tool result
-                            await this.repositories.get(DrizzleAgentRepository).saveToolResult(
+                            await this.repositories.get(AgentRepository).saveToolResult(
                                 callbacks.conversationId,
                                 'tool',
                                 { tool_use_id: tc.id, content: result },
@@ -233,7 +233,7 @@ export abstract class BaseAgent {
                             const errorMsg = err.message || 'Tool execution failed';
                             callbacks.onToolResult(tc.name, JSON.stringify({ error: errorMsg }));
 
-                            await this.repositories.get(DrizzleAgentRepository).saveToolResult(
+                            await this.repositories.get(AgentRepository).saveToolResult(
                                 callbacks.conversationId,
                                 'tool',
                                 { tool_use_id: tc.id, content: JSON.stringify({ error: errorMsg }), }

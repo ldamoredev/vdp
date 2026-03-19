@@ -32,6 +32,10 @@ export const taskFiltersSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+export const taskIdParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
 // ─── Task Notes ─────────────────────────────────────────
 export const createTaskNoteSchema = z.object({
   content: z.string().min(1),
@@ -55,4 +59,8 @@ export const trendFiltersSchema = z.object({
 export const domainStatsFiltersSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
+});
+
+export const reviewFiltersSchema = z.object({
+  date: z.string().optional(),
 });

@@ -1,11 +1,19 @@
 import { request } from "./client";
-import type { Task, TaskStats, TaskTrendDay, TaskReview, DomainStat, PaginatedResult } from "./types";
+import type {
+  CarryOverAllResult,
+  DomainStat,
+  Task,
+  TaskListResponse,
+  TaskReview,
+  TaskStats,
+  TaskTrendDay,
+} from "./types";
 
 export const tasksApi = {
   // ─── CRUD ────────────────────────────────────────────────
   getTasks: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<PaginatedResult<Task>>(`/tasks${qs}`);
+    return request<TaskListResponse>(`/tasks${qs}`);
   },
   getTask: (id: string) => request<Task>(`/tasks/${id}`),
   createTask: (data: {
@@ -31,7 +39,7 @@ export const tasksApi = {
   discardTask: (id: string) =>
     request<Task>(`/tasks/${id}/discard`, { method: "POST" }),
   carryOverAll: (fromDate: string, toDate?: string) =>
-    request<{ carried: number }>("/tasks/carry-over-all", {
+    request<CarryOverAllResult>("/tasks/carry-over-all", {
       method: "POST",
       body: JSON.stringify({ fromDate, toDate }),
     }),

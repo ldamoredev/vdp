@@ -1,32 +1,27 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { tasksApi } from "@/lib/api/tasks";
-import { walletApi } from "@/lib/api/wallet";
-import { healthApi } from "@/lib/api/health";
-import { formatMoney, formatMetricValue, formatRelative, getTodayISO } from "@/lib/format";
 import Link from "next/link";
 import {
-  ListChecks,
-  Wallet,
-  Heart,
+  AlertTriangle,
+  CalendarDays,
   CheckCircle2,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Footprints,
-  Moon,
-  Droplets,
-  Flame,
-  CalendarClock,
-  Pill,
-  TrendingUp,
   ChevronRight,
+  History,
+  ListChecks,
+  TrendingUp,
 } from "lucide-react";
+import { tasksApi } from "@/lib/api/tasks";
+import {
+  formatDateShort,
+  getTodayISO,
+  priorityBadge,
+  priorityLabel,
+} from "@/lib/format";
 
 export default function HomePage() {
   const today = getTodayISO();
 
-  // Tasks data
   const { data: taskStats } = useQuery({
     queryKey: ["home", "task-stats"],
     queryFn: tasksApi.getTodayStats,
@@ -37,318 +32,310 @@ export default function HomePage() {
     queryFn: () => tasksApi.getTasks({ scheduledDate: today, limit: "5" }),
   });
 
-  // Wallet data
-  const { data: accounts } = useQuery({
-    queryKey: ["home", "accounts"],
-    queryFn: walletApi.getAccounts,
+  const { data: review } = useQuery({
+    queryKey: ["home", "review", today],
+    queryFn: () => tasksApi.getReview(today),
   });
 
-  const { data: recentTx } = useQuery({
-    queryKey: ["home", "recent-tx"],
-    queryFn: () => walletApi.getTransactions({ limit: "3" }),
+  const { data: trend } = useQuery({
+    queryKey: ["home", "trend", 7],
+    queryFn: () => tasksApi.getTrend(7),
   });
 
-  // Health data
-  const { data: healthToday } = useQuery({
-    queryKey: ["home", "health-today"],
-    queryFn: healthApi.getTodaySummary,
-  });
-
-  const { data: appointments } = useQuery({
-    queryKey: ["home", "appointments"],
-    queryFn: () => healthApi.getAppointments("upcoming"),
-  });
-
-  const { data: medications } = useQuery({
-    queryKey: ["home", "medications"],
-    queryFn: () => healthApi.getMedications(),
-  });
-
-  // Computed values
-  const totalBalance = accounts?.reduce((sum: number, a: any) => sum + parseFloat(a.balance || 0), 0) || 0;
-  const tasksCompleted = taskStats?.completed || 0;
-  const tasksTotal = taskStats?.total || 0;
+  const tasksCompleted = taskStats?.completed ?? 0;
+  const tasksTotal = taskStats?.total ?? 0;
+  const tasksPending = taskStats?.pending ?? 0;
   const tasksPct = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
-
-  const healthMetrics = healthToday?.metrics || {};
-  const quickHealthCards = [
-    { key: "steps", label: "Pasos", icon: Footprints, target: 10000, unit: "steps" },
-    { key: "sleep_hours", label: "Sueno", icon: Moon, target: 8, unit: "hours" },
-    { key: "water_ml", label: "Agua", icon: Droplets, target: 2500, unit: "ml" },
-    { key: "calories", label: "Calorias", icon: Flame, target: 2200, unit: "kcal" },
-  ];
-
-  const txTypeIcons: Record<string, any> = {
-    income: ArrowDownLeft,
-    expense: ArrowUpRight,
-  };
+  const activeTasks = todayTasks?.tasks ?? [];
+  const averageCompletion = trend?.length
+    ? Math.round(trend.reduce((acc, day) => acc + day.completionRate, 0) / trend.length)
+    : 0;
+  const carriedToday = activeTasks.filter((task) => task.carryOverCount > 0).length;
 
   return (
-    <div className="space-y-8 max-w-6xl animate-fade-in">
-      {/* Header */}
+    <div className="max-w-6xl space-y-8 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">Buen dia</h2>
-        <p className="text-sm text-[var(--muted)] mt-1">Tu resumen de hoy</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+          Centro de comando Tasks
+        </h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Resumen diario del modulo que define la arquitectura actual
+        </p>
       </div>
 
-      {/* Top summary row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 stagger-children">
-        {/* Tasks summary */}
-        <Link href="/tasks" className="glass-card p-5 group cursor-pointer transition-all" style={{ borderColor: undefined }}>
-          <div className="flex items-center justify-between mb-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 stagger-children">
+        <Link
+          href="/tasks"
+          className="glass-card group cursor-pointer p-5 transition-all"
+        >
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--violet-soft-bg)" }}>
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ background: "var(--violet-soft-bg)" }}
+              >
                 <ListChecks size={15} style={{ color: "var(--violet-soft-text)" }} />
               </div>
-              <span className="text-sm font-medium text-[var(--foreground)]">Tareas</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                Tareas
+              </span>
             </div>
-            <ChevronRight size={14} className="text-[var(--muted)] group-hover:text-[var(--violet-soft-text)] transition-colors" />
+            <ChevronRight
+              size={14}
+              className="text-[var(--muted)] transition-colors group-hover:text-[var(--violet-soft-text)]"
+            />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold text-[var(--foreground)]">{tasksCompleted}</span>
-            <span className="text-sm text-[var(--muted)]">/ {tasksTotal} completadas</span>
+            <span className="text-3xl font-semibold text-[var(--foreground)]">
+              {tasksCompleted}
+            </span>
+            <span className="text-sm text-[var(--muted)]">
+              / {tasksTotal} completadas
+            </span>
           </div>
           <div className="progress-bar mt-3">
-            <div className="progress-bar-fill" style={{ width: `${tasksPct}%`, background: "#8B5CF6" }} />
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${tasksPct}%`, background: "#8B5CF6" }}
+            />
           </div>
         </Link>
 
-        {/* Wallet summary */}
-        <Link href="/wallet" className="glass-card p-5 group cursor-pointer transition-all">
-          <div className="flex items-center justify-between mb-3">
+        <div className="glass-card p-5">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--blue-soft-bg)" }}>
-                <Wallet size={15} style={{ color: "var(--blue-soft-text)" }} />
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ background: "var(--amber-soft-bg)" }}
+              >
+                <AlertTriangle size={15} style={{ color: "var(--amber-soft-text)" }} />
               </div>
-              <span className="text-sm font-medium text-[var(--foreground)]">Balance total</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                Pendientes
+              </span>
             </div>
-            <ChevronRight size={14} className="text-[var(--muted)] group-hover:text-[var(--blue-soft-text)] transition-colors" />
+            <span className="text-xs font-medium text-[var(--muted)]">Hoy</span>
           </div>
           <div className="text-3xl font-semibold text-[var(--foreground)]">
-            {formatMoney(totalBalance, "ARS")}
+            {tasksPending}
           </div>
-          <span className="text-xs text-[var(--muted)] mt-1 block">
-            {accounts?.length || 0} cuenta{(accounts?.length || 0) !== 1 ? "s" : ""}
+          <span className="mt-1 block text-xs text-[var(--muted)]">
+            {tasksPending === 0 ? "Dia limpio" : "Quedan tareas abiertas"}
           </span>
-        </Link>
+        </div>
 
-        {/* Health summary */}
-        <Link href="/health" className="glass-card p-5 group cursor-pointer transition-all">
-          <div className="flex items-center justify-between mb-3">
+        <Link
+          href="/tasks/history"
+          className="glass-card group cursor-pointer p-5 transition-all"
+        >
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--emerald-soft-bg)" }}>
-                <Heart size={15} style={{ color: "var(--emerald-soft-text)" }} />
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ background: "var(--violet-soft-bg)" }}
+              >
+                <TrendingUp size={15} style={{ color: "var(--violet-soft-text)" }} />
               </div>
-              <span className="text-sm font-medium text-[var(--foreground)]">Salud hoy</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                Promedio semanal
+              </span>
             </div>
-            <ChevronRight size={14} className="text-[var(--muted)] group-hover:text-[var(--emerald-soft-text)] transition-colors" />
+            <ChevronRight
+              size={14}
+              className="text-[var(--muted)] transition-colors group-hover:text-[var(--violet-soft-text)]"
+            />
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            {quickHealthCards.slice(0, 4).map((card) => {
-              const metric = healthMetrics[card.key];
-              const value = metric ? parseFloat(metric.value) : 0;
-              const pct = card.target ? Math.min(100, Math.round((value / card.target) * 100)) : 0;
-              return (
-                <div key={card.key} className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: pct >= 80 ? "var(--accent-green)" : pct >= 40 ? "var(--accent-amber)" : "var(--muted)" }} />
-                  <span className="text-xs text-[var(--foreground-muted)] truncate">{card.label}</span>
-                  <span className="text-xs font-medium ml-auto text-[var(--foreground)]">{metric ? formatMetricValue(metric.value, card.unit) : "--"}</span>
-                </div>
-              );
-            })}
+          <div className="text-3xl font-semibold text-[var(--foreground)]">
+            {averageCompletion}%
           </div>
+          <span className="mt-1 block text-xs text-[var(--muted)]">
+            Tasa media de completacion en 7 dias
+          </span>
         </Link>
       </div>
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: Tasks + Transactions */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Today's tasks */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <div className="glass-card-static overflow-hidden">
-            <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
                 <ListChecks size={16} style={{ color: "var(--violet-soft-text)" }} />
-                <h3 className="font-medium text-sm text-[var(--foreground)]">Tareas de hoy</h3>
+                <h3 className="text-sm font-medium text-[var(--foreground)]">
+                  Tareas de hoy
+                </h3>
               </div>
-              <Link href="/tasks" className="text-xs transition-colors" style={{ color: "var(--violet-soft-text)" }}>
+              <Link
+                href="/tasks"
+                className="text-xs transition-colors"
+                style={{ color: "var(--violet-soft-text)" }}
+              >
                 Ver todas
               </Link>
             </div>
             <div className="divide-y divide-[var(--divider)]">
-              {todayTasks?.data && todayTasks.data.length > 0 ? (
-                todayTasks.data.map((task: any) => (
-                  <div key={task.id} className="p-3 flex items-center gap-3 hover:bg-[var(--hover-overlay)] transition-colors">
-                    {task.status === "completed" ? (
-                      <CheckCircle2 size={16} style={{ color: "var(--emerald-soft-text)" }} className="shrink-0" />
+              {activeTasks.length > 0 ? (
+                activeTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-3 transition-colors hover:bg-[var(--hover-overlay)]"
+                  >
+                    {task.status === "done" ? (
+                      <CheckCircle2
+                        size={16}
+                        style={{ color: "var(--emerald-soft-text)" }}
+                        className="shrink-0"
+                      />
                     ) : (
-                      <div className="w-4 h-4 rounded-md border border-[var(--glass-border)] shrink-0" />
+                      <div className="h-4 w-4 shrink-0 rounded-md border border-[var(--glass-border)]" />
                     )}
-                    <span className={`text-sm flex-1 ${task.status === "completed" ? "line-through text-[var(--muted)]" : "text-[var(--foreground)]"}`}>
-                      {task.title}
-                    </span>
-                    {task.priority >= 3 && (
-                      <span className="badge badge-red text-[10px]">Alta</span>
-                    )}
-                    {task.priority === 2 && (
-                      <span className="badge badge-amber text-[10px]">Media</span>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <span
+                        className={`text-sm ${
+                          task.status === "done"
+                            ? "text-[var(--muted)] line-through"
+                            : "text-[var(--foreground)]"
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
+                          {priorityLabel(task.priority)}
+                        </span>
+                        <span className="text-[10px] text-[var(--muted)]">
+                          {formatDateShort(task.scheduledDate)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-xs text-[var(--muted)] text-center">
+                <div className="p-4 text-center text-xs text-[var(--muted)]">
                   No hay tareas para hoy
                 </div>
               )}
             </div>
           </div>
 
-          {/* Recent transactions */}
           <div className="glass-card-static overflow-hidden">
-            <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
-                <Wallet size={16} style={{ color: "var(--blue-soft-text)" }} />
-                <h3 className="font-medium text-sm text-[var(--foreground)]">Movimientos recientes</h3>
+                <History size={16} style={{ color: "var(--violet-soft-text)" }} />
+                <h3 className="text-sm font-medium text-[var(--foreground)]">
+                  Revision del dia
+                </h3>
               </div>
-              <Link href="/wallet/transactions" className="text-xs transition-colors" style={{ color: "var(--blue-soft-text)" }}>
-                Ver todos
+              <Link
+                href="/tasks/history"
+                className="text-xs transition-colors"
+                style={{ color: "var(--violet-soft-text)" }}
+              >
+                Abrir historial
               </Link>
             </div>
-            <div className="divide-y divide-[var(--divider)]">
-              {recentTx?.data && recentTx.data.length > 0 ? (
-                recentTx.data.map((tx: any) => {
-                  const TxIcon = txTypeIcons[tx.type] || ArrowUpRight;
-                  const isIncome = tx.type === "income";
-                  return (
-                    <div key={tx.id} className="p-3 flex items-center gap-3 hover:bg-[var(--hover-overlay)] transition-colors">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                           style={{ background: isIncome ? "var(--emerald-soft-bg)" : tx.type === "expense" ? "var(--red-soft-bg)" : "var(--blue-soft-bg)" }}>
-                        <TxIcon size={14} style={{ color: isIncome ? "var(--emerald-soft-text)" : tx.type === "expense" ? "var(--red-soft-text)" : "var(--blue-soft-text)" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-[var(--foreground)] truncate">{tx.description || tx.categoryName || "Sin descripcion"}</div>
-                        <div className="text-xs text-[var(--muted)]">{formatRelative(tx.date)}</div>
-                      </div>
-                      <span className={`text-sm font-medium ${isIncome ? "" : "text-[var(--foreground)]"}`} style={isIncome ? { color: "var(--emerald-soft-text)" } : undefined}>
-                        {tx.type === "income" ? "+" : tx.type === "expense" ? "-" : ""}
-                        {formatMoney(Math.abs(parseFloat(tx.amount)), tx.currency || "ARS")}
-                      </span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-4 text-xs text-[var(--muted)] text-center">
-                  No hay movimientos recientes
+            <div className="grid gap-4 p-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="text-xs text-[var(--muted)]">Total</div>
+                <div className="mt-1 text-2xl font-semibold text-[var(--foreground)]">
+                  {review?.total ?? 0}
                 </div>
-              )}
+              </div>
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="text-xs text-[var(--muted)]">Completadas</div>
+                <div
+                  className="mt-1 text-2xl font-semibold"
+                  style={{ color: "var(--emerald-soft-text)" }}
+                >
+                  {review?.completed ?? 0}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="text-xs text-[var(--muted)]">Carry-over</div>
+                <div
+                  className="mt-1 text-2xl font-semibold"
+                  style={{ color: "var(--amber-soft-text)" }}
+                >
+                  {carriedToday}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right column: Health details */}
         <div className="space-y-6">
-          {/* Health metrics */}
           <div className="glass-card-static overflow-hidden">
-            <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
-                <TrendingUp size={16} style={{ color: "var(--emerald-soft-text)" }} />
-                <h3 className="font-medium text-sm text-[var(--foreground)]">Metricas de hoy</h3>
+                <TrendingUp size={16} style={{ color: "var(--violet-soft-text)" }} />
+                <h3 className="text-sm font-medium text-[var(--foreground)]">
+                  Tendencia semanal
+                </h3>
               </div>
-              <Link href="/health/metrics" className="text-xs transition-colors" style={{ color: "var(--emerald-soft-text)" }}>
-                Registrar
-              </Link>
+              <span className="text-xs text-[var(--muted)]">Ultimos 7 dias</span>
             </div>
-            <div className="divide-y divide-[var(--divider)]">
-              {quickHealthCards.map((card) => {
-                const Icon = card.icon;
-                const metric = healthMetrics[card.key];
-                const value = metric ? parseFloat(metric.value) : 0;
-                const pct = card.target ? Math.min(100, Math.round((value / card.target) * 100)) : 0;
-                return (
-                  <div key={card.key} className="p-3 flex items-center gap-3">
-                    <Icon size={14} className="text-[var(--muted)]" />
-                    <span className="text-sm flex-1 text-[var(--foreground)]">{card.label}</span>
-                    <span className="text-sm font-medium text-[var(--foreground)]">
-                      {metric ? formatMetricValue(metric.value, card.unit) : "--"}
-                    </span>
-                    <div className="w-16 h-1.5 rounded-full bg-[var(--progress-track)]">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          background: pct >= 80 ? "var(--accent-green)" : pct >= 40 ? "var(--accent-amber)" : "var(--muted)",
-                        }}
-                      />
+            <div className="space-y-3 p-4">
+              {trend && trend.length > 0 ? (
+                trend.map((day) => (
+                  <div key={day.date} className="flex items-center gap-3">
+                    <div className="w-16 text-xs text-[var(--muted)]">
+                      {day.date.slice(5)}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Upcoming appointments */}
-          <div className="glass-card-static overflow-hidden">
-            <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CalendarClock size={16} style={{ color: "var(--blue-soft-text)" }} />
-                <h3 className="font-medium text-sm text-[var(--foreground)]">Proximas citas</h3>
-              </div>
-              <Link href="/health/appointments" className="text-xs transition-colors" style={{ color: "var(--blue-soft-text)" }}>
-                Ver todas
-              </Link>
-            </div>
-            <div className="divide-y divide-[var(--divider)]">
-              {appointments && appointments.length > 0 ? (
-                appointments.slice(0, 3).map((a: any) => (
-                  <div key={a.id} className="p-3 hover:bg-[var(--hover-overlay)] transition-colors">
-                    <div className="text-sm font-medium text-[var(--foreground)]">{a.title}</div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-[var(--muted)]">
-                        {a.doctorName || a.specialty || ""}
-                      </span>
-                      <span className="text-xs text-[var(--foreground-muted)]">
-                        {formatRelative(a.scheduledAt)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 text-xs text-[var(--muted)] text-center">
-                  No hay citas programadas
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Active medications */}
-          <div className="glass-card-static overflow-hidden">
-            <div className="p-4 border-b border-[var(--glass-border)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Pill size={16} style={{ color: "var(--emerald-soft-text)" }} />
-                <h3 className="font-medium text-sm text-[var(--foreground)]">Medicamentos</h3>
-              </div>
-              <Link href="/health/medications" className="text-xs transition-colors" style={{ color: "var(--emerald-soft-text)" }}>
-                Ver todos
-              </Link>
-            </div>
-            <div className="divide-y divide-[var(--divider)]">
-              {medications && medications.length > 0 ? (
-                medications.slice(0, 3).map((med: any) => (
-                  <div key={med.id} className="p-3 flex items-center justify-between hover:bg-[var(--hover-overlay)] transition-colors">
-                    <div>
-                      <div className="text-sm font-medium text-[var(--foreground)]">{med.name}</div>
-                      <div className="text-xs text-[var(--muted)]">
-                        {med.dosage} - {med.timeOfDay || med.frequency}
+                    <div className="flex-1">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${Math.max(day.completionRate, 4)}%`,
+                            background:
+                              "linear-gradient(to right, var(--accent), var(--accent-secondary))",
+                          }}
+                        />
                       </div>
                     </div>
-                    <span className="badge badge-green text-[10px]">{med.frequency}</span>
+                    <div className="w-12 text-right text-xs font-medium text-[var(--foreground)]">
+                      {day.completionRate}%
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-xs text-[var(--muted)] text-center">
-                  No hay medicamentos activos
+                <div className="text-sm text-[var(--muted)]">
+                  Todavia no hay tendencia para mostrar.
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="glass-card-static overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={16} style={{ color: "var(--violet-soft-text)" }} />
+                <h3 className="text-sm font-medium text-[var(--foreground)]">
+                  Foco de estabilizacion
+                </h3>
+              </div>
+              <span className="text-xs text-[var(--muted)]">Tasks module</span>
+            </div>
+            <div className="space-y-3 p-4 text-sm text-[var(--foreground-secondary)]">
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="font-medium text-[var(--foreground)]">
+                  Contrato canonico
+                </div>
+                <div className="mt-1 text-xs text-[var(--muted)]">
+                  `tasks`, `done`, stats y mutaciones alineadas entre UI, API y tests.
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="font-medium text-[var(--foreground)]">Chat Tasks</div>
+                <div className="mt-1 text-xs text-[var(--muted)]">
+                  Endpoint SSE del agente conectado al panel lateral.
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                <div className="font-medium text-[var(--foreground)]">Tooling</div>
+                <div className="mt-1 text-xs text-[var(--muted)]">
+                  Drizzle, builds y suite Tasks como baseline del proyecto.
+                </div>
+              </div>
             </div>
           </div>
         </div>

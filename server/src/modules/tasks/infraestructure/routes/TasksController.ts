@@ -1,5 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { taskFiltersSchema } from '@vdp/shared/dist';
+import {
+    carryOverAllSchema,
+    carryOverSchema,
+    createTaskNoteSchema,
+    createTaskSchema,
+    domainStatsFiltersSchema,
+    reviewFiltersSchema,
+    taskFiltersSchema,
+    taskIdParamsSchema,
+    trendFiltersSchema,
+    updateTaskSchema,
+} from '@vdp/shared';
 import { Core } from '../../../Core';
 
 // Services
@@ -69,7 +80,10 @@ export class TasksController {
 
     private async getTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const task = await this.core.getService(GetTask).executeWithNotes(request.params.id);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const task = await this.core.getService(GetTask).executeWithNotes(params.data.id);
             if (!task) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(task);
         } catch (err) {
@@ -80,14 +94,10 @@ export class TasksController {
 
     private async createTask(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const body = request.body as {
-                title: string;
-                description?: string;
-                priority?: number;
-                scheduledDate?: string;
-                domain?: string;
-            };
-            const task = await this.core.getService(CreateTask).execute(body);
+            const body = createTaskSchema.safeParse(request.body);
+            if (!body.success) return reply.status(400).send({ error: body.error.flatten() });
+
+            const task = await this.core.getService(CreateTask).execute(body.data);
             return reply.status(201).send(task);
         } catch (err) {
             this.app.log.error(err);
@@ -97,8 +107,13 @@ export class TasksController {
 
     private async updateTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const body = request.body as Record<string, unknown>;
-            const updated = await this.core.getService(UpdateTask).execute(request.params.id, body);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const body = updateTaskSchema.safeParse(request.body);
+            if (!body.success) return reply.status(400).send({ error: body.error.flatten() });
+
+            const updated = await this.core.getService(UpdateTask).execute(params.data.id, body.data);
             if (!updated) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(updated);
         } catch (err) {
@@ -109,7 +124,10 @@ export class TasksController {
 
     private async deleteTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const deleted = await this.core.getService(DeleteTask).execute(request.params.id);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const deleted = await this.core.getService(DeleteTask).execute(params.data.id);
             if (!deleted) return reply.status(404).send({ error: 'Task not found' });
             return reply.send({ message: 'Task deleted' });
         } catch (err) {
@@ -122,7 +140,10 @@ export class TasksController {
 
     private async completeTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const completed = await this.core.getService(CompleteTask).execute(request.params.id);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const completed = await this.core.getService(CompleteTask).execute(params.data.id);
             if (!completed) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(completed);
         } catch (err) {
@@ -133,8 +154,13 @@ export class TasksController {
 
     private async carryOverTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const body = request.body as { toDate?: string };
-            const carried = await this.core.getService(CarryOverTask).execute(request.params.id, body?.toDate);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const body = carryOverSchema.safeParse(request.body ?? {});
+            if (!body.success) return reply.status(400).send({ error: body.error.flatten() });
+
+            const carried = await this.core.getService(CarryOverTask).execute(params.data.id, body.data.toDate);
             if (!carried) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(carried);
         } catch (err) {
@@ -145,7 +171,10 @@ export class TasksController {
 
     private async discardTask(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const discarded = await this.core.getService(DiscardTask).execute(request.params.id);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const discarded = await this.core.getService(DiscardTask).execute(params.data.id);
             if (!discarded) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(discarded);
         } catch (err) {
@@ -156,8 +185,10 @@ export class TasksController {
 
     private async carryOverAllPending(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const body = request.body as { fromDate: string; toDate?: string };
-            const results = await this.core.getService(CarryOverAllPending).execute(body.fromDate, body.toDate);
+            const body = carryOverAllSchema.safeParse(request.body);
+            if (!body.success) return reply.status(400).send({ error: body.error.flatten() });
+
+            const results = await this.core.getService(CarryOverAllPending).execute(body.data.fromDate, body.data.toDate);
             return reply.send({ carriedOver: results.length, tasks: results });
         } catch (err) {
             this.app.log.error(err);
@@ -169,7 +200,10 @@ export class TasksController {
 
     private async listNotes(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const result = await this.core.getService(GetTask).executeWithNotes(request.params.id);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const result = await this.core.getService(GetTask).executeWithNotes(params.data.id);
             if (!result) return reply.status(404).send({ error: 'Task not found' });
             return reply.send(result.notes);
         } catch (err) {
@@ -180,8 +214,13 @@ export class TasksController {
 
     private async addNote(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         try {
-            const body = request.body as { content: string };
-            const note = await this.core.getService(AddTaskNote).execute(request.params.id, body.content);
+            const params = taskIdParamsSchema.safeParse(request.params);
+            if (!params.success) return reply.status(400).send({ error: params.error.flatten() });
+
+            const body = createTaskNoteSchema.safeParse(request.body);
+            if (!body.success) return reply.status(400).send({ error: body.error.flatten() });
+
+            const note = await this.core.getService(AddTaskNote).execute(params.data.id, body.data.content);
             return reply.status(201).send(note);
         } catch (err) {
             this.app.log.error(err);
@@ -193,8 +232,10 @@ export class TasksController {
 
     private async getEndOfDayReview(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const query = request.query as { date?: string };
-            const result = await this.core.getService(GetEndOfDayReview).execute(query.date);
+            const query = reviewFiltersSchema.safeParse(request.query);
+            if (!query.success) return reply.status(400).send({ error: query.error.flatten() });
+
+            const result = await this.core.getService(GetEndOfDayReview).execute(query.data.date);
             return reply.send(result);
         } catch (err) {
             this.app.log.error(err);
@@ -216,9 +257,10 @@ export class TasksController {
 
     private async getCompletionTrend(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const query = request.query as { days?: string };
-            const days = query.days ? parseInt(query.days) : 7;
-            const result = await this.core.getService(GetDayStats).executeTrend(days);
+            const query = trendFiltersSchema.safeParse(request.query);
+            if (!query.success) return reply.status(400).send({ error: query.error.flatten() });
+
+            const result = await this.core.getService(GetDayStats).executeTrend(query.data.days);
             return reply.send(result);
         } catch (err) {
             this.app.log.error(err);
@@ -228,8 +270,10 @@ export class TasksController {
 
     private async getCompletionByDomain(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const query = request.query as { from?: string; to?: string };
-            const result = await this.core.getService(GetCompletionByDomain).execute(query.from, query.to);
+            const query = domainStatsFiltersSchema.safeParse(request.query);
+            if (!query.success) return reply.status(400).send({ error: query.error.flatten() });
+
+            const result = await this.core.getService(GetCompletionByDomain).execute(query.data.from, query.data.to);
             return reply.send(result);
         } catch (err) {
             this.app.log.error(err);
@@ -239,9 +283,10 @@ export class TasksController {
 
     private async getCarryOverRate(request: FastifyRequest, reply: FastifyReply) {
         try {
-            const query = request.query as { days?: string };
-            const days = query.days ? parseInt(query.days) : 7;
-            const result = await this.core.getService(GetCarryOverRate).execute(days);
+            const query = trendFiltersSchema.safeParse(request.query);
+            if (!query.success) return reply.status(400).send({ error: query.error.flatten() });
+
+            const result = await this.core.getService(GetCarryOverRate).execute(query.data.days);
             return reply.send(result);
         } catch (err) {
             this.app.log.error(err);

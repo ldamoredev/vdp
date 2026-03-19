@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
+import { TasksAgentController } from '../../infraestructure/routes/TasksAgentController';
 import { TasksController } from '../../infraestructure/routes/TasksController';
 import { TaskInsightsSSEController } from '../../infraestructure/routes/TaskInsightsSSEController';
 
@@ -23,6 +24,9 @@ export class TestApp {
 
         const tasksController = new TasksController(this.app, this.core);
         await this.app.register(tasksController.plugin, { prefix: '/api/v1/tasks' });
+
+        const tasksAgentController = new TasksAgentController(this.core);
+        await this.app.register(tasksAgentController.plugin, { prefix: '/api/v1/tasks/agent' });
 
         const taskInsightsSSE = new TaskInsightsSSEController(
             this.core.sseBroadcaster,

@@ -1,6 +1,13 @@
 // ─── Shared ──────────────────────────────────────────────
 export interface PaginatedResult<T> {
-  tasks: T[];
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface TaskListResponse {
+  tasks: Task[];
   total: number;
   limit: number;
   offset: number;
@@ -50,6 +57,11 @@ export interface DomainStat {
   total: number;
   completed: number;
   rate: number;
+}
+
+export interface CarryOverAllResult {
+  carriedOver: number;
+  tasks: Task[];
 }
 
 // ─── Wallet ──────────────────────────────────────────────

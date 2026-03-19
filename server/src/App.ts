@@ -9,6 +9,7 @@ import cors from '@fastify/cors';
 // Wiring: agents, skills, events, scheduler jobs
 import { Core } from './modules/Core';
 import { TasksController } from './modules/tasks/infraestructure/routes/TasksController';
+import { TasksAgentController } from './modules/tasks/infraestructure/routes/TasksAgentController';
 import { TaskInsightsSSEController } from './modules/tasks/infraestructure/routes/TaskInsightsSSEController';
 
 export class App {
@@ -29,6 +30,9 @@ export class App {
         const tasksController = new TasksController(this.app, this.core);
         this.app.register(tasksController.plugin, { prefix: '/api/v1/tasks' });
 
+        const tasksAgentController = new TasksAgentController(this.core);
+        this.app.register(tasksAgentController.plugin, { prefix: '/api/v1/tasks/agent' });
+
         const taskInsightsSSE = new TaskInsightsSSEController(this.core.sseBroadcaster, this.core.taskModule.insightsStore);
         this.app.register(taskInsightsSSE.plugin, { prefix: '/api/v1/tasks/insights' });
     }
@@ -37,7 +41,7 @@ export class App {
         this.app.get('/api/health', async () => ({
             status: 'ok',
             timestamp: new Date().toISOString(),
-            domains: ['wallet', 'health', 'tasks'],
+            domains: ['tasks'],
             agents: this.core.agentRegistry.getAll().map((a) => a.domain),
             skills: this.core.agentRegistry.getAll().flatMap((s) => s.getAllSkills()),
         }));

@@ -41,6 +41,16 @@ describe('Tasks API — E2E', () => {
             expect(body.priority).toBe(3);
             expect(body.status).toBe('pending');
         });
+
+        it('returns 400 for invalid payload', async () => {
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks',
+                payload: { title: '' },
+            });
+
+            expect(res.statusCode).toBe(400);
+        });
     });
 
     describe('GET /api/v1/tasks', () => {
@@ -88,6 +98,27 @@ describe('Tasks API — E2E', () => {
                 url: '/api/v1/tasks/00000000-0000-0000-0000-000000000000',
             });
             expect(res.statusCode).toBe(404);
+        });
+
+        it('returns 400 for invalid task id format', async () => {
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/not-a-uuid',
+            });
+
+            expect(res.statusCode).toBe(400);
+        });
+    });
+
+    describe('POST /api/v1/tasks/agent/chat', () => {
+        it('returns 400 when message is missing', async () => {
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/agent/chat',
+                payload: {},
+            });
+
+            expect(res.statusCode).toBe(400);
         });
     });
 

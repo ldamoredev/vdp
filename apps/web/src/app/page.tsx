@@ -2,82 +2,12 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const dashboardCard = {
-  name: "Dashboard",
-  description: "Tu centro de comando personal. Visualiza el estado de todos tus modulos en un solo lugar.",
-  href: "/home",
+  name: "Tasks",
+  description: "El proyecto esta temporalmente enfocado en Tasks para cerrar la arquitectura, el contrato API y el chat del modulo de referencia.",
+  href: "/tasks",
   gradient: "from-[var(--accent)] to-[var(--accent-secondary)]",
   iconColor: "var(--accent)",
 };
-
-const modules = [
-  {
-    name: "Tasks",
-    description: "Tu lista diaria con foco, prioridad y seguimiento inteligente",
-    active: true,
-    href: "/tasks",
-    iconBg: "var(--violet-soft-bg)",
-    iconLetter: "T",
-    iconColor: "#8B5CF6",
-    softText: "var(--violet-soft-text)",
-    softBorder: "var(--violet-soft-border)",
-    features: ["Prioridades", "Carry-over", "Agente IA"],
-  },
-  {
-    name: "Wallet",
-    description: "Gestiona tus finanzas personales",
-    active: true,
-    href: "/wallet",
-    iconBg: "var(--blue-soft-bg)",
-    iconLetter: "W",
-    iconColor: "#3B82F6",
-    softText: "var(--blue-soft-text)",
-    softBorder: "var(--blue-soft-border)",
-  },
-  {
-    name: "Health",
-    description: "Controla tu salud y bienestar",
-    active: true,
-    href: "/health",
-    iconBg: "var(--emerald-soft-bg)",
-    iconLetter: "H",
-    iconColor: "#10B981",
-    softText: "var(--emerald-soft-text)",
-    softBorder: "var(--emerald-soft-border)",
-  },
-  {
-    name: "People",
-    description: "Administra tus contactos y relaciones",
-    active: false,
-    href: "/people",
-    iconBg: "var(--purple-soft-bg)",
-    iconLetter: "P",
-    iconColor: "#A855F7",
-    softText: "var(--purple-soft-text)",
-    softBorder: "var(--purple-soft-border)",
-  },
-  {
-    name: "Work",
-    description: "Organiza tu trabajo y proyectos",
-    active: false,
-    href: "/work",
-    iconBg: "var(--amber-soft-bg)",
-    iconLetter: "W",
-    iconColor: "#F59E0B",
-    softText: "var(--amber-soft-text)",
-    softBorder: "var(--amber-soft-border)",
-  },
-  {
-    name: "Study",
-    description: "Planifica tu aprendizaje",
-    active: false,
-    href: "/study",
-    iconBg: "var(--rose-soft-bg)",
-    iconLetter: "S",
-    iconColor: "#F43F5E",
-    softText: "var(--rose-soft-text)",
-    softBorder: "var(--rose-soft-border)",
-  },
-];
 
 export default function Home() {
   return (
@@ -99,12 +29,12 @@ export default function Home() {
           </span>
         </h1>
         <p className="text-lg text-[var(--muted)] max-w-md mx-auto leading-relaxed">
-          Tu vida, organizada en modulos inteligentes con IA
+          Modo Tasks-first para estabilizar el proyecto
         </p>
       </div>
 
       {/* ============================================
-          DASHBOARD — Hero Card (Full-width, primary CTA)
+          TASKS — Hero Card (Full-width, primary CTA)
           ============================================ */}
       <Link
         href={dashboardCard.href}
@@ -141,7 +71,7 @@ export default function Home() {
           {/* CTA Button */}
           <div className="flex items-center gap-3">
             <span className="btn-primary text-base px-6 py-3 group-hover:shadow-lg transition-all">
-              Entrar
+              Abrir Tasks
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
@@ -158,92 +88,31 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <div className="flex-1 h-px bg-[var(--divider)]" />
           <span className="text-xs font-medium uppercase tracking-widest text-[var(--muted)]">
-            Modulos
+            Estado actual
           </span>
           <div className="flex-1 h-px bg-[var(--divider)]" />
         </div>
       </div>
 
-      {/* ============================================
-          MODULES GRID — Secondary cards (2-3 cols)
-          ============================================ */}
-      <div className="grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-        {modules.map((mod) => {
-          const cardClasses = `group relative rounded-2xl border border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl p-6 transition-all duration-300 ${
-            mod.active
-              ? "hover:border-[var(--glass-border-hover)] hover:shadow-lg cursor-pointer"
-              : "opacity-50 cursor-not-allowed"
-          }`;
-          const Wrapper = mod.active ? Link : "div";
-          const wrapperProps = mod.active ? { href: mod.href } : {};
-          return (
-          <Wrapper
-            key={mod.name}
-            {...wrapperProps as any}
-            className={cardClasses}
-          >
-            {/* Hover gradient overlay */}
-            {mod.active && (
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                   style={{ background: `linear-gradient(to bottom right, color-mix(in srgb, ${mod.iconColor} 6%, transparent), transparent)` }} />
-            )}
-            <div className="relative">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
-                style={{ background: mod.iconBg }}
-              >
-                <span className="text-lg font-bold" style={{ color: mod.softText }}>
-                  {mod.iconLetter}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2.5 mb-2">
-                <h2 className="text-base font-semibold text-[var(--foreground)]">{mod.name}</h2>
-                {mod.active ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                        style={{ background: "var(--emerald-soft-bg)", color: "var(--emerald-soft-text)", border: "1px solid var(--emerald-soft-border)" }}>
-                    <span className="w-1 h-1 rounded-full" style={{ background: "var(--emerald-soft-text)" }} />
-                    Activo
-                  </span>
-                ) : (
-                  <span className="badge badge-muted text-[10px] font-semibold uppercase tracking-wider">
-                    Pronto
-                  </span>
-                )}
-              </div>
-
-              <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">{mod.description}</p>
-
-              {/* Features tags (if any) */}
-              {mod.features && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {mod.features.map((f: string) => (
-                    <span
-                      key={f}
-                      className="px-3 py-1 rounded-lg text-[11px] font-medium bg-[var(--hover-overlay-strong)] text-[var(--foreground-secondary)] border border-[var(--divider)]"
-                    >
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div
-                className={`mt-5 flex items-center gap-2 text-xs font-medium transition-all ${mod.active ? "group-hover:gap-3" : ""}`}
-                style={{ color: mod.active ? mod.softText : "var(--muted)" }}
-              >
-                <span>{mod.active ? "Abrir modulo" : "Proximamente"}</span>
-                {mod.active && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                )}
-              </div>
+      <div className="w-full max-w-5xl glass-card-static p-6 md:p-8 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--violet-soft-text)]">
+              Tasks only
             </div>
-          </Wrapper>
-          );
-        })}
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+              Alcance reducido para estabilizar el proyecto
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--foreground-muted)]">
+              Wallet, Health y los demas dominios quedan fuera de la navegacion hasta cerrar el contrato, la validacion y el chat de Tasks. Este modulo pasa a ser la plantilla definitiva para el resto.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-sm text-[var(--foreground-secondary)]">
+            <div className="font-medium text-[var(--foreground)]">Meta actual</div>
+            <div className="mt-1">Build verde, contrato Tasks estable y endpoint de chat activo.</div>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
