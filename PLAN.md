@@ -238,9 +238,11 @@ This section documents the tools actually in use in the repository today.
 
 ### 6.10 Future AI and Integration Stack
 
-The current AI/runtime stack is enough for the present Tasks product, but it is not enough for the broader VDP vision.
+The current AI/runtime stack is enough for the present Tasks product,
+but it is not enough for the broader VDP vision.
 
-If VDP expands into deeper intelligence, higher trust, and real external actions, these are the most likely additions.
+If VDP expands into deeper intelligence, higher trust, and real external actions, 
+these are the most likely additions.
 
 #### Observability and Trust
 
@@ -645,7 +647,8 @@ The following work is already done and should not be treated as future work anym
 
 ## 14. Immediate Product Priorities
 
-The next work should improve `Tasks` as a product, not re-open broad architecture work without pressure from real needs.
+The next work should improve `Tasks` as a product, not re-open broad architecture work without 
+pressure from real needs.
 
 Current priority stack:
 
@@ -707,11 +710,12 @@ This is a hard gate, not a soft suggestion.
 
 This roadmap is ordered by actual leverage, not by original ambition.
 
+29 concrete tasks across Phases 1 and 2. Full details in `.claude/plans/shiny-moseying-adleman.md`.
+
 ### Phase 0. Completed
 
 - stabilize the repo around Tasks
 - establish the reference architecture
-- make chat work locally without Anthropic dependency
 - turn Tasks into a usable product slice
 
 ### Phase 1. Current focus: deepen Tasks
@@ -722,28 +726,52 @@ make Tasks clearly valuable before adding another domain
 
 Target outcomes:
 
+- stable task semantics for auditability and later intelligence work
 - higher-quality assistant guidance
 - stronger continuity between chat, tasks, breakdown, and review
 - better UX polish across the main flows
+- agent observability and trust through Langfuse + OpenTelemetry
 
-Concrete roadmap:
+#### 0.9 — Contract & State Integrity (must land before new intelligence)
 
-1. improve task detail experience
-   - make notes and breakdown more legible
-   - strengthen selected-task context
-   - surface breakdown outcomes better
-2. improve chat guidance quality
-   - better clarification prompts
-   - better review prompts
-   - better breakdown suggestions from the assistant
-3. continue UI polish
-   - compact layout refinement
-   - mobile usability
-   - consistency across `/tasks`, `/history`, and `/home`
-4. improve trust and auditability
-   - clearer mutation summaries
-   - stronger conversation continuity
-   - better visible system feedback on errors and actions
+1. `0.9.1` Lifecycle integrity for Tasks — generic update cannot bypass complete/carry-over/discard services, event emission, or `completedAt` semantics
+2. `0.9.2` Carry-over contract alignment — choose one canonical carry-over model and align shared schemas, services, stats, review, agent tools, and frontend types before deeper intelligence work
+
+#### 1.0 — Langfuse Integration (Trust infrastructure)
+
+1. `1.0.1` LangfuseService — shared instance via Core → ModuleContext, SDK wrapper with no-op fallback for local dev
+2. `1.0.2` Instrument BaseAgent — trace every chat(), generation(), and tool execution
+3. `1.0.3` Prompt version tracking — SHA-256 hash in Langfuse generation metadata
+
+#### 1.1 — OpenTelemetry Integration (Request tracing)
+
+4. `1.1.1` OTel SDK + Jaeger — auto-instrumentations (http, pg, fastify), OTLP exporter
+5. `1.1.2` Custom spans for agent provider calls — attributes: provider, model, tool_count, stop_reason
+
+#### 1.2 — Task Detail Experience
+
+6. `1.2.1` Task notes endpoint — verify wiring, add if missing
+7. `1.2.2` Frontend task detail panel — slide-over with notes, breakdown, carry-over count
+8. `1.2.3` Note types for breakdown legibility — `type` column: note/breakdown_step/blocker
+
+#### 1.3 — Chat Guidance Quality
+
+9. `1.3.1` Better clarification prompts — vague→clear examples, max 2 questions
+10. `1.3.2` Better review prompts — concrete action per pending task, no passive summaries
+11. `1.3.3` Better breakdown suggestions — 2-4 steps rule, breakdown_step note type
+
+#### 1.4 — UI Polish
+
+12. `1.4.1` Compact task layout (desktop) — rows with inline badges, hover for description
+13. `1.4.2` Mobile bottom sheet — task actions as bottom overlay
+14. `1.4.3` Visual consistency pass — extract shared badge/indicator components
+
+#### 1.5 — Trust & Auditability
+
+15. `1.5.1` Richer mutation summaries in chat — fuller Spanish context
+16. `1.5.2` Conversation continuity — resume indicator, conversation list drawer
+17. `1.5.3` Error feedback improvement — classified error codes, Spanish messages
+18. `1.5.4` Langfuse trace link in dev mode — "Ver traza" link in chat
 
 ### Phase 2. Product intelligence for Tasks
 
@@ -751,13 +779,34 @@ Goal:
 
 make the system coach better decisions, not just execute commands
 
-Concrete roadmap:
+Infrastructure addition: **pgvector** for semantic search over task history.
 
-1. richer planning signals
-2. better overload heuristics
-3. repeat carry-over detection
-4. better trend summaries
-5. stronger end-of-day recommendations
+#### 2.0 — pgvector Infrastructure
+
+19. `2.0.1` Enable pgvector + embeddings table — vector(384), HNSW index
+20. `2.0.2` EmbeddingProvider abstraction — OllamaEmbeddingProvider (nomic-embed-text)
+21. `2.0.3` TaskEmbeddingRepository + embed-on-write — fire-and-forget from CreateTask/UpdateTask/AddTaskNote
+
+#### 2.1 — Repeat Carry-Over Detection
+
+22. `2.1.1` FindSimilarTasks service — cosine similarity > 0.7, top 5
+23. `2.1.2` Automatic repeat detection on carry-over — DetectRepeatPattern + TaskRepeatDetected event
+
+#### 2.2 — Richer Planning Signals
+
+24. `2.2.1` Planning context service — aggregates stats + carry-over rate + stuck tasks + insights in one tool call
+
+#### 2.3 — Better Overload Heuristics
+
+25. `2.3.1` Historical overload detection — 7-day average completion × 1.5 threshold, lower if carry-over rate > 40%
+
+#### 2.4 — Better Trend Summaries
+
+26. `2.4.1` Weekly summary service — created/completed/carried/discarded, trend direction, best day, worst domain
+
+#### 2.5 — Stronger End-of-Day Recommendations
+
+27. `2.5.1` Recommendation engine — typed recommendations (discard/break_down/reschedule/celebrate) with reasons
 
 ### Phase 3. Decide on second domain readiness
 

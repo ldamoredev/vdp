@@ -15,20 +15,22 @@ import {
   Flame,
   History,
   ListTodo,
+  MoreHorizontal,
   Plus,
   Sparkles,
   Target,
   Trash2,
+  X,
 } from "lucide-react";
 import { tasksApi } from "@/lib/api/tasks";
 import type { Task, TaskNote } from "@/lib/api/types";
 import {
-  domainBadge,
   domainLabel,
   getTodayISO,
-  priorityBadge,
   priorityLabel,
 } from "@/lib/format";
+import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
+import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
 import {
   analyzeTaskDraft,
   buildClarifiedDescription,
@@ -117,6 +119,32 @@ function getPlanningToneClasses(tone: PlanningTone) {
   return "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]";
 }
 
+function formatTaskDate(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("es-AR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function noteTypeLabel(type: TaskNote["type"]) {
+  if (type === "breakdown_step") return "Paso";
+  if (type === "blocker") return "Bloqueo";
+  return "Nota";
+}
+
+function noteTypeTone(type: TaskNote["type"]) {
+  if (type === "breakdown_step") {
+    return "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] text-[var(--violet-soft-text)]";
+  }
+
+  if (type === "blocker") {
+    return "border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] text-[var(--red-soft-text)]";
+  }
+
+  return "border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--foreground)]";
+}
+
 function buildPlanningSignals(args: {
   pendingTasks: Task[];
   urgentTasks: Task[];
@@ -189,6 +217,9 @@ export default function TasksDashboard() {
   const [showClarificationGate, setShowClarificationGate] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>();
   const [newBreakdownStep, setNewBreakdownStep] = useState("");
+  const [newTaskNote, setNewTaskNote] = useState("");
+  const [newTaskNoteType, setNewTaskNoteType] = useState<TaskNote["type"]>("note");
+  const [expandedTaskActions, setExpandedTaskActions] = useState<string | null>(null);
   const breakdownStudioRef = useRef<HTMLDivElement>(null);
 
   const { data: tasksResult } = useQuery({
@@ -214,12 +245,6 @@ export default function TasksDashboard() {
   const { data: carryOverRate } = useQuery({
     queryKey: ["tasks", "carry-over-rate", 7],
     queryFn: () => tasksApi.getCarryOverRate(7),
-  });
-
-  const { data: selectedTaskNotes } = useQuery({
-    queryKey: ["tasks", "notes", selectedTaskId],
-    queryFn: () => tasksApi.getTaskNotes(selectedTaskId!),
-    enabled: !!selectedTaskId,
   });
 
   const createMutation = useMutation({
@@ -315,12 +340,23 @@ export default function TasksDashboard() {
   const draftClarification = analyzeTaskDraft(newTitle);
   const defaultSelectedTaskId = planning.focusTasks[0]?.id || pendingTasks[0]?.id;
   const activeSelectedTaskId = selectedTaskId || defaultSelectedTaskId;
-  const selectedTask = tasks.find((task) => task.id === activeSelectedTaskId);
+  const { data: selectedTaskDetails } = useQuery({
+    queryKey: ["tasks", "detail", activeSelectedTaskId],
+    queryFn: () => tasksApi.getTask(activeSelectedTaskId!),
+    enabled: !!activeSelectedTaskId,
+  });
+  const selectedTask =
+    selectedTaskDetails?.task ||
+    tasks.find((task) => task.id === activeSelectedTaskId);
+  const selectedTaskNotes = selectedTaskDetails?.notes || [];
   const breakdownSuggestions = selectedTask
     ? buildBreakdownSuggestions(selectedTask)
     : [];
-  const persistedSteps =
-    (selectedTaskNotes || []).filter((note) => note.content.trim().startsWith("- "));
+  const persistedSteps = selectedTaskNotes.filter(
+    (note) => note.type === "breakdown_step",
+  );
+  const blockerNotes = selectedTaskNotes.filter((note) => note.type === "blocker");
+  const contextNotes = selectedTaskNotes.filter((note) => note.type === "note");
 
   const isTaskBusy = (taskId: string) =>
     (completeMutation.isPending && completeMutation.variables === taskId) ||
@@ -328,13 +364,26 @@ export default function TasksDashboard() {
     (discardMutation.isPending && discardMutation.variables === taskId) ||
     (deleteMutation.isPending && deleteMutation.variables === taskId);
 
-  const addBreakdownStepMutation = useMutation({
-    mutationFn: ({ taskId, content }: { taskId: string; content: string }) =>
-      tasksApi.addNote(taskId, normalizeBreakdownStep(content)),
-    onSuccess: async () => {
-      setNewBreakdownStep("");
+  const addTaskNoteMutation = useMutation({
+    mutationFn: ({
+      taskId,
+      content,
+      type,
+    }: {
+      taskId: string;
+      content: string;
+      type: TaskNote["type"];
+    }) => tasksApi.addNote(taskId, content, type),
+    onSuccess: async (_note, variables) => {
+      if (variables.type === "breakdown_step") {
+        setNewBreakdownStep("");
+      } else {
+        setNewTaskNote("");
+        setNewTaskNoteType("note");
+      }
+
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", "notes", activeSelectedTaskId],
+        queryKey: ["tasks", "detail", variables.taskId],
       });
     },
   });
@@ -592,47 +641,42 @@ export default function TasksDashboard() {
 
       <section className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
         <div className={`rounded-[30px] border p-6 ${getPlanningToneClasses(planning.tone)}`}>
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
-                <Compass size={12} />
-                Plan del dia
-              </div>
-              <h3 className="mt-4 text-2xl font-semibold text-[var(--foreground)]">
-                {planning.headline}
-              </h3>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-                {planning.summary}
-              </p>
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+              <Compass size={12} />
+              Plan del dia
             </div>
+            <h3 className="mt-4 text-2xl font-semibold text-[var(--foreground)]">
+              {planning.headline}
+            </h3>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+              {planning.summary}
+            </p>
+          </div>
 
-            <div className="flex flex-wrap gap-3 xl:max-w-[29rem] xl:justify-end">
-              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Pendientes
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                  {pendingTasks.length}
-                </div>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Pendientes
               </div>
-              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Calientes
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                  {urgentTasks.length}
-                </div>
+              <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                {pendingTasks.length}
               </div>
-              <div className="min-w-[132px] flex-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center sm:flex-none">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Carry semanal
-                </div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]/80">
-                  7d
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                  {carryOverRate?.rate ?? 0}%
-                </div>
+            </div>
+            <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Calientes
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                {urgentTasks.length}
+              </div>
+            </div>
+            <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Carry semanal 7d
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                {carryOverRate?.rate ?? 0}%
               </div>
             </div>
           </div>
@@ -662,8 +706,10 @@ export default function TasksDashboard() {
           {planning.focusTasks.length > 0 ? (
             <div className="mt-4 space-y-3">
               {planning.focusTasks.map((task, index) => (
-                <div
+                <button
                   key={task.id}
+                  type="button"
+                  onClick={() => openBreakdownStudio(task.id)}
                   className={`rounded-[24px] border p-4 ${
                     task.id === activeSelectedTaskId
                       ? "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]"
@@ -679,14 +725,8 @@ export default function TasksDashboard() {
                         {task.title}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                          {priorityLabel(task.priority)}
-                        </span>
-                        {task.domain && (
-                          <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
-                            {domainLabel(task.domain)}
-                          </span>
-                        )}
+                        <TaskPriorityBadge priority={task.priority} />
+                        <TaskDomainBadge domain={task.domain} />
                       </div>
                       <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
                         {task.carryOverCount > 0
@@ -695,7 +735,7 @@ export default function TasksDashboard() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
@@ -776,12 +816,106 @@ export default function TasksDashboard() {
 
             {visibleTasks.map((task) => {
               const busy = isTaskBusy(task.id);
+              const actionsOpen = expandedTaskActions === task.id;
               return (
                 <div
                   key={task.id}
-                  className={`rounded-[28px] border p-4 transition-all ${getTaskTone(task)}`}
+                  className={`rounded-[20px] md:rounded-2xl border px-4 py-3 transition-all ${getTaskTone(task)}`}
                 >
-                  <div className="flex flex-col gap-4">
+                  {/* ── Desktop: compact single row ── */}
+                  <div className="hidden md:flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => task.status !== "done" && completeMutation.mutate(task.id)}
+                      disabled={task.status === "done" || busy}
+                      className={`task-checkbox shrink-0 ${task.status === "done" ? "checked" : ""}`}
+                    >
+                      {task.status === "done" && (
+                        <Check size={14} className="text-white" />
+                      )}
+                    </button>
+
+                    <span
+                      className={`min-w-0 flex-1 truncate text-sm font-medium ${
+                        task.status === "done"
+                          ? "text-[var(--muted)] line-through"
+                          : "text-[var(--foreground)]"
+                      }`}
+                      title={task.title}
+                    >
+                      {task.title}
+                    </span>
+
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <TaskPriorityBadge priority={task.priority} />
+                      <TaskDomainBadge domain={task.domain} />
+                      {task.carryOverCount > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
+                          <AlertTriangle size={10} />
+                          {task.carryOverCount}
+                        </span>
+                      )}
+                      {task.carryOverCount >= 3 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
+                          Bloqueada
+                        </span>
+                      )}
+                    </div>
+
+                    {task.status !== "done" && (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => completeMutation.mutate(task.id)}
+                          disabled={busy}
+                          title="Marcar como hecha"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent)] text-white transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => carryOverMutation.mutate(task.id)}
+                          disabled={busy}
+                          title="Llevar a manana"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] text-[var(--amber-soft-text)] transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                          <ArrowRight size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openBreakdownStudio(task.id)}
+                          title="Ver detalle"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] text-[var(--violet-soft-text)] transition-all hover:scale-105"
+                        >
+                          <ListTodo size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => discardMutation.mutate(task.id)}
+                          disabled={busy}
+                          title="Descartar"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] text-[var(--red-soft-text)] transition-all hover:scale-105 disabled:opacity-50"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {task.status === "done" && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMutation.mutate(task.id)}
+                        disabled={busy}
+                        title="Borrar"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--muted)] transition-all hover:scale-105 hover:text-[var(--foreground)] disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ── Mobile: card layout ── */}
+                  <div className="flex flex-col gap-3 md:hidden">
                     <div className="flex items-start gap-3">
                       <button
                         type="button"
@@ -795,105 +929,92 @@ export default function TasksDashboard() {
                       </button>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`text-base font-medium leading-tight ${
-                              task.status === "done"
-                                ? "text-[var(--muted)] line-through"
-                                : "text-[var(--foreground)]"
-                            }`}
-                          >
-                            {task.title}
-                          </span>
+                        <span
+                          className={`text-sm font-medium leading-tight ${
+                            task.status === "done"
+                              ? "text-[var(--muted)] line-through"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          {task.title}
+                        </span>
 
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <TaskPriorityBadge priority={task.priority} />
+                          <TaskDomainBadge domain={task.domain} />
                           {task.carryOverCount > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--amber-soft-text)]">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
                               <AlertTriangle size={10} />
-                              {task.carryOverCount} carry-over
+                              {task.carryOverCount}
                             </span>
                           )}
-
                           {task.carryOverCount >= 3 && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-1 text-[10px] font-medium text-[var(--red-soft-text)]">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
                               Bloqueada
                             </span>
                           )}
                         </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                            {priorityLabel(task.priority)}
-                          </span>
-                          {task.domain && (
-                            <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
-                              {domainLabel(task.domain)}
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1 text-[11px] text-[var(--muted)]">
-                            <Clock3 size={11} />
-                            {task.status === "done"
-                              ? "Cerrada hoy"
-                              : task.carryOverCount > 0
-                                ? "Necesita cierre o replanificacion"
-                                : "Lista para ejecutar"}
-                          </span>
-                        </div>
                       </div>
-                    </div>
 
-                    <div className="border-t border-[var(--glass-border)]/80 pt-3">
-                      <div className="flex flex-wrap gap-2">
-                      {task.status !== "done" && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => completeMutation.mutate(task.id)}
-                            disabled={busy}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <Check size={13} />
-                            Hecha
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => carryOverMutation.mutate(task.id)}
-                            disabled={busy}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <ArrowRight size={13} />
-                            Manana
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openBreakdownStudio(task.id)}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--violet-soft-text)] transition-all hover:translate-y-[-1px]"
-                          >
-                            <ListTodo size={13} />
-                            Desglosar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => discardMutation.mutate(task.id)}
-                            disabled={busy}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-4 py-2 text-xs font-medium text-[var(--red-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <Trash2 size={13} />
-                            Descartar
-                          </button>
-                        </>
+                      {task.status !== "done" ? (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedTaskActions(actionsOpen ? null : task.id)}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)]"
+                        >
+                          {actionsOpen ? <X size={14} /> : <MoreHorizontal size={14} />}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => deleteMutation.mutate(task.id)}
+                          disabled={busy}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] disabled:opacity-50"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
+                    </div>
 
-                      <button
-                        type="button"
-                        onClick={() => deleteMutation.mutate(task.id)}
-                        disabled={busy}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-xs font-medium text-[var(--muted)] transition-all hover:translate-y-[-1px] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <Trash2 size={13} />
-                        Borrar
-                      </button>
-                    </div>
-                    </div>
+                    {actionsOpen && task.status !== "done" && (
+                      <div className="flex flex-wrap gap-2 border-t border-[var(--glass-border)]/80 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => { completeMutation.mutate(task.id); setExpandedTaskActions(null); }}
+                          disabled={busy}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                        >
+                          <Check size={13} />
+                          Hecha
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { carryOverMutation.mutate(task.id); setExpandedTaskActions(null); }}
+                          disabled={busy}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--amber-soft-text)] transition-all hover:scale-[1.02] disabled:opacity-50"
+                        >
+                          <ArrowRight size={13} />
+                          Manana
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { openBreakdownStudio(task.id); setExpandedTaskActions(null); }}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--violet-soft-text)] transition-all hover:scale-[1.02]"
+                        >
+                          <ListTodo size={13} />
+                          Detalle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { discardMutation.mutate(task.id); setExpandedTaskActions(null); }}
+                          disabled={busy}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--red-soft-text)] transition-all hover:scale-[1.02] disabled:opacity-50"
+                        >
+                          <Trash2 size={13} />
+                          Descartar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -919,14 +1040,8 @@ export default function TasksDashboard() {
                   {topTask.title}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className={`badge text-[10px] ${priorityBadge(topTask.priority)}`}>
-                    {priorityLabel(topTask.priority)}
-                  </span>
-                  {topTask.domain && (
-                    <span className={`badge text-[10px] ${domainBadge(topTask.domain)}`}>
-                      {domainLabel(topTask.domain)}
-                    </span>
-                  )}
+                  <TaskPriorityBadge priority={topTask.priority} />
+                  <TaskDomainBadge domain={topTask.domain} />
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
                   {topTask.status === "done"
@@ -947,28 +1062,66 @@ export default function TasksDashboard() {
             <div className="flex items-center gap-2">
               <ListTodo size={15} style={{ color: "var(--violet-soft-text)" }} />
               <h3 className="text-sm font-medium text-[var(--foreground)]">
-                Breakdown studio
+                Panel de detalle
               </h3>
             </div>
 
             {selectedTask ? (
               <div className="mt-4 space-y-4">
                 <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
-                    Tarea seleccionada
-                  </div>
-                  <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
-                    {selectedTask.title}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className={`badge text-[10px] ${priorityBadge(selectedTask.priority)}`}>
-                      {priorityLabel(selectedTask.priority)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                        Tarea seleccionada
+                      </div>
+                      <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                        {selectedTask.title}
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-[var(--glass-border)] bg-white/40 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {selectedTask.status === "done" ? "Hecha" : "Activa"}
                     </span>
-                    {selectedTask.domain && (
-                      <span className={`badge text-[10px] ${domainBadge(selectedTask.domain)}`}>
-                        {domainLabel(selectedTask.domain)}
-                      </span>
-                    )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <TaskPriorityBadge priority={selectedTask.priority} />
+                    <TaskDomainBadge domain={selectedTask.domain} />
+                  </div>
+                  {selectedTask.description ? (
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
+                      {selectedTask.description}
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
+                      Sin descripcion adicional. Si necesitas preservar contexto
+                      para retomarla mejor, guardalo como nota.
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[20px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                      Fecha
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                      {formatTaskDate(selectedTask.scheduledDate)}
+                    </div>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] p-4">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                      Carry-over
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                      {selectedTask.carryOverCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                      Notas
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                      {selectedTaskNotes.length}
+                    </div>
                   </div>
                 </div>
 
@@ -1013,12 +1166,13 @@ export default function TasksDashboard() {
                               key={step}
                               type="button"
                               onClick={() =>
-                                addBreakdownStepMutation.mutate({
+                                addTaskNoteMutation.mutate({
                                   taskId: selectedTask.id,
                                   content: step,
+                                  type: "breakdown_step",
                                 })
                               }
-                              disabled={addBreakdownStepMutation.isPending}
+                              disabled={addTaskNoteMutation.isPending}
                               className="block w-full rounded-xl border border-[var(--glass-border)] bg-white/40 px-3 py-2 text-left text-xs text-[var(--foreground)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {step}
@@ -1045,15 +1199,16 @@ export default function TasksDashboard() {
                       type="button"
                       onClick={() =>
                         selectedTask &&
-                        addBreakdownStepMutation.mutate({
+                        addTaskNoteMutation.mutate({
                           taskId: selectedTask.id,
                           content: newBreakdownStep,
+                          type: "breakdown_step",
                         })
                       }
                       disabled={
                         !selectedTask ||
                         !newBreakdownStep.trim() ||
-                        addBreakdownStepMutation.isPending
+                        addTaskNoteMutation.isPending
                       }
                       className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -1072,9 +1227,12 @@ export default function TasksDashboard() {
                       {persistedSteps.map((note: TaskNote) => (
                         <div
                           key={note.id}
-                          className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2 text-sm text-[var(--foreground)]"
+                          className="rounded-2xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-3 text-sm text-[var(--foreground)]"
                         >
-                          {note.content}
+                          <div className="mb-2 inline-flex rounded-full border border-[var(--violet-soft-border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--violet-soft-text)]">
+                            Paso
+                          </div>
+                          <div>{note.content}</div>
                         </div>
                       ))}
                     </div>
@@ -1084,10 +1242,110 @@ export default function TasksDashboard() {
                     </div>
                   )}
                 </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Guardar nota
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <select
+                        value={newTaskNoteType}
+                        onChange={(e) =>
+                          setNewTaskNoteType(e.target.value as TaskNote["type"])
+                        }
+                        className="glass-input w-40 px-3 py-2 text-sm"
+                      >
+                        <option value="note">Nota</option>
+                        <option value="blocker">Bloqueo</option>
+                      </select>
+                      <input
+                        value={newTaskNote}
+                        onChange={(e) => setNewTaskNote(e.target.value)}
+                        placeholder={
+                          newTaskNoteType === "blocker"
+                            ? "Ej: falta respuesta o recurso"
+                            : "Ej: contexto para retomarla rapido"
+                        }
+                        className="glass-input flex-1 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        selectedTask &&
+                        addTaskNoteMutation.mutate({
+                          taskId: selectedTask.id,
+                          content: newTaskNote,
+                          type: newTaskNoteType,
+                        })
+                      }
+                      disabled={
+                        !selectedTask ||
+                        !newTaskNote.trim() ||
+                        addTaskNoteMutation.isPending
+                      }
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus size={14} />
+                      Guardar nota
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Bloqueos
+                  </div>
+                  {blockerNotes.length > 0 ? (
+                    <div className="space-y-2">
+                      {blockerNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className={`rounded-2xl border px-3 py-3 text-sm ${noteTypeTone(note.type)}`}
+                        >
+                          <div className="mb-2 inline-flex rounded-full border border-current/20 px-2 py-1 text-[10px] uppercase tracking-[0.16em]">
+                            {noteTypeLabel(note.type)}
+                          </div>
+                          <div>{note.content}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-6 text-center text-xs text-[var(--muted)]">
+                      Sin bloqueos registrados.
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    Notas y contexto
+                  </div>
+                  {contextNotes.length > 0 ? (
+                    <div className="space-y-2">
+                      {contextNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className={`rounded-2xl border px-3 py-3 text-sm ${noteTypeTone(note.type)}`}
+                        >
+                          <div className="mb-2 inline-flex rounded-full border border-current/20 px-2 py-1 text-[10px] uppercase tracking-[0.16em]">
+                            {noteTypeLabel(note.type)}
+                          </div>
+                          <div>{note.content}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-6 text-center text-xs text-[var(--muted)]">
+                      Todavia no hay notas de contexto para esta tarea.
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="mt-4 rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-8 text-center text-sm text-[var(--muted)]">
-                Selecciona una tarea pendiente para desglosarla.
+                Selecciona una tarea pendiente para ver su detalle.
               </div>
             )}
           </div>

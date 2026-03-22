@@ -19,7 +19,7 @@ export interface Task {
   title: string;
   description: string | null;
   priority: number;
-  status: "pending" | "done" | "carried_over" | "discarded";
+  status: "pending" | "done" | "discarded";
   scheduledDate: string;
   domain: string | null;
   carryOverCount: number;
@@ -67,10 +67,18 @@ export interface CarryOverAllResult {
   tasks: Task[];
 }
 
+export interface CarryOverRateResponse {
+  total: number;
+  carriedOver: number;
+  rate: number;
+  days: number;
+}
+
 export interface TaskNote {
   id: string;
   taskId: string;
   content: string;
+  type: "note" | "breakdown_step" | "blocker";
   createdAt: string;
 }
 

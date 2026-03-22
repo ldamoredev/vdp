@@ -1,6 +1,6 @@
 import { Task } from '../domain/Task';
 import { TaskRepository } from '../domain/TaskRepository';
-import { todayISO } from '../../common/base/utils/dates';
+import { todayISO } from '../../common/base/time/dates';
 
 export type DayReview = {
     date: string;
@@ -23,7 +23,7 @@ export class GetEndOfDayReview {
 
         const completed = dayTasks.filter((t) => t.status === "done");
         const pending = dayTasks.filter((t) => t.status === "pending");
-        const carriedOver = dayTasks.filter((t) => t.status === "carried_over");
+        const carriedOver = dayTasks.filter((t) => t.carryOverCount > 0);
         const discarded = dayTasks.filter((t) => t.status === "discarded");
 
         return {

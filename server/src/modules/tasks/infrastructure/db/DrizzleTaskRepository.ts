@@ -1,5 +1,5 @@
 import { Task } from '../../domain/Task';
-import { todayISO } from '../../../common/base/utils/dates';
+import { todayISO } from '../../../common/base/time/dates';
 import {
     TaskRepository,
     PagedTasks,
@@ -9,6 +9,7 @@ import {
     DomainStat,
     CarryOverStats,
 } from '../../domain/TaskRepository';
+import { TaskStatus } from '../../domain/Task';
 import { Database } from '../../../common/base/db/Database';
 import { tasks } from './schema';
 import { and, asc, desc, eq, gte, lte, sql, SQL } from 'drizzle-orm';
@@ -121,7 +122,7 @@ export class DrizzleTaskRepository extends TaskRepository {
 
     // ─── Queries ─────────────────────────────────────────
 
-    async getTasksByDateAndStatus(date: string, status: string): Promise<Task[]> {
+    async getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]> {
         const rows = await this.db.query
             .select()
             .from(tasks)
@@ -140,7 +141,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         return rows.map(s => Task.fromSnapshot(s));
     }
 
-    async countByDateAndStatus(date: string, status: string): Promise<number> {
+    async countByDateAndStatus(date: string, status: TaskStatus): Promise<number> {
         const result = await this.db.query
             .select({ count: sql<number>`COUNT(*)::int` })
             .from(tasks)

@@ -8,7 +8,7 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["**/__tests__/domain/**/*.test.ts", "**/__tests__/services/**/*.test.ts"],
+          include: ["**/__tests__/domain/**/*.test.ts", "**/__tests__/services/**/*.test.ts", "**/__tests__/observability/**/*.test.ts"],
         },
       },
       {

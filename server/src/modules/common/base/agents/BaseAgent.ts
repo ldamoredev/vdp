@@ -4,10 +4,12 @@ import { ServiceProvider } from '../services/ServiceProvider';
 import { Skill, SkillRegistry } from './skills/SkillRegistry';
 import { SummarizeSkill } from './skills/SummarizeSkill';
 import { AgentRepository } from './AgentRepository';
-import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
 import { AgentProvider } from './providers/AgentProvider';
-import { createAgentProvider } from './providers/createAgentProvider';
 import { AgentMessage, AgentToolCall, AgentToolDefinition, AgentToolResult } from './providers/types';
+import { LLMTraceService, Trace } from '../observability/trace/LLMTraceService';
+import { TraceService } from '../observability/trace/TraceService';
+import { createHash } from 'crypto';
+import { RepositoryProvider } from '../db/RepositoryProvider';
 
 export interface AgentTool {
     name: string;
@@ -25,7 +27,7 @@ export interface ChatCallbacks {
     onText: (text: string) => void;
     onToolUse: (tool: string, input: any) => void;
     onToolResult: (tool: string, result: string) => void;
-    onDone: (conversationId: string) => void;
+    onDone: (conversationId: string, traceId?: string) => void;
     onError: (error: string) => void;
 }
 
@@ -41,21 +43,27 @@ export abstract class BaseAgent {
     abstract readonly tools: AgentTool[];
 
     protected skills: SkillRegistry = new SkillRegistry();
-    protected repositories: DrizzleRepositoryProvider;
+    protected repositories: RepositoryProvider;
     protected services: ServiceProvider;
     protected provider: AgentProvider;
+    protected llmTraceService: LLMTraceService;
+    protected traceService: TraceService;
     protected model: string;
     protected maxTokens = 4096;
 
     constructor(
         eventBus: EventBus,
         services: ServiceProvider,
-        repositories: DrizzleRepositoryProvider,
-        provider: AgentProvider = createAgentProvider(),
+        repositories: RepositoryProvider,
+        provider: AgentProvider,
+        llmTraceService: LLMTraceService,
+        traceService: TraceService,
     ) {
         this.services = services;
         this.repositories = repositories;
         this.provider = provider;
+        this.llmTraceService = llmTraceService;
+        this.traceService = traceService;
         this.model = process.env.AGENT_MODEL || provider.defaultModel;
         this.registerSkill(new SummarizeSkill());
     }
@@ -103,6 +111,16 @@ export abstract class BaseAgent {
         callbacks: ChatCallbacks;
     }): Promise<void> {
         const { message, callbacks } = options;
+        const trace = this.llmTraceService.createTrace({
+            name: `${this.domain}.chat`,
+            metadata: {
+                domain: this.domain,
+                provider: this.provider.name,
+                model: this.model,
+                promptHash: this.hashPrompt(this.systemPrompt),
+                conversationId: options.conversationId,
+            },
+        });
 
         try {
             // Get or create conversation
@@ -111,6 +129,8 @@ export abstract class BaseAgent {
                 const conv = await this.repositories.get(AgentRepository).createConversation(this.domain, message.slice(0, 100));
                 conversationId = conv.id;
             }
+
+            trace.update({ conversationId });
 
             // Save user message
             await this.repositories.get(AgentRepository).createMessage(
@@ -128,8 +148,9 @@ export abstract class BaseAgent {
             await this.runLoop(messages, {
                 conversationId,
                 ...callbacks,
-            });
+            }, trace);
         } catch (err: any) {
+            trace.update({ error: err.message || 'Agent error' });
             callbacks.onError(err.message || 'Agent error');
         }
     }
@@ -141,18 +162,75 @@ export abstract class BaseAgent {
     async runLoop(
         messages: AgentMessage[],
         callbacks: ChatCallbacks & { conversationId: string },
+        trace: Trace,
     ): Promise<void> {
         try {
             let continueLoop = true;
 
             while (continueLoop) {
-                const response = await this.provider.generate({
+                const generation = trace.generation({
+                    name: 'agent.generate',
                     model: this.model,
-                    maxTokens: this.maxTokens,
-                    systemPrompt: this.systemPrompt,
-                    tools: this.toolDefinitions,
-                    messages,
+                    input: messages,
+                    metadata: {
+                        domain: this.domain,
+                        provider: this.provider.name,
+                        promptHash: this.hashPrompt(this.systemPrompt),
+                        toolCount: this.toolDefinitions.length,
+                    },
                 });
+
+                let response;
+
+                try {
+                    response = await this.traceService.runWithSpan(
+                        'agent.provider.generate',
+                        {
+                            attributes: {
+                                domain: this.domain,
+                                provider: this.provider.name,
+                                model: this.model,
+                                tool_count: this.toolDefinitions.length,
+                            },
+                        },
+                        async (span) => {
+                            const providerResponse = await this.provider.generate({
+                                model: this.model,
+                                maxTokens: this.maxTokens,
+                                systemPrompt: this.systemPrompt,
+                                tools: this.toolDefinitions,
+                                messages,
+                            });
+
+                            span.setAttributes({
+                                stop_reason: providerResponse.stopReason,
+                                input_tokens: providerResponse.usage?.inputTokens,
+                                output_tokens: providerResponse.usage?.outputTokens,
+                            });
+
+                            return providerResponse;
+                        },
+                    );
+
+                    generation.end({
+                        output: {
+                            text: response.text,
+                            stopReason: response.stopReason,
+                            toolCalls: response.toolCalls.map((toolCall) => ({
+                                id: toolCall.id,
+                                name: toolCall.name,
+                            })),
+                        },
+                        usage: response.usage,
+                    });
+                } catch (err: any) {
+                    generation.end({
+                        output: {
+                            error: err.message || 'Agent generation failed',
+                        },
+                    });
+                    throw err;
+                }
 
                 if (response.text) {
                     callbacks.onText(response.text);
@@ -174,7 +252,18 @@ export abstract class BaseAgent {
                 if (response.toolCalls.length > 0) {
                     for (const tc of response.toolCalls) {
                         callbacks.onToolUse(tc.name, tc.input);
+                        const toolSpan = trace.span({
+                            name: 'agent.tool',
+                            metadata: {
+                                tool: tc.name,
+                                input: tc.input,
+                            },
+                        });
                         const toolResult = await this.executeToolCall(tc);
+                        toolSpan.end({
+                            output: toolResult.content,
+                            isError: toolResult.is_error ?? false,
+                        });
                         callbacks.onToolResult(tc.name, toolResult.content);
 
                         await this.repositories.get(AgentRepository).saveToolResult(
@@ -195,8 +284,10 @@ export abstract class BaseAgent {
                 }
             }
 
-            callbacks.onDone(callbacks.conversationId);
+            trace.update({ completed: true });
+            callbacks.onDone(callbacks.conversationId, trace.id);
         } catch (err: any) {
+            trace.update({ error: err.message || 'Agent error' });
             callbacks.onError(err.message || 'Agent error');
         }
     }
@@ -264,5 +355,12 @@ export abstract class BaseAgent {
                 is_error: true,
             };
         }
+    }
+
+    private hashPrompt(text: string): string {
+        return createHash('sha256')
+            .update(text)
+            .digest('hex')
+            .slice(0, 8);
     }
 }

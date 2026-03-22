@@ -4,6 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
+import { DomainHttpError } from '../../../common/http/errors';
 
 describe('CompleteTask', () => {
     let repo: FakeTaskRepository;
@@ -40,6 +41,20 @@ describe('CompleteTask', () => {
         // Verify persisted
         const saved = await repo.getTask(task.id);
         expect(saved!.status).toBe('done');
+    });
+
+    it('rejects completing an already done task', async () => {
+        const task = createTask({ status: 'done', completedAt: new Date() });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id)).rejects.toThrow(DomainHttpError);
+    });
+
+    it('rejects completing a discarded task', async () => {
+        const task = createTask({ status: 'discarded' });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id)).rejects.toThrow(DomainHttpError);
     });
 
     it('emits TaskCompleted event with correct payload', async () => {

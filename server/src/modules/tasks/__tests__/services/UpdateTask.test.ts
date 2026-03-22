@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { UpdateTask } from '../../services/UpdateTask';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
+import { DomainHttpError } from '../../../common/http/errors';
 
 describe('UpdateTask', () => {
     let repo: FakeTaskRepository;
@@ -41,7 +42,7 @@ describe('UpdateTask', () => {
         expect(result!.domain).toBe('health');
     });
 
-    it('persists the changes', async () => {
+    it('persists the changes via save', async () => {
         const task = createTask({ title: 'Before' });
         repo.seed([task]);
 
@@ -49,5 +50,31 @@ describe('UpdateTask', () => {
 
         const saved = await repo.getTask(task.id);
         expect(saved!.title).toBe('After');
+    });
+
+    it('rejects update on a completed task with DomainHttpError', async () => {
+        const task = createTask({ status: 'done', completedAt: new Date() });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id, { title: 'Nope' }))
+            .rejects.toThrow(DomainHttpError);
+    });
+
+    it('rejects update on a discarded task with DomainHttpError', async () => {
+        const task = createTask({ status: 'discarded' });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id, { title: 'Nope' }))
+            .rejects.toThrow(DomainHttpError);
+    });
+
+    it('allows rescheduling without incrementing carryOverCount', async () => {
+        const task = createTask({ scheduledDate: '2026-03-22', carryOverCount: 0 });
+        repo.seed([task]);
+
+        const result = await service.execute(task.id, { scheduledDate: '2026-03-25' });
+
+        expect(result!.scheduledDate).toBe('2026-03-25');
+        expect(result!.carryOverCount).toBe(0);
     });
 });

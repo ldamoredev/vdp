@@ -13,7 +13,7 @@ import { GetDayStats } from '../../services/GetDayStats';
 import { AgentTool } from '../../../common/base/agents/BaseAgent';
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
-import { todayISO } from '../../../common/base/utils/dates';
+import { todayISO } from '../../../common/base/time/dates';
 
 export class TasksTools {
   static createTasksTools(services: ServiceProvider, insightsStore?: TaskInsightsStore): AgentTool[] {
@@ -70,7 +70,7 @@ export class TasksTools {
             },
             status: {
               type: "string",
-              enum: ["pending", "done", "carried_over", "discarded"],
+              enum: ["pending", "done", "discarded"],
             },
             domain: {
               type: "string",
@@ -207,11 +207,16 @@ export class TasksTools {
           properties: {
             taskId: { type: "string", description: "Task ID" },
             content: { type: "string", description: "Note content" },
+            type: {
+              type: "string",
+              enum: ["note", "breakdown_step", "blocker"],
+              description: "Note type. Use breakdown_step for executable steps, blocker for explicit obstacles.",
+            },
           },
           required: ["taskId", "content"],
         },
         execute: async (input) => {
-          const note = await services.get(AddTaskNote).execute(input.taskId, input.content);
+          const note = await services.get(AddTaskNote).execute(input.taskId, input.content, input.type);
           return JSON.stringify(note);
         },
       },

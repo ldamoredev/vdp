@@ -20,12 +20,9 @@ import { addDays, format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { tasksApi } from "@/lib/api/tasks";
 import type { Task } from "@/lib/api/types";
-import {
-  domainBadge,
-  domainLabel,
-  priorityBadge,
-  priorityLabel,
-} from "@/lib/format";
+import { domainBadge, domainLabel } from "@/lib/format";
+import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
+import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
 import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
 
 type ReviewSignalTone = "success" | "info" | "warning" | "error";
@@ -357,14 +354,8 @@ export default function HistoryPage() {
                       </div>
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                          {priorityLabel(task.priority)}
-                        </span>
-                        {task.domain && (
-                          <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
-                            {domainLabel(task.domain)}
-                          </span>
-                        )}
+                        <TaskPriorityBadge priority={task.priority} />
+                        <TaskDomainBadge domain={task.domain} />
                       </div>
 
                       <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
@@ -452,14 +443,8 @@ export default function HistoryPage() {
                       {task.title}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                        {priorityLabel(task.priority)}
-                      </span>
-                      {task.domain && (
-                        <span className={`badge text-[10px] ${domainBadge(task.domain)}`}>
-                          {domainLabel(task.domain)}
-                        </span>
-                      )}
+                      <TaskPriorityBadge priority={task.priority} />
+                      <TaskDomainBadge domain={task.domain} />
                     </div>
                   </div>
                 ))

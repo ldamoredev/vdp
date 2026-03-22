@@ -1,7 +1,7 @@
 import { TaskRepository } from '../domain/TaskRepository';
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { TasksOverloaded } from '../domain/events/TasksOverloaded';
-import { todayISO, localDateISO } from '../../common/base/utils/dates';
+import { todayISO, localDateISO } from '../../common/base/time/dates';
 
 export type OverloadCheckResult = {
     total: number;

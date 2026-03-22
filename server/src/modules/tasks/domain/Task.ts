@@ -1,3 +1,7 @@
+export type TaskStatus = 'pending' | 'done' | 'discarded';
+type TaskSnapshotLike = Omit<TaskSnapshot, 'status'> & { status: string };
+
+
 export class Task {
     constructor(
         public id: string,
@@ -6,7 +10,7 @@ export class Task {
         public updatedAt: Date,
         public completedAt: Date | null,
         public title: string,
-        public status: string,
+        public status: TaskStatus,
         public priority: number,
         public scheduledDate: string,
         public domain: string | null,
@@ -51,7 +55,18 @@ export class Task {
         };
     }
 
-    static fromSnapshot(s: TaskSnapshot): Task {
+    private static parseTaskStatus(status: string): TaskStatus {
+        switch (status) {
+            case 'pending':
+            case 'done':
+            case 'discarded':
+                return status;
+            default:
+                throw new Error(`Invalid task status: ${status}`);
+        }
+    }
+
+    static fromSnapshot(s: TaskSnapshotLike): Task {
         return new Task(
             s.id,
             s.createdAt,
@@ -59,7 +74,7 @@ export class Task {
             s.updatedAt,
             s.completedAt,
             s.title,
-            s.status,
+            Task.parseTaskStatus(s.status),
             s.priority,
             s.scheduledDate,
             s.domain,
@@ -72,7 +87,7 @@ export type TaskSnapshot = {
     id: string;
     title: string;
     description: string | null;
-    status: string;
+    status: TaskStatus;
     priority: number;
     scheduledDate: string;
     domain: string | null;

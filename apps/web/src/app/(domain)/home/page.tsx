@@ -12,12 +12,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { tasksApi } from "@/lib/api/tasks";
-import {
-  formatDateShort,
-  getTodayISO,
-  priorityBadge,
-  priorityLabel,
-} from "@/lib/format";
+import { formatDateShort, getTodayISO } from "@/lib/format";
+import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 
 export default function HomePage() {
   const today = getTodayISO();
@@ -199,9 +195,7 @@ export default function HomePage() {
                         {task.title}
                       </span>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                          {priorityLabel(task.priority)}
-                        </span>
+                        <TaskPriorityBadge priority={task.priority} />
                         <span className="text-[10px] text-[var(--muted)]">
                           {formatDateShort(task.scheduledDate)}
                         </span>

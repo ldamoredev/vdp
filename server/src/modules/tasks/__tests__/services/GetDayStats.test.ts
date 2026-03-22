@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GetDayStats } from '../../services/GetDayStats';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
-import { todayISO, localDateISO } from '../../../common/base/utils/dates';
+import { todayISO, localDateISO } from '../../../common/base/time/dates';
 
 describe('GetDayStats', () => {
     let repo: FakeTaskRepository;
@@ -27,14 +27,16 @@ describe('GetDayStats', () => {
             createTask({ scheduledDate: DATE, status: 'done' }),
             createTask({ scheduledDate: DATE, status: 'done' }),
             createTask({ scheduledDate: DATE, status: 'pending' }),
+            createTask({ scheduledDate: DATE, status: 'pending', carryOverCount: 2 }),
         ]);
 
         const stats = await service.execute(DATE);
 
-        expect(stats.total).toBe(3);
+        expect(stats.total).toBe(4);
         expect(stats.completed).toBe(2);
-        expect(stats.pending).toBe(1);
-        expect(stats.completionRate).toBe(67); // Math.round(2/3*100)
+        expect(stats.pending).toBe(2);
+        expect(stats.carriedOver).toBe(1);
+        expect(stats.completionRate).toBe(50);
     });
 
     it('executeToday uses current date', async () => {

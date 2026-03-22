@@ -48,6 +48,10 @@ export class AnthropicAgentProvider implements AgentProvider {
             text,
             toolCalls,
             stopReason: response.stop_reason ?? 'stop',
+            usage: {
+                inputTokens: response.usage?.input_tokens,
+                outputTokens: response.usage?.output_tokens,
+            },
         };
     }
 

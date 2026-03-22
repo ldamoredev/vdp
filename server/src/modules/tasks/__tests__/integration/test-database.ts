@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS tasks.task_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id UUID NOT NULL REFERENCES tasks.tasks(id),
     content TEXT NOT NULL,
+    type VARCHAR(30) NOT NULL DEFAULT 'note',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

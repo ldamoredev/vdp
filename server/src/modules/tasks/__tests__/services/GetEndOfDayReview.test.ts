@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GetEndOfDayReview } from '../../services/GetEndOfDayReview';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
-import { todayISO } from '../../../common/base/utils/dates';
+import { todayISO } from '../../../common/base/time/dates';
 
 describe('GetEndOfDayReview', () => {
     let repo: FakeTaskRepository;
@@ -30,7 +30,7 @@ describe('GetEndOfDayReview', () => {
         repo.seed([
             createTask({ scheduledDate: DATE, status: 'done' }),
             createTask({ scheduledDate: DATE, status: 'done' }),
-            createTask({ scheduledDate: DATE, status: 'pending' }),
+            createTask({ scheduledDate: DATE, status: 'pending', carryOverCount: 1 }),
             createTask({ scheduledDate: DATE, status: 'discarded' }),
         ]);
 
@@ -39,6 +39,7 @@ describe('GetEndOfDayReview', () => {
         expect(review.total).toBe(4);
         expect(review.completed).toBe(2);
         expect(review.pending).toBe(1);
+        expect(review.carriedOver).toBe(1);
         expect(review.discarded).toBe(1);
         expect(review.completionRate).toBe(50);
     });

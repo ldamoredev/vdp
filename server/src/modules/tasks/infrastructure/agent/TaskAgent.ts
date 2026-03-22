@@ -4,8 +4,11 @@ import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
-import { DrizzleRepositoryProvider } from '../../../common/infrastructure/db/DrizzleRepositoryProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
+import { LLMTraceService } from '../../../common/base/observability/trace/LLMTraceService';
+import { TraceService } from '../../../common/base/observability/trace/TraceService';
+import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
+import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 
 export class TaskAgent extends BaseAgent {
     readonly domain: DomainName = 'tasks';
@@ -15,10 +18,13 @@ export class TaskAgent extends BaseAgent {
     constructor(
         eventBus: EventBus,
         services: ServiceProvider,
-        repositories: DrizzleRepositoryProvider,
+        repositories: RepositoryProvider,
         insightsStore: TaskInsightsStore,
+        langfuse: LLMTraceService,
+        openTelemetry: TraceService,
+        agentProvider: AgentProvider
     ) {
-        super(eventBus, services, repositories);
+        super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry);
         this.tools = TasksTools.createTasksTools(services, insightsStore);
     }
 }

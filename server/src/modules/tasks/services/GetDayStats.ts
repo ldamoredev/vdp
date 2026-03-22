@@ -1,5 +1,5 @@
 import { TaskRepository } from '../domain/TaskRepository';
-import { todayISO, localDateISO } from '../../common/base/utils/dates';
+import { todayISO, localDateISO } from '../../common/base/time/dates';
 
 export type DayStats = {
     date: string;
@@ -18,6 +18,7 @@ export class GetDayStats {
         const dayTasks = await this.repository.getTasksByDate(date);
 
         const completed = dayTasks.filter((t) => t.status === "done").length;
+        const carriedOver = dayTasks.filter((t) => t.carryOverCount > 0).length;
         const total = dayTasks.length;
 
         return {
@@ -25,7 +26,7 @@ export class GetDayStats {
             total,
             completed,
             pending: dayTasks.filter((t) => t.status === "pending").length,
-            carriedOver: dayTasks.filter((t) => t.status === "carried_over").length,
+            carriedOver,
             discarded: dayTasks.filter((t) => t.status === "discarded").length,
             completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
         };

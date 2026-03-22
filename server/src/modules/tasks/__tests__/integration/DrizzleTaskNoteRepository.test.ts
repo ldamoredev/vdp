@@ -13,11 +13,12 @@ beforeEach(async () => {
 describe('DrizzleTaskNoteRepository', () => {
     it('adds a note and returns it with id and timestamp', async () => {
         const task = await taskRepo.createTask({ title: 'Parent task' });
-        const note = await noteRepo.addNote(task.id, 'My note');
+        const note = await noteRepo.addNote(task.id, 'My note', 'breakdown_step');
 
         expect(note.id).toBeDefined();
         expect(note.taskId).toBe(task.id);
         expect(note.content).toBe('My note');
+        expect(note.type).toBe('breakdown_step');
         expect(note.createdAt).toBeInstanceOf(Date);
     });
 

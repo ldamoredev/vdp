@@ -12,6 +12,10 @@ type OllamaToolCall = {
 };
 
 type OllamaChatCompletionResponse = {
+    usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+    };
     choices?: Array<{
         finish_reason?: string | null;
         message?: {
@@ -63,6 +67,12 @@ export class OllamaAgentProvider implements AgentProvider {
             text: message?.content ?? '',
             toolCalls: (message?.tool_calls ?? []).map((toolCall) => this.parseToolCall(toolCall)),
             stopReason: choice?.finish_reason ?? 'stop',
+            usage: payload.usage
+                ? {
+                    inputTokens: payload.usage.prompt_tokens,
+                    outputTokens: payload.usage.completion_tokens,
+                }
+                : undefined,
         };
     }
 

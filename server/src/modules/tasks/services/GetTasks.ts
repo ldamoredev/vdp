@@ -1,4 +1,5 @@
 import { TaskRepository } from '../domain/TaskRepository';
+import { TaskStatus } from '../domain/Task';
 
 export class GetTasks {
     constructor(private repository: TaskRepository) {
@@ -11,7 +12,7 @@ export class GetTasks {
 
 type Request = {
     scheduledDate?: string;
-    status?: string;
+    status?: TaskStatus;
     domain?: string;
     priority?: number;
     limit?: number;

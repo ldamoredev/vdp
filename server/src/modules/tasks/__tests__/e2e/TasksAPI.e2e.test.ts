@@ -240,6 +240,24 @@ describe('Tasks API — E2E', () => {
             expect(res.json().title).toBe('New');
             expect(res.json().priority).toBe(1);
         });
+
+        it('rejects lifecycle mutations through the generic update route', async () => {
+            const { body: task } = await createTask({ title: 'Immutable status' });
+
+            const res = await testApp.app.inject({
+                method: 'PUT',
+                url: `/api/v1/tasks/${task.id}`,
+                payload: { status: 'done' },
+            });
+
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+
+            const getRes = await testApp.app.inject({ method: 'GET', url: `/api/v1/tasks/${task.id}` });
+            expect(getRes.statusCode).toBe(200);
+            expect(getRes.json().task.status).toBe('pending');
+            expect(getRes.json().task.completedAt).toBeNull();
+        });
     });
 
     describe('DELETE /api/v1/tasks/:id', () => {

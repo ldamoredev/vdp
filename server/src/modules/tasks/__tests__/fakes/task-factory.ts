@@ -1,12 +1,12 @@
-import { Task } from '../../domain/Task';
+import { Task, TaskStatus } from '../../domain/Task';
 import { randomUUID } from 'crypto';
-import { todayISO } from '../../../common/base/utils/dates';
+import { todayISO } from '../../../common/base/time/dates';
 
 type TaskOverrides = Partial<{
     id: string;
     title: string;
     description: string | null;
-    status: string;
+    status: TaskStatus;
     priority: number;
     scheduledDate: string;
     domain: string | null;

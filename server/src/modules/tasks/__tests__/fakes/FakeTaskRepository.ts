@@ -1,5 +1,5 @@
-import { Task, type TaskSnapshot } from '../../domain/Task';
-import { todayISO } from '../../../common/base/utils/dates';
+import { Task, type TaskSnapshot, type TaskStatus } from '../../domain/Task';
+import { todayISO } from '../../../common/base/time/dates';
 import {
     TaskRepository,
     type TaskFilters,
@@ -107,7 +107,7 @@ export class FakeTaskRepository extends TaskRepository {
 
     // ─── Queries ───────────────────────────────────────
 
-    async getTasksByDateAndStatus(date: string, status: string): Promise<Task[]> {
+    async getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date && s.status === status)
             .map(Task.fromSnapshot);
@@ -119,7 +119,7 @@ export class FakeTaskRepository extends TaskRepository {
             .map(Task.fromSnapshot);
     }
 
-    async countByDateAndStatus(date: string, status: string): Promise<number> {
+    async countByDateAndStatus(date: string, status: TaskStatus): Promise<number> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date && s.status === status)
             .length;

@@ -58,7 +58,7 @@ export class TaskModule extends BaseModule {
         );
 
         this.services.register(GetEndOfDayReview, () => new GetEndOfDayReview(taskRepo()));
-        this.services.register(AddTaskNote, () => new AddTaskNote(noteRepo()));
+        this.services.register(AddTaskNote, () => new AddTaskNote(taskRepo(), noteRepo()));
 
         this.services.register(GetDayStats, () => new GetDayStats(taskRepo()));
         this.services.register(GetCompletionByDomain, () => new GetCompletionByDomain(taskRepo()));
@@ -81,7 +81,15 @@ export class TaskModule extends BaseModule {
 
     protected registerAgents() {
         this.agentRegistry.register(
-            new TaskAgent(this.eventBus, this.services, this.repositories, this.insightsStore),
+            new TaskAgent(
+                this.eventBus,
+                this.services,
+                this.repositories,
+                this.insightsStore,
+                this.llmTraceService,
+                this.traceService,
+                this.agentProvider
+            ),
         );
     }
 

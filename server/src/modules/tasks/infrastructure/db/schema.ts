@@ -20,7 +20,7 @@ export const tasks = tasksSchema.table(
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description"),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
-    // Status: pending, done, carried_over, discarded
+    // Status: pending, done, discarded
     priority: integer("priority").notNull().default(2),
     // Priority: 1=low, 2=medium, 3=high
     scheduledDate: date("scheduled_date").notNull(),
@@ -49,6 +49,7 @@ export const taskNotes = tasksSchema.table(
       .notNull()
       .references(() => tasks.id),
     content: text("content").notNull(),
+    type: varchar("type", { length: 30 }).notNull().default("note"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [

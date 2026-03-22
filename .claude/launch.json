@@ -7,7 +7,7 @@
       "runtimeArgs": ["--filter", "@vdp/server", "run", "dev"],
       "port": 4001,
       "env": {
-        "DATABASE_URL": "postgresql://localhost:5432/vdp",
+        "DATABASE_URL": "postgresql://vdp:vdp@localhost:5432/vdp",
         "PATH": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin"
       }
     },
@@ -16,6 +16,7 @@
       "runtimeExecutable": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin/pnpm",
       "runtimeArgs": ["--filter", "@vdp/web", "run", "dev"],
       "port": 3000,
+      "autoPort": true,
       "env": {
         "PATH": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin"
       }

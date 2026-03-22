@@ -37,7 +37,14 @@ export class App {
         });
     }
 
-    async listen(param: { port: number; host: string }) {
+    async start(param: { port: number; host: string }) {
+        await this.core.start();
         await this.app.listen(param);
+    }
+
+    async stop() {
+        return async () => {
+            await Promise.allSettled([() => this.app.close(), this.core.shutdown()]);
+        }
     }
 }

@@ -4,7 +4,8 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
-import { localDateISO } from '../../../common/base/utils/dates';
+import { localDateISO } from '../../../common/base/time/dates';
+import { DomainHttpError } from '../../../common/http/errors';
 
 describe('CarryOverTask', () => {
     let repo: FakeTaskRepository;
@@ -26,6 +27,20 @@ describe('CarryOverTask', () => {
     it('returns null when task does not exist', async () => {
         const result = await service.execute('nonexistent-id');
         expect(result).toBeNull();
+    });
+
+    it('rejects carrying over a done task', async () => {
+        const task = createTask({ status: 'done', completedAt: new Date() });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
+    });
+
+    it('rejects carrying over a discarded task', async () => {
+        const task = createTask({ status: 'discarded' });
+        repo.seed([task]);
+
+        await expect(service.execute(task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
     });
 
     it('carries over task with explicit toDate', async () => {

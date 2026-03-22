@@ -1,6 +1,7 @@
 import { request } from "./client";
 import type {
   CarryOverAllResult,
+  CarryOverRateResponse,
   DomainStat,
   Task,
   TaskDetailsResponse,
@@ -25,7 +26,7 @@ export const tasksApi = {
     scheduledDate?: string;
     domain?: string;
   }) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
-  updateTask: (id: string, data: Partial<Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain" | "status">>) =>
+  updateTask: (id: string, data: Partial<Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain">>) =>
     request<Task>(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteTask: (id: string) =>
     request<void>(`/tasks/${id}`, { method: "DELETE" }),
@@ -52,10 +53,10 @@ export const tasksApi = {
     return request<TaskReview>(`/tasks/review${qs}`);
   },
   getTaskNotes: (taskId: string) => request<TaskNote[]>(`/tasks/${taskId}/notes`),
-  addNote: (taskId: string, content: string) =>
-    request<{ id: string }>(`/tasks/${taskId}/notes`, {
+  addNote: (taskId: string, content: string, type: TaskNote["type"] = "note") =>
+    request<TaskNote>(`/tasks/${taskId}/notes`, {
       method: "POST",
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, type }),
     }),
 
   // ─── Stats ──────────────────────────────────────────────
@@ -70,6 +71,6 @@ export const tasksApi = {
   },
   getCarryOverRate: (days?: number) => {
     const qs = days ? `?days=${days}` : "";
-    return request<{ rate: number; total: number }>(`/tasks/stats/carry-over${qs}`);
+    return request<CarryOverRateResponse>(`/tasks/stats/carry-over${qs}`);
   },
 };

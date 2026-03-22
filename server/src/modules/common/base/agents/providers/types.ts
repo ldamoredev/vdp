@@ -43,4 +43,8 @@ export type AgentProviderResponse = {
     text: string;
     toolCalls: AgentToolCall[];
     stopReason: string;
+    usage?: {
+        inputTokens?: number;
+        outputTokens?: number;
+    };
 };

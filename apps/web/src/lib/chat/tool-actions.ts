@@ -40,13 +40,18 @@ function taskStateLabel(status?: string) {
   switch (status) {
     case "done":
       return "Completada";
-    case "carried_over":
-      return "Reprogramada";
     case "discarded":
       return "Descartada";
     default:
       return "Actualizada";
   }
+}
+
+function priorityTag(p: unknown): string | undefined {
+  if (p === 3) return "Alta";
+  if (p === 2) return "Media";
+  if (p === 1) return "Baja";
+  return undefined;
 }
 
 function formatTaskSummary(task: Record<string, unknown>) {
@@ -56,6 +61,7 @@ function formatTaskSummary(task: Record<string, unknown>) {
     title,
     scheduledDate,
     status: asString(task.status),
+    priority: asNumber(task.priority),
     carryOverCount: asNumber(task.carryOverCount),
   };
 }
@@ -110,31 +116,43 @@ export function parseToolAction(tool: string, result?: string | null): ToolActio
 
   if (tool === "create_task" && isRecord(parsed)) {
     const task = formatTaskSummary(parsed);
+    const parts: string[] = [];
+    if (task.scheduledDate) parts.push(`Programada para ${task.scheduledDate}`);
+    const pTag = priorityTag(task.priority);
+    if (pTag) parts.push(`Prioridad: ${pTag}`);
     return {
       title: `Tarea creada: ${task.title}`,
-      detail: task.scheduledDate
-        ? `Programada para ${task.scheduledDate}`
-        : "Agregada a tu lista",
+      detail: parts.length > 0 ? parts.join(" · ") : "Agregada a tu lista",
       tone: "success",
     };
   }
 
   if ((tool === "update_task" || tool === "complete_task" || tool === "carry_over_task" || tool === "discard_task") && isRecord(parsed)) {
     const task = formatTaskSummary(parsed);
-    const detailParts = [task.status ? taskStateLabel(task.status) : undefined];
+    const actionLabel = tool === "carry_over_task" ? "Reprogramada" : taskStateLabel(task.status);
+    const detailParts: string[] = [];
 
-    if (task.scheduledDate && tool === "carry_over_task") {
-      detailParts.push(`para ${task.scheduledDate}`);
+    if (tool === "complete_task" && task.scheduledDate) {
+      detailParts.push(`Fecha: ${task.scheduledDate}`);
     }
 
-    if (typeof task.carryOverCount === "number" && task.carryOverCount > 0 && tool === "carry_over_task") {
-      detailParts.push(`(${task.carryOverCount} carry-over)`);
+    if (tool === "carry_over_task") {
+      if (task.scheduledDate) detailParts.push(`para ${task.scheduledDate}`);
+      if (typeof task.carryOverCount === "number" && task.carryOverCount > 0) {
+        detailParts.push(`(${task.carryOverCount} carry-over)`);
+      }
+    }
+
+    let tone: ToolTone = tool === "discard_task" ? "warning" : "success";
+    if (tool === "carry_over_task" && typeof task.carryOverCount === "number" && task.carryOverCount >= 3) {
+      tone = "warning";
+      detailParts.push("— Esta tarea se arrastra hace dias");
     }
 
     return {
-      title: `${taskStateLabel(task.status)}: ${task.title}`,
-      detail: detailParts.filter(Boolean).join(" "),
-      tone: tool === "discard_task" ? "warning" : "success",
+      title: `${actionLabel}: ${task.title}`,
+      detail: detailParts.filter(Boolean).join(" ") || undefined,
+      tone,
     };
   }
 
@@ -181,10 +199,14 @@ export function parseToolAction(tool: string, result?: string | null): ToolActio
     const carriedOver =
       asNumber(parsed.carriedOver) ||
       (Array.isArray(parsed.tasks) ? parsed.tasks.length : 0);
+    const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    const firstDate = tasks.length > 0 && isRecord(tasks[0]) ? asString(tasks[0].scheduledDate) : undefined;
 
     return {
-      title: `${carriedOver} tareas reprogramadas`,
-      detail: "Se movieron las tareas pendientes",
+      title: `${carriedOver} tarea${carriedOver === 1 ? "" : "s"} reprogramada${carriedOver === 1 ? "" : "s"}`,
+      detail: firstDate
+        ? `Movidas a ${firstDate}`
+        : "Se movieron las tareas pendientes",
       items: takeTaskTitles(parsed.tasks),
       tone: "warning",
     };

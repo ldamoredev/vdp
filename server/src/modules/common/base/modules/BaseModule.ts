@@ -3,18 +3,25 @@ import { EventBus } from '../event-bus/EventBus';
 import { EventSubscriber } from '../event-bus/EventSubscriber';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
+import { LLMTraceService } from '../observability/trace/LLMTraceService';
+import { TraceService } from '../observability/trace/TraceService';
 import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
 import { ModuleContext } from './ModuleContext';
 import { DomainModule } from './DomainModule';
 import { DomainModuleDescriptor } from './DomainModuleDescriptor';
 import { HttpController } from '../../http/HttpController';
+import { RepositoryProvider } from '../db/RepositoryProvider';
+import { AgentProvider } from '../agents/providers/AgentProvider';
 
 export abstract class BaseModule implements DomainModule {
-    protected readonly repositories: DrizzleRepositoryProvider;
+    protected readonly repositories: RepositoryProvider;
     protected readonly services: ServiceProvider;
     protected readonly eventBus: EventBus;
     protected readonly agentRegistry: AgentRegistry;
     protected readonly sseBroadcaster: SSEBroadcaster;
+    protected readonly llmTraceService: LLMTraceService;
+    protected readonly traceService: TraceService;
+    protected readonly agentProvider: AgentProvider;
 
     constructor(context: ModuleContext) {
         this.repositories = context.repositories;
@@ -22,6 +29,9 @@ export abstract class BaseModule implements DomainModule {
         this.eventBus = context.eventBus;
         this.agentRegistry = context.agentRegistry;
         this.sseBroadcaster = context.sseBroadcaster;
+        this.llmTraceService = context.llmTraceService;
+        this.traceService = context.traceService;
+        this.agentProvider = context.agentProvider;
     }
 
     bootstrap(): this {

@@ -1,4 +1,4 @@
-import { todayISO } from '../../common/base/utils/dates';
+import { todayISO } from '../../common/base/time/dates';
 
 export const WALLET_SYSTEM_PROMPT = `Sos el asistente financiero personal del usuario. Tu rol es ayudarlo a gestionar su billetera digital.
 

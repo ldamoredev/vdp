@@ -3,11 +3,18 @@ import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
 import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
+import { LLMTraceService } from '../observability/trace/LLMTraceService';
+import { TraceService } from '../observability/trace/TraceService';
+import { RepositoryProvider } from '../db/RepositoryProvider';
+import { AgentProvider } from '../agents/providers/AgentProvider';
 
 export type ModuleContext = {
-    repositories: DrizzleRepositoryProvider;
+    repositories: RepositoryProvider;
     services: ServiceProvider;
     eventBus: EventBus;
     agentRegistry: AgentRegistry;
     sseBroadcaster: SSEBroadcaster;
+    llmTraceService: LLMTraceService;
+    traceService: TraceService;
+    agentProvider: AgentProvider;
 };

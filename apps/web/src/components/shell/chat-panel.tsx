@@ -40,6 +40,7 @@ interface Message {
   action?: ToolActionView;
   pending?: boolean;
   toolInput?: Record<string, unknown>;
+  traceUrl?: string;
 }
 
 const domainConversations = new Map<
@@ -97,6 +98,19 @@ function mapPersistedMessages(records: AgentMessageRecord[]): Message[] {
   }
 
   return messages;
+}
+
+function getErrorMessage(code?: string, fallback?: string): string {
+  switch (code) {
+    case "provider_unavailable":
+      return "El proveedor de IA no esta disponible. Intenta de nuevo en unos minutos.";
+    case "tool_execution_failed":
+      return "Hubo un error al ejecutar una accion. Tus datos no se vieron afectados.";
+    case "conversation_not_found":
+      return "No se encontro la conversacion. Inicia una nueva.";
+    default:
+      return fallback ? `Error: ${fallback}` : "Ocurrio un error inesperado.";
+  }
 }
 
 export function ChatPanel() {
@@ -347,11 +361,21 @@ export function ChatPanel() {
         } else if (event.event === "done") {
           completedConversationId = event.conversationId;
           setConversationId(event.conversationId);
+          if (event.traceUrl) {
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === assistantId
+                  ? { ...message, traceUrl: event.traceUrl }
+                  : message,
+              ),
+            );
+          }
         } else if (event.event === "error") {
+          const errorMessage = getErrorMessage(event.code, event.error);
           setMessages((prev) =>
             prev.map((message) =>
               message.id === assistantId
-                ? { ...message, content: `Error: ${event.error}` }
+                ? { ...message, content: errorMessage }
                 : message,
             ),
           );
@@ -485,6 +509,22 @@ export function ChatPanel() {
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-4">
+        {conversationId && messages.length > 0 && (() => {
+          const activeConv = conversations.find((c) => c.id === conversationId);
+          if (!activeConv) return null;
+          return (
+            <div className="flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2">
+              <History size={12} className="shrink-0 text-[var(--muted)]" />
+              <span className="text-[11px] text-[var(--muted)] truncate">
+                Continuando conversacion
+                {activeConv.title ? ` — ${activeConv.title}` : ""}
+                {" · "}
+                {formatDistanceToNow(new Date(activeConv.createdAt), { addSuffix: true })}
+              </span>
+            </div>
+          );
+        })()}
+
         {messages.length === 0 && !isLoadingHistory && (
           <div className="text-center py-12">
             <div
@@ -529,6 +569,16 @@ export function ChatPanel() {
                       <Loader2 size={14} className="animate-spin" />
                       <span className="text-xs">Pensando...</span>
                     </div>
+                  )}
+                  {message.traceUrl && (
+                    <a
+                      href={message.traceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block mt-1 text-[10px] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      Ver traza
+                    </a>
                   )}
                 </div>
               </div>

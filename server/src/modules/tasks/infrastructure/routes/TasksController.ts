@@ -166,7 +166,7 @@ export class TasksController implements HttpController {
     private async addNote(request: FastifyRequest<IdParams>, reply: FastifyReply) {
         const params = parseParams(taskIdParamsSchema, request.params);
         const body = parseBody(createTaskNoteSchema, request.body);
-        const note = await this.services.get(AddTaskNote).execute(params.id, body.content);
+        const note = await this.services.get(AddTaskNote).execute(params.id, body.content, body.type);
         return sendCreated(reply, note);
     }
 

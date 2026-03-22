@@ -7,7 +7,7 @@ import {
 } from "./common";
 
 // ─── Enums ───────────────────────────────────────────────
-export const taskStatusEnum = z.enum(["pending", "done", "carried_over", "discarded"]);
+export const taskStatusEnum = z.enum(["pending", "done", "discarded"]);
 export const taskPriorityEnum = z.coerce.number().int().min(1).max(3);
 export const taskDomainEnum = z.enum(["wallet", "health", "work", "people", "study"]);
 
@@ -26,8 +26,7 @@ export const updateTaskSchema = z.object({
   priority: taskPriorityEnum.optional(),
   scheduledDate: optionalDateStringSchema,
   domain: taskDomainEnum.nullable().optional(),
-  status: taskStatusEnum.optional(),
-});
+}).strict();
 
 export const taskFiltersSchema = z.object({
   scheduledDate: optionalDateStringSchema,
@@ -41,8 +40,11 @@ export const taskFiltersSchema = z.object({
 export const taskIdParamsSchema = idParamsSchema;
 
 // ─── Task Notes ─────────────────────────────────────────
+export const taskNoteTypeEnum = z.enum(["note", "breakdown_step", "blocker"]);
+
 export const createTaskNoteSchema = z.object({
   content: z.string().min(1),
+  type: taskNoteTypeEnum.default("note"),
 });
 
 // ─── Carry Over ─────────────────────────────────────────

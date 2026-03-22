@@ -1,4 +1,4 @@
-import { todayISO } from '../../common/base/utils/dates';
+import { todayISO } from '../../common/base/time/dates';
 
 export const HEALTH_SYSTEM_PROMPT = `Sos el asistente de salud personal del usuario. Tu rol es ayudarlo a monitorear y mejorar su bienestar físico y mental.
 

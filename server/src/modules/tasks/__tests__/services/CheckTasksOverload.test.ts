@@ -4,7 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
-import { todayISO } from '../../../common/base/utils/dates';
+import { todayISO } from '../../../common/base/time/dates';
 
 describe('CheckTasksOverload', () => {
     let repo: FakeTaskRepository;

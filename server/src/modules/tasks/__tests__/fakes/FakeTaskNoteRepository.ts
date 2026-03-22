@@ -1,14 +1,15 @@
-import { TaskNoteRepository, type TaskNote } from '../../domain/TaskNoteRepository';
+import { TaskNoteRepository, type TaskNote, type TaskNoteType } from '../../domain/TaskNoteRepository';
 import { randomUUID } from 'crypto';
 
 export class FakeTaskNoteRepository extends TaskNoteRepository {
     private store = new Map<string, TaskNote[]>();
 
-    async addNote(taskId: string, content: string): Promise<TaskNote> {
+    async addNote(taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
         const note: TaskNote = {
             id: randomUUID(),
             taskId,
             content,
+            type,
             createdAt: new Date(),
         };
         const notes = this.store.get(taskId) ?? [];

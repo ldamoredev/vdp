@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
 import { httpErrorHandler } from '../../../common/http/errors';
+import { TestCoreConfiguration } from './TestCoreConfiguration';
 
 /**
  * Lightweight Fastify app wired to the test database.
@@ -15,7 +16,7 @@ export class TestApp {
     async setup() {
         process.env.DATABASE_URL = 'postgresql://test:test@localhost:5433/vdp_test';
 
-        this.core = new Core();
+        this.core = new Core(new TestCoreConfiguration());
         this.app = Fastify({ logger: false });
 
         await this.app.register(cors, { origin: true });

@@ -1,4 +1,4 @@
-import { Task } from './Task';
+import { Task, TaskStatus } from './Task';
 
 export abstract class TaskRepository {
     // ─── CRUD ────────────────────────────────────────────
@@ -12,9 +12,9 @@ export abstract class TaskRepository {
     abstract save(task: Task): Promise<Task>;
 
     // ─── Queries ─────────────────────────────────────────
-    abstract getTasksByDateAndStatus(date: string, status: string): Promise<Task[]>;
+    abstract getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]>;
     abstract getTasksByDate(date: string): Promise<Task[]>;
-    abstract countByDateAndStatus(date: string, status: string): Promise<number>;
+    abstract countByDateAndStatus(date: string, status: TaskStatus): Promise<number>;
 
     // ─── Stats ───────────────────────────────────────────
     abstract getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]>;
@@ -23,7 +23,7 @@ export abstract class TaskRepository {
 
 export type TaskFilters = {
     scheduledDate?: string;
-    status?: string;
+    status?: TaskStatus;
     domain?: string;
     priority?: number;
     limit?: number;
