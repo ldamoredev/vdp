@@ -11,6 +11,7 @@ import { RepositoryProvider } from './common/base/db/RepositoryProvider';
 import { LLMTraceService } from './common/base/observability/trace/LLMTraceService';
 import { TraceService } from './common/base/observability/trace/TraceService';
 import { AgentProvider } from './common/base/agents/providers/AgentProvider';
+import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 
 export class Core {
     public readonly eventBus: EventBus = new EventBus();
@@ -36,7 +37,8 @@ export class Core {
             sseBroadcaster: this.sseBroadcaster,
             llmTraceService: this.llmTraceService,
             traceService: this.traceService,
-            agentProvider: config.agentProvider
+            agentProvider: config.agentProvider,
+            embeddingProvider: config.embeddingProvider,
         };
         this.taskModule = this.initTaskModule();
         this.modules = [this.taskModule];
@@ -73,6 +75,7 @@ export class Core {
 export interface CoreConfig {
     repositoryProvider: RepositoryProvider;
     llmTraceService: LLMTraceService;
-    traceService: TraceService
-    agentProvider: AgentProvider
+    traceService: TraceService;
+    agentProvider: AgentProvider;
+    embeddingProvider: EmbeddingProvider;
 }

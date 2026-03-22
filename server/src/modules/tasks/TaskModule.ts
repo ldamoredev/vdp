@@ -27,6 +27,9 @@ import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { TasksController } from './infrastructure/routes/TasksController';
 import { TasksAgentController } from './infrastructure/routes/TasksAgentController';
 import { TaskInsightsSSEController } from './infrastructure/routes/TaskInsightsSSEController';
+import { TaskEmbeddingRepository } from './domain/TaskEmbeddingRepository';
+import { EmbedTask } from './services/EmbedTask';
+import { FindSimilarTasks } from './services/FindSimilarTasks';
 
 export class TaskModule extends BaseModule {
     private static readonly descriptor: DomainModuleDescriptor = {
@@ -43,11 +46,16 @@ export class TaskModule extends BaseModule {
     protected registerServices() {
         const taskRepo = () => this.repositories.get(TaskRepository);
         const noteRepo = () => this.repositories.get(TaskNoteRepository);
+        const embeddingRepo = () => this.repositories.get(TaskEmbeddingRepository);
+
+        this.services.register(EmbedTask, () =>
+            new EmbedTask(taskRepo(), noteRepo(), embeddingRepo(), this.embeddingProvider),
+        );
 
         this.services.register(GetTasks, () => new GetTasks(taskRepo()));
         this.services.register(GetTask, () => new GetTask(taskRepo(), noteRepo()));
-        this.services.register(CreateTask, () => new CreateTask(taskRepo()));
-        this.services.register(UpdateTask, () => new UpdateTask(taskRepo()));
+        this.services.register(CreateTask, () => new CreateTask(taskRepo(), this.services.get(EmbedTask)));
+        this.services.register(UpdateTask, () => new UpdateTask(taskRepo(), this.services.get(EmbedTask)));
         this.services.register(DeleteTask, () => new DeleteTask(taskRepo(), noteRepo()));
 
         this.services.register(CompleteTask, () => new CompleteTask(taskRepo(), this.eventBus));
@@ -58,7 +66,9 @@ export class TaskModule extends BaseModule {
         );
 
         this.services.register(GetEndOfDayReview, () => new GetEndOfDayReview(taskRepo()));
-        this.services.register(AddTaskNote, () => new AddTaskNote(taskRepo(), noteRepo()));
+        this.services.register(AddTaskNote, () => new AddTaskNote(taskRepo(), noteRepo(), this.services.get(EmbedTask)));
+
+        this.services.register(FindSimilarTasks, () => new FindSimilarTasks(embeddingRepo(), this.embeddingProvider));
 
         this.services.register(GetDayStats, () => new GetDayStats(taskRepo()));
         this.services.register(GetCompletionByDomain, () => new GetCompletionByDomain(taskRepo()));

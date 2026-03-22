@@ -12,6 +12,7 @@ import { DomainModuleDescriptor } from './DomainModuleDescriptor';
 import { HttpController } from '../../http/HttpController';
 import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
+import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
 
 export abstract class BaseModule implements DomainModule {
     protected readonly repositories: RepositoryProvider;
@@ -22,6 +23,7 @@ export abstract class BaseModule implements DomainModule {
     protected readonly llmTraceService: LLMTraceService;
     protected readonly traceService: TraceService;
     protected readonly agentProvider: AgentProvider;
+    protected readonly embeddingProvider: EmbeddingProvider;
 
     constructor(context: ModuleContext) {
         this.repositories = context.repositories;
@@ -32,6 +34,7 @@ export abstract class BaseModule implements DomainModule {
         this.llmTraceService = context.llmTraceService;
         this.traceService = context.traceService;
         this.agentProvider = context.agentProvider;
+        this.embeddingProvider = context.embeddingProvider;
     }
 
     bootstrap(): this {

@@ -1,8 +1,11 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as tasksSchema from '../../infrastructure/db/schema';
+import * as embeddingsSchema from '../../infrastructure/db/embeddings-schema';
 
 const SETUP_SQL = `
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS tasks;
 
@@ -46,11 +49,20 @@ CREATE TABLE IF NOT EXISTS tasks.task_notes (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID NOT NULL UNIQUE REFERENCES tasks.tasks(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    embedding vector(384) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_date);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
 CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS core_msg_conversation_idx ON core.agent_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS task_embeddings_task_id_idx ON tasks.task_embeddings(task_id);
 `;
 
 const CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
@@ -61,7 +73,7 @@ export class TestDatabase {
 
     constructor() {
         this.pool = new pg.Pool({ connectionString: CONNECTION_STRING });
-        this.query = drizzle(this.pool, { schema: tasksSchema });
+        this.query = drizzle(this.pool, { schema: { ...tasksSchema, ...embeddingsSchema } });
     }
 
     async setup(): Promise<void> {
@@ -77,7 +89,7 @@ export class TestDatabase {
         const client = await this.pool.connect();
         try {
             await client.query(
-                'TRUNCATE core.agent_messages, core.agent_conversations, tasks.task_notes, tasks.tasks CASCADE',
+                'TRUNCATE core.agent_messages, core.agent_conversations, tasks.task_embeddings, tasks.task_notes, tasks.tasks CASCADE',
             );
         } finally {
             client.release();

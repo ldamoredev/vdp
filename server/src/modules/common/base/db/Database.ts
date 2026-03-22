@@ -5,6 +5,7 @@ import * as walletSchema from '../../../wallet/schema';
 import * as healthSchema from '../../../health/schema';
 import * as agentSchema from '../../infrastructure/agents/schema';
 import * as tasksSchema from '../../../tasks/infrastructure/db/schema';
+import * as embeddingsSchema from '../../../tasks/infrastructure/db/embeddings-schema';
 
 export class Database {
   public query;
@@ -12,7 +13,8 @@ export class Database {
     ...walletSchema,
     ...healthSchema,
     ...agentSchema,
-    ...tasksSchema
+    ...tasksSchema,
+    ...embeddingsSchema,
   };
 
   constructor() {

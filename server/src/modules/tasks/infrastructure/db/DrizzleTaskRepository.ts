@@ -19,8 +19,6 @@ export class DrizzleTaskRepository extends TaskRepository {
         super();
     }
 
-    // ─── CRUD ────────────────────────────────────────────
-
     async getTask(id: string): Promise<Task | null> {
         const result = await this.db.query.select().from(tasks).where(eq(tasks.id, id));
         if (!result[0]) return null;
@@ -107,8 +105,6 @@ export class DrizzleTaskRepository extends TaskRepository {
         return Task.fromSnapshot(deleted);
     }
 
-    // ─── Persistence (save entity state) ─────────────────
-
     async save(task: Task): Promise<Task> {
         const { id, createdAt, ...data } = task.toSnapshot();
         const [updated] = await this.db.query
@@ -119,8 +115,6 @@ export class DrizzleTaskRepository extends TaskRepository {
 
         return Task.fromSnapshot(updated);
     }
-
-    // ─── Queries ─────────────────────────────────────────
 
     async getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]> {
         const rows = await this.db.query
@@ -149,8 +143,6 @@ export class DrizzleTaskRepository extends TaskRepository {
 
         return result[0].count;
     }
-
-    // ─── Stats ───────────────────────────────────────────
 
     async getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]> {
         const conditions: SQL[] = [eq(tasks.status, "done")];

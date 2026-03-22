@@ -8,6 +8,7 @@
       "port": 4001,
       "env": {
         "DATABASE_URL": "postgresql://vdp:vdp@localhost:5432/vdp",
+        "EMBEDDING_PROVIDER": "ollama",
         "PATH": "/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin"
       }
     },

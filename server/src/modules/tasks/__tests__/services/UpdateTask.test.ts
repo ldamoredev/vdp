@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UpdateTask } from '../../services/UpdateTask';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
+import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
+import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepository';
+import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
+import { EmbedTask } from '../../services/EmbedTask';
 import { createTask } from '../fakes/task-factory';
 import { DomainHttpError } from '../../../common/http/errors';
 
@@ -10,7 +14,8 @@ describe('UpdateTask', () => {
 
     beforeEach(() => {
         repo = new FakeTaskRepository();
-        service = new UpdateTask(repo);
+        const embedTask = new EmbedTask(repo, new FakeTaskNoteRepository(), new FakeTaskEmbeddingRepository(), new FakeEmbeddingProvider());
+        service = new UpdateTask(repo, embedTask);
     });
 
     it('returns null when task does not exist', async () => {

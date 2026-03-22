@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { AddTaskNote } from '../../services/AddTaskNote';
 import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
+import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepository';
+import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
+import { EmbedTask } from '../../services/EmbedTask';
 import { createTask } from '../fakes/task-factory';
 
 describe('AddTaskNote', () => {
@@ -12,7 +15,8 @@ describe('AddTaskNote', () => {
     beforeEach(() => {
         taskRepo = new FakeTaskRepository();
         noteRepo = new FakeTaskNoteRepository();
-        service = new AddTaskNote(taskRepo, noteRepo);
+        const embedTask = new EmbedTask(taskRepo, noteRepo, new FakeTaskEmbeddingRepository(), new FakeEmbeddingProvider());
+        service = new AddTaskNote(taskRepo, noteRepo, embedTask);
     });
 
     it('creates a note and returns it', async () => {

@@ -1,9 +1,13 @@
 import { Task } from '../domain/Task';
 import { TaskRepository, UpdateTaskData } from '../domain/TaskRepository';
 import { DomainHttpError } from '../../common/http/errors';
+import { EmbedTask } from './EmbedTask';
 
 export class UpdateTask {
-    constructor(private repository: TaskRepository) {}
+    constructor(
+        private repository: TaskRepository,
+        private embedTask: EmbedTask,
+    ) {}
 
     async execute(id: string, data: UpdateTaskData): Promise<Task | null> {
         const task = await this.repository.getTask(id);
@@ -20,6 +24,8 @@ export class UpdateTask {
         if (data.domain !== undefined) task.domain = data.domain;
         task.updatedAt = new Date();
 
-        return this.repository.save(task);
+        const saved = await this.repository.save(task);
+        this.embedTask.execute(id).catch(() => {});
+        return saved;
     }
 }

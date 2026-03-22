@@ -10,6 +10,9 @@ import { AddTaskNote } from '../../services/AddTaskNote';
 import { GetEndOfDayReview } from '../../services/GetEndOfDayReview';
 import { CarryOverAllPending } from '../../services/CarryOverAllPending';
 import { GetDayStats } from '../../services/GetDayStats';
+import { GetCompletionByDomain } from '../../services/GetCompletionByDomain';
+import { GetCarryOverRate } from '../../services/GetCarryOverRate';
+import { FindSimilarTasks } from '../../services/FindSimilarTasks';
 import { AgentTool } from '../../../common/base/agents/BaseAgent';
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
@@ -18,12 +21,13 @@ import { todayISO } from '../../../common/base/time/dates';
 export class TasksTools {
   static createTasksTools(services: ServiceProvider, insightsStore?: TaskInsightsStore): AgentTool[] {
     return [
-      // ─── CRUD ──────────────────────────────────────────────
       {
         name: "create_task",
         description:
           "Create a new task for today (or a specific date). Only use this after the task is clear enough to execute. " +
-          "If the user message is vague, ask a follow-up first. Returns the created task.",
+          "If the user message is vague, ask a follow-up first. Returns the created task. " +
+          "Automatically checks for similar existing tasks — if duplicates are found, the response includes a 'similarTasks' warning. " +
+          "IMPORTANT: Only call this tool ONCE per task. Never call it twice for the same request.",
         inputSchema: {
           type: "object" as const,
           properties: {
@@ -47,6 +51,16 @@ export class TasksTools {
           required: ["title"],
         },
         execute: async (input) => {
+          let similarTasks: { content: string; matchPercent: number }[] = [];
+          try {
+            const similar = await services.get(FindSimilarTasks).execute(input.title, 3, 0.6);
+            if (similar.length > 0) {
+              similarTasks = similar.map(s => ({ content: s.content, matchPercent: s.matchPercent }));
+            }
+          } catch {
+            // Embedding search failed — proceed with creation anyway
+          }
+
           const task = await services.get(CreateTask).execute({
             title: input.title,
             description: input.description,
@@ -54,7 +68,13 @@ export class TasksTools {
             scheduledDate: input.scheduledDate,
             domain: input.domain,
           });
-          return JSON.stringify(task);
+
+          const result: Record<string, unknown> = { ...task };
+          if (similarTasks.length > 0) {
+            result.similarTasks = similarTasks;
+            result.warning = `Se encontraron ${similarTasks.length} tarea(s) similares. Avisale al usuario.`;
+          }
+          return JSON.stringify(result);
         },
       },
       {
@@ -146,8 +166,6 @@ export class TasksTools {
           return JSON.stringify(deleted ? { message: "Task deleted" } : { error: "Task not found" });
         },
       },
-
-      // ─── Status Transitions ────────────────────────────────
       {
         name: "complete_task",
         description: "Mark a task as done.",
@@ -195,8 +213,6 @@ export class TasksTools {
           return JSON.stringify(discarded || { error: "Task not found" });
         },
       },
-
-      // ─── Notes ─────────────────────────────────────────────
       {
         name: "add_task_note",
         description:
@@ -220,8 +236,6 @@ export class TasksTools {
           return JSON.stringify(note);
         },
       },
-
-      // ─── Daily Review & Stats ──────────────────────────────
       {
         name: "get_end_of_day_review",
         description:
@@ -284,6 +298,73 @@ export class TasksTools {
         execute: async (input) => {
           const result = await services.get(GetDayStats).executeTrend(input.days || 7);
           return JSON.stringify(result);
+        },
+      },
+      {
+        name: "get_weekly_summary",
+        description:
+          "Get a comprehensive weekly summary: daily completion trend, domain breakdown, and carry-over rate. " +
+          "Use this when the user asks for a weekly review, retrospective, or wants to see how their week went.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            days: { type: "number", description: "Number of days to summarize (default: 7)" },
+          },
+          required: [],
+        },
+        execute: async (input) => {
+          const days = input.days || 7;
+          const [trend, domains, carryOver] = await Promise.all([
+            services.get(GetDayStats).executeTrend(days),
+            services.get(GetCompletionByDomain).execute(),
+            services.get(GetCarryOverRate).execute(days),
+          ]);
+
+          const totalTasks = trend.reduce((sum, d) => sum + d.total, 0);
+          const totalCompleted = trend.reduce((sum, d) => sum + d.completed, 0);
+          const avgCompletionRate = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+          const bestDay = trend.reduce((best, d) => d.completionRate > best.completionRate ? d : best, trend[0]);
+          const worstDay = trend.reduce((worst, d) => d.completionRate < worst.completionRate ? d : worst, trend[0]);
+
+          return JSON.stringify({
+            period: { days, totalTasks, totalCompleted, avgCompletionRate },
+            highlights: {
+              bestDay: bestDay ? { date: bestDay.date, rate: bestDay.completionRate } : null,
+              worstDay: worstDay ? { date: worstDay.date, rate: worstDay.completionRate } : null,
+            },
+            carryOver,
+            domainBreakdown: domains,
+            dailyTrend: trend,
+          });
+        },
+      },
+
+      // ─── Intelligence ─────────────────────────────────────
+      {
+        name: "find_similar_tasks",
+        description:
+          "Search for tasks similar to a query using semantic embeddings. " +
+          "Use this before creating a task to check for duplicates, or when the user asks about related/past tasks.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            query: {
+              type: "string",
+              description: "Text to search for similar tasks (e.g. a task title or description)",
+            },
+            limit: {
+              type: "number",
+              description: "Max results to return (default: 5)",
+            },
+          },
+          required: ["query"],
+        },
+        execute: async (input) => {
+          const results = await services.get(FindSimilarTasks).execute(input.query, input.limit);
+          if (results.length === 0) {
+            return JSON.stringify({ message: "No similar tasks found", results: [] });
+          }
+          return JSON.stringify({ count: results.length, results });
         },
       },
 

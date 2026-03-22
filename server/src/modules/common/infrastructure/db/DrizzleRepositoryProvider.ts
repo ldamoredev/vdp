@@ -6,6 +6,8 @@ import { DrizzleTaskNoteRepository } from '../../../tasks/infrastructure/db/Driz
 import { RepositoryProvider } from '../../base/db/RepositoryProvider';
 import { AgentRepository } from '../../base/agents/AgentRepository';
 import { DrizzleAgentRepository } from '../agents/DrizzleAgentRepository';
+import { TaskEmbeddingRepository } from '../../../tasks/domain/TaskEmbeddingRepository';
+import { DrizzleTaskEmbeddingRepository } from '../../../tasks/infrastructure/db/DrizzleTaskEmbeddingRepository';
 
 export class DrizzleRepositoryProvider extends RepositoryProvider {
     constructor(private db: Database) {
@@ -18,6 +20,8 @@ export class DrizzleRepositoryProvider extends RepositoryProvider {
                 return new DrizzleTaskRepository(this.db) as T;
             case TaskNoteRepository:
                 return new DrizzleTaskNoteRepository(this.db) as T;
+            case TaskEmbeddingRepository:
+                return new DrizzleTaskEmbeddingRepository(this.db) as T;
             case AgentRepository:
                 return new DrizzleAgentRepository(this.db) as T;
             default:

@@ -7,6 +7,7 @@ import { LLMTraceService } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
 import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
+import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
 
 export type ModuleContext = {
     repositories: RepositoryProvider;
@@ -17,4 +18,5 @@ export type ModuleContext = {
     llmTraceService: LLMTraceService;
     traceService: TraceService;
     agentProvider: AgentProvider;
+    embeddingProvider: EmbeddingProvider;
 };

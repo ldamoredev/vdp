@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CreateTask } from '../../services/CreateTask';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
+import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
+import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepository';
+import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
+import { EmbedTask } from '../../services/EmbedTask';
 
 describe('CreateTask', () => {
     let repo: FakeTaskRepository;
@@ -8,7 +12,8 @@ describe('CreateTask', () => {
 
     beforeEach(() => {
         repo = new FakeTaskRepository();
-        service = new CreateTask(repo);
+        const embedTask = new EmbedTask(repo, new FakeTaskNoteRepository(), new FakeTaskEmbeddingRepository(), new FakeEmbeddingProvider());
+        service = new CreateTask(repo, embedTask);
     });
 
     it('creates a task with required fields', async () => {

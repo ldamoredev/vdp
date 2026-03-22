@@ -1,22 +1,18 @@
 import { Task, TaskStatus } from './Task';
 
 export abstract class TaskRepository {
-    // ─── CRUD ────────────────────────────────────────────
     abstract getTask(id: string): Promise<Task | null>;
     abstract listTasks(filters: TaskFilters): Promise<PagedTasks>;
     abstract createTask(data: CreateTaskData): Promise<Task>;
     abstract updateTask(id: string, data: UpdateTaskData): Promise<Task | null>;
     abstract deleteTask(id: string): Promise<Task | null>;
 
-    // ─── Persistence (save entity state) ─────────────────
     abstract save(task: Task): Promise<Task>;
 
-    // ─── Queries ─────────────────────────────────────────
     abstract getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]>;
     abstract getTasksByDate(date: string): Promise<Task[]>;
     abstract countByDateAndStatus(date: string, status: TaskStatus): Promise<number>;
 
-    // ─── Stats ───────────────────────────────────────────
     abstract getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]>;
     abstract getCarryOverStats(fromDate: string, toDate: string): Promise<CarryOverStats>;
 }

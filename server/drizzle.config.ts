@@ -7,6 +7,7 @@ export default defineConfig({
     // "./src/modules/wallet/schema.ts",
     // "./src/modules/health/schema.ts",
     "./src/modules/tasks/infrastructure/db/schema.ts",
+    "./src/modules/tasks/infrastructure/db/embeddings-schema.ts",
   ],
   out: "./src/migrations",
   dialect: "postgresql",
