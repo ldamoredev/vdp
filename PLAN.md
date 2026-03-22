@@ -134,11 +134,14 @@ Current reality:
 
 - `App` is the HTTP composition root
 - `Core` constructs shared runtime dependencies and bootstraps active modules
+- `ModuleContext` carries: repositories, services, eventBus, agentRegistry, sseBroadcaster, llmTraceService, traceService, agentProvider, embeddingProvider
 - `TaskModule` is the only active module
 - modules expose controllers through a shared `DomainModule` contract
 - shared HTTP error handling and validation exist
-- shared SSE chat handling exists
+- shared SSE chat handling exists with error classification (AgentErrorCode)
 - shared response helpers exist
+- Langfuse (LLMTraceService) + OpenTelemetry (TraceService) integrated with real + noop implementations
+- pgvector embeddings: EmbeddingProvider abstraction (Ollama / NoOp), embed-on-write pipeline, similarity search
 
 ### 5.4 Agent Runtime
 
@@ -146,13 +149,13 @@ The agent layer is no longer tied to Anthropic.
 
 Current provider model:
 
-- `AnthropicAgentProvider`
-- `OllamaAgentProvider`
-- provider selection via environment variables
+- `AnthropicAgentProvider` / `OllamaAgentProvider` — LLM runtime (agent chat)
+- `OllamaEmbeddingProvider` / `NoOpEmbeddingProvider` — embedding runtime (semantic search)
+- provider selection via environment variables (`AGENT_PROVIDER`, `EMBEDDING_PROVIDER`)
 
 This matters operationally because:
 
-- local development can run on Ollama
+- local development can run on Ollama for both chat and embeddings
 - product testing is not blocked by paid API access
 - the agent runtime can evolve without rewriting domain logic
 
@@ -205,9 +208,11 @@ This section documents the tools actually in use in the repository today.
 
 ### 6.5 Database and Infrastructure
 
-- `PostgreSQL` as the primary application database
+- `PostgreSQL` with `pgvector` extension as the primary application database
+- Docker image: `pgvector/pgvector:pg16` (both dev and test)
 - Docker Compose for local infrastructure
 - a separate Docker Compose test database on port `5433`
+- `task_embeddings` table with `vector(768)` column for semantic similarity search
 
 ### 6.6 Shared Contracts and Validation
 
@@ -590,6 +595,8 @@ Recommended local setup:
 - `AGENT_PROVIDER=ollama`
 - `OLLAMA_BASE_URL=http://127.0.0.1:11434`
 - `AGENT_MODEL=qwen3:4b`
+- `EMBEDDING_PROVIDER=ollama`
+- `EMBEDDING_MODEL=nomic-embed-text` (default)
 
 ---
 
@@ -642,6 +649,8 @@ The following work is already done and should not be treated as future work anym
 - clarification flow for vague tasks
 - breakdown studio for tasks
 - multiple UI polish passes on the Tasks dashboard
+- Phase 1 complete (2026-03-22): contract integrity, Langfuse, OpenTelemetry, task detail, chat guidance, compact dual layout, shared badge components, trust & auditability (mutation summaries, conversation continuity, error classification)
+- Phase 2 foundation complete (2026-03-22): pgvector (pgvector/pgvector:pg16), EmbeddingProvider abstraction (Ollama nomic-embed-text + NoOp), TaskEmbeddingRepository (Drizzle + Fake), EmbedTask service (embed-on-write from CreateTask/UpdateTask/AddTaskNote), FindSimilarTasks service
 
 ---
 
@@ -710,7 +719,7 @@ This is a hard gate, not a soft suggestion.
 
 This roadmap is ordered by actual leverage, not by original ambition.
 
-29 concrete tasks across Phases 1 and 2. Full details in `.claude/plans/shiny-moseying-adleman.md`.
+29 concrete tasks across Phases 1 and 2.
 
 ### Phase 0. Completed
 
@@ -718,60 +727,49 @@ This roadmap is ordered by actual leverage, not by original ambition.
 - establish the reference architecture
 - turn Tasks into a usable product slice
 
-### Phase 1. Current focus: deepen Tasks
+### Phase 1. ✅ Completed (2026-03-22)
 
-Goal:
+All 18 tasks delivered:
 
-make Tasks clearly valuable before adding another domain
+#### 0.9 — Contract & State Integrity ✅
 
-Target outcomes:
+1. `0.9.1` ✅ Lifecycle integrity for Tasks
+2. `0.9.2` ✅ Carry-over contract alignment
 
-- stable task semantics for auditability and later intelligence work
-- higher-quality assistant guidance
-- stronger continuity between chat, tasks, breakdown, and review
-- better UX polish across the main flows
-- agent observability and trust through Langfuse + OpenTelemetry
+#### 1.0 — Langfuse Integration ✅
 
-#### 0.9 — Contract & State Integrity (must land before new intelligence)
+3. `1.0.1` ✅ LLMTraceService — shared instance via Core → ModuleContext, real + no-op implementations
+4. `1.0.2` ✅ Instrument BaseAgent — trace every chat(), generation(), and tool execution
+5. `1.0.3` ✅ Prompt version tracking — SHA-256 hash in Langfuse generation metadata
 
-1. `0.9.1` Lifecycle integrity for Tasks — generic update cannot bypass complete/carry-over/discard services, event emission, or `completedAt` semantics
-2. `0.9.2` Carry-over contract alignment — choose one canonical carry-over model and align shared schemas, services, stats, review, agent tools, and frontend types before deeper intelligence work
+#### 1.1 — OpenTelemetry Integration ✅
 
-#### 1.0 — Langfuse Integration (Trust infrastructure)
+6. `1.1.1` ✅ TraceService — OTel SDK + auto-instrumentations, OTLP exporter, real + no-op
+7. `1.1.2` ✅ Custom spans for agent provider calls
 
-1. `1.0.1` LangfuseService — shared instance via Core → ModuleContext, SDK wrapper with no-op fallback for local dev
-2. `1.0.2` Instrument BaseAgent — trace every chat(), generation(), and tool execution
-3. `1.0.3` Prompt version tracking — SHA-256 hash in Langfuse generation metadata
+#### 1.2 — Task Detail Experience ✅
 
-#### 1.1 — OpenTelemetry Integration (Request tracing)
+8. `1.2.1` ✅ Task notes endpoint
+9. `1.2.2` ✅ Frontend task detail panel — slide-over with notes, breakdown, carry-over count
+10. `1.2.3` ✅ Note types for breakdown legibility — type column: note/breakdown_step/blocker
 
-4. `1.1.1` OTel SDK + Jaeger — auto-instrumentations (http, pg, fastify), OTLP exporter
-5. `1.1.2` Custom spans for agent provider calls — attributes: provider, model, tool_count, stop_reason
+#### 1.3 — Chat Guidance Quality ✅
 
-#### 1.2 — Task Detail Experience
+11. `1.3.1` ✅ Better clarification prompts
+12. `1.3.2` ✅ Better review prompts
+13. `1.3.3` ✅ Better breakdown suggestions
 
-6. `1.2.1` Task notes endpoint — verify wiring, add if missing
-7. `1.2.2` Frontend task detail panel — slide-over with notes, breakdown, carry-over count
-8. `1.2.3` Note types for breakdown legibility — `type` column: note/breakdown_step/blocker
+#### 1.4 — UI Polish ✅
 
-#### 1.3 — Chat Guidance Quality
+14. `1.4.1` ✅ Compact task layout — dual desktop rows (hidden md:flex) / mobile cards (flex md:hidden), inline badges, icon-only action buttons
+15. `1.4.2` ✅ Mobile actions — expandable inline pattern via "..." toggle (covered by 1.4.1)
+16. `1.4.3` ✅ Visual consistency pass — shared TaskPriorityBadge + TaskDomainBadge components
 
-9. `1.3.1` Better clarification prompts — vague→clear examples, max 2 questions
-10. `1.3.2` Better review prompts — concrete action per pending task, no passive summaries
-11. `1.3.3` Better breakdown suggestions — 2-4 steps rule, breakdown_step note type
+#### 1.5 — Trust & Auditability ✅
 
-#### 1.4 — UI Polish
-
-12. `1.4.1` Compact task layout (desktop) — rows with inline badges, hover for description
-13. `1.4.2` Mobile bottom sheet — task actions as bottom overlay
-14. `1.4.3` Visual consistency pass — extract shared badge/indicator components
-
-#### 1.5 — Trust & Auditability
-
-15. `1.5.1` Richer mutation summaries in chat — fuller Spanish context
-16. `1.5.2` Conversation continuity — resume indicator, conversation list drawer
-17. `1.5.3` Error feedback improvement — classified error codes, Spanish messages
-18. `1.5.4` Langfuse trace link in dev mode — "Ver traza" link in chat
+17. `1.5.1` ✅ Richer mutation summaries — priority tag, carry-over count warnings, date context in Spanish
+18. `1.5.2` ✅ Conversation continuity — resume indicator with title + time ago
+19. `1.5.3` ✅ Error feedback — AgentErrorCode classification + Spanish user-facing messages
 
 ### Phase 2. Product intelligence for Tasks
 
@@ -781,32 +779,33 @@ make the system coach better decisions, not just execute commands
 
 Infrastructure addition: **pgvector** for semantic search over task history.
 
-#### 2.0 — pgvector Infrastructure
+#### 2.0 — pgvector Infrastructure ✅ (2026-03-22)
 
-19. `2.0.1` Enable pgvector + embeddings table — vector(384), HNSW index
-20. `2.0.2` EmbeddingProvider abstraction — OllamaEmbeddingProvider (nomic-embed-text)
-21. `2.0.3` TaskEmbeddingRepository + embed-on-write — fire-and-forget from CreateTask/UpdateTask/AddTaskNote
+20. `2.0.1` ✅ Enable pgvector + embeddings table — Docker switched to pgvector/pgvector:pg16, task_embeddings table with vector(768), test DB updated
+21. `2.0.2` ✅ EmbeddingProvider abstraction — abstract class, OllamaEmbeddingProvider (nomic-embed-text), NoOpEmbeddingProvider, createEmbeddingProvider factory, wired through ModuleContext
+22. `2.0.3` ✅ TaskEmbeddingRepository + embed-on-write — Drizzle + Fake implementations, EmbedTask service, fire-and-forget from CreateTask/UpdateTask/AddTaskNote, FindSimilarTasks service registered
 
-#### 2.1 — Repeat Carry-Over Detection
+#### 2.1 — Similarity & Repeat Detection (next)
 
-22. `2.1.1` FindSimilarTasks service — cosine similarity > 0.7, top 5
-23. `2.1.2` Automatic repeat detection on carry-over — DetectRepeatPattern + TaskRepeatDetected event
+23. `2.1.1` FindSimilarTasks agent tool — expose find_similar_tasks in TaskAgent tool definitions (service already exists and works)
+24. `2.1.2` Duplicate detection on create — agent should check similarity before creating tasks, warn user if similar task exists
+25. `2.1.3` Automatic repeat detection on carry-over — DetectRepeatPattern + TaskRepeatDetected event
 
 #### 2.2 — Richer Planning Signals
 
-24. `2.2.1` Planning context service — aggregates stats + carry-over rate + stuck tasks + insights in one tool call
+26. `2.2.1` Planning context service — aggregates stats + carry-over rate + stuck tasks + insights in one tool call
 
 #### 2.3 — Better Overload Heuristics
 
-25. `2.3.1` Historical overload detection — 7-day average completion × 1.5 threshold, lower if carry-over rate > 40%
+27. `2.3.1` Historical overload detection — 7-day average completion × 1.5 threshold, lower if carry-over rate > 40%
 
 #### 2.4 — Better Trend Summaries
 
-26. `2.4.1` Weekly summary service — created/completed/carried/discarded, trend direction, best day, worst domain
+28. `2.4.1` Weekly summary service — created/completed/carried/discarded, trend direction, best day, worst domain
 
 #### 2.5 — Stronger End-of-Day Recommendations
 
-27. `2.5.1` Recommendation engine — typed recommendations (discard/break_down/reschedule/celebrate) with reasons
+29. `2.5.1` Recommendation engine — typed recommendations (discard/break_down/reschedule/celebrate) with reasons
 
 ### Phase 3. Decide on second domain readiness
 
