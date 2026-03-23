@@ -1,20 +1,25 @@
-import { FastifyInstance } from 'fastify';
 import { AgentRegistry } from '../base/agents/AgentRegistry';
 import { DomainModuleDescriptor } from '../base/modules/DomainModuleDescriptor';
-import { HttpController } from './HttpController';
+import { HttpController, RouteRegister } from './HttpController';
 import { buildStatusResponse } from './responses';
 
-export class StatusController implements HttpController {
+export class StatusController extends HttpController {
+    readonly prefix = '/api';
+
     constructor(
         private agentRegistry: AgentRegistry,
         private modules: DomainModuleDescriptor[],
-    ) {}
-
-    register(app: FastifyInstance): void {
-        app.get('/api/health', async () => buildStatusResponse({
-            domains: this.modules.map((module) => module.domain),
-            agents: this.agentRegistry.getAll().map((agent) => agent.domain),
-            skills: this.agentRegistry.getAll().flatMap((agent) => agent.getAllSkills().map((skill) => skill.name)),
-        }));
+    ) {
+        super();
     }
+
+    registerRoutes(routes: RouteRegister): void {
+        routes.get('/health', this.health);
+    }
+
+    private readonly health = async () => buildStatusResponse({
+        domains: this.modules.map((module) => module.domain),
+        agents: this.agentRegistry.getAll().map((agent) => agent.domain),
+        skills: this.agentRegistry.getAll().flatMap((agent) => agent.getAllSkills().map((skill) => skill.name)),
+    });
 }

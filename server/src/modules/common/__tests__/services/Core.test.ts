@@ -12,7 +12,7 @@ import { DomainModuleFactory } from '../../base/modules/DomainModuleFactory';
 import { ModuleContext } from '../../base/modules/ModuleContext';
 import { TraceService, TraceSpan } from '../../base/observability/trace/TraceService';
 import { NoOpLangfuseLLMTraceService } from '../../infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
-import { HttpController } from '../../http/HttpController';
+import { HttpController, RouteRegister } from '../../http/HttpController';
 import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
 
 class FakeRepositoryProvider extends RepositoryProvider {
@@ -61,10 +61,14 @@ class RecordingTraceService implements TraceService {
     }
 }
 
-class RecordingController implements HttpController {
-    constructor(public readonly id: string) {}
+class RecordingController extends HttpController {
+    readonly prefix = '/test';
 
-    register(_app: FastifyInstance): void {}
+    constructor(public readonly id: string) {
+        super();
+    }
+
+    registerRoutes(_routes: RouteRegister): void {}
 }
 
 class RecordingModule extends BaseModule {
