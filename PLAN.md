@@ -133,10 +133,12 @@ The backend is a modular Fastify application.
 Current reality:
 
 - `App` is the HTTP composition root
+- `AppRuntime` owns startup/shutdown orchestration and runtime lifecycle concerns
 - `Core` constructs shared runtime dependencies and bootstraps active modules
 - `ModuleContext` carries: repositories, services, eventBus, agentRegistry, sseBroadcaster, llmTraceService, traceService, agentProvider, embeddingProvider
 - `TaskModule` is the only active module
 - modules expose controllers through a shared `DomainModule` contract
+- controllers mount through `HttpController` and register routes through `RouteRegister`
 - shared HTTP error handling and validation exist
 - shared SSE chat handling exists with error classification (AgentErrorCode)
 - shared response helpers exist
@@ -152,6 +154,7 @@ Current provider model:
 - `AnthropicAgentProvider` / `OllamaAgentProvider` — LLM runtime (agent chat)
 - `OllamaEmbeddingProvider` / `NoOpEmbeddingProvider` — embedding runtime (semantic search)
 - provider selection via environment variables (`AGENT_PROVIDER`, `EMBEDDING_PROVIDER`)
+- the `Tasks` agent tool registry is now composed by tool category instead of one monolithic definition file
 
 This matters operationally because:
 
@@ -532,9 +535,10 @@ Those remain future directions, not present claims.
 
 ### 10.1 Controllers
 
-- controllers implement `register(app)`
+- controllers implement `registerRoutes(routes: RouteRegister)`
+- `HttpController` owns Fastify mounting by prefix
 - `App` registers the shared status controller plus module controllers
-- controllers validate, call services, and respond
+- controllers declare routes, validate inputs, call services, and respond
 - controllers do not own business logic
 
 ### 10.2 Errors
@@ -651,6 +655,8 @@ The following work is already done and should not be treated as future work anym
 - multiple UI polish passes on the Tasks dashboard
 - Phase 1 complete (2026-03-22): contract integrity, Langfuse, OpenTelemetry, task detail, chat guidance, compact dual layout, shared badge components, trust & auditability (mutation summaries, conversation continuity, error classification)
 - Phase 2 foundation complete (2026-03-22): pgvector (pgvector/pgvector:pg16), EmbeddingProvider abstraction (Ollama nomic-embed-text + NoOp), TaskEmbeddingRepository (Drizzle + Fake), EmbedTask service (embed-on-write from CreateTask/UpdateTask/AddTaskNote), FindSimilarTasks service
+- Server architecture refactor pass complete enough to pause (2026-03-23): modular Core composition, runtime lifecycle split (`App` / `AppRuntime`), logging abstraction through shared infrastructure, `TaskModuleRuntime`, slimmer event/insight layer, smaller `BaseAgent` collaborators, and OO controller registration through `HttpController` + `RouteRegister`
+- Task agent tool registry cleanup complete (2026-03-23): `TasksTools` split into category-based builders with shared tool helpers and registry coverage tests
 
 ---
 
@@ -658,6 +664,8 @@ The following work is already done and should not be treated as future work anym
 
 The next work should improve `Tasks` as a product, not re-open broad architecture work without 
 pressure from real needs.
+
+The server is now in a good enough architectural state to stop refactoring unless a concrete product change exposes a new hotspot.
 
 Current priority stack:
 
@@ -778,6 +786,12 @@ Goal:
 make the system coach better decisions, not just execute commands
 
 Infrastructure addition: **pgvector** for semantic search over task history.
+
+Note:
+
+- the March 23 server architecture refactor pass is intentionally out of this roadmap now
+- treat it as complete enough for the current stage
+- do not add more server-cleanup tasks unless product work reveals a real constraint
 
 #### 2.0 — pgvector Infrastructure ✅ (2026-03-22)
 
