@@ -24,3 +24,18 @@ export function tomorrowISO(): string {
     d.setDate(d.getDate() + 1);
     return localDateISO(d);
 }
+
+/** Parses a YYYY-MM-DD string in the local timezone. */
+export function parseLocalDateISO(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+/** Returns the signed difference in whole calendar days between two local YYYY-MM-DD dates. */
+export function diffLocalDateISODays(from: string, to: string): number {
+    const fromDate = parseLocalDateISO(from);
+    const toDate = parseLocalDateISO(to);
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+    return Math.round((toDate.getTime() - fromDate.getTime()) / millisecondsPerDay);
+}

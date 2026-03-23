@@ -34,6 +34,14 @@ Shared runtime dependencies are passed through a single module context:
 - eventBus
 - agentRegistry
 - sseBroadcaster
+- llmTraceService
+- traceService
+- agentProvider
+- embeddingProvider
+- logger
+
+Active modules are selected in the server configuration, not hardcoded in `Core`.
+`Core` is responsible for building the shared `ModuleContext`, bootstrapping the configured modules in order, and exposing their controllers/descriptors to `App`.
 
 Event subscribers follow one shared contract:
 
@@ -98,7 +106,7 @@ Backend HTTP controllers follow one common shape:
 
 - `register(app)`
 
-`App` is the composition root that registers common controllers, asks modules for their controllers, and wires the global HTTP error handler.
+`App` owns the Fastify instance, registers common controllers, asks `Core` for module controllers, wires the global HTTP error handler, and manages start/stop lifecycle.
 
 ## Test template
 

@@ -10,6 +10,7 @@ import { LLMTraceService, Trace } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
 import { createHash } from 'crypto';
 import { RepositoryProvider } from '../db/RepositoryProvider';
+import { Logger } from '../observability/logging/Logger';
 
 export interface AgentTool {
     name: string;
@@ -42,12 +43,13 @@ export abstract class BaseAgent {
     abstract readonly systemPrompt: string;
     abstract readonly tools: AgentTool[];
 
-    protected skills: SkillRegistry = new SkillRegistry();
+    protected skills: SkillRegistry;
     protected repositories: RepositoryProvider;
     protected services: ServiceProvider;
     protected provider: AgentProvider;
     protected llmTraceService: LLMTraceService;
     protected traceService: TraceService;
+    protected logger: Logger;
     protected model: string;
     protected maxTokens = 4096;
 
@@ -58,12 +60,15 @@ export abstract class BaseAgent {
         provider: AgentProvider,
         llmTraceService: LLMTraceService,
         traceService: TraceService,
+        logger: Logger,
     ) {
         this.services = services;
         this.repositories = repositories;
         this.provider = provider;
         this.llmTraceService = llmTraceService;
         this.traceService = traceService;
+        this.logger = logger;
+        this.skills = new SkillRegistry(logger);
         this.model = process.env.AGENT_MODEL || provider.defaultModel;
         this.registerSkill(new SummarizeSkill());
     }

@@ -5,7 +5,6 @@ import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
 import { LLMTraceService } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
-import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
 import { ModuleContext } from './ModuleContext';
 import { DomainModule } from './DomainModule';
 import { DomainModuleDescriptor } from './DomainModuleDescriptor';
@@ -13,6 +12,7 @@ import { HttpController } from '../../http/HttpController';
 import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
 import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
+import { Logger } from '../observability/logging/Logger';
 
 export abstract class BaseModule implements DomainModule {
     protected readonly repositories: RepositoryProvider;
@@ -24,6 +24,7 @@ export abstract class BaseModule implements DomainModule {
     protected readonly traceService: TraceService;
     protected readonly agentProvider: AgentProvider;
     protected readonly embeddingProvider: EmbeddingProvider;
+    protected readonly logger: Logger;
 
     constructor(context: ModuleContext) {
         this.repositories = context.repositories;
@@ -35,6 +36,7 @@ export abstract class BaseModule implements DomainModule {
         this.traceService = context.traceService;
         this.agentProvider = context.agentProvider;
         this.embeddingProvider = context.embeddingProvider;
+        this.logger = context.logger;
     }
 
     bootstrap(): this {

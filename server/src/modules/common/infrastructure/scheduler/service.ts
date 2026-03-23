@@ -1,4 +1,6 @@
 import cron from "node-cron";
+import { Logger } from '../../base/observability/logging/Logger';
+import { NoOpLogger } from '../observability/logging/NoOpLogger';
 
 export interface ScheduledJob {
   name: string;
@@ -13,15 +15,16 @@ export interface ScheduledJob {
  * v1: Uses node-cron for in-process scheduling.
  * v2: Can be upgraded to BullMQ + Redis for reliable job scheduling.
  */
-class SchedulerService {
+export class SchedulerService {
   private jobs = new Map<string, { task: cron.ScheduledTask; job: ScheduledJob }>();
+  constructor(private readonly logger: Logger = new NoOpLogger()) {}
 
   /**
    * Register and start a scheduled job.
    */
   register(job: ScheduledJob): void {
     if (this.jobs.has(job.name)) {
-      console.warn(`[SCHEDULER] Job "${job.name}" already registered, replacing...`);
+      this.logger.warn('scheduler job already registered; replacing', { name: job.name });
       this.remove(job.name);
     }
 
@@ -30,18 +33,25 @@ class SchedulerService {
     }
 
     const task = cron.schedule(job.schedule, async () => {
-      console.log(`[SCHEDULER] Running job: ${job.name}`);
+      this.logger.info('scheduler job running', { name: job.name });
       try {
         await job.handler();
       } catch (err) {
-        console.error(`[SCHEDULER] Job "${job.name}" failed:`, err);
+        this.logger.error('scheduler job failed', {
+          name: job.name,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }, {
       scheduled: job.enabled,
     });
 
     this.jobs.set(job.name, { task, job });
-    console.log(`[SCHEDULER] Registered job: ${job.name} (${job.schedule}) [${job.enabled ? "enabled" : "disabled"}]`);
+    this.logger.info('scheduler job registered', {
+      name: job.name,
+      schedule: job.schedule,
+      enabled: job.enabled,
+    });
   }
 
   /**
@@ -94,8 +104,10 @@ class SchedulerService {
       entry.task.stop();
     }
     this.jobs.clear();
-    console.log("[SCHEDULER] All jobs stopped.");
+    this.logger.info('scheduler shutdown complete');
   }
 }
 
-export const scheduler = new SchedulerService();
+export function createSchedulerService(logger: Logger): SchedulerService {
+  return new SchedulerService(logger);
+}

@@ -13,6 +13,10 @@ import { AgentProvider } from './common/base/agents/providers/AgentProvider';
 import { createAgentProvider } from './common/base/agents/providers/createAgentProvider';
 import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { createEmbeddingProvider } from './common/infrastructure/embeddings/createEmbeddingProvider';
+import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
+import { TaskModule } from './tasks/TaskModule';
+import { Logger } from './common/base/observability/logging/Logger';
+import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
 
 export class DefaultCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -20,12 +24,16 @@ export class DefaultCoreConfiguration implements CoreConfig {
     traceService: TraceService;
     agentProvider: AgentProvider;
     embeddingProvider: EmbeddingProvider;
+    moduleFactories: DomainModuleFactory[];
+    logger: Logger;
 
     constructor() {
+        this.logger = new ConsoleLogger();
         this.repositoryProvider = new DrizzleRepositoryProvider(new Database());
-        this.llmTraceService = createLangfuseService(process.env);
-        this.traceService = createOpenTelemetryService(process.env);
+        this.llmTraceService = createLangfuseService(process.env, this.logger);
+        this.traceService = createOpenTelemetryService(process.env, this.logger);
         this.agentProvider = createAgentProvider(process.env);
         this.embeddingProvider = createEmbeddingProvider(process.env);
+        this.moduleFactories = [(context) => new TaskModule(context)];
     }
 }

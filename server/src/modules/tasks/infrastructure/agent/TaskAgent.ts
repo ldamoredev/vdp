@@ -9,6 +9,7 @@ import { LLMTraceService } from '../../../common/base/observability/trace/LLMTra
 import { TraceService } from '../../../common/base/observability/trace/TraceService';
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
+import { Logger } from '../../../common/base/observability/logging/Logger';
 
 export class TaskAgent extends BaseAgent {
     readonly domain: DomainName = 'tasks';
@@ -22,9 +23,10 @@ export class TaskAgent extends BaseAgent {
         insightsStore: TaskInsightsStore,
         langfuse: LLMTraceService,
         openTelemetry: TraceService,
-        agentProvider: AgentProvider
+        agentProvider: AgentProvider,
+        logger: Logger,
     ) {
-        super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry);
+        super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
         this.tools = TasksTools.createTasksTools(services, insightsStore);
     }
 }

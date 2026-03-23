@@ -1,6 +1,8 @@
 import { Langfuse } from 'langfuse';
 import { Trace, TraceParams, LLMTraceService } from '../../../../base/observability/trace/LLMTraceService';
 import { NoOpLangfuseLLMTraceService } from './NoOpLangfuseLLMTraceService';
+import { Logger } from '../../../../base/observability/logging/Logger';
+import { NoOpLogger } from '../../logging/NoOpLogger';
 
 export class LangfuseLLMTraceService implements LLMTraceService {
     private client: Langfuse;
@@ -66,15 +68,18 @@ export class LangfuseLLMTraceService implements LLMTraceService {
     }
 }
 
-export function createLangfuseService(env: NodeJS.ProcessEnv): LLMTraceService {
+export function createLangfuseService(
+    env: NodeJS.ProcessEnv,
+    logger: Logger = new NoOpLogger(),
+): LLMTraceService {
     const publicKey = env.LANGFUSE_PUBLIC_KEY;
     const secretKey = env.LANGFUSE_SECRET_KEY;
 
     if (publicKey && secretKey) {
-        console.log('[LANGFUSE] Initialized with real client');
+        logger.info('langfuse initialized');
         return new LangfuseLLMTraceService(publicKey, secretKey, env.LANGFUSE_HOST);
     }
 
-    console.log('[LANGFUSE] No keys found, using noop client');
+    logger.info('langfuse disabled; using noop client');
     return new NoOpLangfuseLLMTraceService();
 }

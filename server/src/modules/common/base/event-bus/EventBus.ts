@@ -1,4 +1,6 @@
 import type { DomainEvent, DomainName, EventHandler } from './DomainEvent';
+import { Logger } from '../observability/logging/Logger';
+import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
 
 /**
  * In-process event bus for domain-to-domain communication.
@@ -10,6 +12,8 @@ import type { DomainEvent, DomainName, EventHandler } from './DomainEvent';
  * If a handler fails, the error is logged but doesn't affect other handlers.
  */
 export class EventBus {
+  constructor(private readonly logger: Logger = new NoOpLogger()) {}
+
   private handlers = new Map<string, EventHandler[]>();
   private globalHandlers: EventHandler[] = [];
   private eventLog: DomainEvent[] = [];
@@ -59,7 +63,10 @@ export class EventBus {
     }
 
     // Log to console for debugging
-    console.log(`[EVENT] ${event.domain}.${event.type}`, JSON.stringify(event.payload).slice(0, 200));
+    this.logger.debug('event emitted', {
+      event: `${event.domain}.${event.type}`,
+      payload: JSON.stringify(event.payload).slice(0, 200),
+    });
 
     // Fire handlers for exact match
     const exactKey = `${event.domain}.${event.type}`;
@@ -74,7 +81,10 @@ export class EventBus {
       try {
         await handler(event as DomainEvent);
       } catch (err) {
-        console.error(`[EVENT BUS] Global handler error:`, err);
+        this.logger.error('event bus global handler error', {
+          error: this.normalizeError(err),
+          event: `${event.domain}.${event.type}`,
+        });
       }
     }
 
@@ -89,9 +99,20 @@ export class EventBus {
       try {
         await handler(event);
       } catch (err) {
-        console.error(`[EVENT BUS] Handler error for "${key}":`, err);
+        this.logger.error('event bus handler error', {
+          error: this.normalizeError(err),
+          pattern: key,
+        });
       }
     }
+  }
+
+  private normalizeError(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message;
+    }
+
+    return typeof err === 'string' ? err : 'Unknown event bus error';
   }
 
   /**

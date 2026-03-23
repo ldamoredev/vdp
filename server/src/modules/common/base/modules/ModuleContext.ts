@@ -2,12 +2,12 @@ import { AgentRegistry } from '../agents/AgentRegistry';
 import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
-import { DrizzleRepositoryProvider } from '../../infrastructure/db/DrizzleRepositoryProvider';
 import { LLMTraceService } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
 import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
 import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
+import { Logger } from '../observability/logging/Logger';
 
 export type ModuleContext = {
     repositories: RepositoryProvider;
@@ -19,4 +19,5 @@ export type ModuleContext = {
     traceService: TraceService;
     agentProvider: AgentProvider;
     embeddingProvider: EmbeddingProvider;
+    logger: Logger;
 };

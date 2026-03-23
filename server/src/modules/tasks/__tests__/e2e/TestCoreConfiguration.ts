@@ -15,6 +15,10 @@ import { AgentProvider } from '../../../common/base/agents/providers/AgentProvid
 import { OllamaAgentProvider } from '../../../common/base/agents/providers/OllamaAgentProvider';
 import { EmbeddingProvider } from '../../../common/base/embeddings/EmbeddingProvider';
 import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbeddingProvider';
+import { DomainModuleFactory } from '../../../common/base/modules/DomainModuleFactory';
+import { Logger } from '../../../common/base/observability/logging/Logger';
+import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
+import { TaskModule } from '../../TaskModule';
 
 export class TestCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -22,12 +26,16 @@ export class TestCoreConfiguration implements CoreConfig {
     traceService: TraceService;
     agentProvider: AgentProvider;
     embeddingProvider: EmbeddingProvider;
+    moduleFactories: DomainModuleFactory[];
+    logger: Logger;
 
     constructor() {
+        this.logger = new NoOpLogger();
         this.repositoryProvider = new DrizzleRepositoryProvider(new Database());
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();
         this.embeddingProvider = new NoOpEmbeddingProvider();
+        this.moduleFactories = [(context) => new TaskModule(context)];
     }
 }

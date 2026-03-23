@@ -8,11 +8,12 @@ import { httpErrorHandler } from './modules/common/http/errors';
 
 export class App {
     public app = Fastify({ logger: true });
+    private stopPromise: Promise<void> | null = null;
 
-    constructor(private core: Core) {
+    constructor(public readonly core: Core) {
         this.registerPlugins();
         this.registerControllers();
-        this.events();
+        this.registerTimelineLogging();
     }
 
     private registerPlugins() {
@@ -31,20 +32,57 @@ export class App {
         }
     }
 
-    private events() {
+    private registerTimelineLogging() {
         this.core.eventBus.onAll((event) => {
-            console.log(`[TIMELINE] ${event.domain}.${event.type} at ${event.timestamp.toISOString()}`);
+            this.app.log.info(
+                {
+                    event: `${event.domain}.${event.type}`,
+                    timestamp: event.timestamp.toISOString(),
+                },
+                'timeline event',
+            );
         });
     }
 
-    async start(param: { port: number; host: string }) {
+    async start(port: number, host: string) {
         await this.core.start();
-        await this.app.listen(param);
+        try {
+            await this.app.listen({
+                port,
+                host,
+            });
+            this.logStartup(port)
+        } catch (error) {
+            await this.core.shutdown();
+            throw error;
+        }
     }
 
-    async stop() {
-        return async () => {
-            await Promise.allSettled([() => this.app.close(), this.core.shutdown()]);
+    async stop(err?: unknown): Promise<void> {
+        if (err) this.app.log.error(err);
+        if (!this.stopPromise) {
+            this.stopPromise = Promise.allSettled([
+                this.app.close(),
+                this.core.shutdown(),
+            ]).then(() => undefined);
         }
+
+        return this.stopPromise;
+    }
+
+    private logStartup(port: number): void {
+        this.app.log.info({
+            message: 'VDP Server listening',
+            port,
+            health: `http://localhost:${port}/api/health`,
+            activeModules: this.activeModules(),
+        });
+    }
+
+    private activeModules(): string {
+        return this.core
+            .getModuleDescriptors()
+            .map((module) => module.label)
+            .join(', ');
     }
 }

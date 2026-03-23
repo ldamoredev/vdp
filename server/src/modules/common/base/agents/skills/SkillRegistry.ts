@@ -1,3 +1,6 @@
+import { Logger } from '../../observability/logging/Logger';
+import { NoOpLogger } from '../../../infrastructure/observability/logging/NoOpLogger';
+
 /**
  * Skill: A stateless, reusable capability that agents compose.
  *
@@ -16,11 +19,13 @@ export interface Skill<TInput = unknown, TOutput = unknown> {
 }
 
 export class SkillRegistry {
+  constructor(private readonly logger: Logger = new NoOpLogger()) {}
+
   private skills = new Map<string, Skill>();
 
   register(skill: Skill): void {
     this.skills.set(skill.name, skill);
-    console.log(`[SKILL REGISTRY] Registered skill: ${skill.name}`);
+    this.logger.info('skill registered', { name: skill.name });
   }
 
   get<TInput = unknown, TOutput = unknown>(name: string): Skill<TInput, TOutput> | undefined {
@@ -41,4 +46,3 @@ export class SkillRegistry {
     return skill.execute(input) as Promise<TOutput>;
   }
 }
-

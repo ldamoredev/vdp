@@ -1,4 +1,6 @@
 import { ServerResponse } from 'http';
+import { Logger } from '../observability/logging/Logger';
+import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
 
 /**
  * Reusable SSE broadcaster for server-to-client push.
@@ -18,7 +20,10 @@ export class SSEBroadcaster {
     private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
     private heartbeatMs: number;
 
-    constructor(heartbeatMs = 30_000) {
+    constructor(
+        private readonly logger: Logger = new NoOpLogger(),
+        heartbeatMs = 30_000,
+    ) {
         this.heartbeatMs = heartbeatMs;
     }
 
@@ -49,7 +54,7 @@ export class SSEBroadcaster {
         this.clients.add(res);
         this.ensureHeartbeat();
 
-        console.log(`[SSE] Client connected (total: ${this.clients.size})`);
+        this.logger.info('sse client connected', { clients: this.clients.size });
     }
 
     /**
@@ -57,7 +62,7 @@ export class SSEBroadcaster {
      */
     removeClient(res: ServerResponse): void {
         this.clients.delete(res);
-        console.log(`[SSE] Client disconnected (total: ${this.clients.size})`);
+        this.logger.info('sse client disconnected', { clients: this.clients.size });
 
         if (this.clients.size === 0) {
             this.stopHeartbeat();

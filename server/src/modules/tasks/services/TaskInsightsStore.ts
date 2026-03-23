@@ -1,3 +1,7 @@
+import { diffLocalDateISODays } from '../../common/base/time/dates';
+import { Logger } from '../../common/base/observability/logging/Logger';
+import { NoOpLogger } from '../../common/infrastructure/observability/logging/NoOpLogger';
+
 /**
  * In-memory store for task insights, streaks, and proactive suggestions.
  *
@@ -27,53 +31,66 @@ export interface StreakData {
 }
 
 export type InsightListener = (insight: Insight) => void;
+export type NewInsight = {
+    type: InsightType;
+    title: string;
+    message: string;
+    metadata?: Record<string, unknown>;
+};
 
 export class TaskInsightsStore {
+    constructor(private readonly logger: Logger = new NoOpLogger()) {}
+
     private insights: Insight[] = [];
     private streak: StreakData = { current: 0, best: 0, lastCompletedDate: null };
-    private maxInsights = 50;
-    private listeners: InsightListener[] = [];
+    private readonly maxInsights = 50;
+    private readonly listeners = new Set<InsightListener>();
 
     // ─── Insights ──────────────────────────────────────────
 
-    addInsight(type: InsightType, title: string, message: string, metadata?: Record<string, unknown>): Insight {
+    addInsight(input: NewInsight): Insight {
         const insight: Insight = {
             id: crypto.randomUUID(),
-            type,
-            title,
-            message,
+            type: input.type,
+            title: input.title,
+            message: input.message,
             createdAt: new Date(),
             read: false,
-            metadata,
+            metadata: input.metadata,
         };
 
         this.insights.push(insight);
+        this.trimInsights();
+        this.notifyListeners(insight);
 
-        // Circular buffer
+        return insight;
+    }
+
+    private trimInsights(): void {
         if (this.insights.length > this.maxInsights) {
             this.insights.shift();
         }
+    }
 
-        // Notify listeners (SSE, etc.)
+    private notifyListeners(insight: Insight): void {
         for (const listener of this.listeners) {
             try {
                 listener(insight);
             } catch (err) {
-                console.error('[INSIGHTS] Listener error:', err);
+                this.logger.error('task insight listener error', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
             }
         }
-
-        return insight;
     }
 
     /**
      * Subscribe to new insights. Returns unsubscribe function.
      */
     onInsight(listener: InsightListener): () => void {
-        this.listeners.push(listener);
+        this.listeners.add(listener);
         return () => {
-            const idx = this.listeners.indexOf(listener);
-            if (idx >= 0) this.listeners.splice(idx, 1);
+            this.listeners.delete(listener);
         };
     }
 
@@ -104,10 +121,7 @@ export class TaskInsightsStore {
             // First perfect day ever
             this.streak.current = 1;
         } else {
-            const lastDate = new Date(last);
-            const thisDate = new Date(date);
-            const diffMs = thisDate.getTime() - lastDate.getTime();
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            const diffDays = diffLocalDateISODays(last, date);
 
             if (diffDays === 1) {
                 // Consecutive day → extend streak

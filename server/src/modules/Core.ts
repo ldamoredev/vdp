@@ -1,9 +1,9 @@
 import { DomainModule } from './common/base/modules/DomainModule';
+import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
 import { DomainModuleDescriptor } from './common/base/modules/DomainModuleDescriptor';
 import { ServiceProvider } from './common/base/services/ServiceProvider';
 import { HttpController } from './common/http/HttpController';
 import { ModuleContext } from './common/base/modules/ModuleContext';
-import { TaskModule } from './tasks/TaskModule';
 import { EventBus } from './common/base/event-bus/EventBus';
 import { AgentRegistry } from './common/base/agents/AgentRegistry';
 import { SSEBroadcaster } from './common/base/sse/SSEBroadcaster';
@@ -12,24 +12,34 @@ import { LLMTraceService } from './common/base/observability/trace/LLMTraceServi
 import { TraceService } from './common/base/observability/trace/TraceService';
 import { AgentProvider } from './common/base/agents/providers/AgentProvider';
 import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
+import { Logger } from './common/base/observability/logging/Logger';
 
 export class Core {
-    public readonly eventBus: EventBus = new EventBus();
-    public readonly agentRegistry = new AgentRegistry();
-    public readonly sseBroadcaster = new SSEBroadcaster();
+    public readonly logger: Logger;
+    public readonly eventBus: EventBus;
+    public readonly agentRegistry: AgentRegistry;
+    public readonly sseBroadcaster: SSEBroadcaster;
+    public readonly services: ServiceProvider = new ServiceProvider();
     private readonly llmTraceService: LLMTraceService;
     private readonly traceService: TraceService;
-    private readonly taskModule: TaskModule;
     private readonly modules: DomainModule[];
-    private repositories: RepositoryProvider;
-    private services: ServiceProvider = new ServiceProvider();
-    private moduleContext: ModuleContext;
+    private readonly repositories: RepositoryProvider;
+    private readonly moduleContext: ModuleContext;
 
     constructor(config: CoreConfig) {
+        this.logger = config.logger;
+        this.eventBus = new EventBus(this.logger);
+        this.agentRegistry = new AgentRegistry(this.logger);
+        this.sseBroadcaster = new SSEBroadcaster(this.logger);
         this.repositories = config.repositoryProvider;
         this.llmTraceService = config.llmTraceService;
         this.traceService = config.traceService;
-        this.moduleContext = {
+        this.moduleContext = this.createModuleContext(config);
+        this.modules = this.bootstrapModules(config.moduleFactories);
+    }
+
+    private createModuleContext(config: CoreConfig): ModuleContext {
+        return {
             repositories: this.repositories,
             services: this.services,
             eventBus: this.eventBus,
@@ -39,13 +49,12 @@ export class Core {
             traceService: this.traceService,
             agentProvider: config.agentProvider,
             embeddingProvider: config.embeddingProvider,
+            logger: this.logger,
         };
-        this.taskModule = this.initTaskModule();
-        this.modules = [this.taskModule];
     }
 
-    private initTaskModule(): TaskModule {
-        return new TaskModule(this.moduleContext).bootstrap();
+    private bootstrapModules(moduleFactories: DomainModuleFactory[]): DomainModule[] {
+        return moduleFactories.map((createModule) => createModule(this.moduleContext).bootstrap());
     }
 
     getRepository<T>(token: abstract new (...args: any[]) => T): T {
@@ -63,12 +72,12 @@ export class Core {
     async start() {
         await this.traceService.start();
     }
+
     async shutdown(): Promise<void> {
         await Promise.allSettled([
             this.llmTraceService.shutdown(),
             this.traceService.shutdown(),
         ]);
-
     }
 }
 
@@ -78,4 +87,6 @@ export interface CoreConfig {
     traceService: TraceService;
     agentProvider: AgentProvider;
     embeddingProvider: EmbeddingProvider;
+    moduleFactories: DomainModuleFactory[];
+    logger: Logger;
 }

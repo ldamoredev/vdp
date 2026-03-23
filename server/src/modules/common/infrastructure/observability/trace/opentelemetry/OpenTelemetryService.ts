@@ -4,6 +4,8 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { SpanAttributeValue, SpanOptions, TraceService, TraceSpan } from '../../../../base/observability/trace/TraceService';
 import { NoOpOpenTelemetryService } from './NoOpOpenTelemetryService';
+import { Logger } from '../../../../base/observability/logging/Logger';
+import { NoOpLogger } from '../../logging/NoOpLogger';
 
 export class OpenTelemetryService implements TraceService {
     readonly enabled = true;
@@ -14,6 +16,7 @@ export class OpenTelemetryService implements TraceService {
         private readonly config: {
             serviceName: string;
             tracesEndpoint?: string;
+            logger: Logger;
         },
     ) {
         this.sdk = new NodeSDK({
@@ -38,7 +41,10 @@ export class OpenTelemetryService implements TraceService {
 
         this.sdk.start();
         this.started = true;
-        console.log('[OTEL] Initialized tracing');
+        this.config.logger.info('opentelemetry initialized', {
+            serviceName: this.config.serviceName,
+            tracesEndpoint: this.config.tracesEndpoint,
+        });
     }
 
     async shutdown(): Promise<void> {
@@ -120,14 +126,17 @@ export class OpenTelemetryTraceSpan implements TraceSpan {
     }
 }
 
-export function createOpenTelemetryService(env: NodeJS.ProcessEnv): TraceService {
+export function createOpenTelemetryService(
+    env: NodeJS.ProcessEnv,
+    logger: Logger = new NoOpLogger(),
+): TraceService {
     const enabled =
         env.OTEL_ENABLED === 'true' ||
         Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT) ||
         Boolean(env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT);
 
     if (!enabled) {
-        console.log('[OTEL] Disabled, using noop service');
+        logger.info('opentelemetry disabled; using noop service');
         return new NoOpOpenTelemetryService();
     }
 
@@ -140,5 +149,6 @@ export function createOpenTelemetryService(env: NodeJS.ProcessEnv): TraceService
     return new OpenTelemetryService({
         serviceName: env.OTEL_SERVICE_NAME || 'vdp-server',
         tracesEndpoint: endpoint,
+        logger,
     });
 }
