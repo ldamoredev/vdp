@@ -1,14 +1,15 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
-import { TaskAgent } from './infrastructure/agent/TaskAgent';
-import { TaskInsightsStore } from './services/TaskInsightsStore';
-import { HttpController } from '../common/http/HttpController';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { TaskAgent } from './infrastructure/agent/TaskAgent';
 import { TasksController } from './infrastructure/routes/TasksController';
 import { TasksAgentController } from './infrastructure/routes/TasksAgentController';
 import { TaskInsightsSSEController } from './infrastructure/routes/TaskInsightsSSEController';
 import { TaskEmbeddingRepository } from './domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from './domain/TaskNoteRepository';
 import { TaskRepository } from './domain/TaskRepository';
+import { TaskInsightsStore } from './services/TaskInsightsStore';
+
+// Services
 import { AddTaskNote } from './services/AddTaskNote';
 import { CarryOverAllPending } from './services/CarryOverAllPending';
 import { CarryOverTask } from './services/CarryOverTask';
@@ -17,6 +18,7 @@ import { CheckTasksOverload } from './services/CheckTasksOverload';
 import { CompleteTask } from './services/CompleteTask';
 import { CreateTask } from './services/CreateTask';
 import { DeleteTask } from './services/DeleteTask';
+import { DetectRepeatPattern } from './services/DetectRepeatPattern';
 import { DiscardTask } from './services/DiscardTask';
 import { EmbedTask } from './services/EmbedTask';
 import { FindSimilarTasks } from './services/FindSimilarTasks';
@@ -24,17 +26,21 @@ import { GetCarryOverRate } from './services/GetCarryOverRate';
 import { GetCompletionByDomain } from './services/GetCompletionByDomain';
 import { GetDayStats } from './services/GetDayStats';
 import { GetEndOfDayReview } from './services/GetEndOfDayReview';
+import { RecommendationEngine } from './services/RecommendationEngine';
 import { GetTask } from './services/GetTask';
 import { GetTasks } from './services/GetTasks';
+import { GetWeeklySummary } from './services/GetWeeklySummary';
+import { GetPlanningContext } from './services/GetPlanningContext';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
 import { UpdateTask } from './services/UpdateTask';
 
-type TaskModuleRuntimeDependencies = ModuleContext & {
+export interface TaskModuleRuntimeDeps extends ModuleContext {
     insightsStore: TaskInsightsStore;
-};
+}
 
 export class TaskModuleRuntime {
-    constructor(private readonly deps: TaskModuleRuntimeDependencies) {}
+    constructor(private deps: TaskModuleRuntimeDeps) {
+    }
 
     registerServices(): void {
         this.registerEmbeddingServices();
@@ -63,7 +69,7 @@ export class TaskModuleRuntime {
         );
     }
 
-    createControllers(): HttpController[] {
+    createControllers() {
         return [
             new TasksController(this.deps.services),
             new TasksAgentController(this.deps.agentRegistry, this.agentRepository()),
@@ -72,27 +78,37 @@ export class TaskModuleRuntime {
     }
 
     private registerEmbeddingServices(): void {
-        this.deps.services.register(EmbedTask, () =>
-            new EmbedTask(
-                this.taskRepository(),
-                this.taskNoteRepository(),
-                this.taskEmbeddingRepository(),
-                this.deps.embeddingProvider,
-            ),
+        this.deps.services.register(
+            EmbedTask,
+            () =>
+                new EmbedTask(
+                    this.taskRepository(),
+                    this.taskNoteRepository(),
+                    this.taskEmbeddingRepository(),
+                    this.deps.embeddingProvider,
+                ),
         );
-
-        this.deps.services.register(FindSimilarTasks, () =>
-            new FindSimilarTasks(this.taskEmbeddingRepository(), this.deps.embeddingProvider),
+        this.deps.services.register(
+            FindSimilarTasks,
+            () => new FindSimilarTasks(this.taskEmbeddingRepository(), this.deps.embeddingProvider),
+        );
+        this.deps.services.register(
+            DetectRepeatPattern,
+            () =>
+                new DetectRepeatPattern(
+                    this.deps.services.get(FindSimilarTasks),
+                    this.taskRepository(),
+                    this.deps.eventBus,
+                ),
         );
     }
 
     private registerTaskReadServices(): void {
         this.deps.services.register(GetTasks, () => new GetTasks(this.taskRepository()));
-        this.deps.services.register(GetTask, () =>
-            new GetTask(this.taskRepository(), this.taskNoteRepository()),
-        );
+        this.deps.services.register(GetTask, () => new GetTask(this.taskRepository(), this.taskNoteRepository()));
+        this.deps.services.register(RecommendationEngine, () => new RecommendationEngine());
         this.deps.services.register(GetEndOfDayReview, () =>
-            new GetEndOfDayReview(this.taskRepository()),
+            new GetEndOfDayReview(this.taskRepository(), this.deps.services.get(RecommendationEngine)),
         );
         this.deps.services.register(GetDayStats, () => new GetDayStats(this.taskRepository()));
         this.deps.services.register(GetCompletionByDomain, () =>
@@ -101,11 +117,22 @@ export class TaskModuleRuntime {
         this.deps.services.register(GetCarryOverRate, () =>
             new GetCarryOverRate(this.taskRepository()),
         );
+        this.deps.services.register(GetWeeklySummary, () =>
+            new GetWeeklySummary(this.taskRepository(), this.deps.services.get(GetDayStats)),
+        );
+        this.deps.services.register(GetPlanningContext, () =>
+            new GetPlanningContext(
+                this.taskRepository(),
+                this.deps.services.get(GetDayStats),
+                this.deps.services.get(GetCarryOverRate),
+                this.deps.insightsStore,
+            ),
+        );
     }
 
     private registerTaskMutationServices(): void {
         this.deps.services.register(CreateTask, () =>
-            new CreateTask(this.taskRepository(), this.deps.services.get(EmbedTask)),
+            new CreateTask(this.taskRepository(), this.deps.services.get(EmbedTask), this.deps.services.get(FindSimilarTasks)),
         );
         this.deps.services.register(UpdateTask, () =>
             new UpdateTask(this.taskRepository(), this.deps.services.get(EmbedTask)),
@@ -113,34 +140,36 @@ export class TaskModuleRuntime {
         this.deps.services.register(DeleteTask, () =>
             new DeleteTask(this.taskRepository(), this.taskNoteRepository()),
         );
-        this.deps.services.register(AddTaskNote, () =>
-            new AddTaskNote(
-                this.taskRepository(),
-                this.taskNoteRepository(),
-                this.deps.services.get(EmbedTask),
-            ),
+        this.deps.services.register(
+            AddTaskNote,
+            () =>
+                new AddTaskNote(
+                    this.taskRepository(),
+                    this.taskNoteRepository(),
+                    this.deps.services.get(EmbedTask),
+                ),
         );
-
         this.deps.services.register(CompleteTask, () =>
             new CompleteTask(this.taskRepository(), this.deps.eventBus),
         );
         this.deps.services.register(CarryOverTask, () =>
-            new CarryOverTask(this.taskRepository(), this.deps.eventBus),
+            new CarryOverTask(this.taskRepository(), this.deps.eventBus, this.deps.services.get(DetectRepeatPattern)),
         );
-        this.deps.services.register(DiscardTask, () =>
-            new DiscardTask(this.taskRepository()),
-        );
-        this.deps.services.register(CarryOverAllPending, () =>
-            new CarryOverAllPending(
-                this.taskRepository(),
-                this.deps.services.get(CarryOverTask),
-            ),
+        this.deps.services.register(DiscardTask, () => new DiscardTask(this.taskRepository()));
+        this.deps.services.register(
+            CarryOverAllPending,
+            () =>
+                new CarryOverAllPending(
+                    this.taskRepository(),
+                    this.deps.services.get(CarryOverTask),
+                ),
         );
     }
 
     private registerTaskInsightServices(): void {
-        this.deps.services.register(CheckTasksOverload, () =>
-            new CheckTasksOverload(this.taskRepository(), this.deps.eventBus),
+        this.deps.services.register(
+            CheckTasksOverload,
+            () => new CheckTasksOverload(this.taskRepository(), this.deps.eventBus),
         );
     }
 

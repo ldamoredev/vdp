@@ -4,11 +4,13 @@ import { EventBus } from '../../common/base/event-bus/EventBus';
 import { TaskStuck } from '../domain/events/TaskStuck';
 import { tomorrowISO } from '../../common/base/time/dates';
 import { DomainHttpError } from '../../common/http/errors';
+import { DetectRepeatPattern } from './DetectRepeatPattern';
 
 export class CarryOverTask {
     constructor(
         private repository: TaskRepository,
         private eventBus: EventBus,
+        private detectRepeatPattern: DetectRepeatPattern,
     ) {}
 
     async execute(id: string, toDate?: string): Promise<Task | null> {
@@ -31,6 +33,8 @@ export class CarryOverTask {
                 carryOverCount: saved.carryOverCount,
             }));
         }
+
+        await this.detectRepeatPattern.execute(saved);
 
         return saved;
     }

@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CarryOverTask } from '../../services/CarryOverTask';
+import { DetectRepeatPattern } from '../../services/DetectRepeatPattern';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
@@ -10,13 +11,15 @@ import { DomainHttpError } from '../../../common/http/errors';
 describe('CarryOverTask', () => {
     let repo: FakeTaskRepository;
     let eventBus: EventBus;
+    let detectRepeatPattern: DetectRepeatPattern;
     let service: CarryOverTask;
     let emittedEvents: DomainEvent[];
 
     beforeEach(() => {
         repo = new FakeTaskRepository();
         eventBus = new EventBus();
-        service = new CarryOverTask(repo, eventBus);
+        detectRepeatPattern = { execute: vi.fn().mockResolvedValue(undefined) } as any;
+        service = new CarryOverTask(repo, eventBus, detectRepeatPattern);
         emittedEvents = [];
 
         eventBus.onAll((event) => {
@@ -75,7 +78,7 @@ describe('CarryOverTask', () => {
 
         await service.execute(task.id, '2026-03-19');
 
-        expect(emittedEvents).toHaveLength(0);
+        expect(emittedEvents.filter(e => e.type === 'task.stuck')).toHaveLength(0);
     });
 
     it('emits TaskStuck when carryOverCount reaches 3', async () => {
@@ -84,12 +87,21 @@ describe('CarryOverTask', () => {
 
         await service.execute(task.id, '2026-03-19');
 
-        expect(emittedEvents).toHaveLength(1);
-        expect(emittedEvents[0].type).toBe('task.stuck');
-        expect(emittedEvents[0].payload).toEqual({
+        const stuckEvent = emittedEvents.find(e => e.type === 'task.stuck');
+        expect(stuckEvent).toBeDefined();
+        expect(stuckEvent!.payload).toEqual({
             taskId: task.id,
             title: 'Stuck task',
             carryOverCount: 3,
         });
+    });
+
+    it('calls detectRepeatPattern after carry over', async () => {
+        const task = createTask({ carryOverCount: 0 });
+        repo.seed([task]);
+
+        await service.execute(task.id);
+
+        expect(detectRepeatPattern.execute).toHaveBeenCalled();
     });
 });

@@ -22,8 +22,9 @@ describe('TasksTools', () => {
             'get_end_of_day_review',
             'get_today_stats',
             'get_completion_trend',
-            'get_weekly_summary',
             'find_similar_tasks',
+            'get_planning_context',
+            'get_weekly_summary',
         ]);
     });
 

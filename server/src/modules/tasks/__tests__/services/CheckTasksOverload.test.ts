@@ -4,7 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { createTask } from '../fakes/task-factory';
 import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
-import { todayISO } from '../../../common/base/time/dates';
+import { todayISO, localDateISO } from '../../../common/base/time/dates';
 
 describe('CheckTasksOverload', () => {
     let repo: FakeTaskRepository;
@@ -13,6 +13,9 @@ describe('CheckTasksOverload', () => {
     let emittedEvents: DomainEvent[];
 
     const today = todayISO();
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = localDateISO(yesterdayDate);
 
     beforeEach(() => {
         repo = new FakeTaskRepository();
@@ -25,56 +28,75 @@ describe('CheckTasksOverload', () => {
         });
     });
 
-    it('returns overloaded=false when rate <= 50%', async () => {
-        // 10 tasks, 3 carried over = 30%
-        const tasks = Array.from({ length: 10 }, (_, i) =>
-            createTask({
-                scheduledDate: today,
-                carryOverCount: i < 3 ? 1 : 0,
-            })
+    it('returns overloaded=false when current load is below threshold', async () => {
+        // Baseline: 7 tasks yesterday, all done. Avg = 1. Threshold = max(3, 1*1.5) = 3.
+        const historical = Array.from({ length: 7 }, () =>
+            createTask({ scheduledDate: yesterday, status: 'done' })
         );
-        repo.seed(tasks);
+        repo.seed(historical);
+
+        // Current: 3 pending today. Not overloaded (since 3 <= 3).
+        const current = Array.from({ length: 3 }, () =>
+            createTask({ scheduledDate: today, status: 'pending' })
+        );
+        repo.seed(current);
 
         const result = await service.execute(7);
 
         expect(result.overloaded).toBe(false);
-        expect(result.rate).toBe(30);
+        expect(result.threshold).toBe(3);
         expect(emittedEvents).toHaveLength(0);
     });
 
-    it('emits TasksOverloaded when rate > 50% and total >= 5', async () => {
-        // 6 tasks, 4 carried over = 66%
-        const tasks = Array.from({ length: 6 }, (_, i) =>
-            createTask({
-                scheduledDate: today,
-                carryOverCount: i < 4 ? 1 : 0,
-            })
+    it('emits TasksOverloaded when current load exceeds threshold', async () => {
+        // Baseline: 7 tasks yesterday, all done. Avg = 1. Threshold = 3.
+        const historical = Array.from({ length: 7 }, () =>
+            createTask({ scheduledDate: yesterday, status: 'done' })
         );
-        repo.seed(tasks);
+        repo.seed(historical);
+
+        // Current: 5 pending today. Overloaded (5 > 3).
+        const current = Array.from({ length: 5 }, () =>
+            createTask({ scheduledDate: today, status: 'pending' })
+        );
+        repo.seed(current);
 
         const result = await service.execute(7);
 
         expect(result.overloaded).toBe(true);
-        expect(result.rate).toBe(67); // Math.round(4/6*100)
+        expect(result.threshold).toBe(3);
         expect(emittedEvents).toHaveLength(1);
-        expect(emittedEvents[0].payload).toEqual({
-            carryOverRate: 67,
-            period: 'last_7_days',
+        expect(emittedEvents[0].payload).toMatchObject({
+            currentLoad: 5,
+            threshold: 3,
         });
     });
 
-    it('does NOT emit when total < 5 even if rate is high', async () => {
-        // 3 tasks, 3 carried over = 100% but total < 5
-        repo.seed([
-            createTask({ scheduledDate: today, carryOverCount: 1 }),
-            createTask({ scheduledDate: today, carryOverCount: 2 }),
-            createTask({ scheduledDate: today, carryOverCount: 1 }),
-        ]);
+    it('reduces threshold if historical carry-over rate is high', async () => {
+        // Baseline: 7 tasks yesterday, 6 carried over. Rate = 85%.
+        // Avg completion = 1/7 = 0.14. Threshold = max(3, 0.14*1.5) = 3.
+        // Penalty: 3 * 0.8 = 2.4 -> ceil = 3. 
+        // Wait, let's use bigger numbers to see the penalty.
+        // Baseline: 70 tasks, 60 carried over. Rate = 86%.
+        // Avg completion = 10/7 = 1.4. Threshold = ceil(1.4*1.5) = ceil(2.1) = 3.
+        // Penalty: threshold = ceil(3 * 0.8) = 3. (Still 3 because of max(3, ...))
+        
+        // Let's use 20 done tasks per day.
+        // Baseline: 140 tasks, 0 carried over. Avg = 20. Threshold = ceil(20*1.5) = 30.
+        // If rate > 40%: 30 * 0.8 = 24.
+        
+        const historical = [
+            ...Array.from({ length: 70 }, () => createTask({ scheduledDate: yesterday, status: 'done', carryOverCount: 0 })),
+            ...Array.from({ length: 70 }, () => createTask({ scheduledDate: yesterday, status: 'pending', carryOverCount: 1 })),
+        ];
+        repo.seed(historical);
 
         const result = await service.execute(7);
 
-        expect(result.rate).toBe(100);
-        expect(result.overloaded).toBe(false); // total < 5
-        expect(emittedEvents).toHaveLength(0);
+        // Avg completion = 70/7 = 10.
+        // Base threshold = ceil(10 * 1.5) = 15.
+        // Rate = 50% (> 40%).
+        // Penalty: ceil(15 * 0.8) = 12.
+        expect(result.threshold).toBe(12);
     });
 });

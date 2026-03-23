@@ -3,7 +3,6 @@ import { todayISO } from '../../../../common/base/time/dates';
 import { AddTaskNote } from '../../../services/AddTaskNote';
 import { CreateTask } from '../../../services/CreateTask';
 import { DeleteTask } from '../../../services/DeleteTask';
-import { FindSimilarTasks } from '../../../services/FindSimilarTasks';
 import { GetTask } from '../../../services/GetTask';
 import { GetTasks } from '../../../services/GetTasks';
 import { UpdateTask } from '../../../services/UpdateTask';
@@ -16,11 +15,6 @@ import {
     ToolInput,
     jsonTool,
 } from './shared';
-
-type SimilarTaskMatch = {
-    content: string;
-    matchPercent: number;
-};
 
 export function createTaskManagementTools(services: ServiceProvider) {
     return [
@@ -155,37 +149,23 @@ async function createTaskWithSimilarityCheck(
     services: ServiceProvider,
     input: ToolInput,
 ): Promise<Record<string, unknown>> {
-    const similarTasks = await findSimilarTaskMatches(services, input.title);
-    const task = await services.get(CreateTask).execute({
+    const result = await services.get(CreateTask).execute({
         title: input.title,
         description: input.description,
         priority: input.priority,
         scheduledDate: input.scheduledDate,
         domain: input.domain,
-    });
+    }, true);
 
-    const result: Record<string, unknown> = { ...task };
+    const response: Record<string, unknown> = { ...result.task };
 
-    if (similarTasks.length > 0) {
-        result.similarTasks = similarTasks;
-        result.warning = `Se encontraron ${similarTasks.length} tarea(s) similares. Avisale al usuario.`;
-    }
-
-    return result;
-}
-
-async function findSimilarTaskMatches(
-    services: ServiceProvider,
-    query: string,
-): Promise<SimilarTaskMatch[]> {
-    try {
-        const similarTasks = await services.get(FindSimilarTasks).execute(query, 3, 0.6);
-        return similarTasks.map((task) => ({
-            content: task.content,
-            matchPercent: task.matchPercent,
+    if (result.similarTasks && result.similarTasks.length > 0) {
+        response.similarTasks = result.similarTasks.map(t => ({
+            content: t.content,
+            matchPercent: t.matchPercent
         }));
-    } catch {
-        // Embedding search is a non-critical enhancement; task creation should still work.
-        return [];
+        response.warning = `Se encontraron ${result.similarTasks.length} tarea(s) similares. Avisale al usuario.`;
     }
+
+    return response;
 }

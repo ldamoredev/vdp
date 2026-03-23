@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CarryOverAllPending } from '../../services/CarryOverAllPending';
 import { CarryOverTask } from '../../services/CarryOverTask';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
@@ -13,7 +13,8 @@ describe('CarryOverAllPending', () => {
     beforeEach(() => {
         repo = new FakeTaskRepository();
         const eventBus = new EventBus();
-        const carryOverTask = new CarryOverTask(repo, eventBus);
+        const detectRepeatPattern = { execute: vi.fn().mockResolvedValue(undefined) } as any;
+        const carryOverTask = new CarryOverTask(repo, eventBus, detectRepeatPattern);
         service = new CarryOverAllPending(repo, carryOverTask);
     });
 

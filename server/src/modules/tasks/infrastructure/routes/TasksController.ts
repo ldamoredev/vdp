@@ -70,7 +70,7 @@ export class TasksController extends HttpController {
         routes
             .get('/', { query: taskFiltersSchema }, this.listTasks)
             .get('/:id', { params: taskIdParamsSchema }, this.getTask)
-            .post('/', { body: createTaskSchema }, this.createTask)
+            .post('/', { body: createTaskSchema, query: z.object({ checkDuplicates: z.boolean().optional() }) }, this.createTask)
             .put('/:id', { params: taskIdParamsSchema, body: updateTaskSchema }, this.updateTask)
             .delete('/:id', { params: taskIdParamsSchema }, this.deleteTask);
     }
@@ -120,12 +120,13 @@ export class TasksController extends HttpController {
         return reply.send(task);
     };
 
-    private readonly createTask: RouteContextHandler<undefined, undefined, CreateTaskBody> = async ({
+    private readonly createTask: RouteContextHandler<undefined, { checkDuplicates?: boolean }, CreateTaskBody> = async ({
         body,
+        query,
         reply,
     }) => {
-        const task = await this.services.get(CreateTask).execute(body!);
-        return sendCreated(reply, task);
+        const result = await this.services.get(CreateTask).execute(body!, query?.checkDuplicates);
+        return sendCreated(reply, result);
     };
 
     private readonly updateTask: RouteContextHandler<TaskIdParams, undefined, UpdateTaskBody> = async ({

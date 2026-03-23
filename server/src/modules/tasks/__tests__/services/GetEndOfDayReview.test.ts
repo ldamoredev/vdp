@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GetEndOfDayReview } from '../../services/GetEndOfDayReview';
+import { RecommendationEngine } from '../../services/RecommendationEngine';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
 import { todayISO } from '../../../common/base/time/dates';
@@ -11,7 +12,7 @@ describe('GetEndOfDayReview', () => {
 
     beforeEach(() => {
         repo = new FakeTaskRepository();
-        service = new GetEndOfDayReview(repo);
+        service = new GetEndOfDayReview(repo, new RecommendationEngine());
     });
 
     it('returns zeroed review when no tasks', async () => {
@@ -24,6 +25,7 @@ describe('GetEndOfDayReview', () => {
         expect(review.completionRate).toBe(0);
         expect(review.pendingTasks).toHaveLength(0);
         expect(review.allTasks).toHaveLength(0);
+        expect(review.recommendations).toBeDefined();
     });
 
     it('computes stats correctly for mixed statuses', async () => {
@@ -42,6 +44,7 @@ describe('GetEndOfDayReview', () => {
         expect(review.carriedOver).toBe(1);
         expect(review.discarded).toBe(1);
         expect(review.completionRate).toBe(50);
+        expect(review.recommendations).toBeDefined();
     });
 
     it('returns pendingTasks as Task instances', async () => {

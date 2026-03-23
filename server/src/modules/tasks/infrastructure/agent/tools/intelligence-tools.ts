@@ -1,5 +1,7 @@
 import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
 import { FindSimilarTasks } from '../../../services/FindSimilarTasks';
+import { GetPlanningContext } from '../../../services/GetPlanningContext';
+import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { jsonTool } from './shared';
 
 export function createTaskIntelligenceTools(services: ServiceProvider) {
@@ -32,6 +34,27 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
 
                 return { count: results.length, results };
             },
+        }),
+        jsonTool({
+            name: 'get_planning_context',
+            description:
+                'Get an aggregated view of the day stats, recent trends, carry-over rate, stuck tasks, and proactive insights. ' +
+                'Use this when the user asks for planning help, a daily summary, or when starting a new day.',
+            inputSchema: { type: 'object', properties: {} },
+            execute: async () => services.get(GetPlanningContext).execute(),
+        }),
+        jsonTool({
+            name: 'get_weekly_summary',
+            description:
+                'Get a detailed weekly productivity report (last 7 days by default). ' +
+                'Includes completion rate, trends, best day, and most active domain.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    days: { type: 'number', description: 'Number of days to summarize (default: 7)' },
+                },
+            },
+            execute: async (input) => services.get(GetWeeklySummary).execute(input.days),
         }),
     ];
 }
