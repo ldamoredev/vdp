@@ -11,15 +11,13 @@ export function MobileTabBar() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden">
-      <nav className="flex items-center justify-around h-16 bg-[var(--icon-rail-bg)] backdrop-blur-xl border-t border-[var(--sidebar-border)] safe-bottom">
+      <nav className="flex items-center justify-around h-16 bg-[var(--i
+      con-rail-bg)] backdrop-blur-xl border-t border-[var(--sidebar-border)] safe-bottom">
         {/* Home */}
         <Link
           href="/home"
           className={`flex flex-col items-center justify-center gap-1 w-14 h-12 rounded-xl transition-all ${
-            pathname === "/home"
-              ? "text-[var(--foreground)]"
-              : "text-[var(--muted)]"
-          }`}
+            pathname === "/home" ? "text-[var(--foreground)]" : "text-[var(--muted)]" }`}
         >
           {pathname === "/home" && (
             <div

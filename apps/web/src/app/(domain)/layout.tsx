@@ -29,7 +29,7 @@ export default function DomainLayout({ children }: { children: React.ReactNode; 
 
             <ChatPanel/>
 
-            <MobileTabBar/>
+            <MobileTabBar />
 
             <InsightsProvider/>
         </div>
