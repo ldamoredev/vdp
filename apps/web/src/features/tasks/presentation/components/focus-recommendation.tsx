@@ -1,19 +1,14 @@
 import { Sparkles } from "lucide-react";
-import type { Task } from "@/lib/api/types";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { useTasksData, useTasksActions } from "../use-tasks-context";
 
-interface FocusRecommendationProps {
-  focusTasks: Task[];
-  activeSelectedTaskId: string | undefined;
-  onOpenDetail: (id: string) => void;
-}
+export function FocusRecommendation() {
+  const { planning, activeSelectedTaskId } = useTasksData();
+  const { openBreakdownStudio } = useTasksActions();
 
-export function FocusRecommendation({
-  focusTasks,
-  activeSelectedTaskId,
-  onOpenDetail,
-}: FocusRecommendationProps) {
+  const focusTasks = planning.focusTasks;
+
   return (
     <div className="glass-card-static p-6">
       <div className="flex items-center gap-2">
@@ -29,7 +24,7 @@ export function FocusRecommendation({
             <button
               key={task.id}
               type="button"
-              onClick={() => onOpenDetail(task.id)}
+              onClick={() => openBreakdownStudio(task.id)}
               className={`rounded-[24px] border p-4 ${
                 task.id === activeSelectedTaskId
                   ? "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]"

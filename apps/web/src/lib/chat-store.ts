@@ -1,29 +1,13 @@
 "use client";
 
-// Simple reactive store for chat panel state
-let isOpen = false;
-let listeners = new Set<() => void>();
+import { createStore } from "./create-store";
 
-function emit() {
-  listeners.forEach((l) => l());
-}
+const store = createStore(false);
 
 export const chatStore = {
-  getIsOpen: () => isOpen,
-  toggle: () => {
-    isOpen = !isOpen;
-    emit();
-  },
-  open: () => {
-    isOpen = true;
-    emit();
-  },
-  close: () => {
-    isOpen = false;
-    emit();
-  },
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
+  getIsOpen: store.getState,
+  toggle: () => store.setState((open) => !open),
+  open: () => store.setState(true),
+  close: () => store.setState(false),
+  subscribe: store.subscribe,
 };

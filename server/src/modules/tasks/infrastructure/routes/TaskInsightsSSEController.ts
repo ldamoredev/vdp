@@ -36,10 +36,11 @@ export class TaskInsightsSSEController extends HttpController {
         // so we must set CORS headers manually on the raw response.
         this.broadcaster.addClient(res, origin);
 
-        // Send current unread insights as initial payload
+        // Send current unread insights as initial payload, then mark as read
         const snapshot = this.insightsStore.getSnapshot();
         if (snapshot.unread.length > 0) {
             res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);
+            this.insightsStore.markAllRead();
         }
 
         // Cleanup on disconnect

@@ -12,8 +12,6 @@ import {
   taskDomainOptions,
 } from "../tasks-dashboard-selectors";
 
-// ─── Test helpers ───────────────────────────────────────────
-
 function aTask(overrides: Partial<Task> = {}): Task {
   return {
     id: crypto.randomUUID(),

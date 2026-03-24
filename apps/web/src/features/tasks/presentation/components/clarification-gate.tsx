@@ -1,30 +1,23 @@
 import { Check, Sparkles } from "lucide-react";
+import { useTasksData, useTasksActions } from "../use-tasks-context";
 
-interface ClarificationGateProps {
-  reasons: string[];
-  examples: string[];
-  clarificationOutcome: string;
-  setClarificationOutcome: (value: string) => void;
-  clarificationNextStep: string;
-  setClarificationNextStep: (value: string) => void;
-  onSubmitClarified: () => void;
-  onSubmitAnyway: () => void;
-  onClose: () => void;
-  onReplaceTitle: (example: string) => void;
-}
+export function ClarificationGate() {
+  const {
+    draftClarification,
+    clarificationOutcome,
+    clarificationNextStep,
+    showClarificationGate,
+  } = useTasksData();
+  const {
+    setClarificationOutcome,
+    setClarificationNextStep,
+    setShowClarificationGate,
+    setNewTitle,
+    submitTask,
+  } = useTasksActions();
 
-export function ClarificationGate({
-  reasons,
-  examples,
-  clarificationOutcome,
-  setClarificationOutcome,
-  clarificationNextStep,
-  setClarificationNextStep,
-  onSubmitClarified,
-  onSubmitAnyway,
-  onClose,
-  onReplaceTitle,
-}: ClarificationGateProps) {
+  if (!showClarificationGate) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-[32px] border border-[var(--amber-soft-border)] bg-[var(--sidebar)] p-6 shadow-2xl">
@@ -34,7 +27,7 @@ export function ClarificationGate({
         </div>
 
         <div className="mt-3 space-y-2">
-          {reasons.map((reason) => (
+          {draftClarification.reasons.map((reason) => (
             <p key={reason} className="text-xs leading-relaxed text-[var(--muted)]">
               {reason}
             </p>
@@ -72,11 +65,14 @@ export function ClarificationGate({
             Ejemplos
           </div>
           <div className="grid gap-2 md:grid-cols-3">
-            {examples.map((example) => (
+            {draftClarification.examples.map((example) => (
               <button
                 key={example}
                 type="button"
-                onClick={() => onReplaceTitle(example)}
+                onClick={() => {
+                  setNewTitle(example);
+                  setShowClarificationGate(false);
+                }}
                 className="block w-full rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-3 text-left text-xs text-[var(--foreground)] transition-all hover:translate-y-[-1px]"
               >
                 {example}
@@ -88,7 +84,7 @@ export function ClarificationGate({
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={onSubmitClarified}
+            onClick={() => submitTask(true)}
             disabled={
               !clarificationOutcome.trim() && !clarificationNextStep.trim()
             }
@@ -99,14 +95,14 @@ export function ClarificationGate({
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setShowClarificationGate(false)}
             className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px]"
           >
             Seguir editando
           </button>
           <button
             type="button"
-            onClick={onSubmitAnyway}
+            onClick={() => submitTask(true, false)}
             className="inline-flex items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px]"
           >
             Crear igual

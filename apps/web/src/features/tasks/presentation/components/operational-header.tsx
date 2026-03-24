@@ -7,33 +7,24 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import type { Task } from "@/lib/api/types";
+import { useTasksData, useTasksActions } from "../use-tasks-context";
 
-interface OperationalHeaderProps {
-  completionRate: number;
-  completed: number;
-  total: number;
-  urgentTasks: Task[];
-  stuckTasks: Task[];
-  pendingTasks: Task[];
-  doneTasks: Task[];
-  completionAverage: number;
-  isCarryingOverAll: boolean;
-  onCarryOverAll: () => void;
-}
+export function OperationalHeader() {
+  const {
+    todayStats,
+    urgentTasks,
+    stuckTasks,
+    pendingTasks,
+    doneTasks,
+    completionAverage,
+    isCarryingOverAll,
+  } = useTasksData();
+  const { carryOverAll } = useTasksActions();
 
-export function OperationalHeader({
-  completionRate,
-  completed,
-  total,
-  urgentTasks,
-  stuckTasks,
-  pendingTasks,
-  doneTasks,
-  completionAverage,
-  isCarryingOverAll,
-  onCarryOverAll,
-}: OperationalHeaderProps) {
+  const completionRate = todayStats?.completionRate ?? 0;
+  const completed = todayStats?.completed ?? 0;
+  const total = todayStats?.total ?? 0;
+
   return (
     <div className="glass-card-static overflow-hidden">
       <div className="border-b border-[var(--glass-border)] p-6">
@@ -56,7 +47,7 @@ export function OperationalHeader({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={onCarryOverAll}
+              onClick={carryOverAll}
               disabled={pendingTasks.length === 0 || isCarryingOverAll}
               className="inline-flex items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-4 py-2 text-sm font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
             >

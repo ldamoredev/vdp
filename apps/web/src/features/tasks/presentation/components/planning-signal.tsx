@@ -1,37 +1,22 @@
 import { Compass } from "lucide-react";
-import { getPlanningToneClasses, type PlanningTone } from "../tasks-dashboard-selectors";
+import { getPlanningToneClasses } from "../tasks-dashboard-selectors";
+import { useTasksData } from "../use-tasks-context";
 
-interface PlanningSignalProps {
-  tone: PlanningTone;
-  headline: string;
-  summary: string;
-  recommendations: string[];
-  pendingCount: number;
-  urgentCount: number;
-  carryOverRate: number;
-}
+export function PlanningSignal() {
+  const { planning, pendingTasks, urgentTasks, carryOverRate } = useTasksData();
 
-export function PlanningSignal({
-  tone,
-  headline,
-  summary,
-  recommendations,
-  pendingCount,
-  urgentCount,
-  carryOverRate,
-}: PlanningSignalProps) {
   return (
-    <div className={`rounded-[30px] border p-6 ${getPlanningToneClasses(tone)}`}>
+    <div className={`rounded-[30px] border p-6 ${getPlanningToneClasses(planning.tone)}`}>
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
           <Compass size={12} />
           Plan del dia
         </div>
         <h3 className="mt-4 text-2xl font-semibold text-[var(--foreground)]">
-          {headline}
+          {planning.headline}
         </h3>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-          {summary}
+          {planning.summary}
         </p>
       </div>
 
@@ -41,7 +26,7 @@ export function PlanningSignal({
             Pendientes
           </div>
           <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            {pendingCount}
+            {pendingTasks.length}
           </div>
         </div>
         <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center">
@@ -49,7 +34,7 @@ export function PlanningSignal({
             Calientes
           </div>
           <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            {urgentCount}
+            {urgentTasks.length}
           </div>
         </div>
         <div className="rounded-[22px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 text-center">
@@ -57,13 +42,13 @@ export function PlanningSignal({
             Carry semanal 7d
           </div>
           <div className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-            {carryOverRate}%
+            {carryOverRate?.rate ?? 0}%
           </div>
         </div>
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
-        {recommendations.map((recommendation) => (
+        {planning.recommendations.map((recommendation) => (
           <div
             key={recommendation}
             className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4"

@@ -25,7 +25,11 @@ export const tasksApi = {
     priority?: number;
     scheduledDate?: string;
     domain?: string;
-  }) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
+  }) =>
+    request<{ task: Task; similarTasks?: unknown[] }>("/tasks", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }).then((res) => res.task),
   updateTask: (id: string, data: Partial<Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain">>) =>
     request<Task>(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteTask: (id: string) =>

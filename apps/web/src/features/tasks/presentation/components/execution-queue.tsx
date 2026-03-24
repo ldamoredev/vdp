@@ -1,43 +1,30 @@
 import { CheckCheck } from "lucide-react";
-import type { Task } from "@/lib/api/types";
-import { getFilterTasks, type TaskFilter } from "../tasks-dashboard-selectors";
+import { getFilterTasks } from "../tasks-dashboard-selectors";
+import { useTasksData, useTasksActions } from "../use-tasks-context";
 import { TaskRow } from "./task-row";
 
-interface ExecutionQueueProps {
-  tasks: Task[];
-  visibleTasks: Task[];
-  pendingTasks: Task[];
-  doneTasks: Task[];
-  filter: TaskFilter;
-  setFilter: (filter: TaskFilter) => void;
-  expandedTaskActions: string | null;
-  setExpandedTaskActions: (id: string | null) => void;
-  isTaskBusy: (id: string) => boolean;
-  onComplete: (id: string) => void;
-  onCarryOver: (id: string) => void;
-  onDiscard: (id: string) => void;
-  onDelete: (id: string) => void;
-  onOpenDetail: (id: string) => void;
-}
+export function ExecutionQueue() {
+  const {
+    tasks,
+    visibleTasks,
+    pendingTasks,
+    doneTasks,
+    filter,
+    expandedTaskActions,
+  } = useTasksData();
+  const {
+    setFilter,
+    setExpandedTaskActions,
+    completeTask,
+    carryOverTask,
+    discardTask,
+    deleteTask,
+    openBreakdownStudio,
+    isTaskBusy,
+  } = useTasksActions();
 
-export function ExecutionQueue({
-  tasks,
-  visibleTasks,
-  pendingTasks,
-  doneTasks,
-  filter,
-  setFilter,
-  expandedTaskActions,
-  setExpandedTaskActions,
-  isTaskBusy,
-  onComplete,
-  onCarryOver,
-  onDiscard,
-  onDelete,
-  onOpenDetail,
-}: ExecutionQueueProps) {
   const filterOptions = [
-    { key: "focus" as const, label: "Focus", count: getFilterTasks(tasks, "focus").length },
+    { key: "focus" as const, label: "Focus", count: getFilterTasks([...tasks], "focus").length },
     { key: "pending" as const, label: "Pendientes", count: pendingTasks.length },
     { key: "done" as const, label: "Hechas", count: doneTasks.length },
     { key: "all" as const, label: "Todas", count: tasks.length },
@@ -107,11 +94,11 @@ export function ExecutionQueue({
             task={task}
             busy={isTaskBusy(task.id)}
             actionsOpen={expandedTaskActions === task.id}
-            onComplete={onComplete}
-            onCarryOver={onCarryOver}
-            onDiscard={onDiscard}
-            onDelete={onDelete}
-            onOpenDetail={onOpenDetail}
+            onComplete={completeTask}
+            onCarryOver={carryOverTask}
+            onDiscard={discardTask}
+            onDelete={deleteTask}
+            onOpenDetail={openBreakdownStudio}
             onToggleActions={setExpandedTaskActions}
           />
         ))}

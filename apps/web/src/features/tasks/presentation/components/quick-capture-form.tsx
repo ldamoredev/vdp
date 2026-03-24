@@ -1,32 +1,15 @@
-import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { priorityLabel } from "@/lib/format";
+import { useTasksData, useTasksActions } from "../use-tasks-context";
 
-interface QuickCaptureFormProps {
-  newTitle: string;
-  setNewTitle: (value: string) => void;
-  newPriority: number;
-  setNewPriority: (value: number) => void;
-  newDomain: string;
-  setNewDomain: (value: string) => void;
-  domainOptions: { value: string; label: string }[];
-  isCreatingTask: boolean;
-  onSubmit: (event: FormEvent) => void;
-}
+export function QuickCaptureForm() {
+  const { newTitle, newPriority, newDomain, domainOptions, isCreatingTask } =
+    useTasksData();
+  const { setNewTitle, setNewPriority, setNewDomain, handleCreate } =
+    useTasksActions();
 
-export function QuickCaptureForm({
-  newTitle,
-  setNewTitle,
-  newPriority,
-  setNewPriority,
-  newDomain,
-  setNewDomain,
-  domainOptions,
-  isCreatingTask,
-  onSubmit,
-}: QuickCaptureFormProps) {
   return (
-    <form onSubmit={onSubmit} className="glass-card-static p-6">
+    <form onSubmit={handleCreate} className="glass-card-static p-6">
       <div className="flex items-center gap-2 text-[var(--foreground)]">
         <Plus size={16} style={{ color: "var(--violet-soft-text)" }} />
         <h3 className="text-sm font-medium">Captura rapida</h3>

@@ -1,13 +1,11 @@
 import { AlertTriangle, BarChart3, Sparkles } from "lucide-react";
-import type { Task } from "@/lib/api/types";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { useTasksData } from "../use-tasks-context";
 
-interface NextBestActionProps {
-  topTask: Task | undefined;
-}
+export function NextBestAction() {
+  const { topTask } = useTasksData();
 
-export function NextBestAction({ topTask }: NextBestActionProps) {
   return (
     <div className="glass-card-static p-5">
       <div className="flex items-center gap-2">
@@ -46,13 +44,13 @@ export function NextBestAction({ topTask }: NextBestActionProps) {
   );
 }
 
-interface RecoveryBoardProps {
-  pendingCount: number;
-  carryOverCount: number;
-  stuckCount: number;
-}
+export function RecoveryBoard() {
+  const { review, pendingTasks, stuckTasks } = useTasksData();
 
-export function RecoveryBoard({ pendingCount, carryOverCount, stuckCount }: RecoveryBoardProps) {
+  const pendingCount = review?.pending ?? pendingTasks.length;
+  const carryOverCount = pendingTasks.filter((t) => t.carryOverCount > 0).length;
+  const stuckCount = stuckTasks.length;
+
   return (
     <div className="glass-card-static p-5">
       <div className="flex items-center gap-2">
@@ -86,12 +84,9 @@ export function RecoveryBoard({ pendingCount, carryOverCount, stuckCount }: Reco
   );
 }
 
-interface WeeklyRhythmProps {
-  trend: { date: string; completionRate: number }[] | undefined;
-  today: string;
-}
+export function WeeklyRhythm() {
+  const { trend, today } = useTasksData();
 
-export function WeeklyRhythm({ trend, today }: WeeklyRhythmProps) {
   return (
     <div className="glass-card-static p-5">
       <div className="flex items-center gap-2">

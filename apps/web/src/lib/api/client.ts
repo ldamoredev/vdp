@@ -24,8 +24,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   const headers: Record<string, string> = {};
   if (options?.body) headers["Content-Type"] = "application/json";
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers,
+  const res = await fetch(`${API_BASE}${path}`, { headers,
     ...options,
   });
   if (!res.ok) {

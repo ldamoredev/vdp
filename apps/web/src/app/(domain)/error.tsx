@@ -3,13 +3,7 @@
 import { useEffect } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 
-export default function DomainError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function DomainError({ error, reset }: { error: Error & { digest?: string }; reset: () => void; }) {
   useEffect(() => {
     console.error("[VDP Error]", error);
   }, [error]);

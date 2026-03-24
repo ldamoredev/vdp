@@ -24,6 +24,95 @@ interface TaskRowProps {
   onToggleActions: (id: string | null) => void;
 }
 
+function TaskBadges({ task }: { task: Task }) {
+  return (
+    <>
+      <TaskPriorityBadge priority={task.priority} />
+      <TaskDomainBadge domain={task.domain} />
+      {task.carryOverCount > 0 && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
+          <AlertTriangle size={10} />
+          {task.carryOverCount}
+        </span>
+      )}
+      {task.carryOverCount >= 3 && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
+          Bloqueada
+        </span>
+      )}
+    </>
+  );
+}
+
+function TaskActions({
+  task,
+  busy,
+  isCompact,
+  onComplete,
+  onCarryOver,
+  onDiscard,
+  onOpenDetail,
+  onToggleActions,
+}: {
+  task: Task;
+  busy: boolean;
+  isCompact: boolean;
+  onComplete: (id: string) => void;
+  onCarryOver: (id: string) => void;
+  onDiscard: (id: string) => void;
+  onOpenDetail: (id: string) => void;
+  onToggleActions?: (id: string | null) => void;
+}) {
+  const close = () => onToggleActions?.(null);
+  const sizeClass = isCompact
+    ? "inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+    : "inline-flex h-8 w-8 items-center justify-center rounded-xl transition-all hover:scale-105 disabled:opacity-50";
+
+  return (
+    <div className={isCompact ? "flex flex-wrap gap-2 border-t border-[var(--glass-border)]/80 pt-3" : "flex shrink-0 items-center gap-1"}>
+      <button
+        type="button"
+        onClick={() => { onComplete(task.id); close(); }}
+        disabled={busy}
+        className={`${sizeClass} bg-[var(--accent)] text-white`}
+        title="Marcar como hecha"
+      >
+        <Check size={isCompact ? 13 : 14} />
+        {isCompact && "Hecha"}
+      </button>
+      <button
+        type="button"
+        onClick={() => { onCarryOver(task.id); close(); }}
+        disabled={busy}
+        className={`${sizeClass} border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] text-[var(--amber-soft-text)]`}
+        title="Llevar a manana"
+      >
+        <ArrowRight size={isCompact ? 13 : 14} />
+        {isCompact && "Manana"}
+      </button>
+      <button
+        type="button"
+        onClick={() => { onOpenDetail(task.id); close(); }}
+        className={`${sizeClass} border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] text-[var(--violet-soft-text)]`}
+        title="Ver detalle"
+      >
+        <ListTodo size={isCompact ? 13 : 14} />
+        {isCompact && "Detalle"}
+      </button>
+      <button
+        type="button"
+        onClick={() => { onDiscard(task.id); close(); }}
+        disabled={busy}
+        className={`${sizeClass} border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] text-[var(--red-soft-text)]`}
+        title="Descartar"
+      >
+        <Trash2 size={isCompact ? 13 : 14} />
+        {isCompact && "Descartar"}
+      </button>
+    </div>
+  );
+}
+
 export function TaskRow({
   task,
   busy,
@@ -35,11 +124,13 @@ export function TaskRow({
   onOpenDetail,
   onToggleActions,
 }: TaskRowProps) {
+  const actionProps = { task, busy, onComplete, onCarryOver, onDiscard, onOpenDetail };
+
   return (
     <div
       className={`rounded-[20px] md:rounded-2xl border px-4 py-3 transition-all ${getTaskTone(task)}`}
     >
-      {/* ── Desktop: compact single row ── */}
+      {/* Desktop */}
       <div className="hidden md:flex items-center gap-3">
         <button
           type="button"
@@ -47,9 +138,7 @@ export function TaskRow({
           disabled={task.status === "done" || busy}
           className={`task-checkbox shrink-0 ${task.status === "done" ? "checked" : ""}`}
         >
-          {task.status === "done" && (
-            <Check size={14} className="text-white" />
-          )}
+          {task.status === "done" && <Check size={14} className="text-white" />}
         </button>
 
         <span
@@ -64,59 +153,11 @@ export function TaskRow({
         </span>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <TaskPriorityBadge priority={task.priority} />
-          <TaskDomainBadge domain={task.domain} />
-          {task.carryOverCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
-              <AlertTriangle size={10} />
-              {task.carryOverCount}
-            </span>
-          )}
-          {task.carryOverCount >= 3 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
-              Bloqueada
-            </span>
-          )}
+          <TaskBadges task={task} />
         </div>
 
         {task.status !== "done" && (
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onComplete(task.id)}
-              disabled={busy}
-              title="Marcar como hecha"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent)] text-white transition-all hover:scale-105 disabled:opacity-50"
-            >
-              <Check size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onCarryOver(task.id)}
-              disabled={busy}
-              title="Llevar a manana"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] text-[var(--amber-soft-text)] transition-all hover:scale-105 disabled:opacity-50"
-            >
-              <ArrowRight size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenDetail(task.id)}
-              title="Ver detalle"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] text-[var(--violet-soft-text)] transition-all hover:scale-105"
-            >
-              <ListTodo size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDiscard(task.id)}
-              disabled={busy}
-              title="Descartar"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] text-[var(--red-soft-text)] transition-all hover:scale-105 disabled:opacity-50"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          <TaskActions {...actionProps} isCompact={false} />
         )}
         {task.status === "done" && (
           <button
@@ -131,7 +172,7 @@ export function TaskRow({
         )}
       </div>
 
-      {/* ── Mobile: card layout ── */}
+      {/* Mobile */}
       <div className="flex flex-col gap-3 md:hidden">
         <div className="flex items-start gap-3">
           <button
@@ -140,9 +181,7 @@ export function TaskRow({
             disabled={task.status === "done" || busy}
             className={`task-checkbox mt-0.5 shrink-0 ${task.status === "done" ? "checked" : ""}`}
           >
-            {task.status === "done" && (
-              <Check size={14} className="text-white" />
-            )}
+            {task.status === "done" && <Check size={14} className="text-white" />}
           </button>
 
           <div className="min-w-0 flex-1">
@@ -157,19 +196,7 @@ export function TaskRow({
             </span>
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <TaskPriorityBadge priority={task.priority} />
-              <TaskDomainBadge domain={task.domain} />
-              {task.carryOverCount > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
-                  <AlertTriangle size={10} />
-                  {task.carryOverCount}
-                </span>
-              )}
-              {task.carryOverCount >= 3 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
-                  Bloqueada
-                </span>
-              )}
+              <TaskBadges task={task} />
             </div>
           </div>
 
@@ -194,43 +221,7 @@ export function TaskRow({
         </div>
 
         {actionsOpen && task.status !== "done" && (
-          <div className="flex flex-wrap gap-2 border-t border-[var(--glass-border)]/80 pt-3">
-            <button
-              type="button"
-              onClick={() => { onComplete(task.id); onToggleActions(null); }}
-              disabled={busy}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white transition-all hover:scale-[1.02] disabled:opacity-50"
-            >
-              <Check size={13} />
-              Hecha
-            </button>
-            <button
-              type="button"
-              onClick={() => { onCarryOver(task.id); onToggleActions(null); }}
-              disabled={busy}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--amber-soft-text)] transition-all hover:scale-[1.02] disabled:opacity-50"
-            >
-              <ArrowRight size={13} />
-              Manana
-            </button>
-            <button
-              type="button"
-              onClick={() => { onOpenDetail(task.id); onToggleActions(null); }}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--violet-soft-text)] transition-all hover:scale-[1.02]"
-            >
-              <ListTodo size={13} />
-              Detalle
-            </button>
-            <button
-              type="button"
-              onClick={() => { onDiscard(task.id); onToggleActions(null); }}
-              disabled={busy}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-3 py-1.5 text-xs font-medium text-[var(--red-soft-text)] transition-all hover:scale-[1.02] disabled:opacity-50"
-            >
-              <Trash2 size={13} />
-              Descartar
-            </button>
-          </div>
+          <TaskActions {...actionProps} isCompact onToggleActions={onToggleActions} />
         )}
       </div>
     </div>
