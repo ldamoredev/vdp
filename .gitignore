@@ -11,4 +11,5 @@ dist/
 .agents/
 .junie/
 .kiro/
+.zed
 skills-lock.json
