@@ -20,6 +20,9 @@ export class Database {
   constructor(connectionString?: string) {
     const pool = new pg.Pool({
       connectionString: connectionString ?? process.env.DATABASE_URL,
+      max: 5,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
     });
     this.query = drizzle(pool, { schema: this.schema });
   }

@@ -26,7 +26,7 @@ export const agentMessages = coreSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     conversationId: uuid("conversation_id")
       .notNull()
-      .references(() => agentConversations.id),
+      .references(() => agentConversations.id, { onDelete: 'cascade' }),
     role: varchar("role", { length: 10 }).notNull(),
     content: text("content"),
     toolCalls: jsonb("tool_calls"),

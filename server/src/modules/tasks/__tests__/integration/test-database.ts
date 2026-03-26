@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS core.agent_conversations (
 
 CREATE TABLE IF NOT EXISTS core.agent_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id UUID NOT NULL REFERENCES core.agent_conversations(id),
+    conversation_id UUID NOT NULL REFERENCES core.agent_conversations(id) ON DELETE CASCADE,
     role VARCHAR(10) NOT NULL,
     content TEXT,
     tool_calls JSONB,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS tasks.tasks (
 
 CREATE TABLE IF NOT EXISTS tasks.task_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id UUID NOT NULL REFERENCES tasks.tasks(id),
+    task_id UUID NOT NULL REFERENCES tasks.tasks(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     type VARCHAR(30) NOT NULL DEFAULT 'note',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id UUID NOT NULL UNIQUE REFERENCES tasks.tasks(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    embedding vector(384) NOT NULL,
+    embedding vector(768) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

@@ -23,7 +23,9 @@ export class CreateTask {
         }
 
         const task = await this.repository.createTask(data);
-        this.embedTask.execute(task.id).catch(() => {});
+        this.embedTask.execute(task.id).catch((err: unknown) => {
+            console.warn('[EmbedTask] failed for task', task.id, err instanceof Error ? err.message : err);
+        });
 
         return { task, similarTasks };
     }

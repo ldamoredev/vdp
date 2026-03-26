@@ -47,7 +47,7 @@ export const taskNotes = tasksSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     taskId: uuid("task_id")
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     content: text("content").notNull(),
     type: varchar("type", { length: 30 }).notNull().default("note"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

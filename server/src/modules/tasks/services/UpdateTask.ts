@@ -25,7 +25,9 @@ export class UpdateTask {
         task.updatedAt = new Date();
 
         const saved = await this.repository.save(task);
-        this.embedTask.execute(id).catch(() => {});
+        this.embedTask.execute(id).catch((err: unknown) => {
+            console.warn('[EmbedTask] failed for task', id, err instanceof Error ? err.message : err);
+        });
         return saved;
     }
 }

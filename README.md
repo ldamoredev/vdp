@@ -216,7 +216,7 @@ Base URL: `/api/v1`
 |--------|------|-------------|
 | `GET` | `/api/v1/tasks/insights/stream` | Server-Sent Events for task insights |
 
-**Authentication:** All endpoints (except `/api/health`) require `x-api-key` header or `?api_key=` query param matching `ACCESS_SECRET`. Disabled when `ACCESS_SECRET` is not set.
+**Authentication:** All endpoints (except `/api/health`) require `x-api-key` header matching `ACCESS_SECRET`. Disabled when `ACCESS_SECRET` is not set.
 <!-- END:AUTO-GENERATED:API -->
 
 ## Testing

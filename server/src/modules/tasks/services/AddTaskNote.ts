@@ -17,7 +17,9 @@ export class AddTaskNote {
         }
 
         const note = await this.noteRepository.addNote(taskId, content, type);
-        this.embedTask.execute(taskId).catch(() => {});
+        this.embedTask.execute(taskId).catch((err: unknown) => {
+            console.warn('[EmbedTask] failed for task', taskId, err instanceof Error ? err.message : err);
+        });
         return note;
     }
 }
