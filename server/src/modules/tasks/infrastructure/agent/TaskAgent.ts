@@ -1,5 +1,5 @@
 import { TASKS_SYSTEM_PROMPT } from './system-prompt';
-import { TasksTools } from './tools';
+import { TasksTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
 import { EventBus } from '../../../common/base/event-bus/EventBus';

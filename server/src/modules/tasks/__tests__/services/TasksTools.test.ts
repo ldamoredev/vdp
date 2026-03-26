@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
-import { TasksTools } from '../../infrastructure/agent/tools';
+import { TasksTools } from '../../infrastructure/agent/tools.js';
 
 describe('TasksTools', () => {
     it('composes the base task tool registry without insights tools by default', () => {
