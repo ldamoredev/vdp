@@ -48,6 +48,7 @@ export interface DomainConfig {
   chatDescription: string;
   aiDescription: string;
   navItems: NavItem[];
+  disabled?: boolean;
 }
 
 export const domains: DomainConfig[] = [
@@ -73,6 +74,7 @@ export const domains: DomainConfig[] = [
     subtitle: "Finanzas",
     icon: Wallet,
     iconLetter: "W",
+    disabled: true,
     agentEndpoint: "/wallet/agent/chat",
     chatPlaceholder: "Consulta tus finanzas...",
     chatWelcome: "Hola! Soy tu asistente financiero",
@@ -92,6 +94,7 @@ export const domains: DomainConfig[] = [
     subtitle: "Salud",
     icon: HeartPulse,
     iconLetter: "H",
+    disabled: true,
     agentEndpoint: "/health/agent/chat",
     chatPlaceholder: "Consulta tu salud...",
     chatWelcome: "Hola! Soy tu asistente de salud",
@@ -112,6 +115,7 @@ export const domains: DomainConfig[] = [
     subtitle: "Personas",
     icon: Users,
     iconLetter: "P",
+    disabled: true,
     agentEndpoint: "/people/agent/chat",
     chatPlaceholder: "Consulta sobre tus contactos...",
     chatWelcome: "Hola! Soy tu asistente de relaciones",
@@ -127,6 +131,7 @@ export const domains: DomainConfig[] = [
     subtitle: "Trabajo",
     icon: Briefcase,
     iconLetter: "K",
+    disabled: true,
     agentEndpoint: "/work/agent/chat",
     chatPlaceholder: "Consulta sobre tu carrera...",
     chatWelcome: "Hola! Soy tu asistente profesional",
@@ -142,6 +147,7 @@ export const domains: DomainConfig[] = [
     subtitle: "Estudio",
     icon: GraduationCap,
     iconLetter: "S",
+    disabled: true,
     agentEndpoint: "/study/agent/chat",
     chatPlaceholder: "Consulta sobre tu aprendizaje...",
     chatWelcome: "Hola! Soy tu asistente de estudio",

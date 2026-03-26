@@ -9,11 +9,15 @@ import {
   ChevronRight,
   History,
   ListChecks,
+  Lock,
   TrendingUp,
 } from "lucide-react";
 import { tasksApi } from "@/lib/api/tasks";
 import { formatDateShort, getTodayISO } from "@/lib/format";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
+import { domains } from "@/lib/navigation";
+
+const disabledDomains = domains.filter((d) => d.disabled);
 
 export default function HomePage() {
   const today = getTodayISO();
@@ -52,13 +56,14 @@ export default function HomePage() {
     <div className="max-w-6xl space-y-8 animate-fade-in">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-          Centro de comando Tasks
+          Centro de comando
         </h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Resumen diario del modulo que define la arquitectura actual
+          Tu sistema operativo personal — un dominio a la vez
         </p>
       </div>
 
+      {/* ─── Active: Tasks stats row ─── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 stagger-children">
         <Link
           href="/tasks"
@@ -150,8 +155,10 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* ─── Main content grid ─── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {/* Today's tasks */}
           <div className="glass-card-static overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
@@ -211,6 +218,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Day review */}
           <div className="glass-card-static overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
@@ -256,7 +264,9 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Right sidebar */}
         <div className="space-y-6">
+          {/* Weekly trend */}
           <div className="glass-card-static overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
@@ -299,37 +309,44 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* ─── Disabled domains: Proximamente ─── */}
           <div className="glass-card-static overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
               <div className="flex items-center gap-2">
                 <CalendarDays size={16} style={{ color: "var(--violet-soft-text)" }} />
                 <h3 className="text-sm font-medium text-[var(--foreground)]">
-                  Foco de estabilizacion
+                  Dominios
                 </h3>
               </div>
-              <span className="text-xs text-[var(--muted)]">Tasks module</span>
+              <span className="text-xs text-[var(--muted)]">Vida digital</span>
             </div>
-            <div className="space-y-3 p-4 text-sm text-[var(--foreground-secondary)]">
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
-                <div className="font-medium text-[var(--foreground)]">
-                  Contrato canonico
+            <div className="space-y-2 p-4">
+              {disabledDomains.map((domain) => (
+                <div
+                  key={domain.key}
+                  className="flex items-center gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3 opacity-40"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--glass-border)] bg-[var(--background-secondary)]">
+                    <span className="text-xs font-bold text-[var(--muted)]">
+                      {domain.iconLetter}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[var(--foreground)]">
+                      {domain.label}
+                    </div>
+                    <div className="text-[11px] text-[var(--muted)]">
+                      {domain.subtitle}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-full border border-[var(--glass-border)] px-2 py-0.5">
+                    <Lock size={10} className="text-[var(--muted)]" />
+                    <span className="text-[10px] font-medium text-[var(--muted)]">
+                      Pronto
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  `tasks`, `done`, stats y mutaciones alineadas entre UI, API y tests.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
-                <div className="font-medium text-[var(--foreground)]">Chat Tasks</div>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  Endpoint SSE del agente conectado al panel lateral.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
-                <div className="font-medium text-[var(--foreground)]">Tooling</div>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  Drizzle, builds y suite Tasks como baseline del proyecto.
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

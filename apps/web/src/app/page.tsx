@@ -22,7 +22,7 @@ const modules = [
     softBg: "var(--blue-soft-bg)",
     softText: "var(--blue-soft-text)",
     softBorder: "var(--blue-soft-border)",
-    ready: true,
+    ready: false,
   },
   {
     key: "health",
@@ -33,7 +33,7 @@ const modules = [
     softBg: "var(--emerald-soft-bg)",
     softText: "var(--emerald-soft-text)",
     softBorder: "var(--emerald-soft-border)",
-    ready: true,
+    ready: false,
   },
   {
     key: "people",
@@ -96,87 +96,110 @@ export default function Home() {
 
       {/* Module grid */}
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children mb-16">
-        {modules.map((mod) => (
-          <Link
-            key={mod.key}
-            href={mod.href}
-            className="group relative glass-card p-6 transition-all cursor-pointer overflow-hidden"
-          >
-            {/* Accent glow on hover */}
-            <div
-              className="absolute inset-0 rounded-[var(--radius-lg)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{
-                background: `radial-gradient(ellipse at 50% 0%, ${mod.softBg}, transparent 70%)`,
-              }}
-            />
-
-            <div className="relative">
-              {/* Icon + badge row */}
-              <div className="flex items-center justify-between mb-4">
+        {modules.map((mod) => {
+          const content = (
+            <>
+              {/* Accent glow on hover (active only) */}
+              {mod.ready && (
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold"
+                  className="absolute inset-0 rounded-[var(--radius-lg)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                   style={{
-                    background: mod.softBg,
-                    color: mod.softText,
-                    border: `1px solid ${mod.softBorder}`,
+                    background: `radial-gradient(ellipse at 50% 0%, ${mod.softBg}, transparent 70%)`,
                   }}
-                >
-                  {mod.iconLetter}
+                />
+              )}
+
+              <div className="relative">
+                {/* Icon + badge row */}
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold"
+                    style={{
+                      background: mod.softBg,
+                      color: mod.softText,
+                      border: `1px solid ${mod.softBorder}`,
+                    }}
+                  >
+                    {mod.iconLetter}
+                  </div>
+                  {mod.ready ? (
+                    <span
+                      className="badge"
+                      style={{
+                        background: "var(--green-soft-bg)",
+                        color: "var(--green-soft-text)",
+                        border: "1px solid var(--green-soft-border)",
+                      }}
+                    >
+                      Activo
+                    </span>
+                  ) : (
+                    <span
+                      className="badge"
+                      style={{
+                        background: "var(--muted-bg)",
+                        color: "var(--foreground-muted)",
+                        border: "1px solid var(--divider)",
+                      }}
+                    >
+                      Proximamente
+                    </span>
+                  )}
                 </div>
-                {mod.ready ? (
-                  <span
-                    className="badge"
-                    style={{
-                      background: "var(--green-soft-bg)",
-                      color: "var(--green-soft-text)",
-                      border: "1px solid var(--green-soft-border)",
-                    }}
-                  >
-                    Activo
-                  </span>
-                ) : (
-                  <span
-                    className="badge"
-                    style={{
-                      background: "var(--muted-bg)",
-                      color: "var(--foreground-muted)",
-                      border: "1px solid var(--divider)",
-                    }}
-                  >
-                    Próximamente
-                  </span>
+
+                {/* Name + description */}
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1.5">
+                  {mod.name}
+                </h3>
+                <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
+                  {mod.description}
+                </p>
+
+                {/* Arrow indicator (active only) */}
+                {mod.ready && (
+                  <div className="mt-4 flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: mod.softText }}>
+                    <span>Abrir</span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="group-hover:translate-x-1 transition-transform"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </div>
                 )}
               </div>
+            </>
+          );
 
-              {/* Name + description */}
-              <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1.5">
-                {mod.name}
-              </h3>
-              <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
-                {mod.description}
-              </p>
+          if (mod.ready) {
+            return (
+              <Link
+                key={mod.key}
+                href={mod.href}
+                className="group relative glass-card p-6 transition-all cursor-pointer overflow-hidden"
+              >
+                {content}
+              </Link>
+            );
+          }
 
-              {/* Arrow indicator */}
-              <div className="mt-4 flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: mod.softText }}>
-                <span>{mod.ready ? "Abrir" : "Explorar"}</span>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="group-hover:translate-x-1 transition-transform"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-              </div>
+          return (
+            <div
+              key={mod.key}
+              className="relative glass-card p-6 overflow-hidden opacity-50 cursor-default"
+            >
+              {content}
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       {/* Demo video */}
