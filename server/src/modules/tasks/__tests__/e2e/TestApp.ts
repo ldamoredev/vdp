@@ -14,8 +14,6 @@ export class TestApp {
     public core!: Core;
 
     async setup() {
-        process.env.DATABASE_URL = 'postgresql://test:test@localhost:5433/vdp_test';
-
         this.core = new Core(new TestCoreConfiguration());
         this.app = Fastify({ logger: false });
 

@@ -3,12 +3,21 @@
 import { useEffect, useRef } from "react";
 import { notificationStore, type Notification } from "@/lib/notification-store";
 
-const SSE_URL =
+const SSE_BASE =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api/v1") +
   "/tasks/insights/stream";
 
 const RECONNECT_DELAY_MS = 3000;
 const MAX_RECONNECT_DELAY_MS = 30000;
+
+function getSseUrl(): string {
+  if (typeof document === "undefined") return SSE_BASE;
+  const match = document.cookie.match(/(?:^|;\s*)access_secret=([^;]*)/);
+  const secret = match ? decodeURIComponent(match[1]) : null;
+  if (!secret) return SSE_BASE;
+  const sep = SSE_BASE.includes("?") ? "&" : "?";
+  return `${SSE_BASE}${sep}api_key=${encodeURIComponent(secret)}`;
+}
 
 /**
  * Connects to the SSE insights stream.
@@ -26,7 +35,7 @@ export function useInsightsSSE() {
     function connect() {
       if (!mounted) return;
 
-      const es = new EventSource(SSE_URL);
+      const es = new EventSource(getSseUrl());
       eventSourceRef.current = es;
 
       es.onopen = () => {

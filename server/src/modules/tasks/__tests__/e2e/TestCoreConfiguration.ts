@@ -31,7 +31,7 @@ export class TestCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new NoOpLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database());
+        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(process.env.TEST_DATABASE_URL));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();

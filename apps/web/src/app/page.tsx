@@ -94,25 +94,8 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Demo video */}
-      <div className="w-full max-w-5xl mb-16 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-        <div className="relative rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl shadow-md">
-          <video
-            className="w-full aspect-video"
-            controls
-            preload="metadata"
-            poster=""
-          >
-            <source src="/vdp-demo.mp4" type="video/mp4" />
-          </video>
-        </div>
-        <p className="text-center text-xs text-[var(--muted)] mt-3">
-          Mirá cómo funciona VDP en 90 segundos
-        </p>
-      </div>
-
       {/* Module grid */}
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children mb-16">
         {modules.map((mod) => (
           <Link
             key={mod.key}
@@ -194,6 +177,31 @@ export default function Home() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Demo video */}
+      <div className="w-full max-w-5xl animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+
+        <div className="text-center animate-fade-in-up">
+          <p className="text-lg text-[var(--muted)] max-w-md mx-auto leading-relaxed mb-8">
+            Demo sobre como podemos usar VDP
+          </p>
+        </div>
+
+
+        <div className="relative rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl shadow-md">
+          <video
+              className="w-full aspect-video"
+              controls
+              preload="metadata"
+              poster=""
+          >
+            <source src="/vdp-demo.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <p className="text-center text-xs text-[var(--muted)] mt-3">
+          Mirá cómo funciona VDP en 90 segundos
+        </p>
       </div>
 
       {/* Footer */}

@@ -7,6 +7,25 @@ import {
 } from 'fastify';
 import { defineRoute, RouteContextHandler, RouteSchemas } from './routes';
 
+export interface Controller {
+    readonly prefix: string;
+    registerRoutes(routes: RouteRegister): void | Promise<void>;
+}
+
+export abstract class HttpController implements Controller {
+    abstract readonly prefix: string;
+
+    register(app: FastifyInstance): void {
+        const plugin: FastifyPluginAsync = async (scopedApp) => {
+            await this.registerRoutes(new RouteRegister(scopedApp));
+        };
+
+        app.register(plugin, { prefix: this.prefix });
+    }
+
+    abstract registerRoutes(routes: RouteRegister): void | Promise<void>;
+}
+
 export class RouteRegister {
     constructor(private readonly app: FastifyInstance) {}
 
@@ -107,23 +126,4 @@ export class RouteRegister {
             maybeHandler,
         );
     }
-}
-
-export interface Controller {
-    readonly prefix: string;
-    registerRoutes(routes: RouteRegister): void | Promise<void>;
-}
-
-export abstract class HttpController implements Controller {
-    abstract readonly prefix: string;
-
-    register(app: FastifyInstance): void {
-        const plugin: FastifyPluginAsync = async (scopedApp) => {
-            await this.registerRoutes(new RouteRegister(scopedApp));
-        };
-
-        app.register(plugin, { prefix: this.prefix });
-    }
-
-    abstract registerRoutes(routes: RouteRegister): void | Promise<void>;
 }

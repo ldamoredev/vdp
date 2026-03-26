@@ -1,14 +1,18 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 
 import { Core } from './modules/Core';
 import { HttpController } from './modules/common/http/HttpController';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
+import { BasicHttpAuthentication } from './modules/common/http/BasicHttpAuthentication';
 
 export class App {
     public app = Fastify({ logger: true });
     private stopPromise: Promise<void> | null = null;
+    private basicHttpAuthentication = new BasicHttpAuthentication();
 
     constructor(public readonly core: Core) {
         this.registerPlugins();
@@ -17,7 +21,17 @@ export class App {
     }
 
     private registerPlugins() {
-        this.app.register(cors, { origin: true });
+        const allowedOrigins = process.env.CORS_ORIGIN
+            ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+            : true;
+
+        this.app.register(cors, { origin: allowedOrigins });
+        this.app.register(helmet, { contentSecurityPolicy: false });
+        this.app.register(rateLimit, {
+            max: 100,
+            timeWindow: '1 minute',
+        });
+        this.app.register(this.basicHttpAuthentication.apiKeyGuard);
         this.app.setErrorHandler(httpErrorHandler);
     }
 

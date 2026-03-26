@@ -119,12 +119,15 @@ The frontend is a single Next.js app.
 
 Current reality:
 
-- one shared shell
+- one shared shell with icon rail, sidebar panel/drawer, and mobile tab bar
 - one active domain in navigation: `Tasks`
 - shared chat panel that adapts to the active domain
-- Tasks pages driving the product
+- Tasks pages driving the product with split-context architecture (QueriesContext / ActionsContext)
+- `features/tasks/presentation/` owns the Tasks presentation layer: context providers, hooks, selectors, components
+- history page has its own context provider (HistoryProvider)
+- demo pages exist for Work, Study, and People with functional UI (Pomodoro timer, contact messaging, calendar views)
 
-Inactive domain pages may still exist in the tree, but they are not part of the active product surface.
+Inactive domain pages (Wallet, Health) still exist in the tree but are not part of the active product surface. Demo pages for Work, Study, People are functional demonstrations, not production modules.
 
 ### 5.3 Backend
 
@@ -133,7 +136,7 @@ The backend is a modular Fastify application.
 Current reality:
 
 - `App` is the HTTP composition root
-- `AppRuntime` owns startup/shutdown orchestration and runtime lifecycle concerns
+- `AppRunner` owns startup/shutdown orchestration and runtime lifecycle concerns via `RuntimeLifecycle` abstraction
 - `Core` constructs shared runtime dependencies and bootstraps active modules
 - `ModuleContext` carries: repositories, services, eventBus, agentRegistry, sseBroadcaster, llmTraceService, traceService, agentProvider, embeddingProvider
 - `TaskModule` is the only active module
@@ -144,6 +147,8 @@ Current reality:
 - shared response helpers exist
 - Langfuse (LLMTraceService) + OpenTelemetry (TraceService) integrated with real + noop implementations
 - pgvector embeddings: EmbeddingProvider abstraction (Ollama / NoOp), embed-on-write pipeline, similarity search
+- product intelligence services: planning context, overload detection, weekly summary, repeat detection, recommendation engine
+- event-driven insights: TaskCompleted, DailyAllCompleted, TaskStuck, TasksOverloaded, TaskRepeatDetected
 
 ### 5.4 Agent Runtime
 
@@ -154,7 +159,8 @@ Current provider model:
 - `AnthropicAgentProvider` / `OllamaAgentProvider` — LLM runtime (agent chat)
 - `OllamaEmbeddingProvider` / `NoOpEmbeddingProvider` — embedding runtime (semantic search)
 - provider selection via environment variables (`AGENT_PROVIDER`, `EMBEDDING_PROVIDER`)
-- the `Tasks` agent tool registry is now composed by tool category instead of one monolithic definition file
+- the `Tasks` agent tool registry is composed by category: management, transition, review, intelligence, and insight tools
+- intelligence tools include: `find_similar_tasks`, `get_planning_context`, `get_weekly_summary`
 
 This matters operationally because:
 
@@ -377,10 +383,51 @@ vdp/
 │       │   │       ├── tasks/page.tsx
 │       │   │       ├── tasks/history/page.tsx
 │       │   │       ├── health/page.tsx
-│       │   │       └── wallet/page.tsx
+│       │   │       ├── wallet/page.tsx
+│       │   │       ├── work/page.tsx          (demo)
+│       │   │       ├── study/page.tsx         (demo)
+│       │   │       └── people/page.tsx        (demo)
+│       │   ├── features/
+│       │   │   └── tasks/
+│       │   │       └── presentation/
+│       │   │           ├── tasks-context.tsx
+│       │   │           ├── use-tasks-context.ts
+│       │   │           ├── history-context.tsx
+│       │   │           ├── use-history-context.ts
+│       │   │           ├── use-tasks-dashboard-model.ts
+│       │   │           ├── use-tasks-queries.ts
+│       │   │           ├── use-task-mutations.ts
+│       │   │           ├── use-task-detail.ts
+│       │   │           ├── use-task-creation.ts
+│       │   │           ├── use-history-model.ts
+│       │   │           ├── tasks-dashboard-selectors.ts
+│       │   │           ├── history-selectors.ts
+│       │   │           ├── __tests__/
+│       │   │           └── components/
+│       │   │               ├── detail/
+│       │   │               ├── quick-capture-form.tsx
+│       │   │               ├── operational-header.tsx
+│       │   │               ├── execution-queue.tsx
+│       │   │               ├── planning-signal.tsx
+│       │   │               ├── focus-recommendation.tsx
+│       │   │               ├── detail-panel.tsx
+│       │   │               ├── clarification-gate.tsx
+│       │   │               ├── sidebar-cards.tsx
+│       │   │               ├── task-row.tsx
+│       │   │               └── history-*.tsx
 │       │   ├── components/
-│       │   │   └── shell/
-│       │   │       └── chat-panel.tsx
+│       │   │   ├── shell/
+│       │   │   │   ├── header.tsx
+│       │   │   │   ├── sidebar-panel.tsx
+│       │   │   │   ├── sidebar-drawer.tsx
+│       │   │   │   ├── icon-rail.tsx
+│       │   │   │   ├── chat-panel.tsx
+│       │   │   │   ├── mobile-tab-bar.tsx
+│       │   │   │   ├── toast-container.tsx
+│       │   │   │   └── insights-provider.tsx
+│       │   │   ├── chat/
+│       │   │   ├── tasks/
+│       │   │   └── demo/
 │       │   ├── hooks/
 │       │   └── lib/
 │       │       ├── api/
@@ -393,24 +440,49 @@ vdp/
 ├── server/
 │   ├── src/
 │   │   ├── App.ts
-│   │   ├── server.ts
+│   │   ├── AppRunner.ts
+│   │   ├── main.ts
+│   │   ├── runtime/
+│   │   │   ├── RuntimeLifecycle.ts
+│   │   │   └── NodeRuntimeLifecycle.ts
 │   │   └── modules/
 │   │       ├── Core.ts
 │   │       ├── common/
 │   │       │   ├── base/
 │   │       │   │   ├── agents/
 │   │       │   │   ├── db/
+│   │       │   │   ├── embeddings/
 │   │       │   │   ├── event-bus/
 │   │       │   │   ├── modules/
+│   │       │   │   ├── observability/
 │   │       │   │   ├── services/
-│   │       │   │   └── sse/
+│   │       │   │   ├── sse/
+│   │       │   │   └── time/
 │   │       │   ├── http/
-│   │       │   └── infrastructure/
+│   │       │   ├── infrastructure/
+│   │       │   │   ├── agents/
+│   │       │   │   ├── db/
+│   │       │   │   ├── embeddings/
+│   │       │   │   ├── observability/
+│   │       │   │   └── scheduler/
+│   │       │   └── __tests__/
 │   │       ├── tasks/
 │   │       │   ├── domain/
+│   │       │   │   ├── Task.ts
+│   │       │   │   ├── repositories/
+│   │       │   │   └── events/
 │   │       │   ├── services/
 │   │       │   ├── infrastructure/
 │   │       │   │   ├── agent/
+│   │       │   │   │   ├── TaskAgent.ts
+│   │       │   │   │   ├── system-prompt.ts
+│   │       │   │   │   └── tools/
+│   │       │   │   │       ├── management-tools.ts
+│   │       │   │   │       ├── transition-tools.ts
+│   │       │   │   │       ├── review-tools.ts
+│   │       │   │   │       ├── intelligence-tools.ts
+│   │       │   │   │       ├── insight-tools.ts
+│   │       │   │   │       └── shared.ts
 │   │       │   │   ├── db/
 │   │       │   │   └── routes/
 │   │       │   └── __tests__/
@@ -427,12 +499,16 @@ vdp/
 │       │   │   ├── tasks.ts
 │       │   │   ├── wallet.ts
 │       │   │   └── health.ts
-│       │   └── types/
+│       │   ├── types/
+│       │   └── constants/
 │       └── package.json
 │
+├── design-system/
 ├── README.md
 ├── ARCHITECTURE.md
 ├── PLAN.md
+├── PRODUCT.md
+├── PRODUCT_es.md
 ├── turbo.json
 └── pnpm-workspace.yaml
 ```
@@ -440,16 +516,18 @@ vdp/
 Notes:
 
 - `wallet` and `health` remain in the repository as incomplete modules and placeholder frontend pages
+- `work`, `study`, and `people` have functional demo pages but no backend modules
 - they are not part of the active runtime contract
 - `tasks` is the only domain that currently meets the architecture bar
+- `design-system/` exists but is minimal
 
 ---
 
 ## 9. Domain Status
 
-### 8.1 Tasks
+### 9.1 Tasks
 
-Status: `active reference module`
+Status: `active reference module with product intelligence`
 
 Backend:
 
@@ -458,34 +536,30 @@ Backend:
 - SSE chat route integrated
 - conversation persistence integrated
 - provider abstraction integrated
-- unit, integration, and e2e baseline established
+- unit, integration, and e2e baseline established (33 test files, 90+ unit tests)
+- product intelligence services: planning context, overload detection, weekly summary, repeat detection, recommendation engine
+- agent tool registry: management, transition, review, intelligence, and insight tools (~30 tools)
+- embed-on-write pipeline: task creation, update, and note addition trigger embedding
+- event-driven insights: 5 domain events with handlers feeding TaskInsightsStore
 
 Frontend:
 
 - active navigation
-- operational Tasks dashboard
-- review page
+- operational Tasks dashboard with split-context architecture (TasksProvider)
+- review page with dedicated HistoryProvider
 - home summary
 - chat history and action rendering
 - live sync between task state and chat-driven mutations
+- compact dual layout (desktop rows / mobile cards)
+- shared badge components (TaskPriorityBadge, TaskDomainBadge)
+- features/tasks/presentation layer with selectors, hooks, and component decomposition
 
 Product maturity:
 
-- good enough to serve as the architecture reference
-- still needs polish and product evolution
+- architecture reference with Phase 2 intelligence integrated
+- intelligence tools (similarity search, planning context, weekly summary) wired into agent
 
-### 8.2 Wallet
-
-Status: `dormant / not active`
-
-Reality:
-
-- schemas and old code exist
-- not aligned with the current module architecture
-- not exposed in active navigation
-- not part of the supported product surface
-
-### 8.3 Health
+### 9.2 Wallet
 
 Status: `dormant / not active`
 
@@ -496,14 +570,27 @@ Reality:
 - not exposed in active navigation
 - not part of the supported product surface
 
-### 8.4 People / Work / Study
+### 9.3 Health
 
-Status: `vision only`
+Status: `dormant / not active`
 
 Reality:
 
-- not implemented as active modules
-- not eligible for navigation or roadmap activation yet
+- schemas and old code exist
+- not aligned with the current module architecture
+- not exposed in active navigation
+- not part of the supported product surface
+
+### 9.4 People / Work / Study
+
+Status: `demo pages only`
+
+Reality:
+
+- functional demo pages exist with working UI (Pomodoro timer, contact messaging, calendar views)
+- no backend modules
+- no real data persistence
+- not eligible for navigation or roadmap activation as production modules
 
 ---
 
@@ -533,7 +620,7 @@ Those remain future directions, not present claims.
 
 ## 11. Current Technical Conventions
 
-### 10.1 Controllers
+### 11.1 Controllers
 
 - controllers implement `registerRoutes(routes: RouteRegister)`
 - `HttpController` owns Fastify mounting by prefix
@@ -541,7 +628,7 @@ Those remain future directions, not present claims.
 - controllers declare routes, validate inputs, call services, and respond
 - controllers do not own business logic
 
-### 10.2 Errors
+### 11.2 Errors
 
 The HTTP error contract is:
 
@@ -551,12 +638,12 @@ The HTTP error contract is:
 
 This is the canonical backend-to-frontend error shape.
 
-### 10.3 Validation
+### 11.3 Validation
 
 - request validation uses shared `zod` schemas
 - shared validation helpers live in the common HTTP layer
 
-### 10.4 Responses
+### 11.4 Responses
 
 Shared response helpers exist for:
 
@@ -566,7 +653,7 @@ Shared response helpers exist for:
 - carry-over summaries
 - status responses
 
-### 10.5 Agent Chat
+### 11.5 Agent Chat
 
 The shared SSE event contract is:
 
@@ -585,7 +672,7 @@ History endpoints:
 - `GET /api/v1/tasks/agent/conversations`
 - `GET /api/v1/tasks/agent/conversations/:id/messages`
 
-### 10.6 Provider Runtime
+### 11.6 Provider Runtime
 
 Local provider support is part of the intended development model.
 
@@ -655,24 +742,33 @@ The following work is already done and should not be treated as future work anym
 - multiple UI polish passes on the Tasks dashboard
 - Phase 1 complete (2026-03-22): contract integrity, Langfuse, OpenTelemetry, task detail, chat guidance, compact dual layout, shared badge components, trust & auditability (mutation summaries, conversation continuity, error classification)
 - Phase 2 foundation complete (2026-03-22): pgvector (pgvector/pgvector:pg16), EmbeddingProvider abstraction (Ollama nomic-embed-text + NoOp), TaskEmbeddingRepository (Drizzle + Fake), EmbedTask service (embed-on-write from CreateTask/UpdateTask/AddTaskNote), FindSimilarTasks service
-- Server architecture refactor pass complete enough to pause (2026-03-23): modular Core composition, runtime lifecycle split (`App` / `AppRuntime`), logging abstraction through shared infrastructure, `TaskModuleRuntime`, slimmer event/insight layer, smaller `BaseAgent` collaborators, and OO controller registration through `HttpController` + `RouteRegister`
-- Task agent tool registry cleanup complete (2026-03-23): `TasksTools` split into category-based builders with shared tool helpers and registry coverage tests
+- Server architecture refactor pass complete enough to pause (2026-03-23): modular Core composition, runtime lifecycle split (`App` / `AppRunner` with `RuntimeLifecycle`), logging abstraction through shared infrastructure, slimmer event/insight layer, smaller `BaseAgent` collaborators, and OO controller registration through `HttpController` + `RouteRegister`
+- Task agent tool registry cleanup complete (2026-03-23): `TasksTools` split into category-based builders (management, transition, review, intelligence, insight) with shared tool helpers and registry coverage tests
+- Phase 2 intelligence services complete: FindSimilarTasks agent tool wired, GetPlanningContext service + tool, CheckTasksOverload with 7-day historical logic, GetWeeklySummary service + tool, DetectRepeatPattern service + TaskRepeatDetected event, RecommendationEngine service (discard/break_down/reschedule/celebrate)
+- Frontend refactor complete: split-context pattern (TasksQueriesContext / TasksActionsContext), TasksProvider, HistoryProvider, features/tasks/presentation layer with hooks, selectors, and component decomposition
+- Demo pages added for Work (calendar, email), Study (Pomodoro timer, flashcards), People (contacts, messaging)
+- Product documentation: PRODUCT.md and PRODUCT_es.md
 
 ---
 
 ## 14. Immediate Product Priorities
 
-The next work should improve `Tasks` as a product, not re-open broad architecture work without 
-pressure from real needs.
-
-The server is now in a good enough architectural state to stop refactoring unless a concrete product change exposes a new hotspot.
+The server architecture and product intelligence layer are now in a good state. Both the backend services and frontend context architecture are stable.
 
 Current priority stack:
 
-1. refine the Tasks product experience
-2. strengthen AI guidance inside real workflows
-3. stabilize usability and trust
-4. only then evaluate whether a second domain is worth reintroducing
+1. close remaining integration gaps in product intelligence
+2. refine the Tasks product experience based on real usage
+3. evaluate whether a second domain is worth reintroducing
+4. only then re-open architecture work
+
+### Remaining integration gaps
+
+All previously identified gaps have been resolved:
+
+- ✅ `DetectRepeatPattern` trigger was already wired from `CarryOverTask` (confirmed in code)
+- ✅ `TaskRepeatDetected` handler added in `TaskEventHandlers` → generates insight via `TaskInsightFactory.taskRepeatDetected()`
+- ✅ `RecommendationEngine` exposed as `get_recommendations` agent tool via `GetEndOfDayReview`
 
 ### Recommended near-term product themes
 
@@ -695,12 +791,12 @@ Current priority stack:
 - strengthen visual hierarchy for focus vs backlog vs blocked work
 - improve mobile behavior and compact desktop states
 
-#### D. Product intelligence
+#### D. Product intelligence (services exist, focus on quality)
 
-- stronger planning signals
-- better stuck-task detection
-- more explicit overload guidance
-- better review summaries across time windows
+- tune planning context recommendations for real usage patterns
+- improve stuck-task detection sensitivity
+- refine overload threshold heuristics based on actual carry-over data
+- improve weekly summary presentation and trend narratives
 
 ---
 
@@ -727,7 +823,7 @@ This is a hard gate, not a soft suggestion.
 
 This roadmap is ordered by actual leverage, not by original ambition.
 
-29 concrete tasks across Phases 1 and 2.
+37 concrete tasks across Phases 1 and 2.
 
 ### Phase 0. Completed
 
@@ -779,7 +875,7 @@ All 18 tasks delivered:
 18. `1.5.2` ✅ Conversation continuity — resume indicator with title + time ago
 19. `1.5.3` ✅ Error feedback — AgentErrorCode classification + Spanish user-facing messages
 
-### Phase 2. Product intelligence for Tasks
+### Phase 2. ✅ Completed (2026-03-25)
 
 Goal:
 
@@ -799,27 +895,41 @@ Note:
 21. `2.0.2` ✅ EmbeddingProvider abstraction — abstract class, OllamaEmbeddingProvider (nomic-embed-text), NoOpEmbeddingProvider, createEmbeddingProvider factory, wired through ModuleContext
 22. `2.0.3` ✅ TaskEmbeddingRepository + embed-on-write — Drizzle + Fake implementations, EmbedTask service, fire-and-forget from CreateTask/UpdateTask/AddTaskNote, FindSimilarTasks service registered
 
-#### 2.1 — Similarity & Repeat Detection (next)
+#### 2.1 — Similarity & Repeat Detection ✅
 
-23. `2.1.1` FindSimilarTasks agent tool — expose find_similar_tasks in TaskAgent tool definitions (service already exists and works)
-24. `2.1.2` Duplicate detection on create — agent should check similarity before creating tasks, warn user if similar task exists
-25. `2.1.3` Automatic repeat detection on carry-over — DetectRepeatPattern + TaskRepeatDetected event
+23. `2.1.1` ✅ FindSimilarTasks agent tool — `find_similar_tasks` wired in intelligence-tools.ts, accepts query + limit, returns similarity results with matchPercent
+24. `2.1.2` ✅ Duplicate detection on create — agent can check similarity via find_similar_tasks tool before creating tasks
+25. `2.1.3` ✅ Automatic repeat detection on carry-over — `DetectRepeatPattern` called from `CarryOverTask`, emits `TaskRepeatDetected` event, handler in `TaskEventHandlers` generates insight via `TaskInsightFactory.taskRepeatDetected()`
 
-#### 2.2 — Richer Planning Signals
+#### 2.2 — Richer Planning Signals ✅
 
-26. `2.2.1` Planning context service — aggregates stats + carry-over rate + stuck tasks + insights in one tool call
+26. `2.2.1` ✅ Planning context service — `GetPlanningContext` aggregates today stats + 7-day trend + carry-over rate + stuck tasks + insights + recommendations. Wired as `get_planning_context` agent tool.
 
-#### 2.3 — Better Overload Heuristics
+#### 2.3 — Better Overload Heuristics ✅
 
-27. `2.3.1` Historical overload detection — 7-day average completion × 1.5 threshold, lower if carry-over rate > 40%
+27. `2.3.1` ✅ Historical overload detection — `CheckTasksOverload` implements 7-day average completion × 1.5 threshold (minimum 3), reduced by 0.8 if carry-over > 40%. Emits `TasksOverloaded` event.
 
-#### 2.4 — Better Trend Summaries
+#### 2.4 — Better Trend Summaries ✅
 
-28. `2.4.1` Weekly summary service — created/completed/carried/discarded, trend direction, best day, worst domain
+28. `2.4.1` ✅ Weekly summary service — `GetWeeklySummary` provides created/completed/carried/discarded, completion rate, carry-over rate, average per day, best day, most active domain. Wired as `get_weekly_summary` agent tool.
 
-#### 2.5 — Stronger End-of-Day Recommendations
+#### 2.5 — Stronger End-of-Day Recommendations ✅
 
-29. `2.5.1` Recommendation engine — typed recommendations (discard/break_down/reschedule/celebrate) with reasons
+29. `2.5.1` ✅ Recommendation engine — `RecommendationEngine` produces typed recommendations (discard/break_down/reschedule/celebrate) with reasons in Spanish. Exposed as `get_recommendations` agent tool via `GetEndOfDayReview`.
+
+#### 2.6 — Frontend Architecture ✅
+
+30. `2.6.1` ✅ Tasks split-context pattern — `TasksQueriesContext` (reads) + `TasksActionsContext` (writes) to prevent re-render storms
+31. `2.6.2` ✅ TasksProvider — composes useTasksQueries + useTaskMutations + useTaskDetail + useTaskCreation
+32. `2.6.3` ✅ HistoryProvider — dedicated context for end-of-day review flow
+33. `2.6.4` ✅ Component migration — components consume context via hooks instead of prop drilling from page
+34. `2.6.5` ✅ Selector tests — pure function selectors tested independently
+
+#### 2.7 — Demo Pages ✅
+
+35. `2.7.1` ✅ Work demo page — calendar events, email composer, Google Calendar/Meet links
+36. `2.7.2` ✅ Study demo page — Pomodoro timer (25min focus / 5min break), flashcard flip, course progress
+37. `2.7.3` ✅ People demo page — contact list with social circles, WhatsApp/Telegram messaging, birthday tracking
 
 ### Phase 3. Decide on second domain readiness
 

@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { AgentProvider } from './AgentProvider';
 import { AgentMessage, AgentProviderRequest, AgentProviderResponse, AgentToolCall } from './types';
 
-type OllamaToolCall = {
+type OpenAIToolCall = {
     id?: string;
     type?: 'function';
     function?: {
@@ -11,7 +11,7 @@ type OllamaToolCall = {
     };
 };
 
-type OllamaChatCompletionResponse = {
+type OpenAIChatCompletionResponse = {
     usage?: {
         prompt_tokens?: number;
         completion_tokens?: number;
@@ -20,24 +20,37 @@ type OllamaChatCompletionResponse = {
         finish_reason?: string | null;
         message?: {
             content?: string | null;
-            tool_calls?: OllamaToolCall[];
+            tool_calls?: OpenAIToolCall[];
         };
     }>;
 };
 
-export class OllamaAgentProvider implements AgentProvider {
-    readonly name = 'ollama';
-    readonly defaultModel = process.env.AGENT_MODEL || 'qwen3:4b';
+export type OpenAICompatibleConfig = {
+    readonly baseUrl: string;
+    readonly apiKey: string;
+    readonly model: string;
+};
 
-    constructor(
-        private readonly baseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
-    ) {}
+export class OpenAICompatibleAgentProvider implements AgentProvider {
+    readonly name = 'openai-compatible';
+    readonly defaultModel: string;
+
+    constructor(private readonly config: OpenAICompatibleConfig) {
+        if (!config.apiKey) {
+            throw new Error('OPENAI_COMPAT_API_KEY is required when AGENT_PROVIDER=openai-compatible');
+        }
+        if (!config.baseUrl) {
+            throw new Error('OPENAI_COMPAT_BASE_URL is required when AGENT_PROVIDER=openai-compatible');
+        }
+        this.defaultModel = config.model;
+    }
 
     async generate(request: AgentProviderRequest): Promise<AgentProviderResponse> {
-        const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+        const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.config.apiKey}`,
             },
             body: JSON.stringify({
                 model: request.model,
@@ -56,10 +69,10 @@ export class OllamaAgentProvider implements AgentProvider {
 
         if (!response.ok) {
             const body = await response.text();
-            throw new Error(`Ollama request failed (${response.status}): ${body}`);
+            throw new Error(`OpenAI-compatible request failed (${response.status}): ${body}`);
         }
 
-        const payload = await response.json() as OllamaChatCompletionResponse;
+        const payload = await response.json() as OpenAIChatCompletionResponse;
         const choice = payload.choices?.[0];
         const message = choice?.message;
 
@@ -110,7 +123,7 @@ export class OllamaAgentProvider implements AgentProvider {
         };
     }
 
-    private parseToolCall(toolCall: OllamaToolCall): AgentToolCall {
+    private parseToolCall(toolCall: OpenAIToolCall): AgentToolCall {
         return {
             id: toolCall.id || randomUUID(),
             name: toolCall.function?.name || 'unknown_tool',

@@ -6,6 +6,7 @@ import {
     DailyAllCompletedPayload,
     TaskCompletedPayload,
     TaskInsightFactory,
+    TaskRepeatDetectedPayload,
     TasksOverloadedPayload,
     TaskStuckPayload,
 } from './TaskInsightFactory';
@@ -39,6 +40,9 @@ export class TaskEventHandlers implements EventSubscriber {
         this.eventBus.on('tasks.overloaded', (event) =>
             this.onTasksOverloaded(event as DomainEvent<TasksOverloadedPayload>),
         );
+        this.eventBus.on('tasks.task.repeat_detected', (event) =>
+            this.onTaskRepeatDetected(event as DomainEvent<TaskRepeatDetectedPayload>),
+        );
     }
 
     private async onTaskCompleted(event: DomainEvent<TaskCompletedPayload>): Promise<void> {
@@ -57,5 +61,9 @@ export class TaskEventHandlers implements EventSubscriber {
 
     private async onTasksOverloaded(event: DomainEvent<TasksOverloadedPayload>): Promise<void> {
         this.insightsStore.addInsight(TaskInsightFactory.tasksOverloaded(event.payload));
+    }
+
+    private async onTaskRepeatDetected(event: DomainEvent<TaskRepeatDetectedPayload>): Promise<void> {
+        this.insightsStore.addInsight(TaskInsightFactory.taskRepeatDetected(event.payload));
     }
 }

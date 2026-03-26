@@ -2,6 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { FindSimilarTasks } from '../../../services/FindSimilarTasks';
 import { GetPlanningContext } from '../../../services/GetPlanningContext';
 import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
+import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { jsonTool } from './shared';
 
 export function createTaskIntelligenceTools(services: ServiceProvider) {
@@ -55,6 +56,28 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
                 },
             },
             execute: async (input) => services.get(GetWeeklySummary).execute(input.days),
+        }),
+        jsonTool({
+            name: 'get_recommendations',
+            description:
+                'Get actionable recommendations for the day based on completion rate, pending tasks, and carry-over patterns. ' +
+                'Returns typed recommendations: celebrate, reschedule, break_down, or discard. ' +
+                'Use this at the end of the day or when the user asks for advice on what to do with pending tasks.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    date: { type: 'string', description: 'Date in YYYY-MM-DD format (default: today)' },
+                },
+            },
+            execute: async (input) => {
+                const review = await services.get(GetEndOfDayReview).execute(input.date);
+                return {
+                    date: review.date,
+                    completionRate: review.completionRate,
+                    pending: review.pending,
+                    recommendations: review.recommendations,
+                };
+            },
         }),
     ];
 }

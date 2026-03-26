@@ -21,6 +21,13 @@ export type TasksOverloadedPayload = {
     period: string;
 };
 
+export type TaskRepeatDetectedPayload = {
+    taskId: string;
+    title: string;
+    pattern: string;
+    previousInstances: number;
+};
+
 export class TaskInsightFactory {
     static taskCompleted(payload: TaskCompletedPayload): NewInsight {
         return this.buildInsight(
@@ -90,6 +97,26 @@ export class TaskInsightFactory {
                 `¿Querés que te ayude a dividirla en pasos más concretos?`;
 
         return this.buildInsight('suggestion', '🔄 Tarea atascada', message, payload);
+    }
+
+    static taskRepeatDetected(payload: TaskRepeatDetectedPayload): NewInsight {
+        const patternMessages: Record<string, string> = {
+            habitual_discard:
+                `La tarea "${payload.title}" se parece a ${payload.previousInstances} tareas anteriores que fueron descartadas. ` +
+                `Este patrón sugiere que este tipo de tarea se crea pero nunca se completa. ` +
+                `¿Realmente la necesitás o es mejor eliminarla de tu flujo?`,
+            frequent_recreation:
+                `La tarea "${payload.title}" es similar a ${payload.previousInstances} tareas anteriores que ya completaste. ` +
+                `Podrías considerar convertirla en una tarea recurrente o crear una rutina para ella.`,
+            stuck_pattern:
+                `La tarea "${payload.title}" sigue un patrón de estancamiento similar a ${payload.previousInstances} tareas previas. ` +
+                `Considerá dividirla en pasos más pequeños o replantear el enfoque.`,
+        };
+
+        const message = patternMessages[payload.pattern] ||
+            `Se detectó un patrón repetido ("${payload.pattern}") en la tarea "${payload.title}" con ${payload.previousInstances} instancias previas.`;
+
+        return this.buildInsight('suggestion', '🔁 Patrón repetido detectado', message, payload);
     }
 
     static tasksOverloaded(payload: TasksOverloadedPayload): NewInsight {

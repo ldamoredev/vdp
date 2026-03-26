@@ -65,7 +65,10 @@
       "Bash(nvm use:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm build:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pnpm --filter @vdp/server build)",
+      "Bash(pnpm --filter @vdp/server test:unit)",
+      "Bash(grep -r \"LANGFUSE_SECRET_KEY\\\\|LANGFUSE_PUBLIC_KEY\\\\|ANTHROPIC_API_KEY\\\\|sk-\\\\|pk-\" /Users/lautarodamore/Documents/vdp --include=*.ts --include=*.json --include=*.env -n)"
     ]
   }
 }

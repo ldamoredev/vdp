@@ -25,7 +25,7 @@ async function createTask(data: Record<string, unknown> = {}) {
         url: '/api/v1/tasks',
         payload: { title: 'Test task', ...data },
     });
-    return { status: res.statusCode, body: res.json() };
+    return { status: res.statusCode, body: res.json().task ?? res.json() };
 }
 
 describe('Tasks API — E2E', () => {

@@ -25,6 +25,7 @@ describe('TasksTools', () => {
             'find_similar_tasks',
             'get_planning_context',
             'get_weekly_summary',
+            'get_recommendations',
         ]);
     });
 

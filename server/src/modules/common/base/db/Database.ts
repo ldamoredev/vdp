@@ -17,9 +17,9 @@ export class Database {
     ...embeddingsSchema,
   };
 
-  constructor() {
+  constructor(connectionString?: string) {
     const pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: connectionString ?? process.env.DATABASE_URL,
     });
     this.query = drizzle(pool, { schema: this.schema });
   }
