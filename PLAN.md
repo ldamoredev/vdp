@@ -931,51 +931,121 @@ Note:
 36. `2.7.2` ✅ Study demo page — Pomodoro timer (25min focus / 5min break), flashcard flip, course progress
 37. `2.7.3` ✅ People demo page — contact list with social circles, WhatsApp/Telegram messaging, birthday tracking
 
-### Phase 3. Decide on second domain readiness
+### Phase 3. Stabilize Production (pre-requisite for expansion)
 
 Goal:
 
-choose whether Wallet or Health deserves to be the second module brought up to the Tasks bar
+fix critical issues identified in the code audit, database review, and product review before expanding to a second domain.
 
-Decision criteria:
+**Decision made:** The three reviews (PRODUCT_REVIEW.md, CODE_AUDIT.md, database-review.md) converge on the same conclusion: stabilize Tasks, remove confusion from demo pages, then build Wallet as the second domain.
 
-- user need is real
-- scope is small enough to finish
-- module can conform to the reference architecture
-- the product benefit is clear
+#### 3.0 — Production Hotfixes
 
-This phase should start with one explicit decision:
+1. `3.0.1` Replace `.catch(() => {})` with `.catch(err => log.warn(...))` in CreateTask, UpdateTask, AddTaskNote (Code C1)
+2. `3.0.2` Add HNSW index on `task_embeddings.embedding` column (DB C-1)
+3. `3.0.3` Change `task_notes` FK to `ON DELETE CASCADE` (DB C-5)
+4. `3.0.4` Change `agent_messages` FK to `ON DELETE CASCADE` (DB H-7)
+5. `3.0.5` Configure pool limits in `Database.ts` — `max: 5`, `idleTimeoutMillis: 30_000`, `connectionTimeoutMillis: 5_000` (DB H-2)
+6. `3.0.6` Fix test DB embedding dimensions 384 → 768 (DB M-6)
+7. `3.0.7` Remove query-string `?api_key=` fallback in `BasicHttpAuthentication.ts` (DB L-4)
+8. `3.0.8` Create root `error.tsx` with fallback UI (Code C6)
 
-- `Wallet next`
-- `Health next`
-- or `stay on Tasks longer`
+#### 3.1 — Remove Confusion
 
-### Phase 4. Reintroduce one new domain
+9. `3.1.1` Hide or remove demo domain pages from navigation (wallet, health, people, work, study routes) — prevents "click → 404" momentum killer
+10. `3.1.2` Update `home/page.tsx` to only show Tasks domain card
+11. `3.1.3` Add `@future` marker comments on unused shared schemas
+
+#### 3.2 — Type Safety & Code Quality
+
+12. `3.2.1` Replace `err: any` with `unknown` + type guards in server code (18 instances, Code C2)
+13. `3.2.2` Type chat hooks error handling (Code C3 partial)
+14. `3.2.3` Add vitest coverage thresholds 80% to server and web (Code C4)
+15. `3.2.4` Add shared package tests for task schemas (Code C5)
+16. `3.2.5` Type `DomainEvent<T>` with generics (Code S7)
+17. `3.2.6` Type `ServiceProvider` and `RepositoryProvider` generics (Code C2)
+
+#### 3.3 — Query Performance
+
+18. `3.3.1` Add `getTasksByIds(ids: string[])` to TaskRepository — fix DetectRepeatPattern N+1 (DB C-4)
+19. `3.3.2` Batch `CarryOverAllPending` into a single UPDATE with RETURNING (DB C-2)
+20. `3.3.3` Replace `GetDayStats.executeTrend` loop with single `GROUP BY scheduled_date` query (DB C-3)
+21. `3.3.4` Collapse `CheckDailyCompletion` two COUNTs into one with FILTER (DB M-4)
+22. `3.3.5` Fix `findSimilar` double cosine distance with CTE (DB M-3)
+23. `3.3.6` Add composite index `(scheduled_date, status)` on tasks (DB M-2)
+24. `3.3.7` Add `(domain, updated_at)` index on `agent_conversations` (DB M-8)
+
+#### 3.4 — Structural Refactors
+
+25. `3.4.1` Extract `AgentChatLoop.ts` into smaller functions (Code S1)
+26. `3.4.2` Extract tool implementations from `management-tools.ts` (Code S8)
+27. `3.4.3` Split `home/page.tsx` into sub-components (Code S3)
+28. `3.4.4` Replace string-based `classifyAgentError()` with error codes (Code S4)
+29. `3.4.5` Add explicit field allowlist in `updateTask` (DB M-5)
+
+### Phase 4. Wallet Domain (second domain)
 
 Goal:
 
-restore exactly one additional domain with the full Tasks template
+build Wallet as the first real second domain to prove the cross-domain thesis.
 
-Required outcome:
+Why Wallet:
+- Finance is universal, recurring, high-stakes
+- Schema already exists in `@vdp/shared`
+- Creates the first cross-domain signal: spending spike → task pressure check
+- Proves the magic: "It knows I overspent AND it's reminding me to review tasks"
 
-- real backend module
-- real frontend contract
-- real tests
-- real navigation activation
+#### 4.0 — Wallet Schema Fixes
 
-### Phase 5. Multi-domain orchestration
+30. `4.0.1` Uncomment wallet schema in `drizzle.config.ts` (DB H-6)
+31. `4.0.2` Add FK constraint on `categories.parent_id` + index (DB H-3)
+32. `4.0.3` Add indexes on `savings_contributions` FK columns (DB H-4)
+33. `4.0.4` Add index on `investments.account_id` (DB H-5)
+34. `4.0.5` Add index on `transactions.transfer_to_account_id` (DB M-7)
+
+#### 4.1 — Wallet Backend
+
+35. `4.1.1` Build WalletModule structure following Tasks reference (domain, services, infrastructure/db, infrastructure/routes)
+36. `4.1.2` Implement wallet repositories: accounts, transactions, categories (Drizzle + Fake)
+37. `4.1.3` Implement wallet services: CRUD for transactions, accounts, balance calculation, spending stats
+38. `4.1.4` Build Wallet HTTP API: `POST/GET /transactions`, `GET /accounts`, `GET /balance`, `GET /stats`
+39. `4.1.5` Write wallet unit + integration tests (TDD: Fake repos, Fastify inject)
+
+#### 4.2 — Wallet Agent Integration
+
+40. `4.2.1` Wire wallet agent tools: `log_transaction`, `get_balance`, `list_transactions`, `spending_summary`
+41. `4.2.2` Register WalletAgent in agent registry with domain-scoped tools
+
+#### 4.3 — Cross-Domain Magic
+
+42. `4.3.1` Add `SpendingSpike` domain event in Wallet module
+43. `4.3.2` Add event handler in Tasks module: listen for `SpendingSpike`, trigger agent insight
+44. `4.3.3` Tasks agent responds: "Tu gasto subió esta semana, ¿está todo bien con tus tareas?"
+
+### Phase 5. Polish & Soft Launch
 
 Goal:
 
-only after multiple domains are genuinely active, begin cross-domain orchestration
+make the core experience shine before sharing.
+
+45. `5.0.1` Polish `/tasks` dashboard (carry-over count badges, transitions)
+46. `5.0.2` Quick-capture improvements (keyboard shortcut for new task)
+47. `5.0.3` Generate public demo with seed data (tasks + wallet transactions)
+48. `5.0.4` Migrate all `timestamp` columns to `timestamptz` (DB H-1)
+
+### Phase 6. Multi-domain orchestration
+
+Goal:
+
+only after Tasks and Wallet are genuinely active, begin deeper cross-domain orchestration.
 
 Examples:
 
-- sleep affecting workload recommendations
 - spending pressure affecting task prioritization
-- study/work/health interactions
+- weekly financial summary influencing planning context
+- budget alerts as task suggestions
 
-This phase is intentionally deferred.
+This phase is intentionally deferred until Phase 4 and Phase 5 are complete.
 
 ---
 
@@ -987,4 +1057,4 @@ The governing rule for the project is now:
 
 For the current stage, that means:
 
-> Tasks is the product, the architecture reference, and the quality bar.
+> Stabilize Tasks (Phase 3), then build Wallet to prove the cross-domain thesis (Phase 4).
