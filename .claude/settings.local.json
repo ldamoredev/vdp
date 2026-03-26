@@ -2,73 +2,61 @@
   "permissions": {
     "allow": [
       "Bash(pnpm install:*)",
-      "Bash(pg_isready)",
-      "Bash(psql -l)",
-      "Bash(brew services:*)",
-      "Bash(createdb vdp:*)",
-      "Bash(npx drizzle-kit:*)",
-      "Bash(pnpm exec:*)",
-      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm exec drizzle-kit migrate)",
-      "Bash(DATABASE_URL=postgresql://localhost:5432/vdp pnpm --filter @vdp/server run dev)",
-      "Bash(curl -s http://localhost:4001/api/v1/accounts)",
-      "Bash(curl -s http://localhost:4001/api/v1/categories)",
-      "Bash(python3 -m json.tool)",
-      "Bash(pnpm --filter @vdp/wallet-frontend run dev)",
-      "Bash(curl -s http://localhost:3001)",
-      "mcp__Claude_Preview__preview_start",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"fintech personal finance dashboard wallet dark modern\" --design-system --persist -p \"VDP Wallet\")",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"glassmorphism dark finance\" --domain style -n 3)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"animation micro-interaction loading\" --domain ux -n 5)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"glassmorphism sidebar dashboard\" --stack nextjs)",
-      "Bash(for mod:*)",
-      "Bash(do echo:*)",
-      "Read(//Users/lautarodamore/Documents/vdp/apps/$mod/frontend/**)",
-      "Bash(done)",
-      "Bash(/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin/pnpm install:*)",
-      "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:$PATH\")",
-      "Bash(export PATH=\"/Users/lautarodamore/.nvm/versions/node/v22.11.0/bin:/usr/local/bin:/usr/bin:/bin:$PATH\")",
-      "Bash(curl -s http://localhost:4001/api/health)",
-      "Bash(curl -s http://localhost:4001/api/v1/transactions?limit=2)",
-      "Bash(ls -la /Users/lautarodamore/Documents/vdp/apps/*/frontend/package.json)",
-      "Bash(npx tsc:*)",
-      "Bash(source /Users/lautarodamore/.nvm/nvm.sh)",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''accounts''''\\);console.log\\(j.map\\(a=>a.name+'''' \\(''''+a.currency+''''\\) bal:''''+a.currentBalance\\).join\\('''', ''''\\)\\)}\\)\")",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''categories''''\\)}\\)\")",
-      "Bash(curl -s \"http://localhost:4001/api/v1/transactions?limit=3\")",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.total,''''total,'''',j.data.length,''''returned''''\\)}\\)\")",
-      "Bash(curl -s \"http://localhost:4001/api/v1/stats/summary\")",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK: balances:'''',j.balances?.length||0,'''', incomeExpense:'''',j.incomeExpense?.length||0\\)}\\)\")",
-      "Bash(curl -s http://localhost:4001/api/v1/savings)",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''savings goals''''\\)}\\)\")",
-      "Bash(curl -s http://localhost:4001/api/v1/investments)",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''investments''''\\)}\\)\")",
-      "Bash(curl -s http://localhost:4001/api/v1/exchange-rates/latest)",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.length,''''rates''''\\)}\\)\")",
-      "Bash(node -e \"process.stdin.on\\(''''data'''',d=>{const j=JSON.parse\\(d\\);console.log\\(''''OK:'''',j.status\\)}\\)\")",
-      "Bash(npx next:*)",
-      "Bash(find /Users/lautarodamore/Documents/vdp/packages/shared -type f -name *.tsx -o -name *.ts)",
-      "Bash(grep -r port /Users/lautarodamore/Documents/vdp/apps/*/frontend/package.json /Users/lautarodamore/Documents/vdp/apps/landing/package.json)",
-      "Bash(source ~/.zshrc)",
-      "Bash(ls -d /Users/lautarodamore/Documents/vdp/apps/*/frontend)",
-      "Bash(for dir:*)",
-      "Read(//Users/lautarodamore/Documents/vdp/apps/web/$dir/**)",
-      "Bash(grep -E \"\\\\.\\(json|js|ts|mjs\\)$\")",
-      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"personal dashboard life OS modules dark theme\" --design-system -p \"VDP Life OS\")",
-      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"dark mode light mode theme toggle accessibility\" --domain ux -n 10)",
-      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"dashboard landing hero CTA\" --domain landing -n 5)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"personal dashboard life OS modules dark light theme\" --design-system -p \"VDP Life OS\")",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dark mode light mode theme toggle\" --domain ux -n 10)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"dashboard hero CTA card\" --domain landing -n 5)",
-      "Bash(docker compose:*)",
-      "Bash(/usr/local/bin/docker compose:*)",
-      "Bash(source ~/.nvm/nvm.sh)",
-      "Bash(nvm use:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm build:*)",
-      "WebSearch",
-      "Bash(pnpm --filter @vdp/server build)",
-      "Bash(pnpm --filter @vdp/server test:unit)",
-      "Bash(grep -r \"LANGFUSE_SECRET_KEY\\\\|LANGFUSE_PUBLIC_KEY\\\\|ANTHROPIC_API_KEY\\\\|sk-\\\\|pk-\" /Users/lautarodamore/Documents/vdp --include=*.ts --include=*.json --include=*.env -n)"
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm --filter:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker compose down:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker build:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(pg_isready:*)",
+      "mcp__Claude_Preview__preview_start",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)",
+      "Bash(*ANTHROPIC_API_KEY*)",
+      "Bash(*SECRET_KEY*)",
+      "Bash(*--force*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(*> /dev/*)",
+      "Bash(docker run --privileged*)",
+      "Bash(docker run -v /:/host*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(ssh *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'PreToolUse: Bash command validated'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/lautarodamore/Documents/vdp && git diff --cached --name-only | grep -qE '\\.(env|key|pem|secret)' && echo 'WARNING: Staged files may contain secrets' || true"
+          }
+        ]
+      }
     ]
   }
 }

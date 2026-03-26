@@ -1,3 +1,10 @@
+---
+version: "1.0.0"
+rollback: "Remove generated demo page files under apps/web/src/app/(modules)/"
+observe: "Check that demo pages render correctly in browser and respect theme system"
+feedback: "Verify navigation works, dark/light mode toggles, and no console errors"
+---
+
 # Demo Pages Generation for VDP Presentation
 
 ## Context
