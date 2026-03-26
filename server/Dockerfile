@@ -33,6 +33,10 @@ COPY --chown=appuser:appgroup server/src/migrations server/src/migrations
 COPY --chown=appuser:appgroup server/drizzle.config.ts server/drizzle.config.ts
 COPY --chown=appuser:appgroup pnpm-workspace.yaml package.json ./
 
+# Fix pnpm workspace symlinks broken by Docker COPY (dereferences symlinks to stale pre-build copies)
+RUN mkdir -p node_modules/@vdp && rm -rf node_modules/@vdp/shared && ln -s /app/packages/shared node_modules/@vdp/shared && \
+    mkdir -p node_modules/.pnpm/node_modules/@vdp && rm -rf node_modules/.pnpm/node_modules/@vdp/shared && ln -s /app/packages/shared node_modules/.pnpm/node_modules/@vdp/shared
+
 USER appuser
 WORKDIR /app/server
 
@@ -42,4 +46,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:4000/api/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
 
-CMD ["node", "--import", "tsx/esm", "dist/main.js"]
+CMD ["node_modules/.bin/tsx", "dist/main.js"]
