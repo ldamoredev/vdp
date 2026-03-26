@@ -15,15 +15,14 @@ export class DetectRepeatPattern {
         // Find similar tasks from history, with a high threshold to find near-identical ones
         const similar = await this.findSimilarTasks.execute(task.title, 10, 0.8);
         
-        // Filter out the current task itself and fetch their full records
+        // Filter out the current task itself and batch-fetch their full records
         const historicalIds = similar
             .map(s => s.taskId)
             .filter(taskId => taskId !== task.id);
-            
+
         if (historicalIds.length === 0) return;
 
-        const historyPromises = historicalIds.map(id => this.repository.getTask(id));
-        const history = (await Promise.all(historyPromises)).filter((t): t is Task => t !== null);
+        const history = await this.repository.getTasksByIds(historicalIds);
 
         const discardedCount = history.filter(h => h.status === 'discarded').length;
         const doneCount = history.filter(h => h.status === 'done').length;

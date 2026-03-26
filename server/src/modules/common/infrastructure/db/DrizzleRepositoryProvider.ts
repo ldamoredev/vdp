@@ -14,6 +14,7 @@ export class DrizzleRepositoryProvider extends RepositoryProvider {
         super();
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- abstract constructor spread requires `any`
     protected create<T>(token: abstract new (...args: any[]) => T): T {
         switch (token) {
             case TaskRepository:

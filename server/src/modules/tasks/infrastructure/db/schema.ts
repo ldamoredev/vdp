@@ -36,6 +36,7 @@ export const tasks = tasksSchema.table(
     index("tasks_scheduled_date_idx").on(table.scheduledDate),
     index("tasks_status_idx").on(table.status),
     index("tasks_domain_idx").on(table.domain),
+    index("tasks_date_status_idx").on(table.scheduledDate, table.status),
   ]
 );
 

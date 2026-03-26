@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { AgentProvider } from './AgentProvider';
 import { AgentMessage, AgentProviderRequest, AgentProviderResponse, AgentToolCall } from './types';
+import { AgentError } from '../AgentError';
 
 type OllamaToolCall = {
     id?: string;
@@ -56,7 +57,7 @@ export class OllamaAgentProvider implements AgentProvider {
 
         if (!response.ok) {
             const body = await response.text();
-            throw new Error(`Ollama request failed (${response.status}): ${body}`);
+            throw AgentError.providerUnavailable(`Ollama request failed (${response.status}): ${body}`);
         }
 
         const payload = await response.json() as OllamaChatCompletionResponse;
@@ -118,12 +119,12 @@ export class OllamaAgentProvider implements AgentProvider {
         };
     }
 
-    private parseArguments(value?: string): Record<string, any> {
+    private parseArguments(value?: string): Record<string, unknown> {
         if (!value) return {};
 
         try {
-            const parsed = JSON.parse(value);
-            return parsed && typeof parsed === 'object' ? parsed as Record<string, any> : {};
+            const parsed = JSON.parse(value) as unknown;
+            return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
         } catch {
             return {};
         }

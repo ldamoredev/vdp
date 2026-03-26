@@ -9,5 +9,14 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/__tests__/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
   },
 });

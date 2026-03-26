@@ -78,14 +78,15 @@ export abstract class BaseAgent {
     /**
      * Execute a tool by name.
      */
-    async executeTool(name: string, input: Record<string, any>): Promise<string> {
+    async executeTool(name: string, input: Record<string, unknown>): Promise<string> {
         const tool = this.tools.find((t) => t.name === name);
         if (!tool) return JSON.stringify({ error: `Unknown tool: ${name}` });
 
         try {
             return await tool.execute(input);
-        } catch (err: any) {
-            return JSON.stringify({ error: err.message || 'Tool execution failed' });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Tool execution failed';
+            return JSON.stringify({ error: message });
         }
     }
 
@@ -123,9 +124,10 @@ export abstract class BaseAgent {
             const messages = await this.conversationStore.loadMessages(conversationId);
 
             await this.runLoop(messages, { conversationId, ...callbacks }, trace);
-        } catch (err: any) {
-            trace.update({ error: err.message || 'Agent error' });
-            callbacks.onError(err.message || 'Agent error');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Agent error';
+            trace.update({ error: message });
+            callbacks.onError(message);
         }
     }
 
@@ -163,9 +165,10 @@ export abstract class BaseAgent {
 
             trace.update({ completed: true });
             callbacks.onDone(callbacks.conversationId, trace.id);
-        } catch (err: any) {
-            trace.update({ error: err.message || 'Agent error' });
-            callbacks.onError(err.message || 'Agent error');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Agent error';
+            trace.update({ error: message });
+            callbacks.onError(message);
         }
     }
 
@@ -190,8 +193,8 @@ export abstract class BaseAgent {
         try {
             const result = await this.executeTool(toolCall.name, toolCall.input);
             return { tool_use_id: toolCall.id, content: result };
-        } catch (err: any) {
-            const errorMsg = err.message || 'Tool execution failed';
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : 'Tool execution failed';
             return {
                 tool_use_id: toolCall.id,
                 content: JSON.stringify({ error: errorMsg }),
@@ -212,7 +215,7 @@ export interface AgentTool {
     name: string;
     description: string;
     inputSchema: Record<string, unknown>;
-    execute: (input: Record<string, any>) => Promise<string>;
+    execute: (input: Record<string, unknown>) => Promise<string>;
 }
 
 export interface AgentContext {
@@ -222,7 +225,7 @@ export interface AgentContext {
 
 export interface ChatCallbacks {
     onText: (text: string) => void;
-    onToolUse: (tool: string, input: any) => void;
+    onToolUse: (tool: string, input: unknown) => void;
     onToolResult: (tool: string, result: string) => void;
     onDone: (conversationId: string, traceId?: string) => void;
     onError: (error: string) => void;

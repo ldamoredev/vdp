@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { z, ZodType } from 'zod';
 import type { BaseAgent } from '../base/agents/BaseAgent';
+import { getAgentErrorCode, type AgentErrorCode } from '../base/agents/AgentError';
 import { ServiceUnavailableHttpError } from './errors';
 import { parseBody } from './validation';
 
@@ -81,34 +82,20 @@ export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBo
                         close();
                     },
                     onError: (error) => {
-                        send('error', { error, code: classifyAgentError(error) });
+                        send('error', { error, code: 'unknown' as AgentErrorCode });
                         close();
                     },
                 },
             });
-        } catch (error: any) {
-            const message = error.message || 'Agent error';
-            send('error', { error: message, code: classifyAgentError(message) });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Agent error';
+            send('error', { error: message, code: getAgentErrorCode(error) });
             close();
         }
     };
 }
 
-export type AgentErrorCode = 'provider_unavailable' | 'tool_execution_failed' | 'conversation_not_found' | 'unknown';
-
-export function classifyAgentError(error: string): AgentErrorCode {
-    const lower = error.toLowerCase();
-    if (lower.includes('api') || lower.includes('provider') || lower.includes('connect') || lower.includes('timeout') || lower.includes('econnrefused') || lower.includes('fetch failed')) {
-        return 'provider_unavailable';
-    }
-    if (lower.includes('tool') || lower.includes('execute') || lower.includes('execution')) {
-        return 'tool_execution_failed';
-    }
-    if (lower.includes('conversation') || lower.includes('not found')) {
-        return 'conversation_not_found';
-    }
-    return 'unknown';
-}
+export { type AgentErrorCode } from '../base/agents/AgentError';
 
 export function summarizeAgentToolResult(result: string): string {
     try {

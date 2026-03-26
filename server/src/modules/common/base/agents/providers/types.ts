@@ -7,6 +7,7 @@ export type AgentToolDefinition = {
 export type AgentToolCall = {
     id: string;
     name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LLM-generated tool input parsed from JSON
     input: Record<string, any>;
 };
 

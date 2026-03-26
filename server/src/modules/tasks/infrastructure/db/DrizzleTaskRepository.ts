@@ -8,11 +8,13 @@ import {
     UpdateTaskData,
     DomainStat,
     CarryOverStats,
+    DateCounts,
+    DateTrendRow,
 } from '../../domain/TaskRepository';
 import { TaskStatus } from '../../domain/Task';
 import { Database } from '../../../common/base/db/Database';
 import { tasks } from './schema';
-import { and, asc, desc, eq, gte, lte, sql, SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, sql, SQL } from 'drizzle-orm';
 
 export class DrizzleTaskRepository extends TaskRepository {
     constructor(private db: Database) {
@@ -23,6 +25,12 @@ export class DrizzleTaskRepository extends TaskRepository {
         const result = await this.db.query.select().from(tasks).where(eq(tasks.id, id));
         if (!result[0]) return null;
         return Task.fromSnapshot(result[0]);
+    }
+
+    async getTasksByIds(ids: string[]): Promise<Task[]> {
+        if (ids.length === 0) return [];
+        const rows = await this.db.query.select().from(tasks).where(inArray(tasks.id, ids));
+        return rows.map(s => Task.fromSnapshot(s));
     }
 
     async listTasks(filters: TaskFilters): Promise<PagedTasks> {
@@ -79,10 +87,12 @@ export class DrizzleTaskRepository extends TaskRepository {
         return Task.fromSnapshot(row);
     }
 
+    private static readonly UPDATABLE_FIELDS = ['title', 'description', 'priority', 'scheduledDate', 'domain'] as const;
+
     async updateTask(id: string, data: UpdateTaskData): Promise<Task | null> {
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
-        for (const [k, v] of Object.entries(data)) {
-            if (v !== undefined) updateData[k] = v;
+        for (const field of DrizzleTaskRepository.UPDATABLE_FIELDS) {
+            if (data[field] !== undefined) updateData[field] = data[field];
         }
 
         const [updated] = await this.db.query
@@ -142,6 +152,38 @@ export class DrizzleTaskRepository extends TaskRepository {
             .where(and(eq(tasks.scheduledDate, date), eq(tasks.status, status)));
 
         return result[0].count;
+    }
+
+    async countByDate(date: string): Promise<DateCounts> {
+        const result = await this.db.query
+            .select({
+                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'pending')::int`,
+                done: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'done')::int`,
+                discarded: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'discarded')::int`,
+                total: sql<number>`COUNT(*)::int`,
+            })
+            .from(tasks)
+            .where(eq(tasks.scheduledDate, date));
+
+        return result[0];
+    }
+
+    async getTrendByDateRange(fromDate: string, toDate: string): Promise<DateTrendRow[]> {
+        const rows = await this.db.query
+            .select({
+                date: tasks.scheduledDate,
+                total: sql<number>`COUNT(*)::int`,
+                completed: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'done')::int`,
+                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'pending')::int`,
+                discarded: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'discarded')::int`,
+                carriedOver: sql<number>`COUNT(*) FILTER (WHERE ${tasks.carryOverCount} > 0)::int`,
+            })
+            .from(tasks)
+            .where(and(gte(tasks.scheduledDate, fromDate), lte(tasks.scheduledDate, toDate)))
+            .groupBy(tasks.scheduledDate)
+            .orderBy(desc(tasks.scheduledDate));
+
+        return rows;
     }
 
     async getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]> {

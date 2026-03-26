@@ -25,13 +25,10 @@ export class CheckDailyCompletion implements EventSubscriber {
     }
 
     private async check(date: string): Promise<void> {
-        const pendingCount = await this.repository.countByDateAndStatus(date, "pending");
+        const counts = await this.repository.countByDate(date);
 
-        if (pendingCount === 0) {
-            const doneCount = await this.repository.countByDateAndStatus(date, "done");
-            if (doneCount > 0) {
-                await this.eventBus.emit(new DailyAllCompleted({ date, count: doneCount }));
-            }
+        if (counts.pending === 0 && counts.done > 0) {
+            await this.eventBus.emit(new DailyAllCompleted({ date, count: counts.done }));
         }
     }
 }

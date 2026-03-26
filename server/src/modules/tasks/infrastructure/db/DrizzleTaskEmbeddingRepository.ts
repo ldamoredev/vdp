@@ -32,18 +32,25 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
         const vectorLiteral = `[${embedding.join(',')}]`;
 
         const result = await this.db.query.execute(sql`
-            SELECT
-                task_id,
-                content,
-                1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
-            FROM tasks.task_embeddings
-            WHERE 1 - (embedding <=> ${vectorLiteral}::vector) > ${threshold}
-            ORDER BY embedding <=> ${vectorLiteral}::vector
+            WITH ranked AS (
+                SELECT
+                    task_id,
+                    content,
+                    1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
+                FROM tasks.task_embeddings
+                ORDER BY embedding <=> ${vectorLiteral}::vector
+                LIMIT ${limit * 2}
+            )
+            SELECT task_id, content, similarity
+            FROM ranked
+            WHERE similarity > ${threshold}
+            ORDER BY similarity DESC
             LIMIT ${limit}
         `);
 
-        const rows = (result as any).rows ?? result;
-        return (rows as any[]).map((row: any) => ({
+        type SimilarRow = { task_id: string; content: string; similarity: number };
+        const rows: SimilarRow[] = (result as unknown as { rows?: SimilarRow[] }).rows ?? (result as unknown as SimilarRow[]);
+        return rows.map((row) => ({
             taskId: row.task_id,
             content: row.content,
             similarity: Number(row.similarity),

@@ -8,6 +8,8 @@ import {
     type UpdateTaskData,
     type DomainStat,
     type CarryOverStats,
+    type DateCounts,
+    type DateTrendRow,
 } from '../../domain/TaskRepository';
 import { randomUUID } from 'crypto';
 
@@ -35,6 +37,13 @@ export class FakeTaskRepository extends TaskRepository {
     async getTask(id: string): Promise<Task | null> {
         const snapshot = this.store.get(id);
         return snapshot ? Task.fromSnapshot(snapshot) : null;
+    }
+
+    async getTasksByIds(ids: string[]): Promise<Task[]> {
+        return ids
+            .map(id => this.store.get(id))
+            .filter((s): s is TaskSnapshot => s !== undefined)
+            .map(Task.fromSnapshot);
     }
 
     async listTasks(filters: TaskFilters): Promise<PagedTasks> {
@@ -123,6 +132,41 @@ export class FakeTaskRepository extends TaskRepository {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date && s.status === status)
             .length;
+    }
+
+    async countByDate(date: string): Promise<DateCounts> {
+        const all = Array.from(this.store.values()).filter(s => s.scheduledDate === date);
+        return {
+            pending: all.filter(s => s.status === 'pending').length,
+            done: all.filter(s => s.status === 'done').length,
+            discarded: all.filter(s => s.status === 'discarded').length,
+            total: all.length,
+        };
+    }
+
+    async getTrendByDateRange(fromDate: string, toDate: string): Promise<DateTrendRow[]> {
+        const all = Array.from(this.store.values())
+            .filter(s => s.scheduledDate >= fromDate && s.scheduledDate <= toDate);
+
+        const byDate = new Map<string, DateTrendRow>();
+        for (const s of all) {
+            const existing = byDate.get(s.scheduledDate) ?? {
+                date: s.scheduledDate,
+                total: 0,
+                completed: 0,
+                pending: 0,
+                discarded: 0,
+                carriedOver: 0,
+            };
+            existing.total++;
+            if (s.status === 'done') existing.completed++;
+            if (s.status === 'pending') existing.pending++;
+            if (s.status === 'discarded') existing.discarded++;
+            if (s.carryOverCount > 0) existing.carriedOver++;
+            byDate.set(s.scheduledDate, existing);
+        }
+
+        return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
     }
 
     // ─── Stats ─────────────────────────────────────────

@@ -1,19 +1,22 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- constructor spread requires `any`
 export type SConstructor<T> = new (...args: any[]) => T;
 
 export class ServiceProvider {
-    private cache = new Map<SConstructor<any>, any>();
-    private factories = new Map<SConstructor<any>, () => any>();
+    private cache = new Map<SConstructor<unknown>, unknown>();
+    private factories = new Map<SConstructor<unknown>, () => unknown>();
 
     register<T>(
         serviceType: SConstructor<T>,
         factory: () => T
     ): void {
-        this.factories.set(serviceType, factory);
+        this.factories.set(serviceType as SConstructor<unknown>, factory);
     }
 
     get<T>(serviceType: SConstructor<T>): T {
-        if (!this.cache.has(serviceType)) {
-            const factory = this.factories.get(serviceType);
+        const key = serviceType as SConstructor<unknown>;
+
+        if (!this.cache.has(key)) {
+            const factory = this.factories.get(key);
 
             if (!factory) {
                 throw new Error(
@@ -21,9 +24,9 @@ export class ServiceProvider {
                 );
             }
 
-            this.cache.set(serviceType, factory());
+            this.cache.set(key, factory());
         }
 
-        return this.cache.get(serviceType);
+        return this.cache.get(key) as T;
     }
 }

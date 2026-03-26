@@ -19,6 +19,7 @@ export const TASK_ID_INPUT_SCHEMA = {
     required: ['taskId'],
 } as const;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- LLM tool inputs are validated by JSON schema at the provider level
 export type ToolInput = Record<string, any>;
 
 type JsonToolDefinition = {

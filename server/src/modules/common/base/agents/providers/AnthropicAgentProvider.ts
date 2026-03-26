@@ -39,7 +39,7 @@ export class AnthropicAgentProvider implements AgentProvider {
                 toolCalls.push({
                     id: block.id,
                     name: block.name,
-                    input: block.input as Record<string, any>,
+                    input: block.input as Record<string, unknown>,
                 });
             }
         }

@@ -16,7 +16,7 @@ export abstract class DomainEvent<T = Record<string, unknown>> {
     protected constructor(
         domain: DomainName,
         type: string,
-        payload: any,
+        payload: T,
         metadata?: { triggeredBy?: string; correlationId?: string; })
     {
         this.id = randomUUID();

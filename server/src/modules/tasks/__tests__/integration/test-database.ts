@@ -60,8 +60,10 @@ CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
 CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_date);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
 CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
+CREATE INDEX IF NOT EXISTS tasks_date_status_idx ON tasks.tasks(scheduled_date, status);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS core_msg_conversation_idx ON core.agent_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS agent_conv_domain_updated_idx ON core.agent_conversations(domain, updated_at);
 CREATE INDEX IF NOT EXISTS task_embeddings_task_id_idx ON tasks.task_embeddings(task_id);
 `;
 

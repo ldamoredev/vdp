@@ -92,10 +92,11 @@ export class AgentChatLoop {
             });
 
             return response;
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Agent generation failed';
             generation.end({
                 output: {
-                    error: err.message || 'Agent generation failed',
+                    error: message,
                 },
             });
             throw err;
