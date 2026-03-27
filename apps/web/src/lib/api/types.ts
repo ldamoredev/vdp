@@ -13,6 +13,13 @@ export interface TaskListResponse {
   offset: number;
 }
 
+export interface WalletTransactionListResponse {
+  transactions: Transaction[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // ─── Tasks ───────────────────────────────────────────────
 export interface Task {
   id: string;
@@ -142,6 +149,7 @@ export interface Transaction {
   date: string;
   tags: string[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Category {
@@ -160,12 +168,14 @@ export interface SavingsGoal {
   deadline: string | null;
   isCompleted: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Investment {
   id: string;
   name: string;
   type: string;
+  accountId?: string | null;
   currency: string;
   investedAmount: string;
   currentValue: string;
@@ -174,16 +184,19 @@ export interface Investment {
   rate: string | null;
   notes: string | null;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface WalletStatsSummary {
-  totalIncome: number;
-  totalExpense: number;
-  net: number;
+  totalIncome: string;
+  totalExpenses: string;
+  netBalance: string;
+  transactionCount: number;
 }
 
 export interface CategoryStat {
-  categoryId: string;
+  categoryId: string | null;
   categoryName: string;
   total: number;
   count: number;
@@ -202,6 +215,7 @@ export interface ExchangeRate {
   rate: string;
   type: string;
   date: string;
+  createdAt?: string;
 }
 
 // ─── Health ──────────────────────────────────────────────

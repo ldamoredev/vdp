@@ -2,16 +2,17 @@ import { Wallet } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 
 interface AccountCardProps {
-  account: {
-    id: string;
-    name: string;
-    currency: string;
-    currentBalance?: number;
-    initialBalance: number;
+  readonly account: {
+    readonly id: string;
+    readonly name: string;
+    readonly currency: string;
+    readonly currentBalance?: string;
+    readonly initialBalance: string;
   };
 }
 
 export function AccountCard({ account }: AccountCardProps) {
+  const balance = Number(account.currentBalance ?? account.initialBalance);
   return (
     <div className="glass-card p-5 cursor-pointer group">
       <div className="flex items-center justify-between mb-3">
@@ -24,7 +25,7 @@ export function AccountCard({ account }: AccountCardProps) {
         <span className="badge badge-muted">{account.currency}</span>
       </div>
       <div className="text-2xl font-semibold tracking-tight">
-        {formatMoney(account.currentBalance || account.initialBalance, account.currency as "ARS" | "USD")}
+        {formatMoney(balance, account.currency as "ARS" | "USD")}
       </div>
     </div>
   );

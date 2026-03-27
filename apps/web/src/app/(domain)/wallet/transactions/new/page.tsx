@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { walletApi } from "@/lib/api/wallet";
+import { getTodayISO } from "@/lib/format";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -27,7 +28,7 @@ export default function NewTransactionPage() {
     accountId: "",
     categoryId: "",
     description: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: getTodayISO(),
     tags: "",
   });
 

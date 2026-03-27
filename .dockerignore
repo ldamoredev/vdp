@@ -14,7 +14,7 @@ dist
 .kiro
 .zed
 skills-lock.json
-DEPLOY_REVIEW.md
+docs/DEPLOY_REVIEW.md
 docker-compose.yml
 docker-compose.test.yml
 vitest.config.ts

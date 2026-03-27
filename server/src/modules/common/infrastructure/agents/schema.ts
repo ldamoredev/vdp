@@ -17,8 +17,8 @@ export const agentConversations = coreSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     domain: varchar("domain", { length: 20 }).notNull(),
     title: varchar("title", { length: 200 }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("agent_conv_domain_updated_idx").on(table.domain, table.updatedAt),
@@ -37,7 +37,7 @@ export const agentMessages = coreSchema.table(
     content: text("content"),
     toolCalls: jsonb("tool_calls"),
     toolResult: jsonb("tool_result"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("core_msg_conversation_idx").on(table.conversationId),

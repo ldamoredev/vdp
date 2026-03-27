@@ -7,6 +7,7 @@ import { Header } from '@/components/shell/header';
 import { ChatPanel } from '@/components/shell/chat-panel';
 import { MobileTabBar } from '@/components/shell/mobile-tab-bar';
 import { InsightsProvider } from '@/components/shell/insights-provider';
+import { QuickCapture } from '@/components/tasks/quick-capture';
 import { getDomainFromPathname } from '@/lib/navigation';
 import React from 'react';
 
@@ -32,6 +33,8 @@ export default function DomainLayout({ children }: { children: React.ReactNode; 
             <MobileTabBar />
 
             <InsightsProvider/>
+
+            {domainKey === 'tasks' && <QuickCapture />}
         </div>
     );
 }

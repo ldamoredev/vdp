@@ -8,8 +8,6 @@ import { TaskEmbeddingRepository } from './domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from './domain/TaskNoteRepository';
 import { TaskRepository } from './domain/TaskRepository';
 import { TaskInsightsStore } from './services/TaskInsightsStore';
-
-// Services
 import { AddTaskNote } from './services/AddTaskNote';
 import { CarryOverAllPending } from './services/CarryOverAllPending';
 import { CarryOverTask } from './services/CarryOverTask';
@@ -32,6 +30,7 @@ import { GetTasks } from './services/GetTasks';
 import { GetWeeklySummary } from './services/GetWeeklySummary';
 import { GetPlanningContext } from './services/GetPlanningContext';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
+import { CrossDomainEventHandlers } from './services/CrossDomainEventHandlers';
 import { UpdateTask } from './services/UpdateTask';
 
 export interface TaskModuleRuntimeDeps extends ModuleContext {
@@ -41,6 +40,7 @@ export interface TaskModuleRuntimeDeps extends ModuleContext {
 export class TaskModuleRuntime {
     constructor(private deps: TaskModuleRuntimeDeps) {
     }
+
 
     registerServices(): void {
         this.registerEmbeddingServices();
@@ -177,6 +177,7 @@ export class TaskModuleRuntime {
         const subscribers = [
             new CheckDailyCompletion(this.taskRepository(), this.deps.eventBus),
             new TaskEventHandlers(this.deps.eventBus, this.deps.insightsStore),
+            new CrossDomainEventHandlers(this.deps.eventBus, this.deps.insightsStore, this.deps.logger),
         ];
 
         for (const subscriber of subscribers) {

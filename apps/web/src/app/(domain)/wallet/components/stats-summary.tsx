@@ -2,14 +2,18 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 
 interface StatsSummaryProps {
-  stats: {
-    totalIncome?: number;
-    totalExpense?: number;
-    net?: number;
+  readonly stats: {
+    readonly totalIncome?: string;
+    readonly totalExpenses?: string;
+    readonly netBalance?: string;
   };
 }
 
 export function StatsSummary({ stats }: StatsSummaryProps) {
+  const income = Number(stats.totalIncome ?? 0);
+  const expenses = Number(stats.totalExpenses ?? 0);
+  const net = Number(stats.netBalance ?? 0);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 stagger-children">
       <div className="glass-card-static p-5">
@@ -22,7 +26,7 @@ export function StatsSummary({ stats }: StatsSummaryProps) {
           </div>
         </div>
         <div className="text-xl font-semibold text-[var(--accent-green)]">
-          +{formatMoney(stats.totalIncome || 0, "ARS")}
+          +{formatMoney(income, "ARS")}
         </div>
       </div>
       <div className="glass-card-static p-5">
@@ -35,7 +39,7 @@ export function StatsSummary({ stats }: StatsSummaryProps) {
           </div>
         </div>
         <div className="text-xl font-semibold text-[var(--accent-red)]">
-          -{formatMoney(stats.totalExpense || 0, "ARS")}
+          -{formatMoney(expenses, "ARS")}
         </div>
       </div>
       <div className="glass-card-static p-5">
@@ -48,7 +52,7 @@ export function StatsSummary({ stats }: StatsSummaryProps) {
           </div>
         </div>
         <div className="text-xl font-semibold">
-          {formatMoney(stats.net || 0, "ARS")}
+          {formatMoney(net, "ARS")}
         </div>
       </div>
     </div>

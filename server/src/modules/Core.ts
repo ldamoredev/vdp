@@ -54,7 +54,7 @@ export class Core {
     }
 
     private bootstrapModules(moduleFactories: DomainModuleFactory[]): DomainModule[] {
-        return moduleFactories.map((createModule) => createModule(this.moduleContext).bootstrap());
+        return moduleFactories.map(createModule => createModule(this.moduleContext).bootstrap());
     }
 
     getRepository<T>(token: abstract new (...args: any[]) => T): T {

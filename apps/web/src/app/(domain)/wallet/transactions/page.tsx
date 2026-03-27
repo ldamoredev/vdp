@@ -34,7 +34,7 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] }),
   });
 
-  const transactions = result?.data || [];
+  const transactions = result?.transactions || [];
   const total = result?.total || 0;
   const currentPage =
     Math.floor(parseInt(filters.offset) / parseInt(filters.limit)) + 1;

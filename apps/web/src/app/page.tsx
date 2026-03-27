@@ -16,13 +16,13 @@ const modules = [
   {
     key: "wallet",
     name: "Wallet",
-    description: "Tus finanzas personales, organizadas y claras",
+    description: "MVP de finanzas con dashboard, movimientos y resumen operativo",
     href: "/wallet",
     iconLetter: "W",
     softBg: "var(--blue-soft-bg)",
     softText: "var(--blue-soft-text)",
     softBorder: "var(--blue-soft-border)",
-    ready: false,
+    ready: true,
   },
   {
     key: "health",

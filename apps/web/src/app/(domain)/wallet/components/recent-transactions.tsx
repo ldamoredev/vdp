@@ -2,10 +2,11 @@ import { ArrowDownLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { formatMoney, formatDate } from "@/lib/format";
 import { SkeletonRow } from "./skeleton";
+import type { Transaction } from "@/lib/api/types";
 
 interface RecentTransactionsProps {
-  transactions: any[];
-  isLoading: boolean;
+  readonly transactions: readonly Transaction[];
+  readonly isLoading: boolean;
 }
 
 export function RecentTransactions({ transactions, isLoading }: RecentTransactionsProps) {
@@ -43,7 +44,7 @@ export function RecentTransactions({ transactions, isLoading }: RecentTransactio
             </p>
           </div>
         ) : (
-          transactions.map((tx: any) => (
+          transactions.map((tx) => (
             <div
               key={tx.id}
               className="flex items-center justify-between p-4 hover:bg-[var(--hover-overlay)] transition-colors"
@@ -85,7 +86,7 @@ export function RecentTransactions({ transactions, isLoading }: RecentTransactio
                 }`}
               >
                 {tx.type === "income" ? "+" : "-"}
-                {formatMoney(tx.amount, tx.currency)}
+                {formatMoney(tx.amount, tx.currency as "ARS" | "USD")}
               </div>
             </div>
           ))

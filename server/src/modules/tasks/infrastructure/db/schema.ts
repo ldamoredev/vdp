@@ -27,10 +27,10 @@ export const tasks = tasksSchema.table(
     // Which day this task belongs to (defaults to today)
     domain: varchar("domain", { length: 20 }),
     // Optional link: "wallet", "health", "work", "people", "study", or null
-    completedAt: timestamp("completed_at"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     carryOverCount: integer("carry_over_count").notNull().default(0),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("tasks_scheduled_date_idx").on(table.scheduledDate),
@@ -51,7 +51,7 @@ export const taskNotes = tasksSchema.table(
       .references(() => tasks.id, { onDelete: 'cascade' }),
     content: text("content").notNull(),
     type: varchar("type", { length: 30 }).notNull().default("note"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("task_notes_task_idx").on(table.taskId),

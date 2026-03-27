@@ -26,19 +26,23 @@ export const accounts = walletSchema.table("accounts", {
     .notNull()
     .default("0"),
   isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Categories
-export const categories = walletSchema.table("categories", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 60 }).notNull(),
-  type: varchar("type", { length: 10 }).notNull(),
-  icon: varchar("icon", { length: 30 }),
-  parentId: uuid("parent_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const categories = walletSchema.table(
+  "categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 60 }).notNull(),
+    type: varchar("type", { length: 10 }).notNull(),
+    icon: varchar("icon", { length: 30 }),
+    parentId: uuid("parent_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("categories_parent_id_idx").on(table.parentId)]
+);
 
 // Transactions
 export const transactions = walletSchema.table(
@@ -58,12 +62,13 @@ export const transactions = walletSchema.table(
       () => accounts.id
     ),
     tags: text("tags").array().notNull().default([]),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("tx_account_date_idx").on(table.accountId, table.date),
     index("tx_category_date_idx").on(table.categoryId, table.date),
+    index("tx_transfer_to_account_idx").on(table.transferToAccountId),
   ]
 );
 
@@ -84,8 +89,8 @@ export const savingsGoals = walletSchema.table("savings_goals", {
   currency: varchar("currency", { length: 3 }).notNull(),
   deadline: date("deadline"),
   isCompleted: boolean("is_completed").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Savings Contributions
@@ -95,12 +100,18 @@ export const savingsContributions = walletSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     goalId: uuid("goal_id")
       .notNull()
-      .references(() => savingsGoals.id),
-    transactionId: uuid("transaction_id").references(() => transactions.id),
+      .references(() => savingsGoals.id, { onDelete: "cascade" }),
+    transactionId: uuid("transaction_id").references(() => transactions.id, {
+      onDelete: "set null",
+    }),
     amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
     date: date("date").notNull(),
     note: varchar("note", { length: 255 }),
-  }
+  },
+  (table) => [
+    index("sc_goal_id_idx").on(table.goalId),
+    index("sc_transaction_id_idx").on(table.transactionId),
+  ]
 );
 
 // Investments
@@ -123,9 +134,11 @@ export const investments = walletSchema.table("investments", {
   rate: decimal("rate", { precision: 6, scale: 4 }),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+},
+(table) => [index("investments_account_id_idx").on(table.accountId)]
+);
 
 // Exchange Rates
 export const exchangeRates = walletSchema.table(
@@ -137,7 +150,7 @@ export const exchangeRates = walletSchema.table(
     rate: decimal("rate", { precision: 15, scale: 4 }).notNull(),
     type: varchar("type", { length: 20 }).notNull(),
     date: date("date").notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("exchange_rate_unique_idx").on(

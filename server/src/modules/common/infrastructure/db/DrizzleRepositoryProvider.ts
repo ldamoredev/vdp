@@ -8,6 +8,18 @@ import { AgentRepository } from '../../base/agents/AgentRepository';
 import { DrizzleAgentRepository } from '../agents/DrizzleAgentRepository';
 import { TaskEmbeddingRepository } from '../../../tasks/domain/TaskEmbeddingRepository';
 import { DrizzleTaskEmbeddingRepository } from '../../../tasks/infrastructure/db/DrizzleTaskEmbeddingRepository';
+import { AccountRepository } from '../../../wallet/domain/AccountRepository';
+import { DrizzleAccountRepository } from '../../../wallet/infrastructure/db/DrizzleAccountRepository';
+import { TransactionRepository } from '../../../wallet/domain/TransactionRepository';
+import { DrizzleTransactionRepository } from '../../../wallet/infrastructure/db/DrizzleTransactionRepository';
+import { CategoryRepository } from '../../../wallet/domain/CategoryRepository';
+import { DrizzleCategoryRepository } from '../../../wallet/infrastructure/db/DrizzleCategoryRepository';
+import { SavingsGoalRepository } from '../../../wallet/domain/SavingsGoalRepository';
+import { DrizzleSavingsGoalRepository } from '../../../wallet/infrastructure/db/DrizzleSavingsGoalRepository';
+import { InvestmentRepository } from '../../../wallet/domain/InvestmentRepository';
+import { DrizzleInvestmentRepository } from '../../../wallet/infrastructure/db/DrizzleInvestmentRepository';
+import { ExchangeRateRepository } from '../../../wallet/domain/ExchangeRateRepository';
+import { DrizzleExchangeRateRepository } from '../../../wallet/infrastructure/db/DrizzleExchangeRateRepository';
 
 export class DrizzleRepositoryProvider extends RepositoryProvider {
     constructor(private db: Database) {
@@ -25,6 +37,18 @@ export class DrizzleRepositoryProvider extends RepositoryProvider {
                 return new DrizzleTaskEmbeddingRepository(this.db) as T;
             case AgentRepository:
                 return new DrizzleAgentRepository(this.db) as T;
+            case AccountRepository:
+                return new DrizzleAccountRepository(this.db) as T;
+            case TransactionRepository:
+                return new DrizzleTransactionRepository(this.db) as T;
+            case CategoryRepository:
+                return new DrizzleCategoryRepository(this.db) as T;
+            case SavingsGoalRepository:
+                return new DrizzleSavingsGoalRepository(this.db) as T;
+            case InvestmentRepository:
+                return new DrizzleInvestmentRepository(this.db) as T;
+            case ExchangeRateRepository:
+                return new DrizzleExchangeRateRepository(this.db) as T;
             default:
                 throw new Error(`${token.name} not implemented`);
         }

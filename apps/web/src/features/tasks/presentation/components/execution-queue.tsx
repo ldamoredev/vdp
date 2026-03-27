@@ -1,7 +1,7 @@
-import { CheckCheck } from "lucide-react";
 import { getFilterTasks } from "../tasks-dashboard-selectors";
 import { useTasksData, useTasksActions } from "../use-tasks-context";
 import { TaskRow } from "./task-row";
+import { EmptyTaskList } from "@/components/tasks/empty-task-list";
 
 export function ExecutionQueue() {
   const {
@@ -64,44 +64,24 @@ export function ExecutionQueue() {
       </div>
 
       <div className="space-y-3 p-5">
-        {visibleTasks.length === 0 && (
-          <div className="rounded-[28px] border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-6 py-16 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--violet-soft-bg)]">
-              <CheckCheck
-                size={24}
-                style={{ color: "var(--violet-soft-text)", opacity: 0.8 }}
-              />
-            </div>
-            <p className="mt-4 text-sm font-medium text-[var(--foreground)]">
-              {filter === "focus"
-                ? "No hay nada urgente en la cola."
-                : filter === "pending"
-                  ? "No quedan pendientes para hoy."
-                  : filter === "done"
-                    ? "Todavia no cerraste tareas hoy."
-                    : "No hay tareas para esta fecha."}
-            </p>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              Usa captura rapida o conversa con el asistente para cargar el
-              siguiente bloque de trabajo.
-            </p>
-          </div>
-        )}
+        {visibleTasks.length === 0 && <EmptyTaskList filter={filter} />}
 
-        {visibleTasks.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            busy={isTaskBusy(task.id)}
-            actionsOpen={expandedTaskActions === task.id}
-            onComplete={completeTask}
-            onCarryOver={carryOverTask}
-            onDiscard={discardTask}
-            onDelete={deleteTask}
-            onOpenDetail={openBreakdownStudio}
-            onToggleActions={setExpandedTaskActions}
-          />
-        ))}
+        <div className="stagger-children space-y-3">
+          {visibleTasks.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              busy={isTaskBusy(task.id)}
+              actionsOpen={expandedTaskActions === task.id}
+              onComplete={completeTask}
+              onCarryOver={carryOverTask}
+              onDiscard={discardTask}
+              onDelete={deleteTask}
+              onOpenDetail={openBreakdownStudio}
+              onToggleActions={setExpandedTaskActions}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

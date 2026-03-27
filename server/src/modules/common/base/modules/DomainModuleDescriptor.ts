@@ -1,6 +1,3 @@
 import { DomainName } from '../event-bus/DomainEvent';
 
-export type DomainModuleDescriptor = {
-    domain: DomainName;
-    label: string;
-};
+export type DomainModuleDescriptor = { domain: DomainName; label: string; };

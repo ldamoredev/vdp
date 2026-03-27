@@ -33,7 +33,7 @@ export const taskEmbeddings = tasksSchema.table(
             .unique(),
         content: text('content').notNull(),
         embedding: vector('embedding', EMBEDDING_DIMENSIONS).notNull(),
-        createdAt: timestamp('created_at').notNull().defaultNow(),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     },
     (table) => [
         index('task_embeddings_task_id_idx').on(table.taskId),

@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   ArrowRight,
   Check,
   ListTodo,
@@ -10,6 +9,7 @@ import {
 import type { Task } from "@/lib/api/types";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { CarryOverBadge } from "@/components/tasks/carry-over-badge";
 import { getTaskTone } from "../tasks-dashboard-selectors";
 
 interface TaskRowProps {
@@ -29,17 +29,7 @@ function TaskBadges({ task }: { task: Task }) {
     <>
       <TaskPriorityBadge priority={task.priority} />
       <TaskDomainBadge domain={task.domain} />
-      {task.carryOverCount > 0 && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--amber-soft-text)]">
-          <AlertTriangle size={10} />
-          {task.carryOverCount}
-        </span>
-      )}
-      {task.carryOverCount >= 3 && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--red-soft-text)]">
-          Bloqueada
-        </span>
-      )}
+      <CarryOverBadge count={task.carryOverCount} />
     </>
   );
 }

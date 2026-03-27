@@ -21,7 +21,7 @@ export default function DashboardPage() {
     queryFn: () => walletApi.getStatsSummary(),
   });
 
-  const recentTx = txResult?.data || [];
+  const recentTx = txResult?.transactions || [];
 
   return (
     <div className="space-y-8 max-w-5xl animate-fade-in">
@@ -40,7 +40,7 @@ export default function DashboardPage() {
             <SkeletonCard />
           </>
         ) : (
-          accounts.map((acc: any) => (
+          accounts.map((acc) => (
             <AccountCard key={acc.id} account={acc} />
           ))
         )}

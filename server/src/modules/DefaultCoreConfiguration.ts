@@ -15,6 +15,7 @@ import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { createEmbeddingProvider } from './common/infrastructure/embeddings/createEmbeddingProvider';
 import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
 import { TaskModule } from './tasks/TaskModule';
+import { WalletModule } from './wallet/WalletModule';
 import { Logger } from './common/base/observability/logging/Logger';
 import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
 
@@ -34,6 +35,9 @@ export class DefaultCoreConfiguration implements CoreConfig {
         this.traceService = createOpenTelemetryService(process.env, this.logger);
         this.agentProvider = createAgentProvider(process.env);
         this.embeddingProvider = createEmbeddingProvider(process.env);
-        this.moduleFactories = [(context) => new TaskModule(context)];
+        this.moduleFactories = [
+            (context) => new TaskModule(context),
+            (context) => new WalletModule(context),
+        ];
     }
 }

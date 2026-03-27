@@ -1,358 +1,154 @@
 # VDP Plan
 
-## 1. Current Status
+Updated: 2026-03-27
 
-VDP is currently a `Tasks-first` modular monorepo.
+## 1. Purpose
 
-The project started with a broader "life OS" ambition across Tasks, Wallet, Health, People, Work, and Study. That vision still matters, but the codebase has intentionally narrowed scope so the definitive architecture can be proven in one domain before the others return.
+VDP is a modular personal AI operating system.
 
-Today, the only active product domain is `Tasks`.
+The long-term vision is still multi-domain:
 
-What is real right now:
+- Tasks
+- Wallet
+- Health
+- People
+- Work
+- Study
 
-- a unified frontend in `apps/web`
-- a unified backend in `server`
-- shared schemas in `packages/shared`
-- a stable Tasks HTTP API
-- a stable Tasks agent chat endpoint
-- provider abstraction for local and hosted LLMs
-- conversation history for chat
-- live sync between chat actions and task views
-- actionable planning and review flows for Tasks
+The current execution strategy is narrower and explicit:
 
-What is intentionally not active right now:
+1. keep `Tasks` as the canonical reference module
+2. expand carefully into `Wallet` as the second real domain
+3. keep the other domains inactive until they match the same backend + frontend + test standard
+4. only introduce cross-domain orchestration after at least two domains are truly live
 
-- Wallet, Health, People, Work, and Study in the main navigation
-- any claim that those domains are production-ready
-- cross-domain orchestration as a live product behavior
-
-This plan reflects the codebase as it exists now, not the original broader aspiration alone.
+This document reflects the current repository and the latest project memory from 2026-03-26 and 2026-03-27. If other docs conflict, trust this file, the current codebase, and `README.md`.
 
 ---
 
-## 2. Product Context
+## 2. Current Project State
 
-The current product is a daily execution system for personal tasks with an embedded AI assistant.
+### 2.1 Stable product surface
 
-The product surface today is:
+`Tasks` is the only domain that is clearly implemented end-to-end and already documented as deployed.
+
+Confirmed current Tasks surface:
 
 - `/tasks`
-  Daily operational center. Capture, execute, replan, clarify, and break down work.
 - `/tasks/history`
-  Decision-oriented review flow. Carry over, discard, and inspect closure quality.
 - `/home`
-  Tasks-only command summary.
-- shared shell chat
-  Domain-aware Tasks assistant with persisted conversations and tool-driven actions.
+- shared shell chat for Tasks
+- `/login`
 
-The main product behaviors already implemented in Tasks are:
+Confirmed Tasks capabilities:
 
-- quick capture for today
-- completion, carry-over, discard, and delete flows
-- planning guidance based on queue pressure and carry-over rate
-- clarification gate for vague task capture
-- task breakdown studio using notes as executable next steps
-- end-of-day review with concrete decisions
-- AI chat that can create, update, complete, carry over, discard, inspect, and review tasks
-- conversation history and replay in the chat panel
-- real-time UI sync after both manual and AI-driven mutations
+- stable HTTP API
+- stable agent chat endpoint
+- persisted chat conversations
+- live sync between chat mutations and UI
+- clarification gate for vague capture
+- planning and review flows
+- embeddings architecture and similarity search
+- event-driven task insights
 
-The product thesis being tested is:
+### 2.2 In-progress expansion
 
-> the assistant should not just CRUD tasks; it should improve execution quality, planning quality, and review quality.
+`Wallet` is no longer just an idea in the repo. The current worktree shows active Wallet implementation in both backend and frontend:
 
----
+- `WalletModule` exists and is registered in `DefaultCoreConfiguration`
+- Wallet routes and Wallet agent routes exist on the backend
+- Wallet pages are enabled in frontend navigation
+- the landing page currently marks Wallet as `Activo`
+- Wallet schema and migrations are present in the current worktree
 
-## 3. System Vision
+However, Wallet is not yet at the same confidence level as Tasks. It should be treated as `in progress`, not as fully shipped.
 
-The long-term system vision remains:
+### 2.3 Inactive domains
 
-> VDP is a modular personal operating system where each life domain is represented as a focused module with its own workflows, data, services, and agent capabilities.
+These domains remain inactive from a product and runtime-trust perspective:
 
-That vision is still valid, but the sequence is now explicit:
+- `Health`
+- `People`
+- `Work`
+- `Study`
 
-1. make `Tasks` the canonical reference implementation
-2. extract only the reusable primitives that proved necessary
-3. restore new domains only after they match the Tasks template
-4. add cross-domain orchestration only when multiple domains are truly live
+Current status:
 
-This changes the strategic posture:
-
-- before: broad multi-domain implementation in parallel
-- now: single-domain convergence first, expansion second
-
-The system is still meant to become a multi-domain life OS, but the current product and engineering plan are intentionally narrower and more disciplined.
-
----
-
-## 4. Engineering Strategy
-
-The project architecture is now based on a pragmatic rule:
-
-> one domain must be correct, coherent, and testable before the platform expands.
-
-That means:
-
-- no speculative architecture for dormant domains
-- no hidden coupling between modules
-- no frontend navigation for modules without a working backend and tests
-- no provider lock-in for agent development
-- no duplicate contract definitions between frontend and backend
-
-The current reference architecture is the `Tasks` module.
+- Health still has placeholder/demo frontend presence
+- People, Work, and Study still exist mainly as demo UI or inactive pages
+- none of them should be treated as live product modules
 
 ---
 
-## 5. Current Architecture
+## 3. Domain Status Matrix
 
-### 5.1 Monorepo
+| Domain | Backend | Frontend | Agent | Status |
+|--------|---------|----------|-------|--------|
+| Tasks | Implemented | Implemented | Implemented | Stable |
+| Wallet | Partially implemented | Partially implemented | Partially implemented | In progress |
+| Health | Not active | Placeholder/demo | Not active | Inactive |
+| People | Not active | Demo/inactive | Not active | Inactive |
+| Work | Not active | Demo/inactive | Not active | Inactive |
+| Study | Not active | Demo/inactive | Not active | Inactive |
 
-The repository is a `pnpm` + Turbo monorepo with three active workspace packages:
+Important nuance:
+
+- `Tasks` is the only domain that is clearly complete enough to be called the current product
+- `Wallet` is now the active expansion track in code, but the contract is not fully aligned yet
+
+---
+
+## 4. Architecture Snapshot
+
+### 4.1 Monorepo
+
+The workspace currently contains three active packages:
 
 - `apps/web`
 - `server`
 - `packages/shared`
 
-### 5.2 Frontend
+There are no separate live frontend packages for Wallet, Health, People, Work, or Study in the current workspace. Older references to those packages are stale.
 
-The frontend is a single Next.js app.
+### 4.2 Frontend
 
-Current reality:
+Frontend stack:
 
-- one shared shell with icon rail, sidebar panel/drawer, and mobile tab bar
-- one active domain in navigation: `Tasks`
-- shared chat panel that adapts to the active domain
-- Tasks pages driving the product with split-context architecture (QueriesContext / ActionsContext)
-- `features/tasks/presentation/` owns the Tasks presentation layer: context providers, hooks, selectors, components
-- history page has its own context provider (HistoryProvider)
-- demo pages exist for Work, Study, and People with functional UI (Pomodoro timer, contact messaging, calendar views)
+- Next.js 15
+- React 19
+- Tailwind CSS 4
+- React Query
 
-Inactive domain pages (Wallet, Health) still exist in the tree but are not part of the active product surface. Demo pages for Work, Study, People are functional demonstrations, not production modules.
+Current frontend architecture decisions:
 
-### 5.3 Backend
+- one shared app shell
+- domain-aware navigation and chat shell
+- `Tasks` uses the split-context presentation pattern
+- `TasksProvider` owns dashboard state composition
+- `HistoryProvider` owns review page state composition
 
-The backend is a modular Fastify application.
+Tasks presentation remains the reference frontend pattern for future domains.
 
-Current reality:
+### 4.3 Backend
 
-- `App` is the HTTP composition root
-- `AppRunner` owns startup/shutdown orchestration and runtime lifecycle concerns via `RuntimeLifecycle` abstraction
-- `Core` constructs shared runtime dependencies and bootstraps active modules
-- `ModuleContext` carries: repositories, services, eventBus, agentRegistry, sseBroadcaster, llmTraceService, traceService, agentProvider, embeddingProvider
-- `TaskModule` is the only active module
-- modules expose controllers through a shared `DomainModule` contract
-- controllers mount through `HttpController` and register routes through `RouteRegister`
-- shared HTTP error handling and validation exist
-- shared SSE chat handling exists with error classification (AgentErrorCode)
-- shared response helpers exist
-- Langfuse (LLMTraceService) + OpenTelemetry (TraceService) integrated with real + noop implementations
-- pgvector embeddings: EmbeddingProvider abstraction (Ollama / NoOp), embed-on-write pipeline, similarity search
-- product intelligence services: planning context, overload detection, weekly summary, repeat detection, recommendation engine
-- event-driven insights: TaskCompleted, DailyAllCompleted, TaskStuck, TasksOverloaded, TaskRepeatDetected
+Backend stack:
 
-### 5.4 Agent Runtime
+- Fastify 5
+- Drizzle ORM
+- PostgreSQL
+- pgvector
 
-The agent layer is no longer tied to Anthropic.
+Current backend architecture decisions:
 
-Current provider model:
+- modular monolith
+- `Core` builds shared runtime dependencies once
+- modules receive dependencies through `ModuleContext`
+- no singletons
+- shared HTTP controller pattern
+- shared error handling
+- shared SSE/agent chat handling
 
-- `AnthropicAgentProvider` / `OllamaAgentProvider` — LLM runtime (agent chat)
-- `OllamaEmbeddingProvider` / `NoOpEmbeddingProvider` — embedding runtime (semantic search)
-- provider selection via environment variables (`AGENT_PROVIDER`, `EMBEDDING_PROVIDER`)
-- the `Tasks` agent tool registry is composed by category: management, transition, review, intelligence, and insight tools
-- intelligence tools include: `find_similar_tasks`, `get_planning_context`, `get_weekly_summary`
-
-This matters operationally because:
-
-- local development can run on Ollama for both chat and embeddings
-- product testing is not blocked by paid API access
-- the agent runtime can evolve without rewriting domain logic
-
-### 5.5 Shared Contracts
-
-`packages/shared` contains the shared request schema layer.
-
-Current rule:
-
-- shared primitives go in `packages/shared/src/schemas/common.ts`
-- domain-specific schemas extend those primitives
-- frontend and backend are expected to use the same contract vocabulary
-
----
-
-## 6. Technology Stack
-
-This section documents the tools actually in use in the repository today.
-
-### 6.1 Languages
-
-- TypeScript across frontend, backend, and shared package
-- SQL through PostgreSQL and Drizzle-managed schema definitions
-- CSS through global styles and Tailwind CSS 4
-
-### 6.2 Monorepo and Package Management
-
-- `pnpm` for package management and workspace linking
-- `Turbo` for workspace task orchestration
-
-### 6.3 Frontend
-
-- `Next.js 15` as the application framework
-- `React 19` as the UI runtime
-- `Tailwind CSS 4` for utility-based styling
-- `@tanstack/react-query` for server-state management and cache synchronization
-- `lucide-react` for icons
-- `date-fns` for date formatting and manipulation
-- `recharts` for charts and trend visualizations
-
-### 6.4 Backend
-
-- `Fastify 5` as the HTTP server
-- `@fastify/cors` for CORS handling
-- `drizzle-orm` as the database access layer
-- `pg` as the PostgreSQL driver
-- `node-cron` for scheduler support
-- `dotenv` for environment loading
-- `crypto-randomuuid` for UUID generation compatibility in parts of the backend
-
-### 6.5 Database and Infrastructure
-
-- `PostgreSQL` with `pgvector` extension as the primary application database
-- Docker image: `pgvector/pgvector:pg16` (both dev and test)
-- Docker Compose for local infrastructure
-- a separate Docker Compose test database on port `5433`
-- `task_embeddings` table with `vector(768)` column for semantic similarity search
-
-### 6.6 Shared Contracts and Validation
-
-- `zod` for request validation and shared schema definitions
-- shared schema package in `packages/shared`
-
-### 6.7 AI and Agent Runtime
-
-- provider abstraction over the LLM runtime
-- `@anthropic-ai/sdk` for Anthropic support
-- `Ollama` for local model execution
-- current local model baseline: `qwen3:4b`
-- SSE for streaming assistant responses to the frontend
-
-### 6.8 Testing and Developer Tooling
-
-- `Vitest` for unit, integration, and e2e tests
-- `tsx` for local TypeScript execution and watch mode
-- `TypeScript` compiler for builds in `server` and `packages/shared`
-- `drizzle-kit` for schema generation, migrations, and DB studio
-
-### 6.9 Runtime and Delivery Model
-
-- single Next.js frontend app
-- single Fastify backend app
-- modular monolith backend architecture
-- local-first AI development through Ollama
-
-### 6.10 Future AI and Integration Stack
-
-The current AI/runtime stack is enough for the present Tasks product,
-but it is not enough for the broader VDP vision.
-
-If VDP expands into deeper intelligence, higher trust, and real external actions, 
-these are the most likely additions.
-
-#### Observability and Trust
-
-- `Langfuse`
-  For prompt tracing, tool-call tracing, agent analytics, and evaluation.
-- `OpenTelemetry`
-  For backend traces across controllers, services, providers, and integrations.
-- `Sentry`
-  For frontend and backend error monitoring.
-- `Pino`
-  For structured application and audit logs if logging needs become more explicit than the default setup.
-
-#### Memory and Retrieval
-
-- `pgvector`
-  For embeddings and semantic retrieval inside PostgreSQL.
-- PostgreSQL full-text search
-  For structured search before adding a separate search system.
-- provider or local embedding models
-  Likely through Ollama embeddings or a hosted embedding provider later.
-
-#### External Integrations
-
-- `googleapis`
-  For Gmail and Google Calendar integration in a future Work module.
-- `google-auth-library`
-  For OAuth flows and token handling tied to Google integrations.
-- `gramjs`
-  For user-level Telegram access, contacts, and messaging flows in a future People module.
-- `Telegraf`
-  Only if a Telegram bot becomes useful. It is not the main candidate for personal contact access.
-- `nodemailer`
-  For SMTP-based email flows if needed.
-- `resend`
-  Optional if transactional email delivery becomes part of the platform.
-
-#### Automation and Background Work
-
-- keep `node-cron` for near-term scheduling
-- `Trigger.dev`
-  Likely candidate if background jobs, retries, and workflow durability become important.
-- `Temporal`
-  Only if orchestration grows far beyond what the current product needs.
-
-#### Auth and Account Linking
-
-- `Auth.js`
-  Candidate if the product moves beyond local single-user assumptions.
-- `better-auth`
-  Alternative candidate for authentication and account linking depending on future auth needs.
-
-#### Realtime
-
-- keep `SSE` for chat streaming and simple live updates
-- `WebSockets`
-  Only if richer bidirectional realtime behavior becomes necessary later
-
-#### Recommended Priority Order
-
-If only a few additions are introduced in the next stage, the best sequence is:
-
-1. `Langfuse`
-2. `OpenTelemetry`
-3. `pgvector`
-4. `googleapis`
-5. `gramjs`
-
-Those five tools would add the most leverage for:
-
-- better agent trust and observability
-- stronger memory and retrieval
-- real integrations for People and Work
-- a cleaner path from assistant chat to real-world actions
-
----
-
-## 7. Backend Module Model
-
-The backend module pattern is now explicit.
-
-Each active module should follow:
-
-1. `domain`
-   Repository contracts and domain-level definitions.
-2. `services`
-   Business use cases and orchestration.
-3. `infrastructure/db`
-   Drizzle-backed implementations.
-4. `infrastructure/routes`
-   Thin HTTP controllers.
-5. `infrastructure/agent`
-   Thin AI adapter over the same services.
-6. events and subscribers
-   Emitted from lifecycle transitions and handled through the shared event bus.
-
-Each module boots through:
+Module lifecycle remains:
 
 1. `registerServices()`
 2. `registerEventHandlers()`
@@ -360,701 +156,291 @@ Each module boots through:
 4. `getControllers()`
 5. `getDescriptor()`
 
-This is no longer theoretical. It is how `TaskModule` works now.
+### 4.4 Shared contracts
+
+`packages/shared` is the common contract layer:
+
+- shared zod schemas
+- shared request/response vocabulary
+- domain schemas for Tasks and future domains
+
+Frontend and backend are expected to align through this package.
+
+### 4.5 AI and runtime providers
+
+The provider abstraction is established and should remain:
+
+- LLM provider abstraction for chat
+- embedding provider abstraction for semantic search
+- local development via Ollama
+- hosted runtime via OpenAI-compatible provider in production
+
+### 4.6 Operational rules already established
+
+These are current architecture rules, not optional ideas:
+
+- never use singleton patterns for shared services
+- never use `toISOString().slice(0, 10)` for local-date logic
+- use project date helpers for local dates
+- SSE endpoints using `reply.hijack()` must set CORS headers manually
 
 ---
 
-## 8. Repository Structure
+## 5. Verified Progress
 
-This section describes the repository as it actually exists now.
+### 5.1 Tasks
 
-```text
-vdp/
-├── apps/
-│   └── web/
-│       ├── src/
-│       │   ├── app/
-│       │   │   ├── layout.tsx
-│       │   │   ├── page.tsx
-│       │   │   ├── globals.css
-│       │   │   └── (domain)/
-│       │   │       ├── layout.tsx
-│       │   │       ├── home/page.tsx
-│       │   │       ├── tasks/page.tsx
-│       │   │       ├── tasks/history/page.tsx
-│       │   │       ├── health/page.tsx
-│       │   │       ├── wallet/page.tsx
-│       │   │       ├── work/page.tsx          (demo)
-│       │   │       ├── study/page.tsx         (demo)
-│       │   │       └── people/page.tsx        (demo)
-│       │   ├── features/
-│       │   │   └── tasks/
-│       │   │       └── presentation/
-│       │   │           ├── tasks-context.tsx
-│       │   │           ├── use-tasks-context.ts
-│       │   │           ├── history-context.tsx
-│       │   │           ├── use-history-context.ts
-│       │   │           ├── use-tasks-dashboard-model.ts
-│       │   │           ├── use-tasks-queries.ts
-│       │   │           ├── use-task-mutations.ts
-│       │   │           ├── use-task-detail.ts
-│       │   │           ├── use-task-creation.ts
-│       │   │           ├── use-history-model.ts
-│       │   │           ├── tasks-dashboard-selectors.ts
-│       │   │           ├── history-selectors.ts
-│       │   │           ├── __tests__/
-│       │   │           └── components/
-│       │   │               ├── detail/
-│       │   │               ├── quick-capture-form.tsx
-│       │   │               ├── operational-header.tsx
-│       │   │               ├── execution-queue.tsx
-│       │   │               ├── planning-signal.tsx
-│       │   │               ├── focus-recommendation.tsx
-│       │   │               ├── detail-panel.tsx
-│       │   │               ├── clarification-gate.tsx
-│       │   │               ├── sidebar-cards.tsx
-│       │   │               ├── task-row.tsx
-│       │   │               └── history-*.tsx
-│       │   ├── components/
-│       │   │   ├── shell/
-│       │   │   │   ├── header.tsx
-│       │   │   │   ├── sidebar-panel.tsx
-│       │   │   │   ├── sidebar-drawer.tsx
-│       │   │   │   ├── icon-rail.tsx
-│       │   │   │   ├── chat-panel.tsx
-│       │   │   │   ├── mobile-tab-bar.tsx
-│       │   │   │   ├── toast-container.tsx
-│       │   │   │   └── insights-provider.tsx
-│       │   │   ├── chat/
-│       │   │   ├── tasks/
-│       │   │   └── demo/
-│       │   ├── hooks/
-│       │   └── lib/
-│       │       ├── api/
-│       │       ├── chat/
-│       │       ├── tasks/
-│       │       ├── navigation.ts
-│       │       └── providers.tsx
-│       └── package.json
-│
-├── server/
-│   ├── src/
-│   │   ├── App.ts
-│   │   ├── AppRunner.ts
-│   │   ├── main.ts
-│   │   ├── runtime/
-│   │   │   ├── RuntimeLifecycle.ts
-│   │   │   └── NodeRuntimeLifecycle.ts
-│   │   └── modules/
-│   │       ├── Core.ts
-│   │       ├── common/
-│   │       │   ├── base/
-│   │       │   │   ├── agents/
-│   │       │   │   ├── db/
-│   │       │   │   ├── embeddings/
-│   │       │   │   ├── event-bus/
-│   │       │   │   ├── modules/
-│   │       │   │   ├── observability/
-│   │       │   │   ├── services/
-│   │       │   │   ├── sse/
-│   │       │   │   └── time/
-│   │       │   ├── http/
-│   │       │   ├── infrastructure/
-│   │       │   │   ├── agents/
-│   │       │   │   ├── db/
-│   │       │   │   ├── embeddings/
-│   │       │   │   ├── observability/
-│   │       │   │   └── scheduler/
-│   │       │   └── __tests__/
-│   │       ├── tasks/
-│   │       │   ├── domain/
-│   │       │   │   ├── Task.ts
-│   │       │   │   ├── repositories/
-│   │       │   │   └── events/
-│   │       │   ├── services/
-│   │       │   ├── infrastructure/
-│   │       │   │   ├── agent/
-│   │       │   │   │   ├── TaskAgent.ts
-│   │       │   │   │   ├── system-prompt.ts
-│   │       │   │   │   └── tools/
-│   │       │   │   │       ├── management-tools.ts
-│   │       │   │   │       ├── transition-tools.ts
-│   │       │   │   │       ├── review-tools.ts
-│   │       │   │   │       ├── intelligence-tools.ts
-│   │       │   │   │       ├── insight-tools.ts
-│   │       │   │   │       └── shared.ts
-│   │       │   │   ├── db/
-│   │       │   │   └── routes/
-│   │       │   └── __tests__/
-│   │       ├── wallet/
-│   │       └── health/
-│   └── package.json
-│
-├── packages/
-│   └── shared/
-│       ├── src/
-│       │   ├── index.ts
-│       │   ├── schemas/
-│       │   │   ├── common.ts
-│       │   │   ├── tasks.ts
-│       │   │   ├── wallet.ts
-│       │   │   └── health.ts
-│       │   ├── types/
-│       │   └── constants/
-│       └── package.json
-│
-├── design-system/
-├── README.md
-├── ARCHITECTURE.md
-├── PLAN.md
-├── PRODUCT.md
-├── PRODUCT_es.md
-├── turbo.json
-└── pnpm-workspace.yaml
-```
+The Tasks module remains the strongest part of the system and the reference implementation.
 
-Notes:
+Confirmed in code and memory:
 
-- `wallet` and `health` remain in the repository as incomplete modules and placeholder frontend pages
-- `work`, `study`, and `people` have functional demo pages but no backend modules
-- they are not part of the active runtime contract
-- `tasks` is the only domain that currently meets the architecture bar
-- `design-system/` exists but is minimal
+- split-context frontend refactor is complete
+- planning, review, and chat flows are implemented
+- repeat-detection flow exists in code
+- `TaskRepeatDetected` event handling exists in code
+- `get_recommendations` agent tool exists in code
+- auth gate via `ACCESS_SECRET` exists in frontend and backend
+- OpenAI-compatible provider support exists in code
+
+### 5.2 Recent Tasks polish from 2026-03-27 session memory
+
+The latest Claude session log shows additional Tasks work completed on 2026-03-27:
+
+- carry-over badge component
+- improved empty state for the execution queue
+- staggered task-list transitions
+- quick-capture modal with keyboard shortcut
+
+### 5.3 Verification captured in latest session memory
+
+The latest session memory also records successful verification on 2026-03-27:
+
+- server build passed
+- server unit tests passed: `143` tests
+- web build passed
+- shared package tests passed: `76` tests
+
+These numbers are newer than several older docs and should be considered the more current reference.
+
+### 5.4 Wallet work currently visible in the repo
+
+Current Wallet work in the repo includes:
+
+- backend module class and runtime
+- domain entities and repositories
+- Drizzle repositories
+- fake repositories
+- REST controller
+- Wallet agent controller
+- Wallet agent tools
+- Wallet event handling for spending spikes
+- frontend dashboard and transaction pages
+- frontend stats, savings, and investments pages
+
+This is meaningful progress, but it is still not a proven vertical slice.
 
 ---
 
-## 9. Domain Status
+## 6. Current Reality of Wallet
 
-### 9.1 Tasks
+Wallet should be described precisely.
 
-Status: `active reference module with product intelligence`
+### 6.1 What is implemented
 
-Backend:
+Backend routes currently exist for:
 
-- controller layer stable
-- shared validation and error handling integrated
-- SSE chat route integrated
-- conversation persistence integrated
-- provider abstraction integrated
-- unit, integration, and e2e baseline established (33 test files, 90+ unit tests)
-- product intelligence services: planning context, overload detection, weekly summary, repeat detection, recommendation engine
-- agent tool registry: management, transition, review, intelligence, and insight tools (~30 tools)
-- embed-on-write pipeline: task creation, update, and note addition trigger embedding
-- event-driven insights: 5 domain events with handlers feeding TaskInsightsStore
+- accounts
+- categories
+- transactions
+- wallet stats summary
+- wallet agent conversations/chat
 
-Frontend:
+Frontend pages currently exist for:
 
-- active navigation
-- operational Tasks dashboard with split-context architecture (TasksProvider)
-- review page with dedicated HistoryProvider
-- home summary
-- chat history and action rendering
-- live sync between task state and chat-driven mutations
-- compact dual layout (desktop rows / mobile cards)
-- shared badge components (TaskPriorityBadge, TaskDomainBadge)
-- features/tasks/presentation layer with selectors, hooks, and component decomposition
+- `/wallet`
+- `/wallet/transactions`
+- `/wallet/transactions/new`
+- `/wallet/stats`
+- `/wallet/savings`
+- `/wallet/investments`
 
-Product maturity:
+### 6.2 What is still inconsistent
 
-- architecture reference with Phase 2 intelligence integrated
-- intelligence tools (similarity search, planning context, weekly summary) wired into agent
+The current frontend/backend contract is ahead of the backend implementation.
 
-### 9.2 Wallet
+Frontend API expects more than the backend currently exposes, including routes for:
 
-Status: `dormant / not active`
+- savings goals
+- savings contributions
+- investments
+- category stats
+- monthly trend
+- exchange rates
 
-Reality:
+The backend controller currently exposes only:
 
-- schemas and old code exist
-- not aligned with the current module architecture
-- not exposed in active navigation
-- not part of the supported product surface
+- accounts
+- categories
+- transactions
+- stats summary
 
-### 9.3 Health
+So Wallet is not yet a stable or fully aligned module.
 
-Status: `dormant / not active`
+### 6.3 Product status decision
 
-Reality:
+Because of that mismatch, Wallet should be treated as:
 
-- schemas and old code exist
-- not aligned with the current module architecture
-- not exposed in active navigation
-- not part of the supported product surface
-
-### 9.4 People / Work / Study
-
-Status: `demo pages only`
-
-Reality:
-
-- functional demo pages exist with working UI (Pomodoro timer, contact messaging, calendar views)
-- no backend modules
-- no real data persistence
-- not eligible for navigation or roadmap activation as production modules
+- the active second-domain build
+- not yet stable
+- not yet at Tasks quality level
+- not yet a reliable production claim
 
 ---
 
-## 10. Product Scope Right Now
+## 7. Risks and Unknowns
 
-The supported scope right now is:
+### 7.1 Stale documentation
 
-- one user
-- one Tasks module
-- one shared shell
-- one domain-aware AI chat surface
+Several docs are older than the current code and should not be treated as current truth by themselves:
 
-The supported user story is:
+- `docs/PRODUCT.md` is still vision-heavy
+- `.claude/launch.json` references packages that do not exist in the current workspace
+- older review docs contain outdated test counts and outdated gap lists
 
-> capture work, clarify it, break it down, execute it, review it, and use the assistant to guide those decisions.
+### 7.2 Dirty worktree
 
-The product is not yet:
+The current repository has many uncommitted changes, including:
 
-- a true multi-domain life dashboard
-- a cross-domain event intelligence system
-- a proactive multi-agent orchestration platform
-- a complete personal knowledge graph
+- Wallet backend work
+- Wallet frontend work
+- docs moved under `docs/`
+- recent Tasks UI updates
 
-Those remain future directions, not present claims.
+That means the current state is a mix of:
 
----
+- already-proven Tasks behavior
+- ongoing Wallet implementation
+- documentation cleanup
 
-## 11. Current Technical Conventions
+### 7.3 Wallet contract mismatch
 
-### 11.1 Controllers
+This is the clearest current implementation risk:
 
-- controllers implement `registerRoutes(routes: RouteRegister)`
-- `HttpController` owns Fastify mounting by prefix
-- `App` registers the shared status controller plus module controllers
-- controllers declare routes, validate inputs, call services, and respond
-- controllers do not own business logic
+- frontend navigation and landing page already present Wallet as active
+- backend does not yet cover the full Wallet API surface implied by the frontend
 
-### 11.2 Errors
+### 7.4 Date-rule regression risk
 
-The HTTP error contract is:
+The project memory explicitly forbids `toISOString().slice(0, 10)` for local-date logic.
 
-- `error`
-- `message`
-- `details`
+The current Wallet investments page still uses:
 
-This is the canonical backend-to-frontend error shape.
+- `new Date().toISOString().slice(0, 10)`
 
-### 11.3 Validation
+That conflicts with the established date rule and should be treated as unresolved project risk.
 
-- request validation uses shared `zod` schemas
-- shared validation helpers live in the common HTTP layer
+### 7.5 Unverified older findings
 
-### 11.4 Responses
+Older reviews identified several issues around:
 
-Shared response helpers exist for:
+- database performance
+- vector indexing
+- coverage policy
+- error boundaries
+- silent embedding failures
 
-- created resources
-- message payloads
-- paginated collections
-- carry-over summaries
-- status responses
-
-### 11.5 Agent Chat
-
-The shared SSE event contract is:
-
-- `text`
-- `tool_use`
-- `tool_result`
-- `done`
-- `error`
-
-Tasks chat is available at:
-
-- `POST /api/v1/tasks/agent/chat`
-
-History endpoints:
-
-- `GET /api/v1/tasks/agent/conversations`
-- `GET /api/v1/tasks/agent/conversations/:id/messages`
-
-### 11.6 Provider Runtime
-
-Local provider support is part of the intended development model.
-
-Current supported providers:
-
-- Anthropic
-- Ollama
-
-Recommended local setup:
-
-- `AGENT_PROVIDER=ollama`
-- `OLLAMA_BASE_URL=http://127.0.0.1:11434`
-- `AGENT_MODEL=qwen3:4b`
-- `EMBEDDING_PROVIDER=ollama`
-- `EMBEDDING_MODEL=nomic-embed-text` (default)
+Some old findings are already resolved, but not every older review item has been re-verified against the current worktree. They should be treated as partially open until checked again.
 
 ---
 
-## 12. Testing Baseline
+## 8. Delivery Strategy From Here
 
-The current reference quality bar is the Tasks baseline.
+The project should continue with a disciplined sequence.
 
-Required commands:
+### 8.1 Immediate priority
 
-```bash
-pnpm --filter @vdp/server build
-pnpm --filter @vdp/server test:unit
-pnpm --filter @vdp/server test:integration
-pnpm --filter @vdp/server test:e2e
-pnpm --filter @vdp/web build
-```
+Stabilize the current repo around:
 
-For DB-backed tests:
+1. proven `Tasks`
+2. one coherent `Wallet` MVP slice
 
-- test Postgres runs on `localhost:5433`
-- use `pnpm --filter @vdp/server db:test:up`
+### 8.2 Definition of a real Wallet MVP
 
-The practical rule is:
+Wallet should only be considered active when it has:
 
-> a domain is not active until it satisfies the same baseline Tasks satisfies now.
+1. aligned frontend and backend contracts
+2. shared schemas in `packages/shared`
+3. thin HTTP routes over services
+4. agent tools over the same services
+5. tests following the Tasks template
+6. no obvious broken routes in navigation
 
----
+### 8.3 Cross-domain sequencing
 
-## 13. What Was Completed Recently
+Cross-domain behavior should begin only after Wallet is truly working.
 
-The following work is already done and should not be treated as future work anymore:
+The first meaningful cross-domain proof should be:
 
-- Tasks-only stabilization
-- frontend contract cleanup for Tasks
-- shared validation helpers
-- shared HTTP error handling
-- shared response helpers
-- shared controller contract
-- shared module lifecycle
-- module descriptors
-- shared event subscriber pattern
-- provider abstraction for agent runtime
-- Ollama support
-- Tasks chat endpoint
-- Tasks conversation history
-- chat action rendering
-- manual/chat mutation sync
-- actionable review flow
-- daily planning guidance
-- clarification flow for vague tasks
-- breakdown studio for tasks
-- multiple UI polish passes on the Tasks dashboard
-- Phase 1 complete (2026-03-22): contract integrity, Langfuse, OpenTelemetry, task detail, chat guidance, compact dual layout, shared badge components, trust & auditability (mutation summaries, conversation continuity, error classification)
-- Phase 2 foundation complete (2026-03-22): pgvector (pgvector/pgvector:pg16), EmbeddingProvider abstraction (Ollama nomic-embed-text + NoOp), TaskEmbeddingRepository (Drizzle + Fake), EmbedTask service (embed-on-write from CreateTask/UpdateTask/AddTaskNote), FindSimilarTasks service
-- Server architecture refactor pass complete enough to pause (2026-03-23): modular Core composition, runtime lifecycle split (`App` / `AppRunner` with `RuntimeLifecycle`), logging abstraction through shared infrastructure, slimmer event/insight layer, smaller `BaseAgent` collaborators, and OO controller registration through `HttpController` + `RouteRegister`
-- Task agent tool registry cleanup complete (2026-03-23): `TasksTools` split into category-based builders (management, transition, review, intelligence, insight) with shared tool helpers and registry coverage tests
-- Phase 2 intelligence services complete: FindSimilarTasks agent tool wired, GetPlanningContext service + tool, CheckTasksOverload with 7-day historical logic, GetWeeklySummary service + tool, DetectRepeatPattern service + TaskRepeatDetected event, RecommendationEngine service (discard/break_down/reschedule/celebrate)
-- Frontend refactor complete: split-context pattern (TasksQueriesContext / TasksActionsContext), TasksProvider, HistoryProvider, features/tasks/presentation layer with hooks, selectors, and component decomposition
-- Demo pages added for Work (calendar, email), Study (Pomodoro timer, flashcards), People (contacts, messaging)
-- Product documentation: PRODUCT.md and PRODUCT_es.md
+- Wallet emits spending-related events
+- Tasks consumes that signal in a useful, concrete way
+
+### 8.4 What should stay inactive
+
+Until Wallet is real, do not treat these as active roadmap execution targets:
+
+- Health
+- People
+- Work
+- Study
+
+They can remain as design references or dormant code, but not as active product claims.
 
 ---
 
-## 14. Immediate Product Priorities
+## 9. Working Plan
 
-The server architecture and product intelligence layer are now in a good state. Both the backend services and frontend context architecture are stable.
+### Phase A — Keep Tasks authoritative
 
-Current priority stack:
+- preserve Tasks as the reference module
+- keep Tasks architecture, contracts, and tests as the baseline
+- avoid diluting the product narrative back into six active modules
 
-1. close remaining integration gaps in product intelligence
-2. refine the Tasks product experience based on real usage
-3. evaluate whether a second domain is worth reintroducing
-4. only then re-open architecture work
+### Phase B — Finish Wallet as the second real domain
 
-### Remaining integration gaps
+- finish the missing backend Wallet surface needed by the current frontend
+- or reduce the frontend to the smaller backend surface if that becomes the chosen MVP
+- align the API contract end-to-end
+- test Wallet with the same standard used for Tasks
 
-All previously identified gaps have been resolved:
+### Phase C — Prove the first cross-domain signal
 
-- ✅ `DetectRepeatPattern` trigger was already wired from `CarryOverTask` (confirmed in code)
-- ✅ `TaskRepeatDetected` handler added in `TaskEventHandlers` → generates insight via `TaskInsightFactory.taskRepeatDetected()`
-- ✅ `RecommendationEngine` exposed as `get_recommendations` agent tool via `GetEndOfDayReview`
+- wire one concrete Wallet-to-Tasks interaction
+- keep it narrow and testable
+- avoid building a general orchestration engine too early
 
-### Recommended near-term product themes
+### Phase D — Reassess further domains
 
-#### A. Chat quality and decision quality
+Only after Tasks + Wallet are both real:
 
-- improve how the agent clarifies vague requests
-- improve how the agent proposes breakdowns
-- improve review recommendations and next-step suggestions
-- make assistant responses feel more intentional and less tool-log-like
-
-#### B. Task detail and continuity
-
-- expose richer task detail around notes, breakdown, and history
-- make breakdown steps easier to inspect and act on
-- improve continuity between `/tasks`, `/tasks/history`, and chat conversations
-
-#### C. Daily execution UX
-
-- continue polish on the operational screen
-- strengthen visual hierarchy for focus vs backlog vs blocked work
-- improve mobile behavior and compact desktop states
-
-#### D. Product intelligence (services exist, focus on quality)
-
-- tune planning context recommendations for real usage patterns
-- improve stuck-task detection sensitivity
-- refine overload threshold heuristics based on actual carry-over data
-- improve weekly summary presentation and trend narratives
+- decide whether Health, People, Work, or Study is the third domain
+- restore a domain only when it matches the shared module template
 
 ---
 
-## 15. Reintroduction Rules For Other Domains
-
-Wallet, Health, or any future domain should only return when all of the following are true:
-
-1. shared schemas exist in `packages/shared`
-2. the module follows the current backend module shape
-3. controller validation uses shared helpers
-4. errors use the shared HTTP contract
-5. response shape is stable and shared with the frontend
-6. the module exposes controllers through the module contract
-7. agent chat exists if the domain needs AI interaction
-8. unit, integration, and e2e tests are green
-9. the frontend page uses the canonical client patterns
-10. navigation is only enabled after the above is complete
-
-This is a hard gate, not a soft suggestion.
-
----
-
-## 16. Implementation Roadmap
-
-This roadmap is ordered by actual leverage, not by original ambition.
-
-37 concrete tasks across Phases 1 and 2.
-
-### Phase 0. Completed
-
-- stabilize the repo around Tasks
-- establish the reference architecture
-- turn Tasks into a usable product slice
-
-### Phase 1. ✅ Completed (2026-03-22)
-
-All 18 tasks delivered:
-
-#### 0.9 — Contract & State Integrity ✅
-
-1. `0.9.1` ✅ Lifecycle integrity for Tasks
-2. `0.9.2` ✅ Carry-over contract alignment
-
-#### 1.0 — Langfuse Integration ✅
-
-3. `1.0.1` ✅ LLMTraceService — shared instance via Core → ModuleContext, real + no-op implementations
-4. `1.0.2` ✅ Instrument BaseAgent — trace every chat(), generation(), and tool execution
-5. `1.0.3` ✅ Prompt version tracking — SHA-256 hash in Langfuse generation metadata
-
-#### 1.1 — OpenTelemetry Integration ✅
-
-6. `1.1.1` ✅ TraceService — OTel SDK + auto-instrumentations, OTLP exporter, real + no-op
-7. `1.1.2` ✅ Custom spans for agent provider calls
-
-#### 1.2 — Task Detail Experience ✅
-
-8. `1.2.1` ✅ Task notes endpoint
-9. `1.2.2` ✅ Frontend task detail panel — slide-over with notes, breakdown, carry-over count
-10. `1.2.3` ✅ Note types for breakdown legibility — type column: note/breakdown_step/blocker
-
-#### 1.3 — Chat Guidance Quality ✅
-
-11. `1.3.1` ✅ Better clarification prompts
-12. `1.3.2` ✅ Better review prompts
-13. `1.3.3` ✅ Better breakdown suggestions
-
-#### 1.4 — UI Polish ✅
-
-14. `1.4.1` ✅ Compact task layout — dual desktop rows (hidden md:flex) / mobile cards (flex md:hidden), inline badges, icon-only action buttons
-15. `1.4.2` ✅ Mobile actions — expandable inline pattern via "..." toggle (covered by 1.4.1)
-16. `1.4.3` ✅ Visual consistency pass — shared TaskPriorityBadge + TaskDomainBadge components
-
-#### 1.5 — Trust & Auditability ✅
-
-17. `1.5.1` ✅ Richer mutation summaries — priority tag, carry-over count warnings, date context in Spanish
-18. `1.5.2` ✅ Conversation continuity — resume indicator with title + time ago
-19. `1.5.3` ✅ Error feedback — AgentErrorCode classification + Spanish user-facing messages
-
-### Phase 2. ✅ Completed (2026-03-25)
-
-Goal:
-
-make the system coach better decisions, not just execute commands
-
-Infrastructure addition: **pgvector** for semantic search over task history.
-
-Note:
-
-- the March 23 server architecture refactor pass is intentionally out of this roadmap now
-- treat it as complete enough for the current stage
-- do not add more server-cleanup tasks unless product work reveals a real constraint
-
-#### 2.0 — pgvector Infrastructure ✅ (2026-03-22)
-
-20. `2.0.1` ✅ Enable pgvector + embeddings table — Docker switched to pgvector/pgvector:pg16, task_embeddings table with vector(768), test DB updated
-21. `2.0.2` ✅ EmbeddingProvider abstraction — abstract class, OllamaEmbeddingProvider (nomic-embed-text), NoOpEmbeddingProvider, createEmbeddingProvider factory, wired through ModuleContext
-22. `2.0.3` ✅ TaskEmbeddingRepository + embed-on-write — Drizzle + Fake implementations, EmbedTask service, fire-and-forget from CreateTask/UpdateTask/AddTaskNote, FindSimilarTasks service registered
-
-#### 2.1 — Similarity & Repeat Detection ✅
-
-23. `2.1.1` ✅ FindSimilarTasks agent tool — `find_similar_tasks` wired in intelligence-tools.ts, accepts query + limit, returns similarity results with matchPercent
-24. `2.1.2` ✅ Duplicate detection on create — agent can check similarity via find_similar_tasks tool before creating tasks
-25. `2.1.3` ✅ Automatic repeat detection on carry-over — `DetectRepeatPattern` called from `CarryOverTask`, emits `TaskRepeatDetected` event, handler in `TaskEventHandlers` generates insight via `TaskInsightFactory.taskRepeatDetected()`
-
-#### 2.2 — Richer Planning Signals ✅
-
-26. `2.2.1` ✅ Planning context service — `GetPlanningContext` aggregates today stats + 7-day trend + carry-over rate + stuck tasks + insights + recommendations. Wired as `get_planning_context` agent tool.
-
-#### 2.3 — Better Overload Heuristics ✅
-
-27. `2.3.1` ✅ Historical overload detection — `CheckTasksOverload` implements 7-day average completion × 1.5 threshold (minimum 3), reduced by 0.8 if carry-over > 40%. Emits `TasksOverloaded` event.
-
-#### 2.4 — Better Trend Summaries ✅
-
-28. `2.4.1` ✅ Weekly summary service — `GetWeeklySummary` provides created/completed/carried/discarded, completion rate, carry-over rate, average per day, best day, most active domain. Wired as `get_weekly_summary` agent tool.
-
-#### 2.5 — Stronger End-of-Day Recommendations ✅
-
-29. `2.5.1` ✅ Recommendation engine — `RecommendationEngine` produces typed recommendations (discard/break_down/reschedule/celebrate) with reasons in Spanish. Exposed as `get_recommendations` agent tool via `GetEndOfDayReview`.
-
-#### 2.6 — Frontend Architecture ✅
-
-30. `2.6.1` ✅ Tasks split-context pattern — `TasksQueriesContext` (reads) + `TasksActionsContext` (writes) to prevent re-render storms
-31. `2.6.2` ✅ TasksProvider — composes useTasksQueries + useTaskMutations + useTaskDetail + useTaskCreation
-32. `2.6.3` ✅ HistoryProvider — dedicated context for end-of-day review flow
-33. `2.6.4` ✅ Component migration — components consume context via hooks instead of prop drilling from page
-34. `2.6.5` ✅ Selector tests — pure function selectors tested independently
-
-#### 2.7 — Demo Pages ✅
-
-35. `2.7.1` ✅ Work demo page — calendar events, email composer, Google Calendar/Meet links
-36. `2.7.2` ✅ Study demo page — Pomodoro timer (25min focus / 5min break), flashcard flip, course progress
-37. `2.7.3` ✅ People demo page — contact list with social circles, WhatsApp/Telegram messaging, birthday tracking
-
-### Phase 3. Stabilize Production (pre-requisite for expansion)
-
-Goal:
-
-fix critical issues identified in the code audit, database review, and product review before expanding to a second domain.
-
-**Decision made:** The three reviews (PRODUCT_REVIEW.md, CODE_AUDIT.md, database-review.md) converge on the same conclusion: stabilize Tasks, remove confusion from demo pages, then build Wallet as the second domain.
-
-#### 3.0 — Production Hotfixes
-
-1. `3.0.1` Replace `.catch(() => {})` with `.catch(err => log.warn(...))` in CreateTask, UpdateTask, AddTaskNote (Code C1)
-2. `3.0.2` Add HNSW index on `task_embeddings.embedding` column (DB C-1)
-3. `3.0.3` Change `task_notes` FK to `ON DELETE CASCADE` (DB C-5)
-4. `3.0.4` Change `agent_messages` FK to `ON DELETE CASCADE` (DB H-7)
-5. `3.0.5` Configure pool limits in `Database.ts` — `max: 5`, `idleTimeoutMillis: 30_000`, `connectionTimeoutMillis: 5_000` (DB H-2)
-6. `3.0.6` Fix test DB embedding dimensions 384 → 768 (DB M-6)
-7. `3.0.7` Remove query-string `?api_key=` fallback in `BasicHttpAuthentication.ts` (DB L-4)
-8. `3.0.8` Create root `error.tsx` with fallback UI (Code C6)
-
-#### 3.1 — Remove Confusion
-
-9. `3.1.1` Hide or remove demo domain pages from navigation (wallet, health, people, work, study routes) — prevents "click → 404" momentum killer
-10. `3.1.2` Update `home/page.tsx` to only show Tasks domain card
-11. `3.1.3` Add `@future` marker comments on unused shared schemas
-
-#### 3.2 — Type Safety & Code Quality
-
-12. `3.2.1` Replace `err: any` with `unknown` + type guards in server code (18 instances, Code C2)
-13. `3.2.2` Type chat hooks error handling (Code C3 partial)
-14. `3.2.3` Add vitest coverage thresholds 80% to server and web (Code C4)
-15. `3.2.4` Add shared package tests for task schemas (Code C5)
-16. `3.2.5` Type `DomainEvent<T>` with generics (Code S7)
-17. `3.2.6` Type `ServiceProvider` and `RepositoryProvider` generics (Code C2)
-
-#### 3.3 — Query Performance
-
-18. `3.3.1` Add `getTasksByIds(ids: string[])` to TaskRepository — fix DetectRepeatPattern N+1 (DB C-4)
-19. `3.3.2` Batch `CarryOverAllPending` into a single UPDATE with RETURNING (DB C-2)
-20. `3.3.3` Replace `GetDayStats.executeTrend` loop with single `GROUP BY scheduled_date` query (DB C-3)
-21. `3.3.4` Collapse `CheckDailyCompletion` two COUNTs into one with FILTER (DB M-4)
-22. `3.3.5` Fix `findSimilar` double cosine distance with CTE (DB M-3)
-23. `3.3.6` Add composite index `(scheduled_date, status)` on tasks (DB M-2)
-24. `3.3.7` Add `(domain, updated_at)` index on `agent_conversations` (DB M-8)
-
-#### 3.4 — Structural Refactors
-
-25. `3.4.1` Extract `AgentChatLoop.ts` into smaller functions (Code S1)
-26. `3.4.2` Extract tool implementations from `management-tools.ts` (Code S8)
-27. `3.4.3` Split `home/page.tsx` into sub-components (Code S3)
-28. `3.4.4` Replace string-based `classifyAgentError()` with error codes (Code S4)
-29. `3.4.5` Add explicit field allowlist in `updateTask` (DB M-5)
-
-### Phase 4. Wallet Domain (second domain)
-
-Goal:
-
-build Wallet as the first real second domain to prove the cross-domain thesis.
-
-Why Wallet:
-- Finance is universal, recurring, high-stakes
-- Schema already exists in `@vdp/shared`
-- Creates the first cross-domain signal: spending spike → task pressure check
-- Proves the magic: "It knows I overspent AND it's reminding me to review tasks"
-
-#### 4.0 — Wallet Schema Fixes
-
-30. `4.0.1` Uncomment wallet schema in `drizzle.config.ts` (DB H-6)
-31. `4.0.2` Add FK constraint on `categories.parent_id` + index (DB H-3)
-32. `4.0.3` Add indexes on `savings_contributions` FK columns (DB H-4)
-33. `4.0.4` Add index on `investments.account_id` (DB H-5)
-34. `4.0.5` Add index on `transactions.transfer_to_account_id` (DB M-7)
-
-#### 4.1 — Wallet Backend
-
-35. `4.1.1` Build WalletModule structure following Tasks reference (domain, services, infrastructure/db, infrastructure/routes)
-36. `4.1.2` Implement wallet repositories: accounts, transactions, categories (Drizzle + Fake)
-37. `4.1.3` Implement wallet services: CRUD for transactions, accounts, balance calculation, spending stats
-38. `4.1.4` Build Wallet HTTP API: `POST/GET /transactions`, `GET /accounts`, `GET /balance`, `GET /stats`
-39. `4.1.5` Write wallet unit + integration tests (TDD: Fake repos, Fastify inject)
-
-#### 4.2 — Wallet Agent Integration
-
-40. `4.2.1` Wire wallet agent tools: `log_transaction`, `get_balance`, `list_transactions`, `spending_summary`
-41. `4.2.2` Register WalletAgent in agent registry with domain-scoped tools
-
-#### 4.3 — Cross-Domain Magic
-
-42. `4.3.1` Add `SpendingSpike` domain event in Wallet module
-43. `4.3.2` Add event handler in Tasks module: listen for `SpendingSpike`, trigger agent insight
-44. `4.3.3` Tasks agent responds: "Tu gasto subió esta semana, ¿está todo bien con tus tareas?"
-
-### Phase 5. Polish & Soft Launch
-
-Goal:
-
-make the core experience shine before sharing.
-
-45. `5.0.1` Polish `/tasks` dashboard (carry-over count badges, transitions)
-46. `5.0.2` Quick-capture improvements (keyboard shortcut for new task)
-47. `5.0.3` Generate public demo with seed data (tasks + wallet transactions)
-48. `5.0.4` Migrate all `timestamp` columns to `timestamptz` (DB H-1)
-
-### Phase 6. Multi-domain orchestration
-
-Goal:
-
-only after Tasks and Wallet are genuinely active, begin deeper cross-domain orchestration.
-
-Examples:
-
-- spending pressure affecting task prioritization
-- weekly financial summary influencing planning context
-- budget alerts as task suggestions
-
-This phase is intentionally deferred until Phase 4 and Phase 5 are complete.
-
----
-
-## 17. Working Rule Going Forward
-
-The governing rule for the project is now:
-
-> build the future system by making one domain truly correct at a time.
-
-For the current stage, that means:
-
-> Stabilize Tasks (Phase 3), then build Wallet to prove the cross-domain thesis (Phase 4).
+## 10. Source-of-Truth Notes
+
+When reconstructing project state in future sessions:
+
+- trust the current codebase first
+- trust `README.md` and this `PLAN.md` second
+- use Claude memory summaries as historical context
+- treat `docs/PRODUCT.md` as vision, not current scope
+- treat older review docs as useful but not automatically current
+
+Current concise summary:
+
+- `Tasks` is real
+- `Wallet` is actively being built
+- the rest are inactive
+- the architecture is sound
+- the current challenge is product convergence, not more breadth
