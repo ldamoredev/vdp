@@ -9,11 +9,12 @@ import { ExecutionQueue } from "@/features/tasks/presentation/components/executi
 import { NextBestAction, RecoveryBoard, WeeklyRhythm } from "@/features/tasks/presentation/components/sidebar-cards";
 import { DetailPanel } from "@/features/tasks/presentation/components/detail-panel";
 import { ClarificationGate } from "@/features/tasks/presentation/components/clarification-gate";
+import { ModulePage } from "@/components/primitives/module-page";
 
 export default function TasksDashboard() {
   return (
     <TasksProvider>
-      <div className="max-w-6xl space-y-8 animate-fade-in">
+      <ModulePage width="6xl" spacing="8">
         <section className="grid gap-6 lg:grid-cols-[1.55fr_0.95fr]">
           <OperationalHeader />
           <QuickCaptureForm />
@@ -35,7 +36,7 @@ export default function TasksDashboard() {
         </section>
 
         <ClarificationGate />
-      </div>
+      </ModulePage>
     </TasksProvider>
   );
 }

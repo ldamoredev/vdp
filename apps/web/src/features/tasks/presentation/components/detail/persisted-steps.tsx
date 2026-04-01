@@ -1,4 +1,5 @@
 import type { TaskNote } from "@/lib/api/types";
+import { StateCard } from "@/components/primitives/state-card";
 
 interface PersistedStepsProps {
   steps: TaskNote[];
@@ -25,9 +26,10 @@ export function PersistedSteps({ steps }: PersistedStepsProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-6 text-center text-xs text-[var(--muted)]">
-          Todavia no hay pasos guardados para esta tarea.
-        </div>
+        <StateCard
+          size="sm"
+          description="Todavia no hay pasos guardados para esta tarea."
+        />
       )}
     </div>
   );

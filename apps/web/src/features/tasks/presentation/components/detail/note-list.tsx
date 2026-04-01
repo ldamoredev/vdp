@@ -1,4 +1,5 @@
 import type { TaskNote } from "@/lib/api/types";
+import { StateCard } from "@/components/primitives/state-card";
 import { noteTypeLabel, noteTypeTone } from "../../tasks-dashboard-selectors";
 
 interface NoteListProps {
@@ -28,9 +29,7 @@ export function NoteList({ title, notes, emptyMessage }: NoteListProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-6 text-center text-xs text-[var(--muted)]">
-          {emptyMessage}
-        </div>
+        <StateCard size="sm" description={emptyMessage} />
       )}
     </div>
   );

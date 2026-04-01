@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, ListChecks } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
+import { CollectionCard } from "@/components/primitives/collection-card";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 import type { Task } from "@/lib/api/types";
 
@@ -10,14 +11,12 @@ export interface TodayTasksCardProps {
 
 export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
   return (
-    <div className="glass-card-static overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
-        <div className="flex items-center gap-2">
-          <ListChecks size={16} style={{ color: "var(--violet-soft-text)" }} />
-          <h3 className="text-sm font-medium text-[var(--foreground)]">
-            Tareas de hoy
-          </h3>
-        </div>
+    <CollectionCard
+      title="Tareas de hoy"
+      headerPadding="4"
+      bodyClassName="divide-y divide-[var(--divider)]"
+      icon={<ListChecks size={16} style={{ color: "var(--violet-soft-text)" }} />}
+      action={
         <Link
           href="/tasks"
           className="text-xs transition-colors"
@@ -25,8 +24,8 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
         >
           Ver todas
         </Link>
-      </div>
-      <div className="divide-y divide-[var(--divider)]">
+      }
+    >
         {tasks.length > 0 ? (
           tasks.map((task) => (
             <div
@@ -66,7 +65,6 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
             No hay tareas para hoy
           </div>
         )}
-      </div>
-    </div>
+    </CollectionCard>
   );
 }

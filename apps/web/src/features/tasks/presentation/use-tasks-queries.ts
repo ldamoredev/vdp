@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/tasks";
 import { getTodayISO } from "@/lib/format";
+import { tasksQueryKeys } from "./tasks-query-keys";
 import {
   buildPlanningSignals,
   getFilterTasks,
@@ -17,27 +18,27 @@ export function useTasksQueries() {
   const [filter, setFilter] = useState<TaskFilter>("focus");
 
   const { data: tasksResult } = useQuery({
-    queryKey: ["tasks", today, "all"],
+    queryKey: tasksQueryKeys.list(today),
     queryFn: () => tasksApi.getTasks({ scheduledDate: today }),
   });
 
   const { data: todayStats } = useQuery({
-    queryKey: ["tasks", "stats", "today"],
+    queryKey: tasksQueryKeys.todayStats,
     queryFn: tasksApi.getTodayStats,
   });
 
   const { data: review } = useQuery({
-    queryKey: ["tasks", "review", today],
+    queryKey: tasksQueryKeys.review(today),
     queryFn: () => tasksApi.getReview(today),
   });
 
   const { data: trend } = useQuery({
-    queryKey: ["tasks", "trend", 7],
+    queryKey: tasksQueryKeys.trend(7),
     queryFn: () => tasksApi.getTrend(7),
   });
 
   const { data: carryOverRate } = useQuery({
-    queryKey: ["tasks", "carry-over-rate", 7],
+    queryKey: tasksQueryKeys.carryOverRate(7),
     queryFn: () => tasksApi.getCarryOverRate(7),
   });
 

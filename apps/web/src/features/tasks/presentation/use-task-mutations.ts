@@ -6,6 +6,7 @@ import { tasksApi } from "@/lib/api/tasks";
 import type { TaskNote } from "@/lib/api/types";
 import { getTodayISO } from "@/lib/format";
 import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+import { tasksQueryKeys } from "./tasks-query-keys";
 
 export function useTaskMutations(callbacks?: {
   onNoteAdded?: (type: TaskNote["type"]) => void;
@@ -78,7 +79,7 @@ export function useTaskMutations(callbacks?: {
     onSuccess: async (_note, variables) => {
       callbacks?.onNoteAdded?.(variables.type);
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", "detail", variables.taskId],
+        queryKey: tasksQueryKeys.detail(variables.taskId),
       });
     },
   });

@@ -1,5 +1,5 @@
 import { WALLET_SYSTEM_PROMPT } from './system-prompt';
-import { WalletTools } from './tools';
+import { WalletTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
 import { EventBus } from '../../../common/base/event-bus/EventBus';

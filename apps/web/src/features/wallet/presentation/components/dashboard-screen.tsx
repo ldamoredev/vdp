@@ -1,0 +1,59 @@
+"use client";
+
+import { AccountCard } from "./account-card";
+import { RecentTransactions } from "./recent-transactions";
+import { SkeletonCard } from "./skeleton";
+import { StatsSummary } from "./stats-summary";
+import { useWalletData } from "../use-wallet-context";
+import { ModulePage } from "@/components/primitives/module-page";
+
+export function DashboardScreen() {
+  const {
+    accounts,
+    recentTransactions,
+    statsSummary,
+    isLoadingAccounts,
+    isLoadingRecentTransactions,
+    isLoadingStatsSummary,
+  } = useWalletData();
+
+  return (
+    <ModulePage width="5xl" spacing="8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Resumen de tus finanzas personales
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 stagger-children">
+        {isLoadingAccounts ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          accounts.map((account) => (
+            <AccountCard key={account.id} account={account} />
+          ))
+        )}
+      </div>
+
+      {isLoadingStatsSummary ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : (
+        <StatsSummary stats={statsSummary} />
+      )}
+
+      <RecentTransactions
+        transactions={recentTransactions}
+        isLoading={isLoadingRecentTransactions}
+      />
+    </ModulePage>
+  );
+}

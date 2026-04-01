@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { StateCard } from "@/components/primitives/state-card";
 import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
 import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
 import { useTasksData, useTasksActions } from "../use-tasks-context";
@@ -54,13 +55,13 @@ export function FocusRecommendation() {
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded-[24px] border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-5 py-10 text-center">
-          <p className="text-sm font-medium text-[var(--foreground)]">
-            No hay foco forzado para hoy.
-          </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            La cola esta liviana. Puedes capturar trabajo nuevo sin romper el plan.
-          </p>
+        <div className="mt-4">
+          <StateCard
+            tone="soft"
+            size="md"
+            title="No hay foco forzado para hoy."
+            description="La cola esta liviana. Puedes capturar trabajo nuevo sin romper el plan."
+          />
         </div>
       )}
     </div>

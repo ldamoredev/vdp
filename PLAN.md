@@ -1,6 +1,6 @@
 # VDP Plan
 
-Updated: 2026-03-27
+Updated: 2026-04-01
 
 ## 1. Purpose
 
@@ -82,19 +82,19 @@ Current status:
 
 ## 3. Domain Status Matrix
 
-| Domain | Backend | Frontend | Agent | Status |
-|--------|---------|----------|-------|--------|
-| Tasks | Implemented | Implemented | Implemented | Stable |
-| Wallet | Partially implemented | Partially implemented | Partially implemented | In progress |
-| Health | Not active | Placeholder/demo | Not active | Inactive |
-| People | Not active | Demo/inactive | Not active | Inactive |
-| Work | Not active | Demo/inactive | Not active | Inactive |
-| Study | Not active | Demo/inactive | Not active | Inactive |
+| Domain | Backend | Frontend | Agent | Tests | Status |
+|--------|---------|----------|-------|-------|--------|
+| Tasks | Implemented | Implemented | Implemented | Backend strong, frontend selectors only | Stable |
+| Wallet | Implemented | Implemented | Implemented (15 tools) | Backend good (~55 tests), frontend ~3% | In progress |
+| Health | Not active | Placeholder/demo | Not active | N/A | Inactive |
+| People | Not active | Demo/inactive | Not active | N/A | Inactive |
+| Work | Not active | Demo/inactive | Not active | N/A | Inactive |
+| Study | Not active | Demo/inactive | Not active | N/A | Inactive |
 
 Important nuance:
 
 - `Tasks` is the only domain that is clearly complete enough to be called the current product
-- `Wallet` is now the active expansion track in code, but the contract is not fully aligned yet
+- `Wallet` backend is more complete than previously assessed (full route surface, all services, 15 agent tools) — the gap is frontend test coverage and type alignment
 
 ---
 
@@ -222,6 +222,38 @@ The latest session memory also records successful verification on 2026-03-27:
 
 These numbers are newer than several older docs and should be considered the more current reference.
 
+### 5.5 Test coverage audit (2026-04-01)
+
+A full coverage audit was performed against all uncommitted changes. Key findings:
+
+**Backend Wallet — well-tested:**
+- `wallet-services.test.ts`: ~36 unit test cases covering all 22 services
+- `DrizzleWalletRepositories.test.ts`: 6 integration describes (real Postgres)
+- `WalletAPI.e2e.test.ts`: 11+ e2e cases via `app.inject()`
+- `WalletAgentBehavior.test.ts`: 3 behavioral flows (savings, investments, exchange rates)
+- `WalletTools.test.ts`: 1 tool registry composition test
+
+**Backend Wallet — untested:**
+- `WalletEventHandlers` (event listener wiring) — no tests
+- `DetectSpendingSpike` (spike detection algorithm) — no tests
+- Agent error scenarios (malformed tool inputs, service failures) — not covered
+
+**Frontend Wallet — critical gap:**
+- 31 files, only 1 tested (`wallet-selectors.test.ts`, 4 test cases)
+- 0 hook tests, 0 component tests, 0 context tests, 0 API client tests
+- Estimated coverage: ~3%
+
+**Frontend Tasks refactor — critical gap:**
+- 25 files modified/new, 0 new tests added
+- 1 existing test file (`tasks-dashboard-selectors.test.ts`, ~30 test cases) covers selectors only
+- All hooks, contexts, and components: untested
+- `chat-sync.ts` (cache invalidation logic) is high-risk and untested
+
+**Frontend shared/primitives:**
+- `use-required-context.ts`, `query-keys.ts`, 3 primitive components: all untested
+
+**Verdict:** Backend follows the Tasks testing standard. Frontend does not. The project cannot claim 80% coverage on the frontend layer of either domain.
+
 ### 5.4 Wallet work currently visible in the repo
 
 Current Wallet work in the repo includes:
@@ -245,55 +277,57 @@ This is meaningful progress, but it is still not a proven vertical slice.
 
 Wallet should be described precisely.
 
-### 6.1 What is implemented
+### 6.1 What is implemented (verified 2026-04-01)
 
-Backend routes currently exist for:
+Backend:
+- 22 services across 6 sub-domains (accounts, categories, transactions, stats, savings, investments, exchange rates)
+- 6 repository interfaces with Drizzle + Fake implementations
+- 15 agent tools across 6 tool files
+- Full HTTP controller with all CRUD + stats + agent chat routes
+- Event system (`TransactionCreated`, `SpendingSpike`)
+- Shared zod schemas in `@vdp/shared`
 
-- accounts
-- categories
-- transactions
-- wallet stats summary
-- wallet agent conversations/chat
-
-Frontend pages currently exist for:
-
-- `/wallet`
-- `/wallet/transactions`
-- `/wallet/transactions/new`
+Frontend pages:
+- `/wallet` (dashboard)
+- `/wallet/transactions`, `/wallet/transactions/new`
 - `/wallet/stats`
 - `/wallet/savings`
 - `/wallet/investments`
+- `/wallet/accounts`
+- `/wallet/categories`
 
-### 6.2 What is still inconsistent
+### 6.2 Contract alignment (corrected 2026-04-01)
 
-The current frontend/backend contract is ahead of the backend implementation.
+The previous version of this section was **factually wrong**. A code audit on 2026-04-01 confirmed the backend exposes the full wallet surface:
 
-Frontend API expects more than the backend currently exposes, including routes for:
+**Backend HTTP routes (all under `/api/v1/wallet`):**
+- Accounts: GET, POST, PUT /:id, DELETE /:id
+- Categories: GET (?type=), POST
+- Transactions: GET (?filters), POST, PUT /:id, DELETE /:id
+- Stats: GET /summary, GET /by-category, GET /monthly-trend
+- Savings: GET, POST, PUT /:id, POST /:id/contribute
+- Investments: GET, POST, PUT /:id
+- Exchange rates: GET /latest, POST
+- Agent: GET /conversations, GET /conversations/:id/messages, POST /chat
 
-- savings goals
-- savings contributions
-- investments
-- category stats
-- monthly trend
-- exchange rates
+**Frontend API client calls match all of these routes.**
 
-The backend controller currently exposes only:
+The route-level contract mismatch previously described does not exist.
 
-- accounts
-- categories
-- transactions
-- stats summary
+**What is still inconsistent:**
 
-So Wallet is not yet a stable or fully aligned module.
+1. **Frontend types are duplicated.** `apps/web/src/lib/api/types.ts` defines wallet types locally instead of importing from `@vdp/shared`. The shapes match, but they can drift.
+2. **Some mutations are not exposed.** The frontend has no mutation hooks for: `updateTransaction`, `updateSavingsGoal`, `deleteAccount`, or full `updateAccount` (only rename is exposed).
+3. **Frontend test coverage is ~3%.** The backend meets the Tasks testing standard; the frontend does not.
 
 ### 6.3 Product status decision
 
-Because of that mismatch, Wallet should be treated as:
+Wallet's backend is more complete than previously assessed. The remaining gap is:
 
-- the active second-domain build
-- not yet stable
-- not yet at Tasks quality level
-- not yet a reliable production claim
+- frontend test coverage is far below the Tasks standard
+- frontend types should import from `@vdp/shared` instead of duplicating
+- 2 backend services (`WalletEventHandlers`, `DetectSpendingSpike`) lack tests
+- some frontend mutation hooks are missing for operations the backend supports
 
 ---
 
@@ -322,34 +356,46 @@ That means the current state is a mix of:
 - ongoing Wallet implementation
 - documentation cleanup
 
-### 7.3 Wallet contract mismatch
+### 7.3 Frontend test coverage debt
 
-This is the clearest current implementation risk:
+This is the clearest current risk:
 
-- frontend navigation and landing page already present Wallet as active
-- backend does not yet cover the full Wallet API surface implied by the frontend
+- Backend wallet is well-tested (~36 service tests, 6 integration, 11+ e2e)
+- Frontend wallet has ~3% coverage (1 test file out of 31 source files)
+- Frontend tasks refactor has 0 new tests for 25 modified/new files
+- `chat-sync.ts` (cache invalidation for all task mutations) is completely untested
+- Frontend hooks with complex logic (mutations, cache sync, form transformations) are untested
 
-### 7.4 Date-rule regression risk
+This means bugs in the frontend data layer will only surface in production.
 
-The project memory explicitly forbids `toISOString().slice(0, 10)` for local-date logic.
+### 7.4 Date-rule status (verified 2026-04-01)
 
-The current Wallet investments page still uses:
+The `investments/page.tsx` violation previously reported here does **not exist** in the current code. Verified by grep.
 
-- `new Date().toISOString().slice(0, 10)`
+Remaining `toISOString()` uses are in:
+- `work/page.tsx` (inactive domain, Google Calendar formatting — acceptable UTC use)
+- `server/src/App.ts` line 54 (event logging timestamp — legitimate UTC use)
+- `server/src/modules/common/http/responses.ts` line 67 (HTTP response timestamp — legitimate UTC use)
 
-That conflicts with the established date rule and should be treated as unresolved project risk.
+No `.slice(0, 10)` violations found. Date rule is currently clean.
 
-### 7.5 Unverified older findings
+### 7.5 Duplicated frontend types
 
-Older reviews identified several issues around:
+`apps/web/src/lib/api/types.ts` defines all wallet types locally instead of importing from `@vdp/shared/types/wallet`. The shapes currently match, but they can drift silently. This should be resolved before Wallet is considered stable.
 
-- database performance
-- vector indexing
-- coverage policy
-- error boundaries
-- silent embedding failures
+### 7.6 Untested backend services
 
-Some old findings are already resolved, but not every older review item has been re-verified against the current worktree. They should be treated as partially open until checked again.
+Two wallet services have zero test coverage:
+- `WalletEventHandlers` — if broken, domain events (e.g., spending spike detection) silently fail
+- `DetectSpendingSpike` — business logic algorithm with no validation
+
+### 7.7 Missing frontend mutation hooks
+
+The backend supports operations the frontend doesn't expose:
+- `updateTransaction` — no mutation hook
+- `updateSavingsGoal` — no mutation hook
+- `deleteAccount` — no mutation hook
+- Full `updateAccount` — only rename is exposed
 
 ---
 
@@ -368,12 +414,15 @@ Stabilize the current repo around:
 
 Wallet should only be considered active when it has:
 
-1. aligned frontend and backend contracts
-2. shared schemas in `packages/shared`
-3. thin HTTP routes over services
-4. agent tools over the same services
-5. tests following the Tasks template
-6. no obvious broken routes in navigation
+1. ~~aligned frontend and backend contracts~~ ✅ (verified 2026-04-01 — routes match)
+2. ~~shared schemas in `packages/shared`~~ ✅ (server imports from `@vdp/shared`)
+3. ~~thin HTTP routes over services~~ ✅ (WalletController delegates to services)
+4. ~~agent tools over the same services~~ ✅ (15 tools across 6 tool files)
+5. tests following the Tasks template — **partially done** (backend yes, frontend no)
+6. ~~no obvious broken routes in navigation~~ ✅ (all pages render, all API calls have matching backend routes)
+7. frontend types imported from `@vdp/shared` instead of duplicated — **not done**
+8. `WalletEventHandlers` and `DetectSpendingSpike` tested — **not done**
+9. frontend hook/mutation tests at reasonable coverage — **not done (~3%)**
 
 ### 8.3 Cross-domain sequencing
 
@@ -399,26 +448,60 @@ They can remain as design references or dormant code, but not as active product 
 
 ## 9. Working Plan
 
-### Phase A — Keep Tasks authoritative
+### Phase A — Close the test coverage gap (current priority)
+
+The backend is ahead of the frontend. Before adding features, close the coverage debt:
+
+**Must-have before commit (blocks merge):**
+
+| # | Test | Type | Risk if skipped |
+|---|------|------|-----------------|
+| 1 | `WalletEventHandlers.test.ts` | Unit | Silent event failures |
+| 2 | `DetectSpendingSpike.test.ts` | Unit | Untested business logic |
+| 3 | `chat-sync.test.ts` | Unit | Stale UI across all task mutations |
+| 4 | `use-wallet-creation.test.ts` | Unit | Form→API payload corruption |
+| 5 | `use-wallet-transaction-creation.test.ts` | Unit | Category filtering + tag parsing bugs |
+
+**Should-have (commit with tracked debt):**
+
+| # | Test | Type | Risk if skipped |
+|---|------|------|-----------------|
+| 6 | `use-tasks-queries.test.ts` | Unit | Data transformation bugs |
+| 7 | `use-task-mutations.test.ts` | Unit | Concurrent mutation tracking |
+| 8 | `use-history-model.test.ts` | Unit | Date navigation (known risk area) |
+| 9 | `use-wallet-queries.test.ts` | Unit | Scope-conditional loading |
+| 10 | `use-wallet-mutations.test.ts` | Unit | Cache invalidation |
+| 11 | `client.test.ts` | Unit | API client error handling |
+
+**Testing strategy:**
+- Unit tests for hooks: mock `useQuery`/`useMutation`, test data flow
+- Unit tests for services: Fake repos (established pattern)
+- No Playwright/browser E2E yet — premature without unit foundation
+- Revisit browser E2E when frontend unit coverage reaches >60%
+
+### Phase B — Align frontend types with shared package
+
+- Replace `apps/web/src/lib/api/types.ts` wallet types with imports from `@vdp/shared`
+- This eliminates the type drift risk (section 7.5)
+
+### Phase C — Complete Wallet mutation surface
+
+- Add missing mutation hooks: `updateTransaction`, `updateSavingsGoal`, `deleteAccount`, full `updateAccount`
+- These backend endpoints already exist; the frontend just doesn't expose them
+
+### Phase D — Keep Tasks authoritative
 
 - preserve Tasks as the reference module
 - keep Tasks architecture, contracts, and tests as the baseline
 - avoid diluting the product narrative back into six active modules
 
-### Phase B — Finish Wallet as the second real domain
-
-- finish the missing backend Wallet surface needed by the current frontend
-- or reduce the frontend to the smaller backend surface if that becomes the chosen MVP
-- align the API contract end-to-end
-- test Wallet with the same standard used for Tasks
-
-### Phase C — Prove the first cross-domain signal
+### Phase E — Prove the first cross-domain signal
 
 - wire one concrete Wallet-to-Tasks interaction
 - keep it narrow and testable
 - avoid building a general orchestration engine too early
 
-### Phase D — Reassess further domains
+### Phase F — Reassess further domains
 
 Only after Tasks + Wallet are both real:
 
@@ -439,8 +522,8 @@ When reconstructing project state in future sessions:
 
 Current concise summary:
 
-- `Tasks` is real
-- `Wallet` is actively being built
+- `Tasks` is real and stable
+- `Wallet` backend is fully implemented; frontend is implemented but undertested (~3%)
 - the rest are inactive
 - the architecture is sound
-- the current challenge is product convergence, not more breadth
+- the current challenge is test coverage, not features — close the frontend gap before adding more

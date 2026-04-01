@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { request, withQueryParams } from "./client";
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
@@ -14,10 +14,8 @@ import type {
 
 export const tasksApi = {
   // ─── CRUD ────────────────────────────────────────────────
-  getTasks: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<TaskListResponse>(`/tasks${qs}`);
-  },
+  getTasks: (params?: Record<string, string>) =>
+    request<TaskListResponse>(withQueryParams("/tasks", params)),
   getTask: (id: string) => request<TaskDetailsResponse>(`/tasks/${id}`),
   createTask: (data: {
     title: string;
@@ -52,10 +50,8 @@ export const tasksApi = {
     }),
 
   // ─── Review & Notes ─────────────────────────────────────
-  getReview: (date?: string) => {
-    const qs = date ? `?date=${date}` : "";
-    return request<TaskReview>(`/tasks/review${qs}`);
-  },
+  getReview: (date?: string) =>
+    request<TaskReview>(withQueryParams("/tasks/review", { date })),
   getTaskNotes: (taskId: string) => request<TaskNote[]>(`/tasks/${taskId}/notes`),
   addNote: (taskId: string, content: string, type: TaskNote["type"] = "note") =>
     request<TaskNote>(`/tasks/${taskId}/notes`, {
@@ -65,16 +61,12 @@ export const tasksApi = {
 
   // ─── Stats ──────────────────────────────────────────────
   getTodayStats: () => request<TaskStats>("/tasks/stats/today"),
-  getTrend: (days?: number) => {
-    const qs = days ? `?days=${days}` : "";
-    return request<TaskTrendDay[]>(`/tasks/stats/trend${qs}`);
-  },
-  getByDomain: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<DomainStat[]>(`/tasks/stats/by-domain${qs}`);
-  },
-  getCarryOverRate: (days?: number) => {
-    const qs = days ? `?days=${days}` : "";
-    return request<CarryOverRateResponse>(`/tasks/stats/carry-over${qs}`);
-  },
+  getTrend: (days?: number) =>
+    request<TaskTrendDay[]>(withQueryParams("/tasks/stats/trend", { days })),
+  getByDomain: (params?: Record<string, string>) =>
+    request<DomainStat[]>(withQueryParams("/tasks/stats/by-domain", params)),
+  getCarryOverRate: (days?: number) =>
+    request<CarryOverRateResponse>(
+      withQueryParams("/tasks/stats/carry-over", { days }),
+    ),
 };

@@ -1,4 +1,5 @@
 import { ListTodo } from "lucide-react";
+import { StateCard } from "@/components/primitives/state-card";
 import { useTasksData, useTasksActions } from "../use-tasks-context";
 import { TaskSummary } from "./detail/task-summary";
 import { TaskSelector } from "./detail/task-selector";
@@ -91,8 +92,11 @@ export function DetailPanel() {
           />
         </div>
       ) : (
-        <div className="mt-4 rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-8 text-center text-sm text-[var(--muted)]">
-          Selecciona una tarea pendiente para ver su detalle.
+        <div className="mt-4">
+          <StateCard
+            size="sm"
+            description="Selecciona una tarea pendiente para ver su detalle."
+          />
         </div>
       )}
     </div>

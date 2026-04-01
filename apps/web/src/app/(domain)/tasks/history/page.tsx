@@ -7,11 +7,12 @@ import { HistoryClosureQueue } from "@/features/tasks/presentation/components/hi
 import { HistorySidebar } from "@/features/tasks/presentation/components/history-sidebar";
 import { HistoryTrendChart } from "@/features/tasks/presentation/components/history-trend-chart";
 import { HistoryDomainStats } from "@/features/tasks/presentation/components/history-domain-stats";
+import { ModulePage } from "@/components/primitives/module-page";
 
 export default function HistoryPage() {
   return (
     <HistoryProvider>
-      <div className="max-w-6xl space-y-8 animate-fade-in">
+      <ModulePage width="6xl" spacing="8">
         <HistoryReviewHeader />
         <HistoryReviewSignals />
 
@@ -22,7 +23,7 @@ export default function HistoryPage() {
 
         <HistoryTrendChart />
         <HistoryDomainStats />
-      </div>
+      </ModulePage>
     </HistoryProvider>
   );
 }

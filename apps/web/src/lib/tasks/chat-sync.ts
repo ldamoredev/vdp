@@ -1,6 +1,10 @@
 import type { Query, QueryClient, QueryKey } from "@tanstack/react-query";
 import { getTodayISO } from "@/lib/format";
 import type { Task, TaskListResponse } from "@/lib/api/types";
+import {
+  homeTaskQueryKeys,
+  tasksQueryKeys,
+} from "@/features/tasks/presentation/tasks-query-keys";
 
 type TaskMutationTool =
   | "create_task"
@@ -159,18 +163,29 @@ function removeTaskFromList(current: TaskListResponse, taskId: string) {
   };
 }
 
-function isTasksDateListKey(queryKey: QueryKey): queryKey is [string, string, string] {
+function isTasksListKey(
+  queryKey: QueryKey,
+): queryKey is readonly ["tasks", "list", string, string] {
   return (
     Array.isArray(queryKey) &&
     queryKey[0] === "tasks" &&
-    typeof queryKey[1] === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(queryKey[1]) &&
-    typeof queryKey[2] === "string"
+    queryKey[1] === "list" &&
+    typeof queryKey[2] === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(queryKey[2]) &&
+    typeof queryKey[3] === "string"
   );
 }
 
-function isHomeTodayListKey(queryKey: QueryKey) {
-  return Array.isArray(queryKey) && queryKey[0] === "home" && queryKey[1] === "tasks-today";
+function isHomeTodayListKey(
+  queryKey: QueryKey,
+): queryKey is readonly ["home", "tasks", "list", string] {
+  return (
+    Array.isArray(queryKey) &&
+    queryKey[0] === "home" &&
+    queryKey[1] === "tasks" &&
+    queryKey[2] === "list" &&
+    typeof queryKey[3] === "string"
+  );
 }
 
 function updateListQuery(
@@ -191,8 +206,8 @@ function syncTaskListCaches(queryClient: QueryClient, task: Task) {
   for (const query of queries) {
     const { queryKey } = query;
 
-    if (isTasksDateListKey(queryKey)) {
-      const [, scheduledDate, filter] = queryKey;
+    if (isTasksListKey(queryKey)) {
+      const [, , scheduledDate, filter] = queryKey;
       updateListQuery(queryClient, query, (current) =>
         upsertTaskIntoList(current, task, { scheduledDate, filter }),
       );
@@ -223,14 +238,30 @@ function removeTaskFromCaches(queryClient: QueryClient, taskId: string) {
 }
 
 function invalidateTaskDerivedData(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: ["tasks", "stats"] });
-  void queryClient.invalidateQueries({ queryKey: ["tasks", "review"] });
-  void queryClient.invalidateQueries({ queryKey: ["tasks", "trend"] });
-  void queryClient.invalidateQueries({ queryKey: ["tasks", "domain-stats"] });
-  void queryClient.invalidateQueries({ queryKey: ["tasks", "carry-over-rate"] });
-  void queryClient.invalidateQueries({ queryKey: ["home", "task-stats"] });
-  void queryClient.invalidateQueries({ queryKey: ["home", "review"] });
-  void queryClient.invalidateQueries({ queryKey: ["home", "trend"] });
+  void queryClient.invalidateQueries({
+    queryKey: tasksQueryKeys.key("stats"),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: tasksQueryKeys.key("review"),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: tasksQueryKeys.key("stats", "trend"),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: tasksQueryKeys.byDomain,
+  });
+  void queryClient.invalidateQueries({
+    queryKey: tasksQueryKeys.key("stats", "carry-over-rate"),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: homeTaskQueryKeys.taskStats,
+  });
+  void queryClient.invalidateQueries({
+    queryKey: homeTaskQueryKeys.review(getTodayISO()).slice(0, 3),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: homeTaskQueryKeys.trend(7).slice(0, 3),
+  });
 }
 
 export function syncTaskQueryState({

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/tasks";
 import type { Task } from "@/lib/api/types";
 import { buildBreakdownSuggestions } from "@/lib/tasks/breakdown-task";
+import { tasksQueryKeys } from "./tasks-query-keys";
 
 export function useTaskDetail(args: {
   tasks: Task[];
@@ -23,7 +24,7 @@ export function useTaskDetail(args: {
   const activeSelectedTaskId = selectedTaskId || defaultSelectedTaskId;
 
   const { data: selectedTaskDetails } = useQuery({
-    queryKey: ["tasks", "detail", activeSelectedTaskId],
+    queryKey: tasksQueryKeys.detail(activeSelectedTaskId),
     queryFn: () => tasksApi.getTask(activeSelectedTaskId!),
     enabled: !!activeSelectedTaskId,
   });

@@ -1,4 +1,5 @@
 import { CheckCheck, MessageSquarePlus, Plus, Sparkles } from "lucide-react";
+import { StateCard } from "@/components/primitives/state-card";
 
 type FilterKey = "focus" | "pending" | "done" | "all";
 
@@ -30,20 +31,28 @@ export function EmptyTaskList({ filter }: EmptyTaskListProps) {
   const { title, subtitle } = filterMessages[filter];
 
   return (
-    <div className="animate-fade-in rounded-[28px] border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)] px-6 py-14 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--violet-soft-bg)]">
-        {filter === "done" ? (
-          <Sparkles size={24} style={{ color: "var(--violet-soft-text)", opacity: 0.8 }} />
-        ) : (
-          <CheckCheck size={24} style={{ color: "var(--violet-soft-text)", opacity: 0.8 }} />
-        )}
-      </div>
-
-      <p className="mt-4 text-sm font-medium text-[var(--foreground)]">{title}</p>
-      <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-[var(--muted)]">
-        {subtitle}
-      </p>
-
+    <StateCard
+      tone="soft"
+      size="md"
+      className="animate-fade-in"
+      icon={
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--violet-soft-bg)]">
+          {filter === "done" ? (
+            <Sparkles
+              size={24}
+              style={{ color: "var(--violet-soft-text)", opacity: 0.8 }}
+            />
+          ) : (
+            <CheckCheck
+              size={24}
+              style={{ color: "var(--violet-soft-text)", opacity: 0.8 }}
+            />
+          )}
+        </div>
+      }
+      title={title}
+      description={<span className="mx-auto block max-w-xs">{subtitle}</span>}
+    >
       {filter !== "done" && (
         <div className="mt-5 flex items-center justify-center gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5 text-[11px] text-[var(--muted)]">
@@ -56,6 +65,6 @@ export function EmptyTaskList({ filter }: EmptyTaskListProps) {
           </span>
         </div>
       )}
-    </div>
+    </StateCard>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/tasks";
 import { getTodayISO } from "@/lib/format";
 import { domains } from "@/lib/navigation";
+import { homeTaskQueryKeys } from "@/features/tasks/presentation/tasks-query-keys";
 import { TaskStatsRow } from "@/components/home/task-stats-row";
 import { TodayTasksCard } from "@/components/home/today-tasks-card";
 import { DayReviewCard } from "@/components/home/day-review-card";
@@ -16,22 +17,22 @@ export default function HomePage() {
   const today = getTodayISO();
 
   const { data: taskStats } = useQuery({
-    queryKey: ["home", "task-stats"],
+    queryKey: homeTaskQueryKeys.taskStats,
     queryFn: tasksApi.getTodayStats,
   });
 
   const { data: todayTasks } = useQuery({
-    queryKey: ["home", "tasks-today"],
+    queryKey: homeTaskQueryKeys.tasksToday(today),
     queryFn: () => tasksApi.getTasks({ scheduledDate: today, limit: "5" }),
   });
 
   const { data: review } = useQuery({
-    queryKey: ["home", "review", today],
+    queryKey: homeTaskQueryKeys.review(today),
     queryFn: () => tasksApi.getReview(today),
   });
 
   const { data: trend } = useQuery({
-    queryKey: ["home", "trend", 7],
+    queryKey: homeTaskQueryKeys.trend(7),
     queryFn: () => tasksApi.getTrend(7),
   });
 

@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { request, withQueryParams } from "./client";
 import type {
   Account,
   Transaction,
@@ -19,25 +19,28 @@ export const walletApi = {
   getAccounts: () => request<Account[]>(`${W}/accounts`),
   createAccount: (data: Pick<Account, "name" | "currency" | "type" | "initialBalance">) =>
     request<Account>(`${W}/accounts`, { method: "POST", body: JSON.stringify(data) }),
-  updateAccount: (id: string, data: Partial<Pick<Account, "name" | "isActive">>) =>
+  updateAccount: (
+    id: string,
+    data: Partial<Pick<Account, "name" | "currency" | "type" | "initialBalance">>,
+  ) =>
     request<Account>(`${W}/accounts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteAccount: (id: string) =>
     request<void>(`${W}/accounts/${id}`, { method: "DELETE" }),
 
   // ─── Categories ──────────────────────────────────────────
   getCategories: (type?: string) =>
-    request<Category[]>(`${W}/categories${type ? `?type=${type}` : ""}`),
+    request<Category[]>(withQueryParams(`${W}/categories`, { type })),
   createCategory: (data: Pick<Category, "name" | "type" | "icon">) =>
     request<Category>(`${W}/categories`, { method: "POST", body: JSON.stringify(data) }),
 
   // ─── Transactions ────────────────────────────────────────
-  getTransactions: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<WalletTransactionListResponse>(`${W}/transactions${qs}`);
-  },
+  getTransactions: (params?: Record<string, string>) =>
+    request<WalletTransactionListResponse>(
+      withQueryParams(`${W}/transactions`, params),
+    ),
   createTransaction: (data: {
     accountId: string;
-    categoryId?: string;
+    categoryId?: string | null;
     type: "income" | "expense" | "transfer";
     amount: string;
     currency: string;
@@ -93,14 +96,10 @@ export const walletApi = {
     request<Investment>(`${W}/investments/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 
   // ─── Stats ───────────────────────────────────────────────
-  getStatsSummary: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<WalletStatsSummary>(`${W}/stats/summary${qs}`);
-  },
-  getStatsByCategory: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params)}` : "";
-    return request<CategoryStat[]>(`${W}/stats/by-category${qs}`);
-  },
+  getStatsSummary: (params?: Record<string, string>) =>
+    request<WalletStatsSummary>(withQueryParams(`${W}/stats/summary`, params)),
+  getStatsByCategory: (params?: Record<string, string>) =>
+    request<CategoryStat[]>(withQueryParams(`${W}/stats/by-category`, params)),
   getMonthlyTrend: () => request<MonthlyTrend[]>(`${W}/stats/monthly-trend`),
 
   // ─── Exchange Rates ──────────────────────────────────────

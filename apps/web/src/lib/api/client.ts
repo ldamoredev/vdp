@@ -1,5 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
+export type QueryParams = Record<string, string | number | boolean | undefined>;
+
 type ApiErrorPayload = {
   error?: string;
   message?: string;
@@ -31,6 +33,19 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
   const secret = getAccessSecret();
   if (secret) headers["x-api-key"] = secret;
   return headers;
+}
+
+export function withQueryParams(path: string, params?: QueryParams): string {
+  if (!params) return path;
+
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    searchParams.set(key, String(value));
+  }
+
+  const query = searchParams.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {

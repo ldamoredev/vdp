@@ -1,24 +1,19 @@
 // ─── Shared ──────────────────────────────────────────────
-export interface PaginatedResult<T> {
-  data: T[];
+export interface PaginationMeta {
   total: number;
   limit: number;
   offset: number;
 }
 
-export interface TaskListResponse {
-  tasks: Task[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type PaginatedCollection<TKey extends string, TItem> = Record<TKey, TItem[]> &
+  PaginationMeta;
 
-export interface WalletTransactionListResponse {
-  transactions: Transaction[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type TaskListResponse = PaginatedCollection<"tasks", Task>;
+
+export type WalletTransactionListResponse = PaginatedCollection<
+  "transactions",
+  Transaction
+>;
 
 // ─── Tasks ───────────────────────────────────────────────
 export interface Task {

@@ -6,6 +6,7 @@ import { addDays, format, subDays } from "date-fns";
 import { tasksApi } from "@/lib/api/tasks";
 import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
 import { getReviewSignals } from "./history-selectors";
+import { tasksQueryKeys } from "./tasks-query-keys";
 
 function toISO(d: Date) {
   return format(d, "yyyy-MM-dd");
@@ -20,22 +21,22 @@ export function useHistoryModel() {
   const isToday = dateISO === toISO(new Date());
 
   const { data: reviewResult } = useQuery({
-    queryKey: ["tasks", "review", dateISO],
+    queryKey: tasksQueryKeys.review(dateISO),
     queryFn: () => tasksApi.getReview(dateISO),
   });
 
   const { data: tasksResult } = useQuery({
-    queryKey: ["tasks", dateISO, "all"],
+    queryKey: tasksQueryKeys.list(dateISO),
     queryFn: () => tasksApi.getTasks({ scheduledDate: dateISO }),
   });
 
   const { data: trend } = useQuery({
-    queryKey: ["tasks", "trend", 14],
+    queryKey: tasksQueryKeys.trend(14),
     queryFn: () => tasksApi.getTrend(14),
   });
 
   const { data: domainStats } = useQuery({
-    queryKey: ["tasks", "domain-stats"],
+    queryKey: tasksQueryKeys.byDomain,
     queryFn: () => tasksApi.getByDomain(),
   });
 

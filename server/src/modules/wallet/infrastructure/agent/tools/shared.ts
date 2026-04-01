@@ -3,6 +3,8 @@ import { AgentTool } from '../../../../common/base/agents/BaseAgent';
 export const ACCOUNT_TYPES = ['cash', 'bank', 'crypto', 'investment'] as const;
 export const TRANSACTION_TYPES = ['income', 'expense', 'transfer'] as const;
 export const CURRENCIES = ['ARS', 'USD'] as const;
+export const INVESTMENT_TYPES = ['plazo_fijo', 'fci', 'cedear', 'crypto', 'bond', 'other'] as const;
+export const EXCHANGE_RATE_TYPES = ['official', 'blue', 'mep', 'ccl'] as const;
 
 export const ACCOUNT_ID_SCHEMA = {
     type: 'object',
