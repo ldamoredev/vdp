@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+--> statement-breakpoint
 CREATE SCHEMA "core";
 --> statement-breakpoint
 CREATE SCHEMA "wallet";

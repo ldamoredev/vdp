@@ -9,6 +9,8 @@
     "start": "tsx dist/main.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:reset": "tsx scripts/reset-db.ts",
+    "db:fresh": "pnpm db:reset && pnpm db:migrate",
     "db:studio": "drizzle-kit studio",
     "test": "vitest",
     "test:run": "vitest run",

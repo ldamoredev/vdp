@@ -2,6 +2,7 @@ import { AgentRepository } from './AgentRepository';
 import { AgentMessage, AgentToolCall, AgentToolResult } from './providers/types';
 import { DomainName } from '../event-bus/DomainEvent';
 import { RepositoryProvider } from '../db/RepositoryProvider';
+import { AgentError } from './AgentError';
 
 export class AgentConversationStore {
     constructor(private readonly repositories: RepositoryProvider) {}
@@ -12,6 +13,10 @@ export class AgentConversationStore {
         conversationId?: string,
     ): Promise<string> {
         if (conversationId) {
+            const existing = await this.agentRepository().loadConversationMessages(domain, conversationId);
+            if (!existing) {
+                throw AgentError.conversationNotFound('Conversation not found');
+            }
             return conversationId;
         }
 

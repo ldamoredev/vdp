@@ -10,12 +10,14 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { users } from '../common/infrastructure/auth/schema';
 
 export const walletSchema = pgSchema("wallet");
 
 // Accounts
 export const accounts = walletSchema.table("accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
+  ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar("name", { length: 100 }).notNull(),
   currency: varchar("currency", { length: 3 }).notNull(),
   type: varchar("type", { length: 20 }).notNull(),
@@ -35,13 +37,17 @@ export const categories = walletSchema.table(
   "categories",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     name: varchar("name", { length: 60 }).notNull(),
     type: varchar("type", { length: 10 }).notNull(),
     icon: varchar("icon", { length: 30 }),
     parentId: uuid("parent_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("categories_parent_id_idx").on(table.parentId)]
+  (table) => [
+    index("categories_owner_user_idx").on(table.ownerUserId),
+    index("categories_parent_id_idx").on(table.parentId),
+  ]
 );
 
 // Transactions
@@ -49,6 +55,7 @@ export const transactions = walletSchema.table(
   "transactions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     accountId: uuid("account_id")
       .notNull()
       .references(() => accounts.id),
@@ -66,6 +73,7 @@ export const transactions = walletSchema.table(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    index("tx_owner_user_idx").on(table.ownerUserId),
     index("tx_account_date_idx").on(table.accountId, table.date),
     index("tx_category_date_idx").on(table.categoryId, table.date),
     index("tx_transfer_to_account_idx").on(table.transferToAccountId),
@@ -75,6 +83,7 @@ export const transactions = walletSchema.table(
 // Savings Goals
 export const savingsGoals = walletSchema.table("savings_goals", {
   id: uuid("id").primaryKey().defaultRandom(),
+  ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar("name", { length: 100 }).notNull(),
   targetAmount: decimal("target_amount", {
     precision: 15,
@@ -98,6 +107,7 @@ export const savingsContributions = walletSchema.table(
   "savings_contributions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     goalId: uuid("goal_id")
       .notNull()
       .references(() => savingsGoals.id, { onDelete: "cascade" }),
@@ -117,6 +127,7 @@ export const savingsContributions = walletSchema.table(
 // Investments
 export const investments = walletSchema.table("investments", {
   id: uuid("id").primaryKey().defaultRandom(),
+  ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar("name", { length: 100 }).notNull(),
   type: varchar("type", { length: 30 }).notNull(),
   accountId: uuid("account_id").references(() => accounts.id),
@@ -161,4 +172,3 @@ export const exchangeRates = walletSchema.table(
     ),
   ]
 );
-

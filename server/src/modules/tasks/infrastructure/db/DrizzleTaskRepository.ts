@@ -15,6 +15,7 @@ import { TaskStatus } from '../../domain/Task';
 import { Database } from '../../../common/base/db/Database';
 import { tasks } from './schema';
 import { and, asc, desc, eq, gte, inArray, lte, sql, SQL } from 'drizzle-orm';
+import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleTaskRepository extends TaskRepository {
     constructor(private db: Database) {
@@ -22,19 +23,26 @@ export class DrizzleTaskRepository extends TaskRepository {
     }
 
     async getTask(id: string): Promise<Task | null> {
-        const result = await this.db.query.select().from(tasks).where(eq(tasks.id, id));
+        const result = await this.db.query.select().from(tasks).where(and(
+            eq(tasks.id, id),
+            eq(tasks.ownerUserId, getScopedUserId()),
+        ));
         if (!result[0]) return null;
         return Task.fromSnapshot(result[0]);
     }
 
     async getTasksByIds(ids: string[]): Promise<Task[]> {
         if (ids.length === 0) return [];
-        const rows = await this.db.query.select().from(tasks).where(inArray(tasks.id, ids));
+        const rows = await this.db.query.select().from(tasks).where(and(
+            inArray(tasks.id, ids),
+            eq(tasks.ownerUserId, getScopedUserId()),
+        ));
         return rows.map(s => Task.fromSnapshot(s));
     }
 
     async listTasks(filters: TaskFilters): Promise<PagedTasks> {
         const conditions: SQL[] = [];
+        conditions.push(eq(tasks.ownerUserId, getScopedUserId()));
         if (filters.scheduledDate)
             conditions.push(eq(tasks.scheduledDate, filters.scheduledDate));
         if (filters.status)
@@ -77,6 +85,7 @@ export class DrizzleTaskRepository extends TaskRepository {
             .insert(tasks)
             .values({
                 title: data.title,
+                ownerUserId: getScopedUserId(),
                 description: data.description || null,
                 priority: data.priority ?? 2,
                 scheduledDate,
@@ -98,7 +107,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         const [updated] = await this.db.query
             .update(tasks)
             .set(updateData)
-            .where(eq(tasks.id, id))
+            .where(and(eq(tasks.id, id), eq(tasks.ownerUserId, getScopedUserId())))
             .returning();
 
         if (!updated) return null;
@@ -108,7 +117,7 @@ export class DrizzleTaskRepository extends TaskRepository {
     async deleteTask(id: string): Promise<Task | null> {
         const [deleted] = await this.db.query
             .delete(tasks)
-            .where(eq(tasks.id, id))
+            .where(and(eq(tasks.id, id), eq(tasks.ownerUserId, getScopedUserId())))
             .returning();
 
         if (!deleted) return null;
@@ -120,7 +129,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         const [updated] = await this.db.query
             .update(tasks)
             .set(data)
-            .where(eq(tasks.id, id))
+            .where(and(eq(tasks.id, id), eq(tasks.ownerUserId, getScopedUserId())))
             .returning();
 
         return Task.fromSnapshot(updated);
@@ -130,7 +139,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         const rows = await this.db.query
             .select()
             .from(tasks)
-            .where(and(eq(tasks.scheduledDate, date), eq(tasks.status, status)));
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), eq(tasks.scheduledDate, date), eq(tasks.status, status)));
 
         return rows.map(s => Task.fromSnapshot(s));
     }
@@ -139,7 +148,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         const rows = await this.db.query
             .select()
             .from(tasks)
-            .where(eq(tasks.scheduledDate, date))
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), eq(tasks.scheduledDate, date)))
             .orderBy(desc(tasks.priority), asc(tasks.createdAt));
 
         return rows.map(s => Task.fromSnapshot(s));
@@ -149,7 +158,7 @@ export class DrizzleTaskRepository extends TaskRepository {
         const result = await this.db.query
             .select({ count: sql<number>`COUNT(*)::int` })
             .from(tasks)
-            .where(and(eq(tasks.scheduledDate, date), eq(tasks.status, status)));
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), eq(tasks.scheduledDate, date), eq(tasks.status, status)));
 
         return result[0].count;
     }
@@ -163,7 +172,7 @@ export class DrizzleTaskRepository extends TaskRepository {
                 total: sql<number>`COUNT(*)::int`,
             })
             .from(tasks)
-            .where(eq(tasks.scheduledDate, date));
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), eq(tasks.scheduledDate, date)));
 
         return result[0];
     }
@@ -179,7 +188,7 @@ export class DrizzleTaskRepository extends TaskRepository {
                 carriedOver: sql<number>`COUNT(*) FILTER (WHERE ${tasks.carryOverCount} > 0)::int`,
             })
             .from(tasks)
-            .where(and(gte(tasks.scheduledDate, fromDate), lte(tasks.scheduledDate, toDate)))
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), gte(tasks.scheduledDate, fromDate), lte(tasks.scheduledDate, toDate)))
             .groupBy(tasks.scheduledDate)
             .orderBy(desc(tasks.scheduledDate));
 
@@ -187,7 +196,7 @@ export class DrizzleTaskRepository extends TaskRepository {
     }
 
     async getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]> {
-        const conditions: SQL[] = [eq(tasks.status, "done")];
+        const conditions: SQL[] = [eq(tasks.ownerUserId, getScopedUserId()), eq(tasks.status, "done")];
         if (from) conditions.push(gte(tasks.scheduledDate, from));
         if (to) conditions.push(lte(tasks.scheduledDate, to));
 
@@ -208,7 +217,7 @@ export class DrizzleTaskRepository extends TaskRepository {
                 carriedOver: sql<number>`COUNT(*) FILTER (WHERE ${tasks.carryOverCount} > 0)::int`,
             })
             .from(tasks)
-            .where(and(gte(tasks.scheduledDate, fromDate), lte(tasks.scheduledDate, toDate)));
+            .where(and(eq(tasks.ownerUserId, getScopedUserId()), gte(tasks.scheduledDate, fromDate), lte(tasks.scheduledDate, toDate)));
 
         return { total: result[0].total, carriedOver: result[0].carriedOver };
     }

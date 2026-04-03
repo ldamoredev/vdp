@@ -42,6 +42,7 @@ class FakeAgentRepository extends AgentRepository {
     async createConversation(domain: string, title: string): Promise<AgentConversationRecord> {
         return {
             id: 'conversation-1',
+            userId: 'test-user',
             createdAt: new Date(),
             updatedAt: new Date(),
             title,

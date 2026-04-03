@@ -8,6 +8,7 @@ import {
 import { TransactionRepository } from '../../domain/TransactionRepository';
 import { Database } from '../../../common/base/db/Database';
 import { transactions } from '../../schema';
+import { getScopedUserId } from '../../../common/http/request-auth';
 import { and, desc, eq, gte, ilike, lte, sql, SQL } from 'drizzle-orm';
 
 export class DrizzleTransactionRepository extends TransactionRepository {
@@ -16,7 +17,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
     }
 
     async list(filters: TransactionFilters): Promise<PagedTransactions> {
-        const conditions: SQL[] = [];
+        const conditions: SQL[] = [eq(transactions.ownerUserId, getScopedUserId())];
 
         if (filters.accountId) conditions.push(eq(transactions.accountId, filters.accountId));
         if (filters.categoryId) conditions.push(eq(transactions.categoryId, filters.categoryId));
@@ -55,7 +56,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         const [row] = await this.db.query
             .select()
             .from(transactions)
-            .where(eq(transactions.id, id));
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())));
 
         return row ?? null;
     }
@@ -64,6 +65,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         const [row] = await this.db.query
             .insert(transactions)
             .values({
+                ownerUserId: getScopedUserId(),
                 accountId: data.accountId,
                 categoryId: data.categoryId ?? null,
                 type: data.type,
@@ -93,7 +95,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         const [updated] = await this.db.query
             .update(transactions)
             .set(updateData)
-            .where(eq(transactions.id, id))
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())))
             .returning();
 
         return updated ?? null;
@@ -102,7 +104,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
     async delete(id: string): Promise<Transaction | null> {
         const [deleted] = await this.db.query
             .delete(transactions)
-            .where(eq(transactions.id, id))
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())))
             .returning();
 
         return deleted ?? null;
@@ -120,13 +122,14 @@ export class DrizzleTransactionRepository extends TransactionRepository {
                 `,
             })
             .from(transactions)
-            .where(eq(transactions.accountId, accountId));
+            .where(and(eq(transactions.accountId, accountId), eq(transactions.ownerUserId, getScopedUserId())));
 
         return result.balance;
     }
 
     async sumByDateRange(from: string, to: string, accountId?: string): Promise<string> {
         const conditions: SQL[] = [
+            eq(transactions.ownerUserId, getScopedUserId()),
             gte(transactions.date, from),
             lte(transactions.date, to),
         ];

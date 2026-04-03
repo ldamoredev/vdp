@@ -1,6 +1,8 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 
 export type HttpErrorCode =
+    | 'UNAUTHORIZED'
+    | 'FORBIDDEN'
     | 'VALIDATION_ERROR'
     | 'NOT_FOUND'
     | 'CONFLICT'
@@ -29,6 +31,18 @@ export class HttpError extends Error {
 export class ValidationHttpError extends HttpError {
     constructor(message: string, details?: unknown) {
         super(400, 'VALIDATION_ERROR', message, details);
+    }
+}
+
+export class UnauthorizedHttpError extends HttpError {
+    constructor(message: string, details?: unknown) {
+        super(401, 'UNAUTHORIZED', message, details);
+    }
+}
+
+export class ForbiddenHttpError extends HttpError {
+    constructor(message: string, details?: unknown) {
+        super(403, 'FORBIDDEN', message, details);
     }
 }
 

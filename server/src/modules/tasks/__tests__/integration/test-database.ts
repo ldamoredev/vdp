@@ -1,23 +1,62 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import * as authSchema from '../../../common/infrastructure/auth/schema';
 import * as agentSchema from '../../../common/infrastructure/agents/schema';
 import * as walletSchema from '../../../wallet/schema';
 import * as tasksSchema from '../../infrastructure/db/schema';
 import * as embeddingsSchema from '../../infrastructure/db/embeddings-schema';
+import { DEFAULT_TEST_USER_ID } from '../../../common/http/request-auth';
 
 const SETUP_SQL = `
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS tasks;
 CREATE SCHEMA IF NOT EXISTS wallet;
 
+CREATE TABLE IF NOT EXISTS core.users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    display_name VARCHAR(120) NOT NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS core.sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_agent TEXT,
+    ip_address INET,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS core.audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    actor_user_id UUID REFERENCES core.users(id) ON DELETE SET NULL,
+    actor_session_id UUID REFERENCES core.sessions(id) ON DELETE SET NULL,
+    action VARCHAR(120) NOT NULL,
+    resource_type VARCHAR(120) NOT NULL,
+    resource_id VARCHAR(255),
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS core.agent_conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     domain VARCHAR(20) NOT NULL,
     title VARCHAR(200),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS core.agent_messages (
@@ -27,29 +66,32 @@ CREATE TABLE IF NOT EXISTS core.agent_messages (
     content TEXT,
     tool_calls JSONB,
     tool_result JSONB,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tasks.tasks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     priority INTEGER NOT NULL DEFAULT 2,
     scheduled_date DATE NOT NULL,
     domain VARCHAR(20),
-    completed_at TIMESTAMP,
+    completed_at TIMESTAMPTZ,
     carry_over_count INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tasks.task_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    author_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE RESTRICT,
     task_id UUID NOT NULL REFERENCES tasks.tasks(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     type VARCHAR(30) NOT NULL DEFAULT 'note',
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
@@ -61,16 +103,23 @@ CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
 );
 
 CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_date);
+CREATE INDEX IF NOT EXISTS tasks_owner_user_idx ON tasks.tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
 CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
 CREATE INDEX IF NOT EXISTS tasks_date_status_idx ON tasks.tasks(scheduled_date, status);
+CREATE INDEX IF NOT EXISTS task_notes_owner_user_idx ON tasks.task_notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS core_msg_conversation_idx ON core.agent_messages(conversation_id);
-CREATE INDEX IF NOT EXISTS agent_conv_domain_updated_idx ON core.agent_conversations(domain, updated_at);
+CREATE INDEX IF NOT EXISTS agent_conv_domain_updated_idx ON core.agent_conversations(user_id, domain, updated_at);
 CREATE INDEX IF NOT EXISTS task_embeddings_task_id_idx ON tasks.task_embeddings(task_id);
+CREATE INDEX IF NOT EXISTS users_email_idx ON core.users(email);
+CREATE INDEX IF NOT EXISTS sessions_user_idx ON core.sessions(user_id);
+CREATE INDEX IF NOT EXISTS sessions_expires_idx ON core.sessions(expires_at);
+CREATE INDEX IF NOT EXISTS audit_logs_actor_idx ON core.audit_logs(actor_user_id, created_at);
 
 CREATE TABLE IF NOT EXISTS wallet.accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     type VARCHAR(20) NOT NULL,
@@ -82,6 +131,7 @@ CREATE TABLE IF NOT EXISTS wallet.accounts (
 
 CREATE TABLE IF NOT EXISTS wallet.categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     name VARCHAR(60) NOT NULL,
     type VARCHAR(10) NOT NULL,
     icon VARCHAR(30),
@@ -91,6 +141,7 @@ CREATE TABLE IF NOT EXISTS wallet.categories (
 
 CREATE TABLE IF NOT EXISTS wallet.transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES wallet.accounts(id),
     category_id UUID REFERENCES wallet.categories(id),
     type VARCHAR(10) NOT NULL,
@@ -106,6 +157,7 @@ CREATE TABLE IF NOT EXISTS wallet.transactions (
 
 CREATE TABLE IF NOT EXISTS wallet.savings_goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     target_amount NUMERIC(15, 2) NOT NULL,
     current_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
@@ -118,6 +170,7 @@ CREATE TABLE IF NOT EXISTS wallet.savings_goals (
 
 CREATE TABLE IF NOT EXISTS wallet.savings_contributions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     goal_id UUID NOT NULL REFERENCES wallet.savings_goals(id) ON DELETE CASCADE,
     transaction_id UUID REFERENCES wallet.transactions(id) ON DELETE SET NULL,
     amount NUMERIC(15, 2) NOT NULL,
@@ -127,6 +180,7 @@ CREATE TABLE IF NOT EXISTS wallet.savings_contributions (
 
 CREATE TABLE IF NOT EXISTS wallet.investments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     type VARCHAR(30) NOT NULL,
     account_id UUID REFERENCES wallet.accounts(id),
@@ -153,14 +207,21 @@ CREATE TABLE IF NOT EXISTS wallet.exchange_rates (
 );
 
 CREATE INDEX IF NOT EXISTS categories_parent_id_idx ON wallet.categories(parent_id);
+CREATE INDEX IF NOT EXISTS categories_owner_user_idx ON wallet.categories(owner_user_id);
+CREATE INDEX IF NOT EXISTS tx_owner_user_idx ON wallet.transactions(owner_user_id);
 CREATE INDEX IF NOT EXISTS tx_account_date_idx ON wallet.transactions(account_id, date);
 CREATE INDEX IF NOT EXISTS tx_category_date_idx ON wallet.transactions(category_id, date);
 CREATE INDEX IF NOT EXISTS tx_transfer_to_account_idx ON wallet.transactions(transfer_to_account_id);
 CREATE INDEX IF NOT EXISTS sc_goal_id_idx ON wallet.savings_contributions(goal_id);
 CREATE INDEX IF NOT EXISTS sc_transaction_id_idx ON wallet.savings_contributions(transaction_id);
+CREATE INDEX IF NOT EXISTS investments_owner_user_idx ON wallet.investments(owner_user_id);
 CREATE INDEX IF NOT EXISTS investments_account_id_idx ON wallet.investments(account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
     ON wallet.exchange_rates(from_currency, to_currency, type, date);
+
+INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
+VALUES ('00000000-0000-0000-0000-000000000001', 'test@vdp.local', 'Test User', 'test-password-hash', 'user', TRUE)
+ON CONFLICT (id) DO NOTHING;
 `;
 
 const CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
@@ -172,7 +233,7 @@ export class TestDatabase {
     constructor() {
         this.pool = new pg.Pool({ connectionString: CONNECTION_STRING });
         this.query = drizzle(this.pool, {
-            schema: { ...agentSchema, ...walletSchema, ...tasksSchema, ...embeddingsSchema },
+            schema: { ...authSchema, ...agentSchema, ...walletSchema, ...tasksSchema, ...embeddingsSchema },
         });
     }
 
@@ -190,6 +251,9 @@ export class TestDatabase {
         try {
             await client.query(
                 `TRUNCATE
+                    core.audit_logs,
+                    core.sessions,
+                    core.users,
                     core.agent_messages,
                     core.agent_conversations,
                     tasks.task_embeddings,
@@ -203,6 +267,11 @@ export class TestDatabase {
                     wallet.categories,
                     wallet.accounts
                  CASCADE`,
+            );
+            await client.query(
+                `INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
+                 VALUES ($1, 'test@vdp.local', 'Test User', 'test-password-hash', 'user', TRUE)`,
+                [DEFAULT_TEST_USER_ID],
             );
         } finally {
             client.release();

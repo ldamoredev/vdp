@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+const API_BASE = "/api/proxy/v1";
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 
@@ -22,16 +22,27 @@ export class ApiError extends Error {
   }
 }
 
-function getAccessSecret(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|;\s*)access_secret=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+function toHeaderRecord(headers?: HeadersInit): Record<string, string> {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return { ...headers };
 }
 
-function buildHeaders(extra?: Record<string, string>): Record<string, string> {
-  const headers: Record<string, string> = { ...extra };
-  const secret = getAccessSecret();
-  if (secret) headers["x-api-key"] = secret;
+function buildHeaders(
+  extra?: HeadersInit,
+  defaultContentType?: string,
+): Record<string, string> {
+  const headers = toHeaderRecord(extra);
+
+  if (defaultContentType && !("Content-Type" in headers)) {
+    headers["Content-Type"] = defaultContentType;
+  }
+
   return headers;
 }
 
@@ -50,10 +61,13 @@ export function withQueryParams(path: string, params?: QueryParams): string {
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = buildHeaders(
-    options?.body ? { "Content-Type": "application/json" } : undefined,
+    options?.headers,
+    options?.body ? "application/json" : undefined,
   );
 
-  const res = await fetch(`${API_BASE}${path}`, { headers,
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers,
+    credentials: "same-origin",
     ...options,
   });
   if (!res.ok) {
@@ -72,7 +86,8 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 export async function* chatStream(endpoint: string, message: string, conversationId?: string) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
-    headers: buildHeaders({ "Content-Type": "application/json" }),
+    headers: buildHeaders(undefined, "application/json"),
+    credentials: "same-origin",
     body: JSON.stringify({ message, conversationId }),
   });
   if (!res.ok) {

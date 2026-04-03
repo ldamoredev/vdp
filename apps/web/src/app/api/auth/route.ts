@@ -1,28 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
-  const accessSecret = process.env.ACCESS_SECRET;
+export const dynamic = "force-dynamic";
 
-  if (!accessSecret) {
-    return NextResponse.json({ ok: true });
-  }
+export async function GET() {
+  return NextResponse.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+}
 
-  const body = await request.json().catch(() => null);
-  const secret = body?.secret;
-
-  if (typeof secret !== "string" || secret !== accessSecret) {
-    return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
-  }
-
-  const response = NextResponse.json({ ok: true });
-
-  response.cookies.set("access_secret", secret, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
-
-  return response;
+export async function POST() {
+  return NextResponse.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }

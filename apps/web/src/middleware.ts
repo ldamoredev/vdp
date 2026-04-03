@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE_NAME } from "@/lib/server/backend";
 
 const PUBLIC_PATHS = ["/login", "/_next", "/favicon.ico"];
 
@@ -8,20 +9,15 @@ function isPublicPath(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (isPublicPath(pathname)) return NextResponse.next();
 
-  const accessSecret = process.env.ACCESS_SECRET;
-
-  // Guard disabled — allow everything
-  if (!accessSecret) return NextResponse.next();
-
-  const cookie = request.cookies.get("access_secret");
-
-  if (cookie?.value === accessSecret) return NextResponse.next();
+  if (sessionToken) return NextResponse.next();
 
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
+  loginUrl.searchParams.set("next", pathname);
   return NextResponse.redirect(loginUrl);
 }
 

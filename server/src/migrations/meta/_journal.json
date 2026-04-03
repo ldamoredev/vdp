@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1773696147468,
-      "tag": "0000_robust_spectrum",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1774051151345,
-      "tag": "0001_kind_morlun",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1774189284404,
-      "tag": "0002_light_lord_hawal",
+      "when": 1775215944586,
+      "tag": "0000_wooden_plazm",
       "breakpoints": true
     }
   ]

@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Menu, MessageCircle, Sparkles } from "lucide-react";
 import { chatStore } from "@/lib/chat-store";
+import { logout, useCurrentUser } from "@/lib/auth";
 import { shellStore } from "@/lib/shell-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentUser();
+
   // Wire Ctrl+K / Cmd+K keyboard shortcut
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -20,6 +27,13 @@ export function Header() {
   }, []);
 
   const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
+
+  async function handleLogout() {
+    await logout();
+    await queryClient.invalidateQueries({ queryKey: ["auth"] });
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <header className="h-16 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-4 md:px-8">
@@ -36,6 +50,24 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-3">
+        {currentUser && (
+          <div className="hidden lg:flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-[var(--foreground)]">
+                {currentUser.displayName}
+              </div>
+              <div className="max-w-48 truncate text-xs text-[var(--foreground-muted)]">
+                {currentUser.email}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-medium text-[var(--foreground-muted)] transition-colors hover:text-[var(--foreground)]"
+            >
+              Salir
+            </button>
+          </div>
+        )}
         <ThemeToggle />
         <button
           onClick={chatStore.toggle}

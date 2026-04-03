@@ -2,6 +2,7 @@ import { Database } from '../../base/db/Database';
 import { AgentConversationRecord, AgentMessageRecord, AgentRepository } from '../../base/agents/AgentRepository';
 import { agentConversations, agentMessages } from './schema';
 import { and, asc, desc, eq } from 'drizzle-orm';
+import { getScopedUserId } from '../../http/request-auth';
 
 export class DrizzleAgentRepository extends AgentRepository {
     constructor(private db: Database) {
@@ -12,6 +13,7 @@ export class DrizzleAgentRepository extends AgentRepository {
         const [conv] = await this.db.query
             .insert(agentConversations)
             .values({
+                userId: getScopedUserId(),
                 domain,
                 title,
             })
@@ -55,7 +57,10 @@ export class DrizzleAgentRepository extends AgentRepository {
         return await this.db.query
             .select()
             .from(agentConversations)
-            .where(eq(agentConversations.domain, domain))
+            .where(and(
+                eq(agentConversations.userId, getScopedUserId()),
+                eq(agentConversations.domain, domain),
+            ))
             .orderBy(desc(agentConversations.updatedAt))
             .limit(limit);
     }
@@ -66,6 +71,7 @@ export class DrizzleAgentRepository extends AgentRepository {
             .from(agentConversations)
             .where(and(
                 eq(agentConversations.id, conversationId),
+                eq(agentConversations.userId, getScopedUserId()),
                 eq(agentConversations.domain, domain),
             ))
             .limit(1);

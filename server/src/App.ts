@@ -4,17 +4,34 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 
 import { Core } from './modules/Core';
+import { AuditLogRepository } from './modules/common/base/auth/AuditLogRepository';
+import { SessionRepository } from './modules/common/base/auth/SessionRepository';
+import { UserRepository } from './modules/common/base/auth/UserRepository';
+import { AuthService } from './modules/common/auth/AuthService';
 import { HttpController } from './modules/common/http/HttpController';
+import { AuthController } from './modules/common/http/AuthController';
+import { RequestAuditLogger } from './modules/common/http/RequestAuditLogger';
+import { SessionAuthentication } from './modules/common/http/SessionAuthentication';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
-import { BasicHttpAuthentication } from './modules/common/http/BasicHttpAuthentication';
 
 export class App {
     public app = Fastify({ logger: true });
     private stopPromise: Promise<void> | null = null;
-    private basicHttpAuthentication = new BasicHttpAuthentication();
+    private readonly authService: AuthService;
+    private readonly sessionAuthentication: SessionAuthentication;
+    private readonly requestAuditLogger: RequestAuditLogger;
 
     constructor(public readonly core: Core) {
+        this.authService = new AuthService(
+            this.core.getRepository(UserRepository),
+            this.core.getRepository(SessionRepository),
+            this.core.getRepository(AuditLogRepository),
+        );
+        this.sessionAuthentication = new SessionAuthentication(this.authService);
+        this.requestAuditLogger = new RequestAuditLogger(
+            this.core.getRepository(AuditLogRepository),
+        );
         this.registerPlugins();
         this.registerControllers();
         this.registerTimelineLogging();
@@ -31,13 +48,15 @@ export class App {
             max: 100,
             timeWindow: '1 minute',
         });
-        this.app.register(this.basicHttpAuthentication.apiKeyGuard);
+        void this.sessionAuthentication.plugin(this.app);
+        void this.requestAuditLogger.plugin(this.app);
         this.app.setErrorHandler(httpErrorHandler);
     }
 
     private registerControllers() {
         const controllers: HttpController[] = [
             new StatusController(this.core.agentRegistry, this.core.getModuleDescriptors()),
+            new AuthController(this.authService),
             ...this.core.getControllers(),
         ];
 
@@ -65,7 +84,7 @@ export class App {
                 port,
                 host,
             });
-            this.logStartup(port)
+            this.logStartup(port);
         } catch (error) {
             await this.core.shutdown();
             throw error;

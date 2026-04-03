@@ -1,7 +1,9 @@
 import { Database } from '../../../common/base/db/Database';
 import { TaskEmbeddingRepository, SimilarTask } from '../../domain/TaskEmbeddingRepository';
 import { taskEmbeddings } from './embeddings-schema';
-import { eq, sql } from 'drizzle-orm';
+import { tasks } from './schema';
+import { and, eq, sql } from 'drizzle-orm';
+import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
     constructor(private db: Database) {
@@ -10,6 +12,17 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
 
     async upsert(taskId: string, content: string, embedding: number[]): Promise<void> {
         const vectorLiteral = `[${embedding.join(',')}]`;
+        const userId = getScopedUserId();
+
+        const [task] = await this.db.query
+            .select({ id: tasks.id })
+            .from(tasks)
+            .where(and(eq(tasks.id, taskId), eq(tasks.ownerUserId, userId)))
+            .limit(1);
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
 
         await this.db.query
             .insert(taskEmbeddings)
@@ -30,15 +43,18 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
 
     async findSimilar(embedding: number[], limit: number, threshold = 0.7): Promise<SimilarTask[]> {
         const vectorLiteral = `[${embedding.join(',')}]`;
+        const userId = getScopedUserId();
 
         const result = await this.db.query.execute(sql`
             WITH ranked AS (
                 SELECT
-                    task_id,
-                    content,
-                    1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
-                FROM tasks.task_embeddings
-                ORDER BY embedding <=> ${vectorLiteral}::vector
+                    embeddings.task_id,
+                    embeddings.content,
+                    1 - (embeddings.embedding <=> ${vectorLiteral}::vector) AS similarity
+                FROM tasks.task_embeddings embeddings
+                INNER JOIN tasks.tasks task ON task.id = embeddings.task_id
+                WHERE task.owner_user_id = ${userId}
+                ORDER BY embeddings.embedding <=> ${vectorLiteral}::vector
                 LIMIT ${limit * 2}
             )
             SELECT task_id, content, similarity
@@ -58,6 +74,13 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
     }
 
     async deleteByTaskId(taskId: string): Promise<void> {
-        await this.db.query.delete(taskEmbeddings).where(eq(taskEmbeddings.taskId, taskId));
+        const userId = getScopedUserId();
+        await this.db.query.execute(sql`
+            DELETE FROM tasks.task_embeddings embeddings
+            USING tasks.tasks task
+            WHERE embeddings.task_id = ${taskId}
+              AND task.id = embeddings.task_id
+              AND task.owner_user_id = ${userId}
+        `);
     }
 }

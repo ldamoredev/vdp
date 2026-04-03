@@ -13,4 +13,3 @@ export abstract class RepositoryProvider {
 
     protected abstract create<T>(token: AbstractConstructor<T>): T;
 }
-

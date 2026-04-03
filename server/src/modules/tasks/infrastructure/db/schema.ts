@@ -8,6 +8,7 @@ import {
   date,
   index,
 } from "drizzle-orm/pg-core";
+import { users } from '../../../common/infrastructure/auth/schema';
 
 export const tasksSchema = pgSchema("tasks");
 
@@ -17,6 +18,7 @@ export const tasks = tasksSchema.table(
   "tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description"),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
@@ -33,6 +35,7 @@ export const tasks = tasksSchema.table(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    index("tasks_owner_user_idx").on(table.ownerUserId),
     index("tasks_scheduled_date_idx").on(table.scheduledDate),
     index("tasks_status_idx").on(table.status),
     index("tasks_domain_idx").on(table.domain),
@@ -46,6 +49,8 @@ export const taskNotes = tasksSchema.table(
   "task_notes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    authorUserId: uuid("author_user_id").notNull().references(() => users.id, { onDelete: 'restrict' }),
     taskId: uuid("task_id")
       .notNull()
       .references(() => tasks.id, { onDelete: 'cascade' }),
@@ -54,6 +59,7 @@ export const taskNotes = tasksSchema.table(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    index("task_notes_owner_user_idx").on(table.ownerUserId),
     index("task_notes_task_idx").on(table.taskId),
   ]
 );

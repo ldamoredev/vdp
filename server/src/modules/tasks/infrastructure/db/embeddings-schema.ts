@@ -37,7 +37,7 @@ export const taskEmbeddings = tasksSchema.table(
     },
     (table) => [
         index('task_embeddings_task_id_idx').on(table.taskId),
-        // HNSW index on embedding column managed via raw migration (0003_production_hotfixes.sql)
+        // HNSW index on embedding column is managed via manual SQL in `src/manual-migrations/0001_task_embeddings_hnsw.sql`
         // Drizzle ORM does not support HNSW index definitions natively
     ],
 );

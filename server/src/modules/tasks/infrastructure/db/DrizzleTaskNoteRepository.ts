@@ -1,7 +1,8 @@
 import { TaskNoteRepository, TaskNote, TaskNoteType } from '../../domain/TaskNoteRepository';
 import { Database } from '../../../common/base/db/Database';
-import { taskNotes } from './schema';
-import { eq, asc } from 'drizzle-orm';
+import { taskNotes, tasks } from './schema';
+import { and, eq, asc } from 'drizzle-orm';
+import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleTaskNoteRepository extends TaskNoteRepository {
     constructor(private db: Database) {
@@ -9,25 +10,46 @@ export class DrizzleTaskNoteRepository extends TaskNoteRepository {
     }
 
     async addNote(taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
+        const ownerUserId = getScopedUserId();
+        const [task] = await this.db.query
+            .select({ id: tasks.id })
+            .from(tasks)
+            .where(and(eq(tasks.id, taskId), eq(tasks.ownerUserId, ownerUserId)))
+            .limit(1);
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
         const [note] = await this.db.query
             .insert(taskNotes)
-            .values({ taskId, content, type })
+            .values({
+                ownerUserId,
+                authorUserId: ownerUserId,
+                taskId,
+                content,
+                type,
+            })
             .returning();
         return toTaskNote(note);
     }
 
     async listNotes(taskId: string): Promise<TaskNote[]> {
+        const ownerUserId = getScopedUserId();
         const notes = await this.db.query
             .select()
             .from(taskNotes)
-            .where(eq(taskNotes.taskId, taskId))
+            .where(and(eq(taskNotes.taskId, taskId), eq(taskNotes.ownerUserId, ownerUserId)))
             .orderBy(asc(taskNotes.createdAt));
 
         return notes.map(toTaskNote);
     }
 
     async deleteByTaskId(taskId: string): Promise<void> {
-        await this.db.query.delete(taskNotes).where(eq(taskNotes.taskId, taskId));
+        const ownerUserId = getScopedUserId();
+        await this.db.query
+            .delete(taskNotes)
+            .where(and(eq(taskNotes.taskId, taskId), eq(taskNotes.ownerUserId, ownerUserId)));
     }
 }
 

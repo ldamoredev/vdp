@@ -1,5 +1,6 @@
 export type AgentConversationRecord = {
     id: string;
+    userId: string;
     createdAt: Date;
     updatedAt: Date;
     title: string | null;

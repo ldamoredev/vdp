@@ -20,6 +20,12 @@ import { InvestmentRepository } from '../../../wallet/domain/InvestmentRepositor
 import { DrizzleInvestmentRepository } from '../../../wallet/infrastructure/db/DrizzleInvestmentRepository';
 import { ExchangeRateRepository } from '../../../wallet/domain/ExchangeRateRepository';
 import { DrizzleExchangeRateRepository } from '../../../wallet/infrastructure/db/DrizzleExchangeRateRepository';
+import { UserRepository } from '../../base/auth/UserRepository';
+import { SessionRepository } from '../../base/auth/SessionRepository';
+import { AuditLogRepository } from '../../base/auth/AuditLogRepository';
+import { DrizzleUserRepository } from '../auth/DrizzleUserRepository';
+import { DrizzleSessionRepository } from '../auth/DrizzleSessionRepository';
+import { DrizzleAuditLogRepository } from '../auth/DrizzleAuditLogRepository';
 
 export class DrizzleRepositoryProvider extends RepositoryProvider {
     constructor(private db: Database) {
@@ -49,6 +55,12 @@ export class DrizzleRepositoryProvider extends RepositoryProvider {
                 return new DrizzleInvestmentRepository(this.db) as T;
             case ExchangeRateRepository:
                 return new DrizzleExchangeRateRepository(this.db) as T;
+            case UserRepository:
+                return new DrizzleUserRepository(this.db) as T;
+            case SessionRepository:
+                return new DrizzleSessionRepository(this.db) as T;
+            case AuditLogRepository:
+                return new DrizzleAuditLogRepository(this.db) as T;
             default:
                 throw new Error(`${token.name} not implemented`);
         }

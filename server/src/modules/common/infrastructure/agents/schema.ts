@@ -7,6 +7,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { users } from '../auth/schema';
 
 export const coreSchema = pgSchema("core");
 
@@ -15,13 +16,14 @@ export const agentConversations = coreSchema.table(
   "agent_conversations",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     domain: varchar("domain", { length: 20 }).notNull(),
     title: varchar("title", { length: 200 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("agent_conv_domain_updated_idx").on(table.domain, table.updatedAt),
+    index("agent_conv_domain_updated_idx").on(table.userId, table.domain, table.updatedAt),
   ]
 );
 

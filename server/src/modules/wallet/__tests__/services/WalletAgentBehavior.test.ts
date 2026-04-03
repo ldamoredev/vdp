@@ -57,6 +57,7 @@ class InMemoryAgentRepository extends AgentRepository {
         const now = new Date();
         const conversation: AgentConversationRecord = {
             id: `conversation-${this.conversationSeq}`,
+            userId: 'test-user',
             createdAt: now,
             updatedAt: now,
             title,

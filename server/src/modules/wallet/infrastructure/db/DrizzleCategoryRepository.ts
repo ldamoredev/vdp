@@ -2,7 +2,8 @@ import { Category, CreateCategoryData, UpdateCategoryData } from '../../domain/C
 import { CategoryRepository } from '../../domain/CategoryRepository';
 import { Database } from '../../../common/base/db/Database';
 import { categories } from '../../schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleCategoryRepository extends CategoryRepository {
     constructor(private readonly db: Database) {
@@ -10,20 +11,24 @@ export class DrizzleCategoryRepository extends CategoryRepository {
     }
 
     async findAll(type?: string): Promise<Category[]> {
+        const ownerUserId = getScopedUserId();
         if (type) {
             return this.db.query
                 .select()
                 .from(categories)
-                .where(eq(categories.type, type));
+                .where(and(eq(categories.type, type), eq(categories.ownerUserId, ownerUserId)));
         }
-        return this.db.query.select().from(categories);
+        return this.db.query
+            .select()
+            .from(categories)
+            .where(eq(categories.ownerUserId, ownerUserId));
     }
 
     async findById(id: string): Promise<Category | null> {
         const [row] = await this.db.query
             .select()
             .from(categories)
-            .where(eq(categories.id, id));
+            .where(and(eq(categories.id, id), eq(categories.ownerUserId, getScopedUserId())));
 
         return row ?? null;
     }
@@ -32,6 +37,7 @@ export class DrizzleCategoryRepository extends CategoryRepository {
         const [row] = await this.db.query
             .insert(categories)
             .values({
+                ownerUserId: getScopedUserId(),
                 name: data.name,
                 type: data.type,
                 icon: data.icon ?? null,
@@ -57,7 +63,7 @@ export class DrizzleCategoryRepository extends CategoryRepository {
         const [updated] = await this.db.query
             .update(categories)
             .set(updateData)
-            .where(eq(categories.id, id))
+            .where(and(eq(categories.id, id), eq(categories.ownerUserId, getScopedUserId())))
             .returning();
 
         return updated ?? null;

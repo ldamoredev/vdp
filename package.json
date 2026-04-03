@@ -7,6 +7,8 @@
     "build": "turbo build",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
+    "db:reset": "pnpm --filter @vdp/server db:reset",
+    "db:fresh": "pnpm --filter @vdp/server db:fresh",
     "db:studio": "turbo db:studio",
     "test": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit && pnpm --filter @vdp/server test:integration",
     "test:unit": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit",

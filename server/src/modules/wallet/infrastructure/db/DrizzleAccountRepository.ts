@@ -2,7 +2,8 @@ import { Account, CreateAccountData, UpdateAccountData } from '../../domain/Acco
 import { AccountRepository } from '../../domain/AccountRepository';
 import { Database } from '../../../common/base/db/Database';
 import { accounts } from '../../schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleAccountRepository extends AccountRepository {
     constructor(private readonly db: Database) {
@@ -10,11 +11,17 @@ export class DrizzleAccountRepository extends AccountRepository {
     }
 
     async findAll(): Promise<Account[]> {
-        return this.db.query.select().from(accounts);
+        return this.db.query
+            .select()
+            .from(accounts)
+            .where(eq(accounts.ownerUserId, getScopedUserId()));
     }
 
     async findById(id: string): Promise<Account | null> {
-        const [row] = await this.db.query.select().from(accounts).where(eq(accounts.id, id));
+        const [row] = await this.db.query
+            .select()
+            .from(accounts)
+            .where(and(eq(accounts.id, id), eq(accounts.ownerUserId, getScopedUserId())));
         return row ?? null;
     }
 
@@ -22,6 +29,7 @@ export class DrizzleAccountRepository extends AccountRepository {
         const [row] = await this.db.query
             .insert(accounts)
             .values({
+                ownerUserId: getScopedUserId(),
                 name: data.name,
                 currency: data.currency,
                 type: data.type,
@@ -43,7 +51,7 @@ export class DrizzleAccountRepository extends AccountRepository {
         const [updated] = await this.db.query
             .update(accounts)
             .set(updateData)
-            .where(eq(accounts.id, id))
+            .where(and(eq(accounts.id, id), eq(accounts.ownerUserId, getScopedUserId())))
             .returning();
 
         return updated ?? null;
@@ -52,7 +60,7 @@ export class DrizzleAccountRepository extends AccountRepository {
     async delete(id: string): Promise<Account | null> {
         const [deleted] = await this.db.query
             .delete(accounts)
-            .where(eq(accounts.id, id))
+            .where(and(eq(accounts.id, id), eq(accounts.ownerUserId, getScopedUserId())))
             .returning();
 
         return deleted ?? null;
