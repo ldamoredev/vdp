@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { walletApi } from "@/lib/api/wallet";
 import { getTodayISO } from "@/lib/format";
-import type { Category, Transaction } from "@/lib/api/types";
+import type { Category, Transaction, TransactionType } from "@/lib/api/types";
 import {
   type TransactionFormState,
 } from "./wallet-selectors";
@@ -85,7 +85,7 @@ export function useWalletTransactionCreation() {
         ...current,
         [field]:
           field === "type"
-            ? (value as Transaction["type"])
+            ? (value as TransactionType)
             : field === "currency"
               ? (value as TransactionFormState["currency"])
               : value,

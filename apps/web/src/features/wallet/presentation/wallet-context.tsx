@@ -3,13 +3,17 @@
 import { createContext } from "react";
 import type {
   Account,
+  AccountType,
   Category,
   CategoryStat,
+  Currency,
   ExchangeRate,
+  InvestmentType,
   Investment,
   MonthlyTrend,
   SavingsGoal,
   Transaction,
+  TransactionType,
   WalletStatsSummary,
 } from "@/lib/api/types";
 import { useWalletQueries } from "./use-wallet-queries";
@@ -70,9 +74,12 @@ export interface WalletQueriesValue {
   isLoadingSavingsGoals: boolean;
   isLoadingInvestments: boolean;
   isCreatingAccount: boolean;
+  isDeletingAccount: boolean;
   isUpdatingAccount: boolean;
   isCreatingCategory: boolean;
   isDeletingTransaction: boolean;
+  isUpdatingTransaction: boolean;
+  isUpdatingSavingsGoal: boolean;
   isCreatingSavingsGoal: boolean;
   isContributingSavings: boolean;
   isCreatingInvestment: boolean;
@@ -87,6 +94,16 @@ export interface WalletActionsValue {
   ) => void;
   readonly submitAccount: () => Promise<void>;
   readonly renameAccount: (id: string, name: string) => void;
+  readonly deleteAccount: (id: string) => void;
+  readonly updateAccount: (input: {
+    id: string;
+    data: Partial<{
+      name: string;
+      currency: Currency;
+      type: AccountType;
+      initialBalance: string;
+    }>;
+  }) => Promise<unknown>;
 
   readonly toggleCategoryForm: () => void;
   readonly setCategoryFormField: (
@@ -95,12 +112,25 @@ export interface WalletActionsValue {
   ) => void;
   readonly submitCategory: () => Promise<void>;
 
-  readonly setTransactionType: (value: Transaction["type"] | "") => void;
+  readonly setTransactionType: (value: TransactionType | "") => void;
   readonly setTransactionFrom: (value: string) => void;
   readonly setTransactionTo: (value: string) => void;
   readonly previousTransactionsPage: () => void;
   readonly nextTransactionsPage: () => void;
   readonly deleteTransaction: (id: string) => void;
+  readonly updateTransaction: (input: {
+    id: string;
+    data: Partial<{
+      accountId: string;
+      categoryId: string | null;
+      type: TransactionType;
+      amount: string;
+      currency: Currency;
+      description: string | null;
+      date: string;
+      tags: string[];
+    }>;
+  }) => Promise<unknown>;
 
   readonly toggleSavingsForm: () => void;
   readonly setSavingsFormField: (
@@ -108,6 +138,14 @@ export interface WalletActionsValue {
     value: string,
   ) => void;
   readonly submitSavingsGoal: () => Promise<void>;
+  readonly updateSavingsGoal: (input: {
+    id: string;
+    data: Partial<{
+      name: string;
+      targetAmount: string;
+      deadline: string | null;
+    }>;
+  }) => Promise<unknown>;
   readonly startContribution: (goalId: string) => void;
   readonly cancelContribution: () => void;
   readonly setContributeAmount: (value: string) => void;
@@ -123,9 +161,9 @@ export interface WalletActionsValue {
     id: string;
     data: Partial<{
       name: string;
-      type: string;
+      type: InvestmentType;
       accountId: string | null;
-      currency: string;
+      currency: Currency;
       investedAmount: string;
       currentValue: string;
       startDate: string;
@@ -202,9 +240,12 @@ export function WalletProvider({
     isLoadingSavingsGoals: queries.isLoadingSavingsGoals,
     isLoadingInvestments: queries.isLoadingInvestments,
     isCreatingAccount: mutations.isCreatingAccount,
+    isDeletingAccount: mutations.isDeletingAccount,
     isUpdatingAccount: mutations.isUpdatingAccount,
     isCreatingCategory: mutations.isCreatingCategory,
     isDeletingTransaction: mutations.isDeletingTransaction,
+    isUpdatingTransaction: mutations.isUpdatingTransaction,
+    isUpdatingSavingsGoal: mutations.isUpdatingSavingsGoal,
     isCreatingSavingsGoal: mutations.isCreatingSavingsGoal,
     isContributingSavings: mutations.isContributingSavings,
     isCreatingInvestment: mutations.isCreatingInvestment,
@@ -226,6 +267,8 @@ export function WalletProvider({
       })),
     submitAccount: creation.submitAccount,
     renameAccount: mutations.renameAccount,
+    deleteAccount: mutations.deleteAccount,
+    updateAccount: mutations.updateAccount,
 
     toggleCategoryForm: () =>
       creation.setShowCategoryForm((current) => !current),
@@ -270,6 +313,7 @@ export function WalletProvider({
         offset: String(Number(current.offset) + Number(current.limit)),
       })),
     deleteTransaction: mutations.deleteTransaction,
+    updateTransaction: mutations.updateTransaction,
 
     toggleSavingsForm: () =>
       creation.setShowSavingsForm((current) => !current),
@@ -279,6 +323,7 @@ export function WalletProvider({
         [field]: value,
       })),
     submitSavingsGoal: creation.submitSavingsGoal,
+    updateSavingsGoal: mutations.updateSavingsGoal,
     startContribution: creation.setContributeId,
     cancelContribution: () => {
       creation.setContributeId(null);

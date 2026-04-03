@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Landmark, PencilLine, Plus, Wallet2 } from "lucide-react";
+import { Landmark, PencilLine, Plus, Trash2, Wallet2 } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
 import { formatMoney } from "@/lib/format";
@@ -15,6 +15,7 @@ export function AccountsScreen() {
     accountForm,
     isLoadingAccounts,
     isCreatingAccount,
+    isDeletingAccount,
     isUpdatingAccount,
   } = useWalletData();
   const {
@@ -22,6 +23,7 @@ export function AccountsScreen() {
     setAccountFormField,
     submitAccount,
     renameAccount,
+    deleteAccount,
   } = useWalletActions();
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -190,15 +192,24 @@ export function AccountsScreen() {
                   </div>
 
                   {!isEditing && (
-                    <button
-                      onClick={() => {
-                        setEditingAccountId(account.id);
-                        setEditingName(account.name);
-                      }}
-                      className="rounded-xl p-2 text-[var(--muted)] transition-colors hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)]"
-                    >
-                      <PencilLine size={16} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          setEditingAccountId(account.id);
+                          setEditingName(account.name);
+                        }}
+                        className="rounded-xl p-2 text-[var(--muted)] transition-colors hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)]"
+                      >
+                        <PencilLine size={16} />
+                      </button>
+                      <button
+                        onClick={() => deleteAccount(account.id)}
+                        disabled={isDeletingAccount}
+                        className="rounded-xl p-2 text-[var(--muted)] transition-colors hover:bg-[var(--accent-red-glow)] hover:text-[var(--accent-red)]"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   )}
                 </div>
 

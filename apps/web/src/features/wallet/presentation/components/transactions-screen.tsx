@@ -15,9 +15,10 @@ import {
 } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
+import type { TransactionType } from "@/lib/api/types";
 import { getTransactionPresentation } from "../wallet-selectors";
 
-function getTypeIcon(type: "income" | "expense" | "transfer") {
+function getTypeIcon(type: TransactionType) {
   switch (type) {
     case "income":
       return (

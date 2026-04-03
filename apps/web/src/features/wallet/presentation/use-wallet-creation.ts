@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getTodayISO } from "@/lib/format";
+import type { Currency, AccountType, CategoryType, InvestmentType } from "@/lib/api/types";
 import type {
   AccountFormState,
   CategoryFormState,
@@ -53,19 +54,19 @@ function createInitialInvestmentForm(): InvestmentFormState {
 export function useWalletCreation(actions: {
   createAccount: (input: {
     name: string;
-    currency: "ARS" | "USD";
-    type: "cash" | "bank" | "crypto" | "investment";
+    currency: Currency;
+    type: AccountType;
     initialBalance: string;
   }) => Promise<unknown>;
   createCategory: (input: {
     name: string;
-    type: "income" | "expense";
+    type: CategoryType;
     icon: string | null;
   }) => Promise<unknown>;
   createSavingsGoal: (input: {
     name: string;
     targetAmount: string;
-    currency: "ARS" | "USD";
+    currency: Currency;
     deadline: string | null;
   }) => Promise<unknown>;
   contributeSavings: (input: {
@@ -76,9 +77,9 @@ export function useWalletCreation(actions: {
   }) => Promise<unknown>;
   createInvestment: (input: {
     name: string;
-    type: string;
+    type: InvestmentType;
     accountId: string | null;
-    currency: "ARS" | "USD";
+    currency: Currency;
     investedAmount: string;
     currentValue: string;
     startDate: string;

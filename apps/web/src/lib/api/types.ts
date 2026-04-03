@@ -120,11 +120,35 @@ export interface AgentMessageRecord {
 }
 
 // ─── Wallet ──────────────────────────────────────────────
+//
+// Union types imported from @vdp/shared to prevent drift.
+// The interfaces below are API response shapes (string dates, optional fields,
+// enriched fields like categoryName) — they intentionally differ from the
+// domain models in @vdp/shared which use Date objects.
+//
+import type {
+  Currency,
+  AccountType,
+  TransactionType,
+  CategoryType,
+  InvestmentType,
+  ExchangeRateType,
+} from "@vdp/shared";
+
+export type {
+  Currency,
+  AccountType,
+  TransactionType,
+  CategoryType,
+  InvestmentType,
+  ExchangeRateType,
+};
+
 export interface Account {
   id: string;
   name: string;
-  currency: string;
-  type: string;
+  currency: Currency;
+  type: AccountType;
   initialBalance: string;
   currentBalance?: string;
   isActive: boolean;
@@ -137,9 +161,9 @@ export interface Transaction {
   accountId: string;
   categoryId: string | null;
   categoryName?: string;
-  type: "income" | "expense" | "transfer";
+  type: TransactionType;
   amount: string;
-  currency: string;
+  currency: Currency;
   description: string | null;
   date: string;
   tags: string[];
@@ -150,7 +174,7 @@ export interface Transaction {
 export interface Category {
   id: string;
   name: string;
-  type: "income" | "expense";
+  type: CategoryType;
   icon: string | null;
 }
 
@@ -159,7 +183,7 @@ export interface SavingsGoal {
   name: string;
   targetAmount: string;
   currentAmount: string;
-  currency: string;
+  currency: Currency;
   deadline: string | null;
   isCompleted: boolean;
   createdAt: string;
@@ -169,9 +193,9 @@ export interface SavingsGoal {
 export interface Investment {
   id: string;
   name: string;
-  type: string;
+  type: InvestmentType;
   accountId?: string | null;
-  currency: string;
+  currency: Currency;
   investedAmount: string;
   currentValue: string;
   startDate: string;
@@ -205,10 +229,10 @@ export interface MonthlyTrend {
 
 export interface ExchangeRate {
   id: string;
-  fromCurrency: string;
-  toCurrency: string;
+  fromCurrency: Currency;
+  toCurrency: Currency;
   rate: string;
-  type: string;
+  type: ExchangeRateType;
   date: string;
   createdAt?: string;
 }

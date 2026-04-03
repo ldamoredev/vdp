@@ -1,6 +1,11 @@
 import type {
   Account,
   Category,
+  Currency,
+  AccountType,
+  TransactionType,
+  CategoryType,
+  InvestmentType,
   ExchangeRate,
   Investment,
   SavingsGoal,
@@ -18,21 +23,21 @@ export type WalletScope =
 
 export type AccountFormState = {
   name: string;
-  currency: "ARS" | "USD";
-  type: "cash" | "bank" | "crypto" | "investment";
+  currency: Currency;
+  type: AccountType;
   initialBalance: string;
 };
 
 export type CategoryFormState = {
   name: string;
-  type: "income" | "expense";
+  type: CategoryType;
   icon: string;
 };
 
 export type WalletTransactionFilters = {
   limit: string;
   offset: string;
-  type?: Transaction["type"];
+  type?: TransactionType;
   from?: string;
   to?: string;
 };
@@ -40,15 +45,15 @@ export type WalletTransactionFilters = {
 export type SavingsFormState = {
   name: string;
   targetAmount: string;
-  currency: "ARS" | "USD";
+  currency: Currency;
   deadline: string;
 };
 
 export type InvestmentFormState = {
   name: string;
-  type: string;
+  type: InvestmentType;
   accountId: string;
-  currency: "ARS" | "USD";
+  currency: Currency;
   investedAmount: string;
   currentValue: string;
   startDate: string;
@@ -75,7 +80,7 @@ export const accountTypeLabels: Record<Account["type"], string> = {
   investment: "Inversion",
 };
 
-export const investmentTypeLabels: Record<string, string> = {
+export const investmentTypeLabels: Record<InvestmentType, string> = {
   plazo_fijo: "Plazo fijo",
   fci: "FCI",
   cedear: "CEDEAR",

@@ -19,9 +19,9 @@ describe("wallet-selectors", () => {
       },
       {
         id: "2",
-        fromCurrency: "EUR",
-        toCurrency: "ARS",
-        rate: "1200.00",
+        fromCurrency: "ARS",
+        toCurrency: "USD",
+        rate: "0.0009",
         type: "official",
         date: "2026-03-27",
       },

@@ -8,9 +8,15 @@
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
     "db:studio": "turbo db:studio",
+    "test": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit && pnpm --filter @vdp/server test:integration",
+    "test:unit": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit",
+    "test:integration": "pnpm --filter @vdp/server test:integration",
+    "test:e2e": "pnpm --filter @vdp/server test:e2e",
     "infra:start": "docker compose up -d",
     "infra:stop": "docker compose down",
     "infra:reset": "docker compose down -v && docker compose up -d",
+    "prepare": "./scripts/install-hooks.sh",
+    "commit": "git commit",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache apps/**/.next"
   },
   "devDependencies": {

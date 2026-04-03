@@ -1,8 +1,12 @@
 import { request, withQueryParams } from "./client";
 import type {
   Account,
+  Currency,
+  InvestmentType,
   Transaction,
+  TransactionType,
   Category,
+  CategoryType,
   SavingsGoal,
   Investment,
   WalletStatsSummary,
@@ -28,7 +32,7 @@ export const walletApi = {
     request<void>(`${W}/accounts/${id}`, { method: "DELETE" }),
 
   // ─── Categories ──────────────────────────────────────────
-  getCategories: (type?: string) =>
+  getCategories: (type?: CategoryType) =>
     request<Category[]>(withQueryParams(`${W}/categories`, { type })),
   createCategory: (data: Pick<Category, "name" | "type" | "icon">) =>
     request<Category>(`${W}/categories`, { method: "POST", body: JSON.stringify(data) }),
@@ -41,9 +45,9 @@ export const walletApi = {
   createTransaction: (data: {
     accountId: string;
     categoryId?: string | null;
-    type: "income" | "expense" | "transfer";
+    type: TransactionType;
     amount: string;
-    currency: string;
+    currency: Currency;
     description?: string | null;
     date?: string;
     transferToAccountId?: string | null;
@@ -70,9 +74,9 @@ export const walletApi = {
   getInvestments: () => request<Investment[]>(`${W}/investments`),
   createInvestment: (data: {
     name: string;
-    type: string;
+    type: InvestmentType;
     accountId?: string | null;
-    currency: string;
+    currency: Currency;
     investedAmount: string;
     currentValue: string;
     startDate: string;
@@ -83,9 +87,9 @@ export const walletApi = {
     request<Investment>(`${W}/investments`, { method: "POST", body: JSON.stringify(data) }),
   updateInvestment: (id: string, data: Partial<{
     name: string;
-    type: string;
+    type: InvestmentType;
     accountId: string | null;
-    currency: string;
+    currency: Currency;
     investedAmount: string;
     currentValue: string;
     startDate: string;
