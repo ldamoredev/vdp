@@ -58,7 +58,7 @@ describe('DetectSpendingSpike', () => {
 
     it('does not emit when current week expenses are zero', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         await service.execute();
 
@@ -67,7 +67,7 @@ describe('DetectSpendingSpike', () => {
 
     it('does not emit when previous average is zero (first week of spending)', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         // Only current week has expenses, no history
         const today = new Date();
@@ -85,7 +85,7 @@ describe('DetectSpendingSpike', () => {
 
     it('emits SpendingSpike when current week exceeds 50% of 4-week average', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         // Previous 4 weeks: ~100 each
         for (let i = 1; i <= 4; i++) {
@@ -115,7 +115,7 @@ describe('DetectSpendingSpike', () => {
 
     it('does not emit when increase is below 50% threshold', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         // Previous 4 weeks: 100 each
         for (let i = 1; i <= 4; i++) {
@@ -139,7 +139,7 @@ describe('DetectSpendingSpike', () => {
 
     it('emits when increase is exactly at the 50% threshold', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         // Previous 4 weeks: 100 each
         for (let i = 1; i <= 4; i++) {
@@ -165,7 +165,7 @@ describe('DetectSpendingSpike', () => {
 
     it('uses absolute values for expense amounts', async () => {
         const emitted: DomainEvent[] = [];
-        eventBus.on('wallet.spending.spike', (e) => emitted.push(e));
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
         // Previous weeks with negative amounts (how some repos store expenses)
         for (let i = 1; i <= 4; i++) {
