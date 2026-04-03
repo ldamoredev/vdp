@@ -1,6 +1,12 @@
 # VDP Plan
 
-Updated: 2026-04-01
+Updated: 2026-04-03
+
+Status note:
+
+- For current repository state verified directly from code on 2026-04-03, trust [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) first.
+- Use this file primarily as roadmap and execution guidance.
+- Authentication modernization is now the immediate platform priority before starting another domain module.
 
 ## 1. Purpose
 
@@ -85,7 +91,7 @@ Current status:
 | Domain | Backend | Frontend | Agent | Tests | Status |
 |--------|---------|----------|-------|-------|--------|
 | Tasks | Implemented | Implemented | Implemented | Backend strong, frontend selectors only | Stable |
-| Wallet | Implemented | Implemented | Implemented (15 tools) | Backend good (~55 tests), frontend ~3% | In progress |
+| Wallet | Implemented | Implemented | Implemented (15 tools) | Backend verified, frontend baseline improved (30 tests) | Active, newer than Tasks |
 | Health | Not active | Placeholder/demo | Not active | N/A | Inactive |
 | People | Not active | Demo/inactive | Not active | N/A | Inactive |
 | Work | Not active | Demo/inactive | Not active | N/A | Inactive |
@@ -94,7 +100,8 @@ Current status:
 Important nuance:
 
 - `Tasks` is the only domain that is clearly complete enough to be called the current product
-- `Wallet` backend is more complete than previously assessed (full route surface, all services, 15 agent tools) — the gap is frontend test coverage and type alignment
+- `Wallet` backend is more complete than previously assessed (full route surface, all services, 15 agent tools)
+- several older documented Wallet gaps are now closed in code and tests
 
 ---
 
@@ -233,26 +240,29 @@ A full coverage audit was performed against all uncommitted changes. Key finding
 - `WalletAgentBehavior.test.ts`: 3 behavioral flows (savings, investments, exchange rates)
 - `WalletTools.test.ts`: 1 tool registry composition test
 
-**Backend Wallet — untested:**
-- `WalletEventHandlers` (event listener wiring) — no tests
-- `DetectSpendingSpike` (spike detection algorithm) — no tests
-- Agent error scenarios (malformed tool inputs, service failures) — not covered
+**Backend Wallet — current verified state:**
+- `WalletEventHandlers.test.ts` exists
+- `DetectSpendingSpike.test.ts` exists
+- `wallet-services.test.ts`, `DrizzleWalletRepositories.test.ts`, `WalletAPI.e2e.test.ts`, `WalletAgentBehavior.test.ts`, and `WalletTools.test.ts` exist
+- Agent error scenarios are still less explicit than the happy-path/service coverage and should be treated as a smaller residual gap, not a missing test surface
 
-**Frontend Wallet — critical gap:**
-- 31 files, only 1 tested (`wallet-selectors.test.ts`, 4 test cases)
-- 0 hook tests, 0 component tests, 0 context tests, 0 API client tests
-- Estimated coverage: ~3%
+**Frontend Wallet — current verified state:**
+- `wallet-selectors.test.ts` exists
+- `wallet-creation-logic.test.ts` exists
+- `wallet-transaction-creation-logic.test.ts` exists
+- current wallet frontend test count is 30 tests across 3 files
+- this is no longer the previous `~3% / 1 file` state, though it is still lighter than the Tasks reference standard
 
-**Frontend Tasks refactor — critical gap:**
-- 25 files modified/new, 0 new tests added
-- 1 existing test file (`tasks-dashboard-selectors.test.ts`, ~30 test cases) covers selectors only
-- All hooks, contexts, and components: untested
-- `chat-sync.ts` (cache invalidation logic) is high-risk and untested
+**Frontend Tasks refactor — historical gap, now partially closed:**
+- the original refactor landed with little direct coverage
+- current validated coverage now includes `tasks-dashboard-selectors.test.ts`, `history-selectors.test.ts`, and `chat-sync.test.ts`
+- `chat-sync.ts` is no longer untested
+- hook/context/component coverage is still lighter than a fully hardened UI layer
 
 **Frontend shared/primitives:**
 - `use-required-context.ts`, `query-keys.ts`, 3 primitive components: all untested
 
-**Verdict:** Backend follows the Tasks testing standard. Frontend does not. The project cannot claim 80% coverage on the frontend layer of either domain.
+**Verdict:** Wallet is no longer missing the major backend tests and mutation surface previously reported here. Frontend coverage improved materially, but it is still not yet equivalent to the overall confidence level of the Tasks module.
 
 ### 5.4 Wallet work currently visible in the repo
 
@@ -269,7 +279,7 @@ Current Wallet work in the repo includes:
 - frontend dashboard and transaction pages
 - frontend stats, savings, and investments pages
 
-This is meaningful progress, but it is still not a proven vertical slice.
+This is meaningful progress and now constitutes a real vertical slice, even if it still has less overall confidence than the older `Tasks` module.
 
 ---
 
@@ -316,18 +326,12 @@ The route-level contract mismatch previously described does not exist.
 
 **What is still inconsistent:**
 
-1. **Frontend types are duplicated.** `apps/web/src/lib/api/types.ts` defines wallet types locally instead of importing from `@vdp/shared`. The shapes match, but they can drift.
-2. **Some mutations are not exposed.** The frontend has no mutation hooks for: `updateTransaction`, `updateSavingsGoal`, `deleteAccount`, or full `updateAccount` (only rename is exposed).
-3. **Frontend test coverage is ~3%.** The backend meets the Tasks testing standard; the frontend does not.
+1. **Frontend response interfaces remain local by design.** Union types are now imported from `@vdp/shared`, but API response interfaces in `apps/web/src/lib/api/types.ts` still live in the web app because they intentionally differ from server/domain types (`string` dates vs `Date`, optional enriched fields).
+2. **Frontend coverage is still lighter than Tasks.** The older `~3% / one file` claim is stale, but Wallet frontend tests still focus on selectors and creation logic rather than full hook/component coverage.
 
 ### 6.3 Product status decision
 
-Wallet's backend is more complete than previously assessed. The remaining gap is:
-
-- frontend test coverage is far below the Tasks standard
-- frontend types should import from `@vdp/shared` instead of duplicating
-- 2 backend services (`WalletEventHandlers`, `DetectSpendingSpike`) lack tests
-- some frontend mutation hooks are missing for operations the backend supports
+Wallet's backend and frontend surface are more complete than previously assessed. The previously documented gaps around missing mutation hooks and missing backend event-handler tests are closed. The remaining difference vs `Tasks` is mainly confidence level, long-term hardening, and broader frontend coverage depth.
 
 ---
 
@@ -358,15 +362,15 @@ That means the current state is a mix of:
 
 ### 7.3 Frontend test coverage debt
 
-This is the clearest current risk:
+This is the clearest current historical risk area, but parts of it are now stale:
 
 - Backend wallet is well-tested (~36 service tests, 6 integration, 11+ e2e)
-- Frontend wallet has ~3% coverage (1 test file out of 31 source files)
-- Frontend tasks refactor has 0 new tests for 25 modified/new files
-- `chat-sync.ts` (cache invalidation for all task mutations) is completely untested
+- Frontend wallet no longer has only one test file; it currently has 30 tests across 3 frontend test files
+- Frontend tasks refactor is no longer in the original zero-test state
+- `chat-sync.ts` (cache invalidation for all task mutations) now has dedicated tests
 - Frontend hooks with complex logic (mutations, cache sync, form transformations) are untested
 
-This means bugs in the frontend data layer will only surface in production.
+This still means frontend data-layer bugs are a meaningful risk, but the Wallet-specific statement above should no longer be read as `~3% coverage with one test file`.
 
 ### 7.4 Date-rule status (verified 2026-04-01)
 
@@ -379,23 +383,38 @@ Remaining `toISOString()` uses are in:
 
 No `.slice(0, 10)` violations found. Date rule is currently clean.
 
-### 7.5 Duplicated frontend types
+### 7.5 Frontend type boundary
 
-`apps/web/src/lib/api/types.ts` defines all wallet types locally instead of importing from `@vdp/shared/types/wallet`. The shapes currently match, but they can drift silently. This should be resolved before Wallet is considered stable.
+This section is partially stale.
 
-### 7.6 Untested backend services
+Current status:
 
-Two wallet services have zero test coverage:
-- `WalletEventHandlers` — if broken, domain events (e.g., spending spike detection) silently fail
-- `DetectSpendingSpike` — business logic algorithm with no validation
+- wallet union types are imported from `@vdp/shared`
+- wallet frontend response interfaces remain local in `apps/web/src/lib/api/types.ts`
 
-### 7.7 Missing frontend mutation hooks
+This is now a boundary decision more than a pure duplication bug. It is acceptable if kept intentional and documented, because frontend response shapes differ from backend/domain types.
 
-The backend supports operations the frontend doesn't expose:
-- `updateTransaction` — no mutation hook
-- `updateSavingsGoal` — no mutation hook
-- `deleteAccount` — no mutation hook
-- Full `updateAccount` — only rename is exposed
+### 7.6 Wallet event-service test status
+
+This section is stale.
+
+Current status:
+
+- `WalletEventHandlers.test.ts` exists
+- `DetectSpendingSpike.test.ts` exists
+
+These services are no longer untested.
+
+### 7.7 Wallet mutation surface
+
+This section is stale.
+
+Current status:
+
+- `updateTransaction` exists
+- `updateSavingsGoal` exists
+- `deleteAccount` exists
+- full `updateAccount` exists
 
 ---
 
@@ -407,8 +426,12 @@ The project should continue with a disciplined sequence.
 
 Stabilize the current repo around:
 
-1. proven `Tasks`
-2. one coherent `Wallet` MVP slice
+1. replace the current shared-secret gate with real multi-user authentication
+2. add user ownership and actor attribution across `Tasks`, `Wallet`, and agent conversations
+3. keep `Tasks` authoritative during the auth transition
+4. preserve `Wallet` as the second active domain while making it user-scoped
+
+Authentication now comes before any new domain expansion.
 
 ### 8.2 Definition of a real Wallet MVP
 
@@ -420,9 +443,9 @@ Wallet should only be considered active when it has:
 4. ~~agent tools over the same services~~ ✅ (15 tools across 6 tool files)
 5. tests following the Tasks template — **partially done** (backend yes, frontend no)
 6. ~~no obvious broken routes in navigation~~ ✅ (all pages render, all API calls have matching backend routes)
-7. frontend types imported from `@vdp/shared` instead of duplicated — **not done**
-8. `WalletEventHandlers` and `DetectSpendingSpike` tested — **not done**
-9. frontend hook/mutation tests at reasonable coverage — **not done (~3%)**
+7. union types imported from `@vdp/shared` while frontend response interfaces remain local by design — **partially done / acceptable current boundary**
+8. `WalletEventHandlers` and `DetectSpendingSpike` tested — ✅
+9. frontend hook/mutation tests at reasonable coverage — **partially done; older `~3%` claim is stale**
 
 ### 8.3 Cross-domain sequencing
 
@@ -508,7 +531,176 @@ Only after Tasks + Wallet are both real:
 
 ---
 
-## 10. Source-of-Truth Notes
+## 10. Authentication Reset Plan
+
+This project is no longer only for personal use. The current `ACCESS_SECRET` mechanism is not sufficient.
+
+The next platform milestone is a clean cutover to real multi-user authentication.
+
+### 10.1 Current auth state to replace
+
+Current behavior in the repo:
+
+- frontend login uses a shared secret
+- backend API access uses the same shared secret
+- there is no `User` model
+- domain data is not owned by a user
+- agent conversations are not scoped to a user
+
+This model should be treated as temporary and should be removed.
+
+### 10.2 Product goal
+
+Introduce a real user model so the system can:
+
+- identify who performed each action
+- isolate each user's Tasks, Wallet data, and conversations
+- support multiple human users safely
+- create a foundation for future authorization and auditability
+
+### 10.3 Migration constraint
+
+Important product decision:
+
+- the app is not currently used by anyone
+- production data can be discarded
+
+This means the project should **not** spend time on backward-compatible auth migration for production.
+
+### 10.4 Delivery strategy
+
+Use a clean auth cutover instead of a legacy migration layer:
+
+1. implement the final multi-user auth model
+2. update the schema to the final user-owned shape
+3. remove the shared-secret auth flow
+4. reset production data
+5. deploy the new auth-aware system
+
+Do **not**:
+
+- backfill legacy production data
+- maintain dual auth modes in production
+- keep `ACCESS_SECRET` as the long-term human login mechanism
+
+### 10.5 Target auth model
+
+Recommended first version:
+
+- first-party users with email + password
+- server-managed sessions
+- `httpOnly` session cookie for the web app
+- backend request auth context with the authenticated user
+- audit log for actor attribution
+
+This is intentionally narrower than full RBAC, organizations, or SSO.
+
+### 10.6 Required new core data
+
+Add to `core`:
+
+- `users`
+- `sessions`
+- `audit_logs`
+
+Recommended semantics:
+
+- `users`: identity and account status
+- `sessions`: browser/server session tracking and revocation
+- `audit_logs`: who did what, when, and to which resource
+
+### 10.7 Ownership model
+
+All user-owned domain records must be explicitly scoped to a user.
+
+Must become user-owned:
+
+- tasks
+- task notes
+- wallet accounts
+- wallet categories
+- wallet transactions
+- wallet savings goals
+- wallet savings contributions
+- wallet investments
+- agent conversations
+
+Can remain shared/system-level:
+
+- exchange rates
+
+### 10.8 Architectural rule for auth
+
+User scoping must not live only in controllers.
+
+Required rule:
+
+- controllers authenticate the request
+- repositories enforce user ownership in reads and writes
+- services remain focused on domain behavior, but accept actor/user context where needed
+
+This is mandatory to avoid accidental cross-user data leaks.
+
+### 10.9 Actor attribution
+
+The system must distinguish:
+
+- user-initiated actions
+- system-initiated actions
+
+Examples:
+
+- a task created from the UI should be attributable to a specific user
+- a task created automatically from `wallet.spending.spike` should be attributable to the system on behalf of that user
+
+This should be captured through actor context and audit logging.
+
+### 10.10 Scope of the first auth release
+
+Must include:
+
+- real users
+- sessions
+- logout/current-user flow
+- per-user Tasks
+- per-user Wallet
+- per-user agent conversations
+- audit log foundation
+- cross-user isolation tests
+
+Must not expand yet into:
+
+- organizations/workspaces
+- fine-grained RBAC
+- social login
+- enterprise SSO
+
+### 10.11 Execution order
+
+Recommended order:
+
+1. finalize auth architecture and request-context shape
+2. add `core.users`, `core.sessions`, and `core.audit_logs`
+3. add ownership columns to user-owned domain tables
+4. scope repositories and agent-conversation storage by user
+5. replace `ACCESS_SECRET` login and API key flow with session auth
+6. update the frontend to bootstrap and enforce session-based auth
+7. add actor attribution for mutations and cross-domain automation
+8. reset production data and deploy the new schema
+9. create the first admin user
+
+### 10.12 Gating rule
+
+Do not start another domain module until:
+
+- auth is multi-user
+- Tasks and Wallet are user-scoped
+- agent conversations are user-scoped
+- cross-user isolation is tested
+
+---
+
+## 11. Source-of-Truth Notes
 
 When reconstructing project state in future sessions:
 
@@ -521,7 +713,7 @@ When reconstructing project state in future sessions:
 Current concise summary:
 
 - `Tasks` is real and stable
-- `Wallet` backend is fully implemented; frontend is implemented but undertested (~3%)
+- `Wallet` is the second active domain and remains newer than `Tasks`
 - the rest are inactive
 - the architecture is sound
-- the current challenge is test coverage, not features — close the frontend gap before adding more
+- the immediate platform challenge is authentication and user ownership, not adding another module
