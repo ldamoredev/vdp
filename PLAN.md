@@ -485,11 +485,19 @@ All must-have tests written and committed. Should-have items 8 and 11 also close
 - History selectors and API client utility tests added to strengthen the baseline
 - Monorepo test commands (`pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`) and conventional commit hook installed
 
-### Phase E — Prove the first cross-domain signal
+### Phase E — Prove the first cross-domain signal ✅
 
-- wire one concrete Wallet-to-Tasks interaction
-- keep it narrow and testable
-- avoid building a general orchestration engine too early
+Spending spike → automatic task creation. When `DetectSpendingSpike` emits `wallet.spending.spike`,
+`CrossDomainEventHandlers` now:
+1. Creates an insight (existing behavior)
+2. Creates a task "Revisar gasto semanal: subió X%" with domain `finanzas`, priority 3, scheduled today
+
+Implementation:
+- `CrossDomainEventHandlers` receives `CreateTask` via dependency injection
+- Task creation is fire-and-forget (errors logged, never block the event bus)
+- Insight creation happens before task creation (always succeeds even if DB is down)
+- 6 tests: insight creation, task creation with correct fields, description details, error resilience, insight-on-failure, unrelated event rejection
+- Wired in `TaskModuleRuntime.subscribeToTaskEvents()`
 
 ### Phase F — Reassess further domains
 

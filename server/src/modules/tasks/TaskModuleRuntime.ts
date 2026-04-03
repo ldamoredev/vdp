@@ -177,7 +177,12 @@ export class TaskModuleRuntime {
         const subscribers = [
             new CheckDailyCompletion(this.taskRepository(), this.deps.eventBus),
             new TaskEventHandlers(this.deps.eventBus, this.deps.insightsStore),
-            new CrossDomainEventHandlers(this.deps.eventBus, this.deps.insightsStore, this.deps.logger),
+            new CrossDomainEventHandlers(
+                this.deps.eventBus,
+                this.deps.insightsStore,
+                this.deps.services.get(CreateTask),
+                this.deps.logger,
+            ),
         ];
 
         for (const subscriber of subscribers) {
