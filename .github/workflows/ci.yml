@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
+  ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -24,12 +29,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build all packages
-        run: pnpm build
+      - name: Build shared package
+        run: pnpm --filter @vdp/shared build
 
       - name: Type check server
         run: pnpm --filter @vdp/server exec tsc --noEmit
 
-      - name: Run unit tests
-        working-directory: server
-        run: pnpm test:unit
+      - name: Type check web
+        run: pnpm --filter @vdp/web exec tsc --noEmit
+
+      - name: Run web unit tests
+        run: pnpm --filter @vdp/web test
+
+      - name: Run server unit tests
+        run: pnpm --filter @vdp/server test:unit
