@@ -9,6 +9,7 @@ import { createTask } from '../fakes/task-factory';
 import { DomainHttpError } from '../../../common/http/errors';
 
 describe('UpdateTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: UpdateTask;
 
@@ -19,7 +20,7 @@ describe('UpdateTask', () => {
     });
 
     it('returns null when task does not exist', async () => {
-        const result = await service.execute('nonexistent', { title: 'New' });
+        const result = await service.execute(userId, 'nonexistent', { title: 'New' });
         expect(result).toBeNull();
     });
 
@@ -27,7 +28,7 @@ describe('UpdateTask', () => {
         const task = createTask({ title: 'Old title' });
         repo.seed([task]);
 
-        const result = await service.execute(task.id, { title: 'New title' });
+        const result = await service.execute(userId, task.id, { title: 'New title' });
 
         expect(result!.title).toBe('New title');
     });
@@ -36,7 +37,7 @@ describe('UpdateTask', () => {
         const task = createTask({ title: 'Original', priority: 3 });
         repo.seed([task]);
 
-        const result = await service.execute(task.id, {
+        const result = await service.execute(userId, task.id, {
             title: 'Updated',
             priority: 1,
             domain: 'health',
@@ -51,9 +52,9 @@ describe('UpdateTask', () => {
         const task = createTask({ title: 'Before' });
         repo.seed([task]);
 
-        await service.execute(task.id, { title: 'After' });
+        await service.execute(userId, task.id, { title: 'After' });
 
-        const saved = await repo.getTask(task.id);
+        const saved = await repo.getTask(userId, task.id);
         expect(saved!.title).toBe('After');
     });
 
@@ -61,7 +62,7 @@ describe('UpdateTask', () => {
         const task = createTask({ status: 'done', completedAt: new Date() });
         repo.seed([task]);
 
-        await expect(service.execute(task.id, { title: 'Nope' }))
+        await expect(service.execute(userId, task.id, { title: 'Nope' }))
             .rejects.toThrow(DomainHttpError);
     });
 
@@ -69,7 +70,7 @@ describe('UpdateTask', () => {
         const task = createTask({ status: 'discarded' });
         repo.seed([task]);
 
-        await expect(service.execute(task.id, { title: 'Nope' }))
+        await expect(service.execute(userId, task.id, { title: 'Nope' }))
             .rejects.toThrow(DomainHttpError);
     });
 
@@ -77,7 +78,7 @@ describe('UpdateTask', () => {
         const task = createTask({ scheduledDate: '2026-03-22', carryOverCount: 0 });
         repo.seed([task]);
 
-        const result = await service.execute(task.id, { scheduledDate: '2026-03-25' });
+        const result = await service.execute(userId, task.id, { scheduledDate: '2026-03-25' });
 
         expect(result!.scheduledDate).toBe('2026-03-25');
         expect(result!.carryOverCount).toBe(0);

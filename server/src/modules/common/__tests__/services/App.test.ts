@@ -8,10 +8,12 @@ import { CreateUserData, UserRecord, UserRepository } from '../../base/auth/User
 import { EventBus } from '../../base/event-bus/EventBus';
 import { DomainModuleDescriptor } from '../../base/modules/DomainModuleDescriptor';
 import { HttpController } from '../../http/HttpController';
+import { AuthContextStorage } from '../../auth/AuthContextStorage';
 
 class FakeCore {
     public readonly eventBus = new EventBus();
     public readonly agentRegistry = new AgentRegistry();
+    private readonly authContextStorage = new AuthContextStorage();
     public startCalls = 0;
     public shutdownCalls = 0;
     private readonly repositories = new Map<abstract new (...args: any[]) => unknown, unknown>([
@@ -31,6 +33,10 @@ class FakeCore {
         }
 
         return repository as T;
+    }
+
+    getAuthContextStorage(): AuthContextStorage {
+        return this.authContextStorage;
     }
 
     getModuleDescriptors(): DomainModuleDescriptor[] {

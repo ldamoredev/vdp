@@ -8,6 +8,7 @@ import { EmbedTask } from '../../services/EmbedTask';
 import { createTask } from '../fakes/task-factory';
 
 describe('AddTaskNote', () => {
+    const userId = 'test-user-id';
     let taskRepo: FakeTaskRepository;
     let noteRepo: FakeTaskNoteRepository;
     let service: AddTaskNote;
@@ -21,9 +22,9 @@ describe('AddTaskNote', () => {
 
     it('creates a note and returns it', async () => {
         const task = createTask({ id: 'task-1' });
-        await taskRepo.save(task);
+        await taskRepo.save(userId, task);
 
-        const note = await service.execute('task-1', 'My note content');
+        const note = await service.execute(userId, 'task-1', 'My note content');
 
         expect(note.taskId).toBe('task-1');
         expect(note.content).toBe('My note content');
@@ -34,26 +35,26 @@ describe('AddTaskNote', () => {
 
     it('supports typed notes for breakdown and blockers', async () => {
         const task = createTask({ id: 'task-1' });
-        await taskRepo.save(task);
+        await taskRepo.save(userId, task);
 
-        const note = await service.execute('task-1', 'Definir entregable', 'breakdown_step');
+        const note = await service.execute(userId, 'task-1', 'Definir entregable', 'breakdown_step');
 
         expect(note.type).toBe('breakdown_step');
     });
 
     it('persists the note in the repository', async () => {
         const task = createTask({ id: 'task-1' });
-        await taskRepo.save(task);
+        await taskRepo.save(userId, task);
 
-        await service.execute('task-1', 'First note');
-        await service.execute('task-1', 'Second note', 'blocker');
+        await service.execute(userId, 'task-1', 'First note');
+        await service.execute(userId, 'task-1', 'Second note', 'blocker');
 
-        const notes = await noteRepo.listNotes('task-1');
+        const notes = await noteRepo.listNotes(userId, 'task-1');
         expect(notes).toHaveLength(2);
         expect(notes[1].type).toBe('blocker');
     });
 
     it('throws when the task does not exist', async () => {
-        await expect(service.execute('missing-task', 'First note')).rejects.toThrow('Task not found');
+        await expect(service.execute(userId, 'missing-task', 'First note')).rejects.toThrow('Task not found');
     });
 });

@@ -5,6 +5,7 @@ import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { createTask } from '../fakes/task-factory';
 
 describe('GetTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let noteRepo: FakeTaskNoteRepository;
     let service: GetTask;
@@ -17,7 +18,7 @@ describe('GetTask', () => {
 
     describe('execute()', () => {
         it('returns null when task does not exist', async () => {
-            const result = await service.execute('nonexistent');
+            const result = await service.execute(userId, 'nonexistent');
             expect(result).toBeNull();
         });
 
@@ -25,7 +26,7 @@ describe('GetTask', () => {
             const task = createTask({ title: 'Find me' });
             repo.seed([task]);
 
-            const result = await service.execute(task.id);
+            const result = await service.execute(userId, task.id);
             expect(result).not.toBeNull();
             expect(result!.title).toBe('Find me');
         });
@@ -33,17 +34,17 @@ describe('GetTask', () => {
 
     describe('executeWithNotes()', () => {
         it('returns null when task does not exist', async () => {
-            const result = await service.executeWithNotes('nonexistent');
+            const result = await service.executeWithNotes(userId, 'nonexistent');
             expect(result).toBeNull();
         });
 
         it('returns task with its notes', async () => {
             const task = createTask({ title: 'With notes' });
             repo.seed([task]);
-            await noteRepo.addNote(task.id, 'Note 1');
-            await noteRepo.addNote(task.id, 'Note 2');
+            await noteRepo.addNote(userId, task.id, 'Note 1');
+            await noteRepo.addNote(userId, task.id, 'Note 2');
 
-            const result = await service.executeWithNotes(task.id);
+            const result = await service.executeWithNotes(userId, task.id);
 
             expect(result).not.toBeNull();
             expect(result!.task.title).toBe('With notes');
@@ -55,7 +56,7 @@ describe('GetTask', () => {
             const task = createTask();
             repo.seed([task]);
 
-            const result = await service.executeWithNotes(task.id);
+            const result = await service.executeWithNotes(userId, task.id);
             expect(result!.notes).toHaveLength(0);
         });
     });

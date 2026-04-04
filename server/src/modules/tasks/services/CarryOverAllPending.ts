@@ -8,12 +8,12 @@ export class CarryOverAllPending {
         private carryOverTask: CarryOverTask,
     ) {}
 
-    async execute(fromDate: string, toDate?: string): Promise<Task[]> {
-        const pendingTasks = await this.repository.getTasksByDateAndStatus(fromDate, "pending");
+    async execute(userId: string, fromDate: string, toDate?: string): Promise<Task[]> {
+        const pendingTasks = await this.repository.getTasksByDateAndStatus(userId, fromDate, "pending");
         const results: Task[] = [];
 
         for (const task of pendingTasks) {
-            const carried = await this.carryOverTask.execute(task.id, toDate);
+            const carried = await this.carryOverTask.execute(userId, task.id, toDate);
             if (carried) results.push(carried);
         }
 

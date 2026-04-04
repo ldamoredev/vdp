@@ -19,8 +19,8 @@ export class GetWeeklySummary {
         private getDayStats: GetDayStats,
     ) {}
 
-    async execute(days: number = 7): Promise<WeeklySummary> {
-        const dailyStats = await this.getDayStats.executeTrend(days);
+    async execute(userId: string, days: number = 7): Promise<WeeklySummary> {
+        const dailyStats = await this.getDayStats.executeTrend(userId, days);
         
         let totalTasks = 0;
         let completedTasks = 0;
@@ -42,7 +42,7 @@ export class GetWeeklySummary {
         const fromStr = localDateISO(fromDate);
         const toStr = todayISO();
 
-        const domainStats = await this.repository.getCompletionByDomain(fromStr, toStr);
+        const domainStats = await this.repository.getCompletionByDomain(userId, fromStr, toStr);
         // Heuristic: the domain with the most tasks is the focus area (or potential "worst" if it has low completion, 
         // but for now we just return the most active one).
         const worstDomain = domainStats.length > 0 

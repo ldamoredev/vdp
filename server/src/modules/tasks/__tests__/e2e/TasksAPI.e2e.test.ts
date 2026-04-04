@@ -28,6 +28,8 @@ async function createTask(data: Record<string, unknown> = {}) {
     return { status: res.statusCode, body: res.json().task ?? res.json() };
 }
 
+const userId = '00000000-0000-0000-0000-000000000001';
+
 describe('Tasks API — E2E', () => {
 
     // ─── CRUD ──────────────────────────────────────
@@ -163,10 +165,10 @@ describe('Tasks API — E2E', () => {
     describe('GET /api/v1/tasks/agent/conversations', () => {
         it('returns persisted task conversations ordered by recency', async () => {
             const agentRepository = testApp.core.getRepository(AgentRepository);
-            const older = await agentRepository.createConversation('tasks', 'Primera conversacion');
+            const older = await agentRepository.createConversation(userId, 'tasks', 'Primera conversacion');
             await agentRepository.createMessage(older.id, 'user', 'hola');
 
-            const newer = await agentRepository.createConversation('tasks', 'Segunda conversacion');
+            const newer = await agentRepository.createConversation(userId, 'tasks', 'Segunda conversacion');
             await agentRepository.createMessage(newer.id, 'user', 'que tengo hoy');
 
             const res = await testApp.app.inject({
@@ -185,7 +187,7 @@ describe('Tasks API — E2E', () => {
     describe('GET /api/v1/tasks/agent/conversations/:id/messages', () => {
         it('returns persisted conversation messages', async () => {
             const agentRepository = testApp.core.getRepository(AgentRepository);
-            const conversation = await agentRepository.createConversation('tasks', 'Historial');
+            const conversation = await agentRepository.createConversation(userId, 'tasks', 'Historial');
             await agentRepository.createMessage(conversation.id, 'user', 'que hice hoy');
             await agentRepository.createAgentMessage(
                 conversation.id,
@@ -213,7 +215,7 @@ describe('Tasks API — E2E', () => {
 
         it('returns 404 for a conversation outside the tasks domain', async () => {
             const agentRepository = testApp.core.getRepository(AgentRepository);
-            const conversation = await agentRepository.createConversation('health', 'Otra conversacion');
+            const conversation = await agentRepository.createConversation(userId, 'health', 'Otra conversacion');
 
             const res = await testApp.app.inject({
                 method: 'GET',

@@ -10,6 +10,7 @@ import { TraceService } from '../../../common/base/observability/trace/TraceServ
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 import { Logger } from '../../../common/base/observability/logging/Logger';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 
 export class TaskAgent extends BaseAgent {
     readonly domain: DomainName = 'tasks';
@@ -25,8 +26,9 @@ export class TaskAgent extends BaseAgent {
         openTelemetry: TraceService,
         agentProvider: AgentProvider,
         logger: Logger,
+        authContextStorage: AuthContextStorage,
     ) {
         super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
-        this.tools = TasksTools.createTasksTools(services, insightsStore);
+        this.tools = TasksTools.createTasksTools(services, authContextStorage, insightsStore);
     }
 }

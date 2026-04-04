@@ -13,15 +13,15 @@ export class GetTask {
         private noteRepository: TaskNoteRepository,
     ) {}
 
-    async execute(id: string): Promise<Task | null> {
-        return this.repository.getTask(id);
+    async execute(userId: string, id: string): Promise<Task | null> {
+        return this.repository.getTask(userId, id);
     }
 
-    async executeWithNotes(id: string): Promise<TaskWithNotes | null> {
-        const task = await this.repository.getTask(id);
+    async executeWithNotes(userId: string, id: string): Promise<TaskWithNotes | null> {
+        const task = await this.repository.getTask(userId, id);
         if (!task) return null;
 
-        const notes = await this.noteRepository.listNotes(id);
+        const notes = await this.noteRepository.listNotes(userId, id);
         return { task, notes };
     }
 }

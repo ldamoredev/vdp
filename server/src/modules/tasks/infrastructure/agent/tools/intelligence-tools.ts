@@ -4,8 +4,9 @@ import { GetPlanningContext } from '../../../services/GetPlanningContext';
 import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createTaskIntelligenceTools(services: ServiceProvider) {
+export function createTaskIntelligenceTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'find_similar_tasks',
@@ -27,7 +28,8 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
                 required: ['query'],
             },
             execute: async (input) => {
-                const results = await services.get(FindSimilarTasks).execute(input.query, input.limit);
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const results = await services.get(FindSimilarTasks).execute(userId, input.query, input.limit);
 
                 if (results.length === 0) {
                     return { message: 'No similar tasks found', results: [] };
@@ -42,7 +44,10 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
                 'Get an aggregated view of the day stats, recent trends, carry-over rate, stuck tasks, and proactive insights. ' +
                 'Use this when the user asks for planning help, a daily summary, or when starting a new day.',
             inputSchema: { type: 'object', properties: {} },
-            execute: async () => services.get(GetPlanningContext).execute(),
+            execute: async () => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetPlanningContext).execute(userId);
+            },
         }),
         jsonTool({
             name: 'get_weekly_summary',
@@ -55,7 +60,10 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
                     days: { type: 'number', description: 'Number of days to summarize (default: 7)' },
                 },
             },
-            execute: async (input) => services.get(GetWeeklySummary).execute(input.days),
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetWeeklySummary).execute(userId, input.days);
+            },
         }),
         jsonTool({
             name: 'get_recommendations',
@@ -70,7 +78,8 @@ export function createTaskIntelligenceTools(services: ServiceProvider) {
                 },
             },
             execute: async (input) => {
-                const review = await services.get(GetEndOfDayReview).execute(input.date);
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const review = await services.get(GetEndOfDayReview).execute(userId, input.date);
                 return {
                     date: review.date,
                     completionRate: review.completionRate,

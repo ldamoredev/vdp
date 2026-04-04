@@ -5,7 +5,7 @@ import * as agentSchema from '../../../common/infrastructure/agents/schema';
 import * as walletSchema from '../../../wallet/schema';
 import * as tasksSchema from '../../infrastructure/db/schema';
 import * as embeddingsSchema from '../../infrastructure/db/embeddings-schema';
-import { DEFAULT_TEST_USER_ID } from '../../../common/http/request-auth';
+const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 const SETUP_SQL = `
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

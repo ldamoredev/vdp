@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { WalletTools } from '../../infrastructure/agent/tools';
 
 describe('WalletTools', () => {
     it('composes the wallet tool registry with accounts, transactions, stats, savings, investments, and exchange rates', () => {
-        const tools = WalletTools.createWalletTools(new ServiceProvider());
+        const tools = WalletTools.createWalletTools(new ServiceProvider(), new AuthContextStorage());
 
         expect(tools.map((tool) => tool.name)).toEqual([
             'get_accounts',

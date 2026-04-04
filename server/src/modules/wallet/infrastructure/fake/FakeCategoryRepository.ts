@@ -23,17 +23,17 @@ export class FakeCategoryRepository extends CategoryRepository {
 
     // ─── CRUD ──────────────────────────────────────────
 
-    async findAll(type?: string): Promise<Category[]> {
+    async findAll(_userId: string, type?: string): Promise<Category[]> {
         const all = Array.from(this.store.values());
         if (type) return all.filter(c => c.type === type);
         return all;
     }
 
-    async findById(id: string): Promise<Category | null> {
+    async findById(_userId: string, id: string): Promise<Category | null> {
         return this.store.get(id) ?? null;
     }
 
-    async create(data: CreateCategoryData): Promise<Category> {
+    async create(_userId: string, data: CreateCategoryData): Promise<Category> {
         const category: Category = {
             id: randomUUID(),
             name: data.name,
@@ -46,7 +46,7 @@ export class FakeCategoryRepository extends CategoryRepository {
         return category;
     }
 
-    async update(id: string, data: UpdateCategoryData): Promise<Category | null> {
+    async update(_userId: string, id: string, data: UpdateCategoryData): Promise<Category | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 

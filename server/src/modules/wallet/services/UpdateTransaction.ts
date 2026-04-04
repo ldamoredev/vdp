@@ -4,7 +4,7 @@ import { TransactionRepository } from '../domain/TransactionRepository';
 export class UpdateTransaction {
     constructor(private readonly transactions: TransactionRepository) {}
 
-    async execute(id: string, data: UpdateTransactionData): Promise<Transaction | null> {
-        return this.transactions.update(id, data);
+    async execute(userId: string, id: string, data: UpdateTransactionData): Promise<Transaction | null> {
+        return this.transactions.update(userId, id, data);
     }
 }

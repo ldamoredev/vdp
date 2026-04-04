@@ -2,8 +2,9 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { CreateAccount } from '../../../services/CreateAccount';
 import { ACCOUNT_TYPES, CURRENCIES, jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createAccountTools(services: ServiceProvider) {
+export function createAccountTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'get_accounts',
@@ -15,7 +16,10 @@ export function createAccountTools(services: ServiceProvider) {
                 properties: {},
                 required: [],
             },
-            execute: async () => services.get(GetAccounts).execute(),
+            execute: async () => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetAccounts).execute(userId);
+            },
         }),
         jsonTool({
             name: 'create_account',
@@ -32,13 +36,15 @@ export function createAccountTools(services: ServiceProvider) {
                 },
                 required: ['name', 'currency', 'type'],
             },
-            execute: async (input) =>
-                services.get(CreateAccount).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(CreateAccount).execute(userId, {
                     name: input.name,
                     currency: input.currency,
                     type: input.type,
                     initialBalance: input.initialBalance,
-                }),
+                });
+            },
         }),
     ];
 }

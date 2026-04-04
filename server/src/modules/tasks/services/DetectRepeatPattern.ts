@@ -11,10 +11,10 @@ export class DetectRepeatPattern {
         private eventBus: EventBus,
     ) {}
 
-    async execute(task: Task): Promise<void> {
+    async execute(userId: string, task: Task): Promise<void> {
         // Find similar tasks from history, with a high threshold to find near-identical ones
-        const similar = await this.findSimilarTasks.execute(task.title, 10, 0.8);
-        
+        const similar = await this.findSimilarTasks.execute(userId, task.title, 10, 0.8);
+
         // Filter out the current task itself and batch-fetch their full records
         const historicalIds = similar
             .map(s => s.taskId)
@@ -22,7 +22,7 @@ export class DetectRepeatPattern {
 
         if (historicalIds.length === 0) return;
 
-        const history = await this.repository.getTasksByIds(historicalIds);
+        const history = await this.repository.getTasksByIds(userId, historicalIds);
 
         const discardedCount = history.filter(h => h.status === 'discarded').length;
         const doneCount = history.filter(h => h.status === 'done').length;
@@ -37,10 +37,11 @@ export class DetectRepeatPattern {
 
         if (pattern) {
             await this.eventBus.emit(new TaskRepeatDetected({
+                userId,
                 taskId: task.id,
                 title: task.title,
                 pattern,
-                previousInstances: history.length
+                previousInstances: history.length,
             }));
         }
     }

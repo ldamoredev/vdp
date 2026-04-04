@@ -23,15 +23,15 @@ export class FakeAccountRepository extends AccountRepository {
 
     // ─── CRUD ──────────────────────────────────────────
 
-    async findAll(): Promise<Account[]> {
+    async findAll(_userId: string): Promise<Account[]> {
         return Array.from(this.store.values());
     }
 
-    async findById(id: string): Promise<Account | null> {
+    async findById(_userId: string, id: string): Promise<Account | null> {
         return this.store.get(id) ?? null;
     }
 
-    async create(data: CreateAccountData): Promise<Account> {
+    async create(_userId: string, data: CreateAccountData): Promise<Account> {
         const now = new Date();
         const account: Account = {
             id: randomUUID(),
@@ -47,7 +47,7 @@ export class FakeAccountRepository extends AccountRepository {
         return account;
     }
 
-    async update(id: string, data: UpdateAccountData): Promise<Account | null> {
+    async update(_userId: string, id: string, data: UpdateAccountData): Promise<Account | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 
@@ -62,7 +62,7 @@ export class FakeAccountRepository extends AccountRepository {
         return updated;
     }
 
-    async delete(id: string): Promise<Account | null> {
+    async delete(_userId: string, id: string): Promise<Account | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 

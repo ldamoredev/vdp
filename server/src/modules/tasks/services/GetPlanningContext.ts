@@ -21,13 +21,13 @@ export class GetPlanningContext {
         private insightsStore: TaskInsightsStore,
     ) {}
 
-    async execute(): Promise<PlanningContext> {
-        const today = await this.getDayStats.executeToday();
-        const recentTrend = await this.getDayStats.executeTrend(7);
-        const carryOver = await this.getCarryOverRate.execute(7);
+    async execute(userId: string): Promise<PlanningContext> {
+        const today = await this.getDayStats.executeToday(userId);
+        const recentTrend = await this.getDayStats.executeTrend(userId, 7);
+        const carryOver = await this.getCarryOverRate.execute(userId, 7);
         const insights = this.insightsStore.getSnapshot();
 
-        const pendingTasks = await this.repository.getTasksByDateAndStatus(todayISO(), 'pending');
+        const pendingTasks = await this.repository.getTasksByDateAndStatus(userId, todayISO(), 'pending');
         const stuckTasks = pendingTasks
             .filter(t => t.carryOverCount >= 3)
             .map(t => ({ id: t.id, title: t.title, carryOverCount: t.carryOverCount }));

@@ -12,6 +12,7 @@ import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
 import { TaskEmbeddingRepository } from '../../domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from '../../domain/TaskNoteRepository';
@@ -39,7 +40,7 @@ class FakeAgentProvider implements AgentProvider {
 }
 
 class FakeAgentRepository extends AgentRepository {
-    async createConversation(domain: string, title: string): Promise<AgentConversationRecord> {
+    async createConversation(_userId: string, domain: string, title: string): Promise<AgentConversationRecord> {
         return {
             id: 'conversation-1',
             userId: 'test-user',
@@ -65,11 +66,12 @@ class FakeAgentRepository extends AgentRepository {
         return [];
     }
 
-    async listConversations(_domain: string, _limit?: number): Promise<AgentConversationRecord[]> {
+    async listConversations(_userId: string, _domain: string, _limit?: number): Promise<AgentConversationRecord[]> {
         return [];
     }
 
     async loadConversationMessages(
+        _userId: string,
         _domain: string,
         _conversationId: string,
     ): Promise<AgentMessageRecord[] | null> {
@@ -113,6 +115,7 @@ function createContext(): ModuleContext {
         agentProvider: new FakeAgentProvider(),
         embeddingProvider: new FakeEmbeddingProvider(),
         logger: new NoOpLogger(),
+        authContextStorage: new AuthContextStorage(),
     };
 }
 

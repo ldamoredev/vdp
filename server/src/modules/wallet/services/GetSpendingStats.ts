@@ -28,7 +28,7 @@ export class GetSpendingStats {
         private readonly categories: CategoryRepository,
     ) {}
 
-    async executeSummary(from?: string, to?: string, accountId?: string): Promise<SpendingSummary> {
+    async executeSummary(userId: string, from?: string, to?: string, accountId?: string): Promise<SpendingSummary> {
         const now = new Date();
         const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
         const defaultTo = localDateISO(now);
@@ -36,7 +36,7 @@ export class GetSpendingStats {
         const effectiveFrom = from ?? defaultFrom;
         const effectiveTo = to ?? defaultTo;
 
-        const result = await this.transactions.list({
+        const result = await this.transactions.list(userId, {
             from: effectiveFrom,
             to: effectiveTo,
             accountId,
@@ -64,12 +64,12 @@ export class GetSpendingStats {
         };
     }
 
-    async executeByCategory(from?: string, to?: string): Promise<CategoryStat[]> {
+    async executeByCategory(userId: string, from?: string, to?: string): Promise<CategoryStat[]> {
         const now = new Date();
         const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
         const defaultTo = localDateISO(now);
 
-        const result = await this.transactions.list({
+        const result = await this.transactions.list(userId, {
             from: from ?? defaultFrom,
             to: to ?? defaultTo,
             type: 'expense',
@@ -77,7 +77,7 @@ export class GetSpendingStats {
             offset: 0,
         });
 
-        const categories = await this.categories.findAll('expense');
+        const categories = await this.categories.findAll(userId, 'expense');
         const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
         const totals = new Map<string | null, { total: number; count: number }>();
 
@@ -99,9 +99,9 @@ export class GetSpendingStats {
             .sort((a, b) => b.total - a.total);
     }
 
-    async executeMonthlyTrend(year?: number): Promise<MonthlyTrendPoint[]> {
+    async executeMonthlyTrend(userId: string, year?: number): Promise<MonthlyTrendPoint[]> {
         const effectiveYear = year ?? new Date().getFullYear();
-        const result = await this.transactions.list({
+        const result = await this.transactions.list(userId, {
             from: `${effectiveYear}-01-01`,
             to: `${effectiveYear}-12-31`,
             limit: 10000,

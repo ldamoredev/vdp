@@ -3,33 +3,32 @@ import { and, eq } from 'drizzle-orm';
 import { investments } from '../../schema';
 import { CreateInvestmentData, Investment, UpdateInvestmentData } from '../../domain/Investment';
 import { InvestmentRepository } from '../../domain/InvestmentRepository';
-import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleInvestmentRepository extends InvestmentRepository {
     constructor(private readonly db: Database) {
         super();
     }
 
-    async findAll(): Promise<Investment[]> {
+    async findAll(userId: string): Promise<Investment[]> {
         return this.db.query
             .select()
             .from(investments)
-            .where(eq(investments.ownerUserId, getScopedUserId()));
+            .where(eq(investments.ownerUserId, userId));
     }
 
-    async findById(id: string): Promise<Investment | null> {
+    async findById(userId: string, id: string): Promise<Investment | null> {
         const [row] = await this.db.query
             .select()
             .from(investments)
-            .where(and(eq(investments.id, id), eq(investments.ownerUserId, getScopedUserId())));
+            .where(and(eq(investments.id, id), eq(investments.ownerUserId, userId)));
         return row ?? null;
     }
 
-    async create(data: CreateInvestmentData): Promise<Investment> {
+    async create(userId: string, data: CreateInvestmentData): Promise<Investment> {
         const [row] = await this.db.query
             .insert(investments)
             .values({
-                ownerUserId: getScopedUserId(),
+                ownerUserId: userId,
                 name: data.name,
                 type: data.type,
                 accountId: data.accountId ?? null,
@@ -59,7 +58,7 @@ export class DrizzleInvestmentRepository extends InvestmentRepository {
         'notes',
     ] as const;
 
-    async update(id: string, data: UpdateInvestmentData): Promise<Investment | null> {
+    async update(userId: string, id: string, data: UpdateInvestmentData): Promise<Investment | null> {
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         for (const field of DrizzleInvestmentRepository.UPDATABLE_FIELDS) {
             if (data[field] !== undefined) updateData[field] = data[field];
@@ -68,7 +67,7 @@ export class DrizzleInvestmentRepository extends InvestmentRepository {
         const [updated] = await this.db.query
             .update(investments)
             .set(updateData)
-            .where(and(eq(investments.id, id), eq(investments.ownerUserId, getScopedUserId())))
+            .where(and(eq(investments.id, id), eq(investments.ownerUserId, userId)))
             .returning();
 
         return updated ?? null;

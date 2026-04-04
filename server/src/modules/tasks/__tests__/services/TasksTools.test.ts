@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { TasksTools } from '../../infrastructure/agent/tools.js';
 
+const authContextStorage = new AuthContextStorage();
+
 describe('TasksTools', () => {
     it('composes the base task tool registry without insights tools by default', () => {
-        const tools = TasksTools.createTasksTools(new ServiceProvider());
+        const tools = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage);
 
         expect(tools.map((tool) => tool.name)).toEqual([
             'create_task',
@@ -30,7 +33,7 @@ describe('TasksTools', () => {
     });
 
     it('adds insight tools when an insights store is available', () => {
-        const tools = TasksTools.createTasksTools(new ServiceProvider(), new TaskInsightsStore());
+        const tools = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, new TaskInsightsStore());
 
         expect(tools.slice(-2).map((tool) => tool.name)).toEqual([
             'get_insights',

@@ -1,31 +1,16 @@
 import { InsightType, NewInsight, StreakData } from './TaskInsightsStore';
+import { TaskCompletedPayload } from '../domain/events/TaskCompleted';
+import { DailyAllCompletedPayload } from '../domain/events/DailyAllCompleted';
+import { TaskStuckPayload } from '../domain/events/TaskStuck';
+import { TasksOverloadedPayload } from '../domain/events/TasksOverloaded';
+import { TaskRepeatDetectedPayload } from '../domain/events/TaskRepeatDetected';
 
-export type TaskCompletedPayload = {
-    taskId: string;
-    scheduledDate: string;
-};
-
-export type DailyAllCompletedPayload = {
-    date: string;
-    count: number;
-};
-
-export type TaskStuckPayload = {
-    taskId: string;
-    title: string;
-    carryOverCount: number;
-};
-
-export type TasksOverloadedPayload = {
-    carryOverRate: number;
-    period: string;
-};
-
-export type TaskRepeatDetectedPayload = {
-    taskId: string;
-    title: string;
-    pattern: string;
-    previousInstances: number;
+export type {
+    TaskCompletedPayload,
+    DailyAllCompletedPayload,
+    TaskStuckPayload,
+    TasksOverloadedPayload,
+    TaskRepeatDetectedPayload,
 };
 
 export class TaskInsightFactory {

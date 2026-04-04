@@ -4,8 +4,9 @@ import { GetCompletionByDomain } from '../../../services/GetCompletionByDomain';
 import { GetDayStats } from '../../../services/GetDayStats';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { EMPTY_OBJECT_SCHEMA, jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createTaskReviewTools(services: ServiceProvider) {
+export function createTaskReviewTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'get_end_of_day_review',
@@ -19,14 +20,20 @@ export function createTaskReviewTools(services: ServiceProvider) {
                 },
                 required: [],
             },
-            execute: async (input) => services.get(GetEndOfDayReview).execute(input.date),
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetEndOfDayReview).execute(userId, input.date);
+            },
         }),
         jsonTool({
             name: 'get_today_stats',
             description:
                 "Get today's task stats: completed, pending, completion rate. Useful when helping the user plan the day or assess load.",
             inputSchema: EMPTY_OBJECT_SCHEMA,
-            execute: async () => services.get(GetDayStats).executeToday(),
+            execute: async () => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetDayStats).executeToday(userId);
+            },
         }),
         jsonTool({
             name: 'get_completion_trend',
@@ -39,7 +46,10 @@ export function createTaskReviewTools(services: ServiceProvider) {
                 },
                 required: [],
             },
-            execute: async (input) => services.get(GetDayStats).executeTrend(input.days || 7),
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetDayStats).executeTrend(userId, input.days || 7);
+            },
         }),
     ];
 }

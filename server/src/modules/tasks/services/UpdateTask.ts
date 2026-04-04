@@ -9,8 +9,8 @@ export class UpdateTask {
         private embedTask: EmbedTask,
     ) {}
 
-    async execute(id: string, data: UpdateTaskData): Promise<Task | null> {
-        const task = await this.repository.getTask(id);
+    async execute(userId: string, id: string, data: UpdateTaskData): Promise<Task | null> {
+        const task = await this.repository.getTask(userId, id);
         if (!task) return null;
 
         if (task.status !== 'pending') {
@@ -24,8 +24,8 @@ export class UpdateTask {
         if (data.domain !== undefined) task.domain = data.domain;
         task.updatedAt = new Date();
 
-        const saved = await this.repository.save(task);
-        this.embedTask.execute(id).catch((err: unknown) => {
+        const saved = await this.repository.save(userId, task);
+        this.embedTask.execute(userId, id).catch((err: unknown) => {
             console.warn('[EmbedTask] failed for task', id, err instanceof Error ? err.message : err);
         });
         return saved;

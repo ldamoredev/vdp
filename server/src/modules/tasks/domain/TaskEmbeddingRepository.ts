@@ -5,7 +5,7 @@ export type SimilarTask = {
 };
 
 export abstract class TaskEmbeddingRepository {
-    abstract upsert(taskId: string, content: string, embedding: number[]): Promise<void>;
-    abstract findSimilar(embedding: number[], limit: number, threshold?: number): Promise<SimilarTask[]>;
-    abstract deleteByTaskId(taskId: string): Promise<void>;
+    abstract upsert(userId: string, taskId: string, content: string, embedding: number[]): Promise<void>;
+    abstract findSimilar(userId: string, embedding: number[], limit: number, threshold?: number): Promise<SimilarTask[]>;
+    abstract deleteByTaskId(userId: string, taskId: string): Promise<void>;
 }

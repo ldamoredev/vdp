@@ -5,6 +5,7 @@ import { createTask } from '../fakes/task-factory';
 import { todayISO, localDateISO } from '../../../common/base/time/dates';
 
 describe('GetDayStats', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: GetDayStats;
     const DATE = '2026-03-18';
@@ -15,7 +16,7 @@ describe('GetDayStats', () => {
     });
 
     it('returns zeroed stats for empty day', async () => {
-        const stats = await service.execute(DATE);
+        const stats = await service.execute(userId, DATE);
 
         expect(stats.date).toBe(DATE);
         expect(stats.total).toBe(0);
@@ -30,7 +31,7 @@ describe('GetDayStats', () => {
             createTask({ scheduledDate: DATE, status: 'pending', carryOverCount: 2 }),
         ]);
 
-        const stats = await service.execute(DATE);
+        const stats = await service.execute(userId, DATE);
 
         expect(stats.total).toBe(4);
         expect(stats.completed).toBe(2);
@@ -43,7 +44,7 @@ describe('GetDayStats', () => {
         const today = todayISO();
         repo.seed([createTask({ scheduledDate: today, status: 'done' })]);
 
-        const stats = await service.executeToday();
+        const stats = await service.executeToday(userId);
         expect(stats.date).toBe(today);
         expect(stats.completed).toBe(1);
     });
@@ -57,7 +58,7 @@ describe('GetDayStats', () => {
             repo.seed([createTask({ scheduledDate: dateStr, status: 'done' })]);
         }
 
-        const trend = await service.executeTrend(3);
+        const trend = await service.executeTrend(userId, 3);
 
         expect(trend).toHaveLength(3);
         trend.forEach((stats) => {

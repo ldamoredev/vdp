@@ -5,6 +5,7 @@ import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { createTask } from '../fakes/task-factory';
 
 describe('DeleteTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let noteRepo: FakeTaskNoteRepository;
     let service: DeleteTask;
@@ -16,7 +17,7 @@ describe('DeleteTask', () => {
     });
 
     it('returns null when task does not exist', async () => {
-        const result = await service.execute('nonexistent');
+        const result = await service.execute(userId, 'nonexistent');
         expect(result).toBeNull();
     });
 
@@ -24,7 +25,7 @@ describe('DeleteTask', () => {
         const task = createTask({ title: 'To delete' });
         repo.seed([task]);
 
-        const result = await service.execute(task.id);
+        const result = await service.execute(userId, task.id);
 
         expect(result!.title).toBe('To delete');
         expect(repo.size).toBe(0);
@@ -33,11 +34,11 @@ describe('DeleteTask', () => {
     it('deletes associated notes before the task', async () => {
         const task = createTask();
         repo.seed([task]);
-        await noteRepo.addNote(task.id, 'Note to delete');
+        await noteRepo.addNote(userId, task.id, 'Note to delete');
 
-        await service.execute(task.id);
+        await service.execute(userId, task.id);
 
-        const notes = await noteRepo.listNotes(task.id);
+        const notes = await noteRepo.listNotes(userId, task.id);
         expect(notes).toHaveLength(0);
         expect(repo.size).toBe(0);
     });

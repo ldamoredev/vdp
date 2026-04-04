@@ -5,6 +5,7 @@ import { createTask } from '../fakes/task-factory';
 import { todayISO } from '../../../common/base/time/dates';
 
 describe('GetCarryOverRate', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: GetCarryOverRate;
 
@@ -16,7 +17,7 @@ describe('GetCarryOverRate', () => {
     });
 
     it('returns 0% when no tasks', async () => {
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         expect(result.total).toBe(0);
         expect(result.carriedOver).toBe(0);
@@ -32,7 +33,7 @@ describe('GetCarryOverRate', () => {
             createTask({ scheduledDate: today, carryOverCount: 0 }),
         ]);
 
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         expect(result.total).toBe(4);
         expect(result.carriedOver).toBe(2);
@@ -45,7 +46,7 @@ describe('GetCarryOverRate', () => {
         ]);
 
         // GetCarryOverRate is a pure query — no EventBus dependency
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         expect(result.rate).toBe(100);
         // No event bus in constructor = CQS compliance verified by design

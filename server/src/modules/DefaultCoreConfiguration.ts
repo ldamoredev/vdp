@@ -18,6 +18,7 @@ import { TaskModule } from './tasks/TaskModule';
 import { WalletModule } from './wallet/WalletModule';
 import { Logger } from './common/base/observability/logging/Logger';
 import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
+import { AuthContextStorage } from './common/auth/AuthContextStorage';
 
 export class DefaultCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -27,6 +28,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
     embeddingProvider: EmbeddingProvider;
     moduleFactories: DomainModuleFactory[];
     logger: Logger;
+    authContextStorage: AuthContextStorage;
 
     constructor() {
         this.logger = new ConsoleLogger();
@@ -35,6 +37,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
         this.traceService = createOpenTelemetryService(process.env, this.logger);
         this.agentProvider = createAgentProvider(process.env);
         this.embeddingProvider = createEmbeddingProvider(process.env);
+        this.authContextStorage = new AuthContextStorage();
         this.moduleFactories = [
             (context) => new TaskModule(context),
             (context) => new WalletModule(context),

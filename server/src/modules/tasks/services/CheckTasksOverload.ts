@@ -19,7 +19,7 @@ export class CheckTasksOverload {
         private eventBus: EventBus,
     ) {}
 
-    async execute(days: number = 7): Promise<OverloadCheckResult> {
+    async execute(userId: string, days: number = 7): Promise<OverloadCheckResult> {
         const fromDate = new Date();
         fromDate.setDate(fromDate.getDate() - (days + 1)); // Exclude today for the baseline
         const fromStr = localDateISO(fromDate);
@@ -27,7 +27,7 @@ export class CheckTasksOverload {
         yesterday.setDate(yesterday.getDate() - 1);
         const toStr = localDateISO(yesterday);
 
-        const { total, carriedOver } = await this.repository.getCarryOverStats(fromStr, toStr);
+        const { total, carriedOver } = await this.repository.getCarryOverStats(userId, fromStr, toStr);
         const rate = total > 0 ? Math.round((carriedOver / total) * 100) : 0;
         
         // Calculate 7-day average completion (done tasks)
@@ -44,17 +44,18 @@ export class CheckTasksOverload {
 
         // Check current load for today
         const todayStr = todayISO();
-        const todayTasks = await this.repository.getTasksByDateAndStatus(todayStr, 'pending');
+        const todayTasks = await this.repository.getTasksByDateAndStatus(userId, todayStr, 'pending');
         const currentLoad = todayTasks.length;
 
         const overloaded = currentLoad > threshold;
 
         if (overloaded) {
             await this.eventBus.emit(new TasksOverloaded({
+                userId,
                 carryOverRate: rate,
                 period: `last_${days}_days`,
                 currentLoad,
-                threshold
+                threshold,
             }));
         }
 

@@ -11,11 +11,11 @@ export class EmbedTask {
         private embeddingProvider: EmbeddingProvider,
     ) {}
 
-    async execute(taskId: string): Promise<void> {
-        const task = await this.taskRepository.getTask(taskId);
+    async execute(userId: string, taskId: string): Promise<void> {
+        const task = await this.taskRepository.getTask(userId, taskId);
         if (!task) return;
 
-        const notes = await this.noteRepository.listNotes(taskId);
+        const notes = await this.noteRepository.listNotes(userId, taskId);
 
         const parts = [task.title];
         if (task.description) parts.push(task.description);
@@ -26,6 +26,6 @@ export class EmbedTask {
         const content = parts.join(' | ');
         const embedding = await this.embeddingProvider.embed(content);
 
-        await this.embeddingRepository.upsert(taskId, content, embedding);
+        await this.embeddingRepository.upsert(userId, taskId, content, embedding);
     }
 }

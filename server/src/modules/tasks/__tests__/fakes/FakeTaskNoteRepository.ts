@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 export class FakeTaskNoteRepository extends TaskNoteRepository {
     private store = new Map<string, TaskNote[]>();
 
-    async addNote(taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
+    async addNote(_userId: string, taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
         const note: TaskNote = {
             id: randomUUID(),
             taskId,
@@ -18,11 +18,11 @@ export class FakeTaskNoteRepository extends TaskNoteRepository {
         return note;
     }
 
-    async listNotes(taskId: string): Promise<TaskNote[]> {
+    async listNotes(_userId: string, taskId: string): Promise<TaskNote[]> {
         return this.store.get(taskId) ?? [];
     }
 
-    async deleteByTaskId(taskId: string): Promise<void> {
+    async deleteByTaskId(_userId: string, taskId: string): Promise<void> {
         this.store.delete(taskId);
     }
 

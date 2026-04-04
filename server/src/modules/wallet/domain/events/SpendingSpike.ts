@@ -1,6 +1,7 @@
 import { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
 
 export type SpendingSpikePayload = {
+    readonly userId: string;
     readonly totalExpenses: string;
     readonly previousAverage: string;
     readonly percentageIncrease: number;

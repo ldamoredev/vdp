@@ -8,7 +8,6 @@ import {
 import { TransactionRepository } from '../../domain/TransactionRepository';
 import { Database } from '../../../common/base/db/Database';
 import { transactions } from '../../schema';
-import { getScopedUserId } from '../../../common/http/request-auth';
 import { and, desc, eq, gte, ilike, lte, sql, SQL } from 'drizzle-orm';
 
 export class DrizzleTransactionRepository extends TransactionRepository {
@@ -16,8 +15,8 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         super();
     }
 
-    async list(filters: TransactionFilters): Promise<PagedTransactions> {
-        const conditions: SQL[] = [eq(transactions.ownerUserId, getScopedUserId())];
+    async list(userId: string, filters: TransactionFilters): Promise<PagedTransactions> {
+        const conditions: SQL[] = [eq(transactions.ownerUserId, userId)];
 
         if (filters.accountId) conditions.push(eq(transactions.accountId, filters.accountId));
         if (filters.categoryId) conditions.push(eq(transactions.categoryId, filters.categoryId));
@@ -52,20 +51,20 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         };
     }
 
-    async findById(id: string): Promise<Transaction | null> {
+    async findById(userId: string, id: string): Promise<Transaction | null> {
         const [row] = await this.db.query
             .select()
             .from(transactions)
-            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())));
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, userId)));
 
         return row ?? null;
     }
 
-    async create(data: CreateTransactionData): Promise<Transaction> {
+    async create(userId: string, data: CreateTransactionData): Promise<Transaction> {
         const [row] = await this.db.query
             .insert(transactions)
             .values({
-                ownerUserId: getScopedUserId(),
+                ownerUserId: userId,
                 accountId: data.accountId,
                 categoryId: data.categoryId ?? null,
                 type: data.type,
@@ -86,7 +85,7 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         'description', 'date', 'transferToAccountId', 'tags',
     ] as const;
 
-    async update(id: string, data: UpdateTransactionData): Promise<Transaction | null> {
+    async update(userId: string, id: string, data: UpdateTransactionData): Promise<Transaction | null> {
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         for (const field of DrizzleTransactionRepository.UPDATABLE_FIELDS) {
             if (data[field] !== undefined) updateData[field] = data[field];
@@ -95,22 +94,22 @@ export class DrizzleTransactionRepository extends TransactionRepository {
         const [updated] = await this.db.query
             .update(transactions)
             .set(updateData)
-            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())))
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, userId)))
             .returning();
 
         return updated ?? null;
     }
 
-    async delete(id: string): Promise<Transaction | null> {
+    async delete(userId: string, id: string): Promise<Transaction | null> {
         const [deleted] = await this.db.query
             .delete(transactions)
-            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, getScopedUserId())))
+            .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, userId)))
             .returning();
 
         return deleted ?? null;
     }
 
-    async sumByAccountId(accountId: string): Promise<string> {
+    async sumByAccountId(userId: string, accountId: string): Promise<string> {
         const [result] = await this.db.query
             .select({
                 balance: sql<string>`
@@ -122,14 +121,14 @@ export class DrizzleTransactionRepository extends TransactionRepository {
                 `,
             })
             .from(transactions)
-            .where(and(eq(transactions.accountId, accountId), eq(transactions.ownerUserId, getScopedUserId())));
+            .where(and(eq(transactions.accountId, accountId), eq(transactions.ownerUserId, userId)));
 
         return result.balance;
     }
 
-    async sumByDateRange(from: string, to: string, accountId?: string): Promise<string> {
+    async sumByDateRange(userId: string, from: string, to: string, accountId?: string): Promise<string> {
         const conditions: SQL[] = [
-            eq(transactions.ownerUserId, getScopedUserId()),
+            eq(transactions.ownerUserId, userId),
             gte(transactions.date, from),
             lte(transactions.date, to),
         ];

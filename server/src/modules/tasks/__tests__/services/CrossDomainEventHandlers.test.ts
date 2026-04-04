@@ -32,6 +32,7 @@ describe('CrossDomainEventHandlers', () => {
         const addSpy = vi.spyOn(insightsStore, 'addInsight');
 
         await eventBus.emit(new SpendingSpike({
+            userId: 'test-user-id',
             totalExpenses: '500.00',
             previousAverage: '250.00',
             percentageIncrease: 100,
@@ -47,6 +48,7 @@ describe('CrossDomainEventHandlers', () => {
 
     it('creates a task on spending spike', async () => {
         await eventBus.emit(new SpendingSpike({
+            userId: 'test-user-id',
             totalExpenses: '500.00',
             previousAverage: '250.00',
             percentageIncrease: 100,
@@ -57,7 +59,7 @@ describe('CrossDomainEventHandlers', () => {
 
         expect(createTask.execute).toHaveBeenCalledOnce();
 
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
         expect(taskData.title).toContain('Revisar gasto semanal');
         expect(taskData.title).toContain('100%');
         expect(taskData.domain).toBe('finanzas');
@@ -67,6 +69,7 @@ describe('CrossDomainEventHandlers', () => {
 
     it('includes expense details in task description', async () => {
         await eventBus.emit(new SpendingSpike({
+            userId: 'test-user-id',
             totalExpenses: '750.00',
             previousAverage: '300.00',
             percentageIncrease: 150,
@@ -75,7 +78,7 @@ describe('CrossDomainEventHandlers', () => {
             periodTo: '2026-03-30',
         }));
 
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
         expect(taskData.description).toContain('$750.00');
         expect(taskData.description).toContain('$300.00');
         expect(taskData.description).toContain('USD');
@@ -86,6 +89,7 @@ describe('CrossDomainEventHandlers', () => {
 
         await expect(
             eventBus.emit(new SpendingSpike({
+                userId: 'test-user-id',
                 totalExpenses: '500.00',
                 previousAverage: '250.00',
                 percentageIncrease: 100,
@@ -101,6 +105,7 @@ describe('CrossDomainEventHandlers', () => {
         const addSpy = vi.spyOn(insightsStore, 'addInsight');
 
         await eventBus.emit(new SpendingSpike({
+            userId: 'test-user-id',
             totalExpenses: '500.00',
             previousAverage: '250.00',
             percentageIncrease: 100,

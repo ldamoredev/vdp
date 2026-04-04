@@ -22,9 +22,9 @@ export class GetEndOfDayReview {
         private recommendationEngine: RecommendationEngine,
     ) {}
 
-    async execute(date?: string): Promise<DayReview> {
+    async execute(userId: string, date?: string): Promise<DayReview> {
         const reviewDate = date || todayISO();
-        const dayTasks = await this.repository.getTasksByDate(reviewDate);
+        const dayTasks = await this.repository.getTasksByDate(userId, reviewDate);
 
         const completed = dayTasks.filter((t) => t.status === "done");
         const pending = dayTasks.filter((t) => t.status === "pending");

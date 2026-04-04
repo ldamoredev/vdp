@@ -27,6 +27,7 @@ describe('WalletEventHandlers', () => {
 
         await eventBus.emit(
             new TransactionCreated({
+                userId: 'test-user-id',
                 transactionId: 'tx-1',
                 type: 'expense',
                 amount: '500',
@@ -49,6 +50,7 @@ describe('WalletEventHandlers', () => {
         await expect(
             eventBus.emit(
                 new TransactionCreated({
+                    userId: 'test-user-id',
                     transactionId: 'tx-1',
                     type: 'expense',
                     amount: '500',
@@ -74,6 +76,7 @@ describe('WalletEventHandlers', () => {
 
         await eventBus.emit(
             new TransactionCreated({
+                userId: 'test-user-id',
                 transactionId: 'tx-1',
                 type: 'expense',
                 amount: '100',
@@ -117,6 +120,7 @@ describe('WalletEventHandlers', () => {
 
         await eventBus.emit(
             new TransactionCreated({
+                userId: 'test-user-id',
                 transactionId: 'tx-1',
                 type: 'expense',
                 amount: '100',

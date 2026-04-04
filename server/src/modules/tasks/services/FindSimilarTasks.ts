@@ -11,9 +11,9 @@ export class FindSimilarTasks {
         private embeddingProvider: EmbeddingProvider,
     ) {}
 
-    async execute(query: string, limit = 5, threshold = 0.7): Promise<SimilarTaskResult[]> {
+    async execute(userId: string, query: string, limit = 5, threshold = 0.7): Promise<SimilarTaskResult[]> {
         const embedding = await this.embeddingProvider.embed(query);
-        const similar = await this.embeddingRepository.findSimilar(embedding, limit, threshold);
+        const similar = await this.embeddingRepository.findSimilar(userId, embedding, limit, threshold);
 
         return similar.map((s) => ({
             ...s,

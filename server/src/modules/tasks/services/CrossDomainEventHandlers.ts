@@ -48,7 +48,7 @@ export class CrossDomainEventHandlers implements EventSubscriber {
         });
 
         this.createTask
-            .execute({
+            .execute(payload.userId, {
                 title: `Revisar gasto semanal: subió ${payload.percentageIncrease}%`,
                 description:
                     `Gasto esta semana: $${payload.totalExpenses} ${payload.currency}. ` +

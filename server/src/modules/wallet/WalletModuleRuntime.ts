@@ -62,6 +62,7 @@ export class WalletModuleRuntime {
                 this.deps.traceService,
                 this.deps.agentProvider,
                 this.deps.logger,
+                this.deps.authContextStorage
             )
         );
     }

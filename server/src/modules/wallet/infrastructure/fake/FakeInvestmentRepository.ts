@@ -11,15 +11,15 @@ export class FakeInvestmentRepository extends InvestmentRepository {
         }
     }
 
-    async findAll(): Promise<Investment[]> {
+    async findAll(_userId: string): Promise<Investment[]> {
         return Array.from(this.store.values());
     }
 
-    async findById(id: string): Promise<Investment | null> {
+    async findById(_userId: string, id: string): Promise<Investment | null> {
         return this.store.get(id) ?? null;
     }
 
-    async create(data: CreateInvestmentData): Promise<Investment> {
+    async create(_userId: string, data: CreateInvestmentData): Promise<Investment> {
         const now = new Date();
         const investment: Investment = {
             id: randomUUID(),
@@ -41,7 +41,7 @@ export class FakeInvestmentRepository extends InvestmentRepository {
         return investment;
     }
 
-    async update(id: string, data: UpdateInvestmentData): Promise<Investment | null> {
+    async update(_userId: string, id: string, data: UpdateInvestmentData): Promise<Investment | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 

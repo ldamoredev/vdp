@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { AgentRepository, AgentConversationRecord, AgentMessageRecord } from '../../../common/base/agents/AgentRepository';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 import { AgentMessage, AgentProviderRequest, AgentProviderResponse, AgentToolResult } from '../../../common/base/agents/providers/types';
@@ -52,7 +53,7 @@ class InMemoryAgentRepository extends AgentRepository {
     private readonly conversations = new Map<string, AgentConversationRecord>();
     private readonly messages = new Map<string, AgentMessageRecord[]>();
 
-    async createConversation(domain: string, title: string): Promise<AgentConversationRecord> {
+    async createConversation(_userId: string, domain: string, title: string): Promise<AgentConversationRecord> {
         this.conversationSeq += 1;
         const now = new Date();
         const conversation: AgentConversationRecord = {
@@ -89,12 +90,13 @@ class InMemoryAgentRepository extends AgentRepository {
         return [...(this.messages.get(conversationId) ?? [])];
     }
 
-    async listConversations(domain: string, limit?: number): Promise<AgentConversationRecord[]> {
+    async listConversations(_userId: string, domain: string, limit?: number): Promise<AgentConversationRecord[]> {
         const matches = Array.from(this.conversations.values()).filter((conversation) => conversation.domain === domain);
         return typeof limit === 'number' ? matches.slice(0, limit) : matches;
     }
 
     async loadConversationMessages(
+        _userId: string,
         domain: string,
         conversationId: string,
     ): Promise<AgentMessageRecord[] | null> {
@@ -176,6 +178,7 @@ function createContext(provider: AgentProvider) {
         agentProvider: provider,
         embeddingProvider: new NoOpEmbeddingProvider(),
         logger: new NoOpLogger(),
+        authContextStorage: new AuthContextStorage(),
     };
 
     new WalletModule(context).bootstrap();
@@ -189,6 +192,15 @@ function createContext(provider: AgentProvider) {
 }
 
 async function runWalletChat(context: ModuleContext, message: string) {
+    context.authContextStorage.setAuthContext({
+        isAuthenticated: true,
+        userId: 'test-user-id',
+        sessionId: 'test-session',
+        role: 'user',
+        email: 'test@test.com',
+        displayName: 'Test User',
+    });
+
     const agent = context.agentRegistry.get('wallet');
     if (!agent) {
         throw new Error('Wallet agent not registered');
@@ -201,6 +213,7 @@ async function runWalletChat(context: ModuleContext, message: string) {
     const errors: string[] = [];
 
     await agent.chat({
+        userId: 'test-user-id',
         message,
         callbacks: {
             onText: (text) => texts.push(text),
@@ -345,7 +358,7 @@ describe('WalletAgent conversational behavior', () => {
             'Actualiza el valor de mi NASDAQ ETF a 1080.25 USD',
         );
 
-        const [updatedInvestment] = await investmentRepo.findAll();
+        const [updatedInvestment] = await investmentRepo.findAll('test-user-id');
 
         expect(result.errors).toEqual([]);
         expect(result.toolUses.map((entry) => entry.tool)).toEqual([

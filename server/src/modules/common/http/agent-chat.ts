@@ -59,6 +59,7 @@ export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBo
 
         try {
             await agent.chat({
+                userId: request.auth.userId!,
                 message: body.message,
                 conversationId: body.conversationId,
                 callbacks: {

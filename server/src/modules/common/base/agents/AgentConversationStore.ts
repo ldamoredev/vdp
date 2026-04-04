@@ -8,19 +8,20 @@ export class AgentConversationStore {
     constructor(private readonly repositories: RepositoryProvider) {}
 
     async ensureConversation(
+        userId: string,
         domain: DomainName,
         message: string,
         conversationId?: string,
     ): Promise<string> {
         if (conversationId) {
-            const existing = await this.agentRepository().loadConversationMessages(domain, conversationId);
+            const existing = await this.agentRepository().loadConversationMessages(userId, domain, conversationId);
             if (!existing) {
                 throw AgentError.conversationNotFound('Conversation not found');
             }
             return conversationId;
         }
 
-        const conversation = await this.agentRepository().createConversation(domain, message.slice(0, 100));
+        const conversation = await this.agentRepository().createConversation(userId, domain, message.slice(0, 100));
         return conversation.id;
     }
 

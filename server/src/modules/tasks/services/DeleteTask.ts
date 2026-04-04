@@ -8,9 +8,9 @@ export class DeleteTask {
         private noteRepository: TaskNoteRepository,
     ) {}
 
-    async execute(id: string): Promise<Task | null> {
+    async execute(userId: string, id: string): Promise<Task | null> {
         // Delete notes first (FK constraint)
-        await this.noteRepository.deleteByTaskId(id);
-        return this.repository.deleteTask(id);
+        await this.noteRepository.deleteByTaskId(userId, id);
+        return this.repository.deleteTask(userId, id);
     }
 }

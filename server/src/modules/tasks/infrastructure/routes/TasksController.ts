@@ -102,147 +102,177 @@ export class TasksController extends HttpController {
     }
 
     private readonly listTasks: RouteContextHandler<undefined, TaskFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetTasks).execute(query!);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetTasks).execute(userId, query!);
         return reply.send(paginatedCollection('tasks', result.tasks, result));
     };
 
     private readonly getTask: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const task = assertFound(
-            await this.services.get(GetTask).executeWithNotes(params!.id),
+            await this.services.get(GetTask).executeWithNotes(userId, params!.id),
             'Task not found',
         );
         return reply.send(task);
     };
 
     private readonly createTask: RouteContextHandler<undefined, { checkDuplicates?: boolean }, CreateTaskBody> = async ({
+        request,
         body,
         query,
         reply,
     }) => {
-        const result = await this.services.get(CreateTask).execute(body!, query?.checkDuplicates);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(CreateTask).execute(userId, body!, query?.checkDuplicates);
         return sendCreated(reply, result);
     };
 
     private readonly updateTask: RouteContextHandler<TaskIdParams, undefined, UpdateTaskBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateTask).execute(params!.id, body!),
+            await this.services.get(UpdateTask).execute(userId, params!.id, body!),
             'Task not found',
         );
         return reply.send(updated);
     };
 
     private readonly deleteTask: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
-        assertFound(await this.services.get(DeleteTask).execute(params!.id), 'Task not found');
+        const userId = request.auth.userId!;
+        assertFound(await this.services.get(DeleteTask).execute(userId, params!.id), 'Task not found');
         return sendMessage(reply, 'Task deleted');
     };
 
     private readonly completeTask: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const completed = assertFound(
-            await this.services.get(CompleteTask).execute(params!.id),
+            await this.services.get(CompleteTask).execute(userId, params!.id),
             'Task not found',
         );
         return reply.send(completed);
     };
 
     private readonly carryOverTask = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
         const params = parseParams(taskIdParamsSchema, request.params);
         const body = parseBody(carryOverSchema, request.body ?? {});
         const carried = assertFound(
-            await this.services.get(CarryOverTask).execute(params.id, body.toDate),
+            await this.services.get(CarryOverTask).execute(userId, params.id, body.toDate),
             'Task not found',
         );
         return reply.send(carried);
     };
 
     private readonly discardTask: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const discarded = assertFound(
-            await this.services.get(DiscardTask).execute(params!.id),
+            await this.services.get(DiscardTask).execute(userId, params!.id),
             'Task not found',
         );
         return reply.send(discarded);
     };
 
     private readonly carryOverAllPending: RouteContextHandler<undefined, undefined, CarryOverAllBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const results = await this.services.get(CarryOverAllPending).execute(body!.fromDate, body!.toDate);
+        const userId = request.auth.userId!;
+        const results = await this.services.get(CarryOverAllPending).execute(userId, body!.fromDate, body!.toDate);
         return reply.send(carryOverResponse(results));
     };
 
     private readonly getTaskNotes: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const result = assertFound(
-            await this.services.get(GetTask).executeWithNotes(params!.id),
+            await this.services.get(GetTask).executeWithNotes(userId, params!.id),
             'Task not found',
         );
         return reply.send(result.notes);
     };
 
     private readonly addTaskNote: RouteContextHandler<TaskIdParams, undefined, CreateTaskNoteBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
-        const note = await this.services.get(AddTaskNote).execute(params!.id, body!.content, body!.type);
+        const userId = request.auth.userId!;
+        const note = await this.services.get(AddTaskNote).execute(userId, params!.id, body!.content, body!.type);
         return sendCreated(reply, note);
     };
 
     private readonly getReview: RouteContextHandler<undefined, ReviewFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetEndOfDayReview).execute(query!.date);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetEndOfDayReview).execute(userId, query!.date);
         return reply.send(result);
     };
 
-    private readonly getTodayStats = async (_request: FastifyRequest, reply: FastifyReply) => {
-        const result = await this.services.get(GetDayStats).executeToday();
+    private readonly getTodayStats = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetDayStats).executeToday(userId);
         return reply.send(result);
     };
 
     private readonly getTrendStats: RouteContextHandler<undefined, TrendFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetDayStats).executeTrend(query!.days);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetDayStats).executeTrend(userId, query!.days);
         return reply.send(result);
     };
 
     private readonly getStatsByDomain: RouteContextHandler<undefined, DomainStatsFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetCompletionByDomain).execute(query!.from, query!.to);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetCompletionByDomain).execute(userId, query!.from, query!.to);
         return reply.send(result);
     };
 
     private readonly getCarryOverRate: RouteContextHandler<undefined, TrendFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetCarryOverRate).execute(query!.days);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetCarryOverRate).execute(userId, query!.days);
         return reply.send(result);
     };
 }

@@ -13,6 +13,7 @@ import { TraceService } from './common/base/observability/trace/TraceService';
 import { AgentProvider } from './common/base/agents/providers/AgentProvider';
 import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { Logger } from './common/base/observability/logging/Logger';
+import { AuthContextStorage } from './common/auth/AuthContextStorage';
 
 export class Core {
     public readonly logger: Logger;
@@ -24,6 +25,7 @@ export class Core {
     private readonly traceService: TraceService;
     private readonly modules: DomainModule[];
     private readonly repositories: RepositoryProvider;
+    private readonly authContextStorage: AuthContextStorage;
     private readonly moduleContext: ModuleContext;
 
     constructor(config: CoreConfig) {
@@ -34,6 +36,7 @@ export class Core {
         this.repositories = config.repositoryProvider;
         this.llmTraceService = config.llmTraceService;
         this.traceService = config.traceService;
+        this.authContextStorage = config.authContextStorage;
         this.moduleContext = this.createModuleContext(config);
         this.modules = this.bootstrapModules(config.moduleFactories);
     }
@@ -50,11 +53,16 @@ export class Core {
             agentProvider: config.agentProvider,
             embeddingProvider: config.embeddingProvider,
             logger: this.logger,
+            authContextStorage: config.authContextStorage
         };
     }
 
     private bootstrapModules(moduleFactories: DomainModuleFactory[]): DomainModule[] {
         return moduleFactories.map(createModule => createModule(this.moduleContext).bootstrap());
+    }
+
+    getAuthContextStorage(): AuthContextStorage {
+        return this.authContextStorage;
     }
 
     getRepository<T>(token: abstract new (...args: any[]) => T): T {
@@ -89,4 +97,5 @@ export interface CoreConfig {
     embeddingProvider: EmbeddingProvider;
     moduleFactories: DomainModuleFactory[];
     logger: Logger;
+    authContextStorage: AuthContextStorage
 }

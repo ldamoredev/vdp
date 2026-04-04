@@ -1,11 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { AuthService } from '../auth/AuthService';
-import { RequestAuthContext, createUnauthenticatedRequestAuth, setRequestAuth } from './request-auth';
+import { AuthContextStorage } from '../auth/AuthContextStorage';
+import { AuthContext } from '../auth/AuthContext';
 
 type PublicPath = '/api/health' | '/api/auth/login' | '/api/auth/register' | '/api/auth/setup';
 
-export class SessionAuthentication {
+export class HttpSessionAuthentication {
     private readonly PUBLIC_PATHS: PublicPath[] = [
         '/api/health',
         '/api/auth/login',
@@ -13,16 +14,16 @@ export class SessionAuthentication {
         '/api/auth/setup',
     ];
 
-    constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService, private readonly authContextStorage: AuthContextStorage) {}
 
     plugin = async (fastify: FastifyInstance) => {
         fastify.decorateRequest('auth');
 
         fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-            const context = createUnauthenticatedRequestAuth();
+            const context = this.authContextStorage.unauthenticatedAuth();
 
             request.auth = { ...context };
-            setRequestAuth({ ...context });
+            this.authContextStorage.setAuthContext({ ...context });
 
             const sessionToken = this.getSessionToken(request);
 
@@ -36,7 +37,7 @@ export class SessionAuthentication {
 
             try {
                 const { user, sessionId } = await this.authService.getAuthenticatedUser(sessionToken);
-                const authenticatedContext: RequestAuthContext = {
+                const authenticatedContext: AuthContext = {
                     isAuthenticated: true,
                     userId: user.id,
                     sessionId,
@@ -45,7 +46,7 @@ export class SessionAuthentication {
                     displayName: user.displayName,
                 };
                 request.auth = authenticatedContext;
-                setRequestAuth({ ...authenticatedContext });
+                this.authContextStorage.setAuthContext({ ...authenticatedContext });
             } catch (error) {
                 if (this.isPublicPath(request.url)) {
                     return;
@@ -59,8 +60,8 @@ export class SessionAuthentication {
         });
 
         fastify.addHook('preHandler', async (request, _reply) => {
-            const currentAuth = request.auth ?? createUnauthenticatedRequestAuth();
-            setRequestAuth({ ...currentAuth });
+            const currentAuth = request.auth ?? this.authContextStorage.unauthenticatedAuth();
+            this.authContextStorage.setAuthContext({ ...currentAuth });
         });
     };
 

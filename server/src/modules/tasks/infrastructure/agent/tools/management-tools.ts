@@ -15,8 +15,9 @@ import {
     ToolInput,
     jsonTool,
 } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createTaskManagementTools(services: ServiceProvider) {
+export function createTaskManagementTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'create_task',
@@ -47,7 +48,9 @@ export function createTaskManagementTools(services: ServiceProvider) {
                 },
                 required: ['title'],
             },
-            execute: async (input) => createTaskWithSimilarityCheck(services, input),
+            execute: async (input) => {
+                return createTaskWithSimilarityCheck(services, authContextStorage, input);
+            },
         }),
         jsonTool({
             name: 'list_tasks',
@@ -72,21 +75,25 @@ export function createTaskManagementTools(services: ServiceProvider) {
                 },
                 required: [],
             },
-            execute: async (input) =>
-                services.get(GetTasks).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetTasks).execute(userId, {
                     scheduledDate: input.scheduledDate || todayISO(),
                     status: input.status,
                     domain: input.domain,
                     priority: input.priority,
-                }),
+                });
+            },
         }),
         jsonTool({
             name: 'get_task',
             description:
                 'Get a task by ID with its notes. Use this before proposing a breakdown or adding clarification notes to an existing task.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
-            execute: async (input) =>
-                (await services.get(GetTask).executeWithNotes(input.taskId)) || { error: 'Task not found' },
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return (await services.get(GetTask).executeWithNotes(userId, input.taskId)) || { error: 'Task not found' };
+            },
         }),
         jsonTool({
             name: 'update_task',
@@ -108,18 +115,21 @@ export function createTaskManagementTools(services: ServiceProvider) {
                 required: ['taskId'],
             },
             execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
                 const { taskId, ...data } = input;
-                return (await services.get(UpdateTask).execute(taskId, data)) || { error: 'Task not found' };
+                return (await services.get(UpdateTask).execute(userId, taskId, data)) || { error: 'Task not found' };
             },
         }),
         jsonTool({
             name: 'delete_task',
             description: 'Permanently delete a task.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
-            execute: async (input) =>
-                (await services.get(DeleteTask).execute(input.taskId))
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return (await services.get(DeleteTask).execute(userId, input.taskId))
                     ? { message: 'Task deleted' }
-                    : { error: 'Task not found' },
+                    : { error: 'Task not found' };
+            },
         }),
         jsonTool({
             name: 'add_task_note',
@@ -139,17 +149,21 @@ export function createTaskManagementTools(services: ServiceProvider) {
                 },
                 required: ['taskId', 'content'],
             },
-            execute: async (input) =>
-                services.get(AddTaskNote).execute(input.taskId, input.content, input.type),
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(AddTaskNote).execute(userId, input.taskId, input.content, input.type);
+            },
         }),
     ];
 }
 
 async function createTaskWithSimilarityCheck(
     services: ServiceProvider,
+    authContextStorage: AuthContextStorage,
     input: ToolInput,
 ): Promise<Record<string, unknown>> {
-    const result = await services.get(CreateTask).execute({
+    const userId = authContextStorage.getRequestAuth().userId!;
+    const result = await services.get(CreateTask).execute(userId, {
         title: input.title,
         description: input.description,
         priority: input.priority,

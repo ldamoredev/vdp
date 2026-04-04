@@ -18,7 +18,7 @@ export type AgentMessageRecord = {
 };
 
 export abstract class AgentRepository {
-    abstract createConversation(domain: string, title: string): Promise<AgentConversationRecord>;
+    abstract createConversation(userId: string, domain: string, title: string): Promise<AgentConversationRecord>;
 
     abstract createMessage(conversationId: string, role: string, message: string): Promise<void>
 
@@ -28,7 +28,7 @@ export abstract class AgentRepository {
 
     abstract loadHistory(conversationId: string): Promise<AgentMessageRecord[]>
 
-    abstract listConversations(domain: string, limit?: number): Promise<AgentConversationRecord[]>
+    abstract listConversations(userId: string, domain: string, limit?: number): Promise<AgentConversationRecord[]>
 
-    abstract loadConversationMessages(domain: string, conversationId: string): Promise<AgentMessageRecord[] | null>
+    abstract loadConversationMessages(userId: string, domain: string, conversationId: string): Promise<AgentMessageRecord[] | null>
 }

@@ -2,18 +2,16 @@ import { Database } from '../../base/db/Database';
 import { AgentConversationRecord, AgentMessageRecord, AgentRepository } from '../../base/agents/AgentRepository';
 import { agentConversations, agentMessages } from './schema';
 import { and, asc, desc, eq } from 'drizzle-orm';
-import { getScopedUserId } from '../../http/request-auth';
-
 export class DrizzleAgentRepository extends AgentRepository {
     constructor(private db: Database) {
         super();
     }
 
-    async createConversation(domain: string, title: string): Promise<AgentConversationRecord> {
+    async createConversation(userId: string, domain: string, title: string): Promise<AgentConversationRecord> {
         const [conv] = await this.db.query
             .insert(agentConversations)
             .values({
-                userId: getScopedUserId(),
+                userId,
                 domain,
                 title,
             })
@@ -53,25 +51,25 @@ export class DrizzleAgentRepository extends AgentRepository {
             .orderBy(asc(agentMessages.createdAt));
     }
 
-    async listConversations(domain: string, limit = 50): Promise<AgentConversationRecord[]> {
+    async listConversations(userId: string, domain: string, limit = 50): Promise<AgentConversationRecord[]> {
         return await this.db.query
             .select()
             .from(agentConversations)
             .where(and(
-                eq(agentConversations.userId, getScopedUserId()),
+                eq(agentConversations.userId, userId),
                 eq(agentConversations.domain, domain),
             ))
             .orderBy(desc(agentConversations.updatedAt))
             .limit(limit);
     }
 
-    async loadConversationMessages(domain: string, conversationId: string): Promise<AgentMessageRecord[] | null> {
+    async loadConversationMessages(userId: string, domain: string, conversationId: string): Promise<AgentMessageRecord[] | null> {
         const [conversation] = await this.db.query
             .select()
             .from(agentConversations)
             .where(and(
                 eq(agentConversations.id, conversationId),
-                eq(agentConversations.userId, getScopedUserId()),
+                eq(agentConversations.userId, userId),
                 eq(agentConversations.domain, domain),
             ))
             .limit(1);

@@ -10,11 +10,11 @@ export class GetAccounts {
         private readonly transactions: TransactionRepository,
     ) {}
 
-    async execute(): Promise<AccountWithBalance[]> {
-        const allAccounts = await this.accounts.findAll();
+    async execute(userId: string): Promise<AccountWithBalance[]> {
+        const allAccounts = await this.accounts.findAll(userId);
         return Promise.all(
             allAccounts.map(async (account) => {
-                const txSum = await this.transactions.sumByAccountId(account.id);
+                const txSum = await this.transactions.sumByAccountId(userId, account.id);
                 const currentBalance = (
                     parseFloat(account.initialBalance) + parseFloat(txSum)
                 ).toFixed(2);

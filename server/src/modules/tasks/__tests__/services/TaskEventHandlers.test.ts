@@ -15,10 +15,10 @@ describe('TaskEventHandlers', () => {
 
         new TaskEventHandlers(eventBus, insightsStore).subscribe();
 
-        await eventBus.emit(new TaskCompleted({ taskId: 'task-1', scheduledDate: '2026-03-22' }));
-        await eventBus.emit(new DailyAllCompleted({ date: '2026-03-22', count: 3 }));
-        await eventBus.emit(new TaskStuck({ taskId: 'task-2', title: 'Cerrar tema', carryOverCount: 3 }));
-        await eventBus.emit(new TasksOverloaded({ carryOverRate: 72, period: 'last_7_days' }));
+        await eventBus.emit(new TaskCompleted({ userId: 'test-user-id', taskId: 'task-1', scheduledDate: '2026-03-22' }));
+        await eventBus.emit(new DailyAllCompleted({ userId: 'test-user-id', date: '2026-03-22', count: 3 }));
+        await eventBus.emit(new TaskStuck({ userId: 'test-user-id', taskId: 'task-2', title: 'Cerrar tema', carryOverCount: 3 }));
+        await eventBus.emit(new TasksOverloaded({ userId: 'test-user-id', carryOverRate: 72, period: 'last_7_days', currentLoad: 8, threshold: 5 }));
 
         const insights = insightsStore.getUnreadInsights();
 

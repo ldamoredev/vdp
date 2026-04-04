@@ -13,12 +13,12 @@ export class DetectSpendingSpike {
         private readonly logger: Logger,
     ) {}
 
-    async execute(): Promise<void> {
+    async execute(userId: string): Promise<void> {
         const now = new Date();
         const thisWeekStart = this.weekStart(now);
         const thisWeekEnd = this.formatDate(now);
 
-        const currentSum = await this.transactions.sumByDateRange(thisWeekStart, thisWeekEnd);
+        const currentSum = await this.transactions.sumByDateRange(userId, thisWeekStart, thisWeekEnd);
         const currentExpenses = Math.abs(parseFloat(currentSum));
 
         if (currentExpenses === 0) return;
@@ -29,6 +29,7 @@ export class DetectSpendingSpike {
             weekEnd.setDate(weekEnd.getDate() - 7 * i);
             const weekStart = this.weekStart(weekEnd);
             const sum = await this.transactions.sumByDateRange(
+                userId,
                 weekStart,
                 this.formatDate(weekEnd),
             );
@@ -49,6 +50,7 @@ export class DetectSpendingSpike {
 
             await this.eventBus.emit(
                 new SpendingSpike({
+                    userId,
                     totalExpenses: currentExpenses.toFixed(2),
                     previousAverage: avgExpenses.toFixed(2),
                     percentageIncrease: Math.round(percentageIncrease),

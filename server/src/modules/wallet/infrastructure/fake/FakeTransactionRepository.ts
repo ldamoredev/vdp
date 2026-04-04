@@ -29,7 +29,7 @@ export class FakeTransactionRepository extends TransactionRepository {
 
     // ─── CRUD ──────────────────────────────────────────
 
-    async list(filters: TransactionFilters): Promise<PagedTransactions> {
+    async list(_userId: string, filters: TransactionFilters): Promise<PagedTransactions> {
         let items = Array.from(this.store.values());
 
         if (filters.accountId) items = items.filter(t => t.accountId === filters.accountId);
@@ -56,11 +56,11 @@ export class FakeTransactionRepository extends TransactionRepository {
         };
     }
 
-    async findById(id: string): Promise<Transaction | null> {
+    async findById(_userId: string, id: string): Promise<Transaction | null> {
         return this.store.get(id) ?? null;
     }
 
-    async create(data: CreateTransactionData): Promise<Transaction> {
+    async create(_userId: string, data: CreateTransactionData): Promise<Transaction> {
         const now = new Date();
         const tx: Transaction = {
             id: randomUUID(),
@@ -80,7 +80,7 @@ export class FakeTransactionRepository extends TransactionRepository {
         return tx;
     }
 
-    async update(id: string, data: UpdateTransactionData): Promise<Transaction | null> {
+    async update(_userId: string, id: string, data: UpdateTransactionData): Promise<Transaction | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 
@@ -95,7 +95,7 @@ export class FakeTransactionRepository extends TransactionRepository {
         return updated;
     }
 
-    async delete(id: string): Promise<Transaction | null> {
+    async delete(_userId: string, id: string): Promise<Transaction | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 
@@ -103,7 +103,7 @@ export class FakeTransactionRepository extends TransactionRepository {
         return existing;
     }
 
-    async sumByAccountId(accountId: string): Promise<string> {
+    async sumByAccountId(_userId: string, accountId: string): Promise<string> {
         let balance = 0;
         for (const tx of this.store.values()) {
             if (tx.accountId !== accountId) continue;
@@ -114,7 +114,7 @@ export class FakeTransactionRepository extends TransactionRepository {
         return balance.toString();
     }
 
-    async sumByDateRange(from: string, to: string, accountId?: string): Promise<string> {
+    async sumByDateRange(_userId: string, from: string, to: string, accountId?: string): Promise<string> {
         let balance = 0;
         for (const tx of this.store.values()) {
             if (tx.date < from || tx.date > to) continue;

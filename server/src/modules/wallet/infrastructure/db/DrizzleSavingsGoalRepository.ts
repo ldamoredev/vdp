@@ -8,33 +8,32 @@ import { SavingsGoalRepository } from '../../domain/SavingsGoalRepository';
 import { Database } from '../../../common/base/db/Database';
 import { savingsContributions, savingsGoals } from '../../schema';
 import { and, eq } from 'drizzle-orm';
-import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {
     constructor(private readonly db: Database) {
         super();
     }
 
-    async findAll(): Promise<SavingsGoal[]> {
+    async findAll(userId: string): Promise<SavingsGoal[]> {
         return this.db.query
             .select()
             .from(savingsGoals)
-            .where(eq(savingsGoals.ownerUserId, getScopedUserId()));
+            .where(eq(savingsGoals.ownerUserId, userId));
     }
 
-    async findById(id: string): Promise<SavingsGoal | null> {
+    async findById(userId: string, id: string): Promise<SavingsGoal | null> {
         const [row] = await this.db.query
             .select()
             .from(savingsGoals)
-            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, getScopedUserId())));
+            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, userId)));
         return row ?? null;
     }
 
-    async create(data: CreateSavingsGoalData): Promise<SavingsGoal> {
+    async create(userId: string, data: CreateSavingsGoalData): Promise<SavingsGoal> {
         const [row] = await this.db.query
             .insert(savingsGoals)
             .values({
-                ownerUserId: getScopedUserId(),
+                ownerUserId: userId,
                 name: data.name,
                 targetAmount: data.targetAmount,
                 currency: data.currency,
@@ -47,7 +46,7 @@ export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {
 
     private static readonly UPDATABLE_FIELDS = ['name', 'targetAmount', 'currency', 'deadline'] as const;
 
-    async update(id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
+    async update(userId: string, id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         for (const field of DrizzleSavingsGoalRepository.UPDATABLE_FIELDS) {
             if (data[field] !== undefined) updateData[field] = data[field];
@@ -56,14 +55,14 @@ export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {
         const [updated] = await this.db.query
             .update(savingsGoals)
             .set(updateData)
-            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, getScopedUserId())))
+            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, userId)))
             .returning();
 
         return updated ?? null;
     }
 
-    async contribute(id: string, data: ContributeSavingsData): Promise<SavingsGoal | null> {
-        const existing = await this.findById(id);
+    async contribute(userId: string, id: string, data: ContributeSavingsData): Promise<SavingsGoal | null> {
+        const existing = await this.findById(userId, id);
         if (!existing) return null;
 
         const nextCurrentAmount = (
@@ -74,7 +73,7 @@ export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {
         await this.db.query
             .insert(savingsContributions)
             .values({
-                ownerUserId: getScopedUserId(),
+                ownerUserId: userId,
                 goalId: id,
                 transactionId: data.transactionId ?? null,
                 amount: data.amount,
@@ -89,7 +88,7 @@ export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {
                 isCompleted,
                 updatedAt: new Date(),
             })
-            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, getScopedUserId())))
+            .where(and(eq(savingsGoals.id, id), eq(savingsGoals.ownerUserId, userId)))
             .returning();
 
         return updated ?? null;

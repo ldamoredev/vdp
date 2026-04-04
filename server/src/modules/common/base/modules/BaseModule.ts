@@ -13,6 +13,7 @@ import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
 import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
 import { Logger } from '../observability/logging/Logger';
+import { AuthContextStorage } from '../../auth/AuthContextStorage';
 
 export abstract class BaseModule implements DomainModule {
     protected readonly repositories: RepositoryProvider;
@@ -25,6 +26,7 @@ export abstract class BaseModule implements DomainModule {
     protected readonly agentProvider: AgentProvider;
     protected readonly embeddingProvider: EmbeddingProvider;
     protected readonly logger: Logger;
+    protected readonly authContextStorage: AuthContextStorage;
 
     constructor(context: ModuleContext) {
         this.repositories = context.repositories;
@@ -37,6 +39,7 @@ export abstract class BaseModule implements DomainModule {
         this.agentProvider = context.agentProvider;
         this.embeddingProvider = context.embeddingProvider;
         this.logger = context.logger;
+        this.authContextStorage = context.authContextStorage;
     }
 
     bootstrap(): this {

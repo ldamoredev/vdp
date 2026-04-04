@@ -16,15 +16,15 @@ export class FakeSavingsGoalRepository extends SavingsGoalRepository {
         }
     }
 
-    async findAll(): Promise<SavingsGoal[]> {
+    async findAll(_userId: string): Promise<SavingsGoal[]> {
         return Array.from(this.store.values());
     }
 
-    async findById(id: string): Promise<SavingsGoal | null> {
+    async findById(_userId: string, id: string): Promise<SavingsGoal | null> {
         return this.store.get(id) ?? null;
     }
 
-    async create(data: CreateSavingsGoalData): Promise<SavingsGoal> {
+    async create(_userId: string, data: CreateSavingsGoalData): Promise<SavingsGoal> {
         const now = new Date();
         const goal: SavingsGoal = {
             id: randomUUID(),
@@ -41,7 +41,7 @@ export class FakeSavingsGoalRepository extends SavingsGoalRepository {
         return goal;
     }
 
-    async update(id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
+    async update(_userId: string, id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 
@@ -54,7 +54,7 @@ export class FakeSavingsGoalRepository extends SavingsGoalRepository {
         return updated;
     }
 
-    async contribute(id: string, data: ContributeSavingsData): Promise<SavingsGoal | null> {
+    async contribute(_userId: string, id: string, data: ContributeSavingsData): Promise<SavingsGoal | null> {
         const existing = this.store.get(id);
         if (!existing) return null;
 

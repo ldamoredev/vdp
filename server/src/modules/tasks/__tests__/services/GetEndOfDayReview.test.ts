@@ -6,6 +6,7 @@ import { createTask } from '../fakes/task-factory';
 import { todayISO } from '../../../common/base/time/dates';
 
 describe('GetEndOfDayReview', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: GetEndOfDayReview;
     const DATE = '2026-03-18';
@@ -16,7 +17,7 @@ describe('GetEndOfDayReview', () => {
     });
 
     it('returns zeroed review when no tasks', async () => {
-        const review = await service.execute(DATE);
+        const review = await service.execute(userId, DATE);
 
         expect(review.date).toBe(DATE);
         expect(review.total).toBe(0);
@@ -36,7 +37,7 @@ describe('GetEndOfDayReview', () => {
             createTask({ scheduledDate: DATE, status: 'discarded' }),
         ]);
 
-        const review = await service.execute(DATE);
+        const review = await service.execute(userId, DATE);
 
         expect(review.total).toBe(4);
         expect(review.completed).toBe(2);
@@ -53,7 +54,7 @@ describe('GetEndOfDayReview', () => {
             createTask({ scheduledDate: DATE, status: 'done' }),
         ]);
 
-        const review = await service.execute(DATE);
+        const review = await service.execute(userId, DATE);
 
         expect(review.pendingTasks).toHaveLength(1);
         expect(review.pendingTasks[0].title).toBe('Still pending');
@@ -63,7 +64,7 @@ describe('GetEndOfDayReview', () => {
         const today = todayISO();
         repo.seed([createTask({ scheduledDate: today, status: 'done' })]);
 
-        const review = await service.execute();
+        const review = await service.execute(userId);
 
         expect(review.date).toBe(today);
         expect(review.total).toBe(1);

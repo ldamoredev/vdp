@@ -4,6 +4,7 @@ import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { createTask } from '../fakes/task-factory';
 
 describe('GetCompletionByDomain', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: GetCompletionByDomain;
 
@@ -15,7 +16,7 @@ describe('GetCompletionByDomain', () => {
     it('returns empty array when no completed tasks', async () => {
         repo.seed([createTask({ status: 'pending', domain: 'work' })]);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
         expect(result).toHaveLength(0);
     });
 
@@ -27,7 +28,7 @@ describe('GetCompletionByDomain', () => {
             createTask({ status: 'pending', domain: 'work' }),
         ]);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
 
         const workStat = result.find((s) => s.domain === 'work');
         const healthStat = result.find((s) => s.domain === 'health');
@@ -43,7 +44,7 @@ describe('GetCompletionByDomain', () => {
             createTask({ status: 'done', domain: 'work', scheduledDate: '2026-03-25' }),
         ]);
 
-        const result = await service.execute('2026-03-15', '2026-03-20');
+        const result = await service.execute(userId, '2026-03-15', '2026-03-20');
 
         expect(result).toHaveLength(1);
         expect(result[0].count).toBe(1);

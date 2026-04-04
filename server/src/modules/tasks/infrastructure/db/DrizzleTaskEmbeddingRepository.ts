@@ -3,16 +3,14 @@ import { TaskEmbeddingRepository, SimilarTask } from '../../domain/TaskEmbedding
 import { taskEmbeddings } from './embeddings-schema';
 import { tasks } from './schema';
 import { and, eq, sql } from 'drizzle-orm';
-import { getScopedUserId } from '../../../common/http/request-auth';
 
 export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
     constructor(private db: Database) {
         super();
     }
 
-    async upsert(taskId: string, content: string, embedding: number[]): Promise<void> {
+    async upsert(userId: string, taskId: string, content: string, embedding: number[]): Promise<void> {
         const vectorLiteral = `[${embedding.join(',')}]`;
-        const userId = getScopedUserId();
 
         const [task] = await this.db.query
             .select({ id: tasks.id })
@@ -41,9 +39,8 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
             });
     }
 
-    async findSimilar(embedding: number[], limit: number, threshold = 0.7): Promise<SimilarTask[]> {
+    async findSimilar(userId: string, embedding: number[], limit: number, threshold = 0.7): Promise<SimilarTask[]> {
         const vectorLiteral = `[${embedding.join(',')}]`;
-        const userId = getScopedUserId();
 
         const result = await this.db.query.execute(sql`
             WITH ranked AS (
@@ -73,8 +70,7 @@ export class DrizzleTaskEmbeddingRepository extends TaskEmbeddingRepository {
         }));
     }
 
-    async deleteByTaskId(taskId: string): Promise<void> {
-        const userId = getScopedUserId();
+    async deleteByTaskId(userId: string, taskId: string): Promise<void> {
         await this.db.query.execute(sql`
             DELETE FROM tasks.task_embeddings embeddings
             USING tasks.tasks task

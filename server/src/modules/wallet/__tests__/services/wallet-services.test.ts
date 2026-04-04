@@ -124,6 +124,8 @@ function createExchangeRate(overrides: Partial<ExchangeRate> = {}): ExchangeRate
 
 // ─── Tests ──────────────────────────────────────────
 
+const userId = 'test-user-id';
+
 describe('GetAccounts', () => {
     let accountRepo: FakeAccountRepository;
     let txRepo: FakeTransactionRepository;
@@ -136,7 +138,7 @@ describe('GetAccounts', () => {
     });
 
     it('returns empty array when no accounts', async () => {
-        const result = await service.execute();
+        const result = await service.execute(userId);
         expect(result).toHaveLength(0);
     });
 
@@ -147,7 +149,7 @@ describe('GetAccounts', () => {
             createTransaction({ id: 'tx-2', accountId: 'acc-1', type: 'expense', amount: '200' }),
         ]);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
 
         expect(result).toHaveLength(1);
         // 1000 + 500 - 200 = 1300
@@ -166,7 +168,7 @@ describe('CreateAccount', () => {
     });
 
     it('creates account with valid data', async () => {
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             name: 'Savings',
             currency: 'USD',
             type: 'savings',
@@ -182,7 +184,7 @@ describe('CreateAccount', () => {
     });
 
     it('creates account with default initialBalance', async () => {
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             name: 'Empty',
             currency: 'ARS',
             type: 'cash',
@@ -204,14 +206,14 @@ describe('UpdateAccount', () => {
     it('updates existing account', async () => {
         accountRepo.seed([createAccount({ id: 'acc-1', name: 'Old Name' })]);
 
-        const result = await service.execute('acc-1', { name: 'New Name' });
+        const result = await service.execute(userId, 'acc-1', { name: 'New Name' });
 
         expect(result).not.toBeNull();
         expect(result!.name).toBe('New Name');
     });
 
     it('returns null for non-existent id', async () => {
-        const result = await service.execute('non-existent', { name: 'Test' });
+        const result = await service.execute(userId, 'non-existent', { name: 'Test' });
         expect(result).toBeNull();
     });
 });
@@ -228,7 +230,7 @@ describe('DeleteAccount', () => {
     it('deletes existing account', async () => {
         accountRepo.seed([createAccount({ id: 'acc-1' })]);
 
-        const result = await service.execute('acc-1');
+        const result = await service.execute(userId, 'acc-1');
 
         expect(result).not.toBeNull();
         expect(result!.id).toBe('acc-1');
@@ -236,7 +238,7 @@ describe('DeleteAccount', () => {
     });
 
     it('returns null for non-existent id', async () => {
-        const result = await service.execute('non-existent');
+        const result = await service.execute(userId, 'non-existent');
         expect(result).toBeNull();
     });
 });
@@ -251,7 +253,7 @@ describe('GetTransactions', () => {
     });
 
     it('returns empty paginated result', async () => {
-        const result = await service.execute({});
+        const result = await service.execute(userId, {});
 
         expect(result.transactions).toHaveLength(0);
         expect(result.total).toBe(0);
@@ -264,7 +266,7 @@ describe('GetTransactions', () => {
             createTransaction({ id: 'tx-3', accountId: 'acc-1' }),
         ]);
 
-        const result = await service.execute({ accountId: 'acc-1' });
+        const result = await service.execute(userId, { accountId: 'acc-1' });
 
         expect(result.transactions).toHaveLength(2);
         expect(result.transactions.every(t => t.accountId === 'acc-1')).toBe(true);
@@ -279,7 +281,7 @@ describe('GetTransactions', () => {
             createTransaction({ id: 'tx-5', date: '2026-03-05' }),
         ]);
 
-        const result = await service.execute({ limit: 2, offset: 1 });
+        const result = await service.execute(userId, { limit: 2, offset: 1 });
 
         expect(result.transactions).toHaveLength(2);
         expect(result.total).toBe(5);
@@ -305,7 +307,7 @@ describe('CreateTransaction', () => {
             emitted.push(event);
         });
 
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             accountId: 'acc-1',
             type: 'expense',
             amount: '250.50',
@@ -328,7 +330,7 @@ describe('CreateTransaction', () => {
             emitted.push(event);
         });
 
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             accountId: 'acc-1',
             type: 'income',
             amount: '1000',
@@ -358,14 +360,14 @@ describe('UpdateTransaction', () => {
     it('updates existing transaction', async () => {
         txRepo.seed([createTransaction({ id: 'tx-1', description: 'Old' })]);
 
-        const result = await service.execute('tx-1', { description: 'Updated' });
+        const result = await service.execute(userId, 'tx-1', { description: 'Updated' });
 
         expect(result).not.toBeNull();
         expect(result!.description).toBe('Updated');
     });
 
     it('returns null for non-existent id', async () => {
-        const result = await service.execute('non-existent', { description: 'Test' });
+        const result = await service.execute(userId, 'non-existent', { description: 'Test' });
         expect(result).toBeNull();
     });
 });
@@ -382,7 +384,7 @@ describe('DeleteTransaction', () => {
     it('deletes existing transaction', async () => {
         txRepo.seed([createTransaction({ id: 'tx-1' })]);
 
-        const result = await service.execute('tx-1');
+        const result = await service.execute(userId, 'tx-1');
 
         expect(result).not.toBeNull();
         expect(result!.id).toBe('tx-1');
@@ -390,7 +392,7 @@ describe('DeleteTransaction', () => {
     });
 
     it('returns null for non-existent id', async () => {
-        const result = await service.execute('non-existent');
+        const result = await service.execute(userId, 'non-existent');
         expect(result).toBeNull();
     });
 });
@@ -410,7 +412,7 @@ describe('GetCategories', () => {
             createCategory({ id: 'cat-2', type: 'income' }),
         ]);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
 
         expect(result).toHaveLength(2);
     });
@@ -422,7 +424,7 @@ describe('GetCategories', () => {
             createCategory({ id: 'cat-3', type: 'expense' }),
         ]);
 
-        const result = await service.execute('expense');
+        const result = await service.execute(userId, 'expense');
 
         expect(result).toHaveLength(2);
         expect(result.every(c => c.type === 'expense')).toBe(true);
@@ -439,7 +441,7 @@ describe('CreateCategory', () => {
     });
 
     it('creates category', async () => {
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             name: 'Transport',
             type: 'expense',
             icon: 'bus',
@@ -465,7 +467,7 @@ describe('GetSpendingStats', () => {
     });
 
     it('returns zero summary when no transactions', async () => {
-        const result = await service.executeSummary('2026-01-01', '2026-12-31');
+        const result = await service.executeSummary(userId, '2026-01-01', '2026-12-31');
 
         expect(result.totalIncome).toBe('0.00');
         expect(result.totalExpenses).toBe('0.00');
@@ -481,7 +483,7 @@ describe('GetSpendingStats', () => {
             createTransaction({ id: 'tx-4', type: 'expense', amount: '200', date: '2026-03-18' }),
         ]);
 
-        const result = await service.executeSummary('2026-03-01', '2026-03-31');
+        const result = await service.executeSummary(userId, '2026-03-01', '2026-03-31');
 
         expect(result.totalIncome).toBe('4500.00');
         expect(result.totalExpenses).toBe('1000.00');
@@ -501,7 +503,7 @@ describe('GetSpendingStats', () => {
             createTransaction({ id: 'tx-4', type: 'income', amount: '1000', date: '2026-03-12' }),
         ]);
 
-        const result = await service.executeByCategory('2026-03-01', '2026-03-31');
+        const result = await service.executeByCategory(userId, '2026-03-01', '2026-03-31');
 
         expect(result).toHaveLength(2);
         expect(result[0]).toMatchObject({
@@ -526,7 +528,7 @@ describe('GetSpendingStats', () => {
             createTransaction({ id: 'tx-4', type: 'expense', amount: '300', date: '2026-02-15' }),
         ]);
 
-        const result = await service.executeMonthlyTrend(2026);
+        const result = await service.executeMonthlyTrend(userId, 2026);
 
         expect(result).toEqual([
             { month: '2026-01', income: 1000, expense: 200 },
@@ -546,7 +548,7 @@ describe('Savings goals', () => {
         goalRepo.seed([createSavingsGoal(), createSavingsGoal({ id: 'goal-2', name: 'Vacation' })]);
         const service = new GetSavingsGoals(goalRepo);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
 
         expect(result).toHaveLength(2);
     });
@@ -554,7 +556,7 @@ describe('Savings goals', () => {
     it('creates a savings goal', async () => {
         const service = new CreateSavingsGoal(goalRepo);
 
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             name: 'Laptop',
             targetAmount: '2500',
             currency: 'USD',
@@ -570,7 +572,7 @@ describe('Savings goals', () => {
         goalRepo.seed([createSavingsGoal({ id: 'goal-1', name: 'Old goal' })]);
         const service = new UpdateSavingsGoal(goalRepo);
 
-        const result = await service.execute('goal-1', { name: 'Updated goal' });
+        const result = await service.execute(userId, 'goal-1', { name: 'Updated goal' });
 
         expect(result?.name).toBe('Updated goal');
     });
@@ -579,7 +581,7 @@ describe('Savings goals', () => {
         goalRepo.seed([createSavingsGoal({ id: 'goal-1', targetAmount: '1000', currentAmount: '900' })]);
         const service = new ContributeSavings(goalRepo);
 
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             goalId: 'goal-1',
             amount: '150',
             date: '2026-03-20',
@@ -601,7 +603,7 @@ describe('Investments', () => {
         investmentRepo.seed([createInvestment(), createInvestment({ id: 'inv-2', name: 'Cedear NVDA' })]);
         const service = new GetInvestments(investmentRepo);
 
-        const result = await service.execute();
+        const result = await service.execute(userId);
 
         expect(result).toHaveLength(2);
     });
@@ -609,7 +611,7 @@ describe('Investments', () => {
     it('creates an investment', async () => {
         const service = new CreateInvestment(investmentRepo);
 
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             name: 'Plazo fijo',
             type: 'plazo_fijo',
             currency: 'ARS',
@@ -626,7 +628,7 @@ describe('Investments', () => {
         investmentRepo.seed([createInvestment({ id: 'inv-1', currentValue: '1000' })]);
         const service = new UpdateInvestment(investmentRepo);
 
-        const result = await service.execute('inv-1', { currentValue: '1250' });
+        const result = await service.execute(userId, 'inv-1', { currentValue: '1250' });
 
         expect(result?.currentValue).toBe('1250');
     });

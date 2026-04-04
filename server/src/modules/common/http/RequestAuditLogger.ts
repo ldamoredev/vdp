@@ -1,14 +1,14 @@
 import { FastifyInstance } from 'fastify';
 
 import { AuditLogRepository } from '../base/auth/AuditLogRepository';
-import { getRequestAuth } from './request-auth';
+import { AuthContextStorage } from '../auth/AuthContextStorage';
 
 export class RequestAuditLogger {
-    constructor(private readonly auditLogs: AuditLogRepository) {}
+    constructor(private readonly auditLogs: AuditLogRepository, private readonly authContextStorage: AuthContextStorage) {}
 
     plugin = async (fastify: FastifyInstance) => {
         fastify.addHook('onResponse', async (request, reply) => {
-            const auth = getRequestAuth();
+            const auth = this.authContextStorage.getRequestAuth();
             if (!auth.userId) return;
             if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return;
             if (request.url.startsWith('/api/health')) return;

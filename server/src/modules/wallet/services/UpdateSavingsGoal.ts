@@ -4,7 +4,7 @@ import { SavingsGoalRepository } from '../domain/SavingsGoalRepository';
 export class UpdateSavingsGoal {
     constructor(private readonly goals: SavingsGoalRepository) {}
 
-    async execute(id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
-        return this.goals.update(id, data);
+    async execute(userId: string, id: string, data: UpdateSavingsGoalData): Promise<SavingsGoal | null> {
+        return this.goals.update(userId, id, data);
     }
 }

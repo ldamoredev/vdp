@@ -7,6 +7,7 @@ import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
 import { todayISO, localDateISO } from '../../../common/base/time/dates';
 
 describe('CheckTasksOverload', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let eventBus: EventBus;
     let service: CheckTasksOverload;
@@ -41,7 +42,7 @@ describe('CheckTasksOverload', () => {
         );
         repo.seed(current);
 
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         expect(result.overloaded).toBe(false);
         expect(result.threshold).toBe(3);
@@ -61,7 +62,7 @@ describe('CheckTasksOverload', () => {
         );
         repo.seed(current);
 
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         expect(result.overloaded).toBe(true);
         expect(result.threshold).toBe(3);
@@ -91,7 +92,7 @@ describe('CheckTasksOverload', () => {
         ];
         repo.seed(historical);
 
-        const result = await service.execute(7);
+        const result = await service.execute(userId, 7);
 
         // Avg completion = 70/7 = 10.
         // Base threshold = ceil(10 * 1.5) = 15.

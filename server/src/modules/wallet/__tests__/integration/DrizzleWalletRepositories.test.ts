@@ -5,6 +5,7 @@ import { DrizzleTransactionRepository } from '../../infrastructure/db/DrizzleTra
 import { DrizzleSavingsGoalRepository } from '../../infrastructure/db/DrizzleSavingsGoalRepository';
 import { DrizzleInvestmentRepository } from '../../infrastructure/db/DrizzleInvestmentRepository';
 import { DrizzleExchangeRateRepository } from '../../infrastructure/db/DrizzleExchangeRateRepository';
+const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 import { testDb } from './test-database';
 
 const accountRepo = new DrizzleAccountRepository(testDb as never);
@@ -18,43 +19,45 @@ beforeEach(async () => {
     await testDb.truncate();
 });
 
+const userId = DEFAULT_TEST_USER_ID;
+
 describe('Drizzle wallet repositories', () => {
     describe('accounts', () => {
         it('creates, updates, lists, and deletes accounts', async () => {
-            const created = await accountRepo.create({
+            const created = await accountRepo.create(userId, {
                 name: 'Primary',
                 currency: 'ARS',
                 type: 'bank',
                 initialBalance: '1500.50',
             });
 
-            const listed = await accountRepo.findAll();
+            const listed = await accountRepo.findAll(userId);
             expect(listed).toHaveLength(1);
             expect(listed[0].name).toBe('Primary');
 
-            const updated = await accountRepo.update(created.id, { name: 'Main account' });
+            const updated = await accountRepo.update(userId, created.id, { name: 'Main account' });
             expect(updated).not.toBeNull();
             expect(updated!.name).toBe('Main account');
             expect(updated!.initialBalance).toBe('1500.50');
 
-            const deleted = await accountRepo.delete(created.id);
+            const deleted = await accountRepo.delete(userId, created.id);
             expect(deleted?.id).toBe(created.id);
-            await expect(accountRepo.findById(created.id)).resolves.toBeNull();
+            await expect(accountRepo.findById(userId, created.id)).resolves.toBeNull();
         });
     });
 
     describe('categories and transactions', () => {
         it('persists transaction filters, ordering, and account sums', async () => {
-            const account = await accountRepo.create({
+            const account = await accountRepo.create(userId, {
                 name: 'Checking',
                 currency: 'ARS',
                 type: 'bank',
                 initialBalance: '1000',
             });
-            const groceries = await categoryRepo.create({ name: 'Groceries', type: 'expense' });
-            const salary = await categoryRepo.create({ name: 'Salary', type: 'income' });
+            const groceries = await categoryRepo.create(userId, { name: 'Groceries', type: 'expense' });
+            const salary = await categoryRepo.create(userId, { name: 'Salary', type: 'income' });
 
-            const older = await transactionRepo.create({
+            const older = await transactionRepo.create(userId, {
                 accountId: account.id,
                 categoryId: groceries.id,
                 type: 'expense',
@@ -64,7 +67,7 @@ describe('Drizzle wallet repositories', () => {
                 date: '2026-03-10',
                 tags: ['food'],
             });
-            await transactionRepo.create({
+            await transactionRepo.create(userId, {
                 accountId: account.id,
                 categoryId: salary.id,
                 type: 'income',
@@ -74,7 +77,7 @@ describe('Drizzle wallet repositories', () => {
                 date: '2026-03-12',
                 tags: ['salary'],
             });
-            const newer = await transactionRepo.create({
+            const newer = await transactionRepo.create(userId, {
                 accountId: account.id,
                 categoryId: groceries.id,
                 type: 'expense',
@@ -85,7 +88,7 @@ describe('Drizzle wallet repositories', () => {
                 tags: ['food', 'market'],
             });
 
-            const filtered = await transactionRepo.list({
+            const filtered = await transactionRepo.list(userId, {
                 type: 'expense',
                 search: 'Groceries',
                 from: '2026-03-01',
@@ -97,24 +100,24 @@ describe('Drizzle wallet repositories', () => {
             expect(filtered.total).toBe(2);
             expect(filtered.transactions.map((transaction) => transaction.id)).toEqual([newer.id, older.id]);
 
-            const accountBalanceDelta = await transactionRepo.sumByAccountId(account.id);
+            const accountBalanceDelta = await transactionRepo.sumByAccountId(userId, account.id);
             expect(accountBalanceDelta).toBe('699.75');
 
-            const rangedNet = await transactionRepo.sumByDateRange('2026-03-11', '2026-03-31', account.id);
+            const rangedNet = await transactionRepo.sumByDateRange(userId, '2026-03-11', '2026-03-31', account.id);
             expect(rangedNet).toBe('820.00');
         });
     });
 
     describe('savings goals', () => {
         it('tracks contributions and completion state', async () => {
-            const goal = await savingsGoalRepo.create({
+            const goal = await savingsGoalRepo.create(userId, {
                 name: 'Emergency fund',
                 targetAmount: '500.00',
                 currency: 'USD',
                 deadline: '2026-12-31',
             });
 
-            const afterFirstContribution = await savingsGoalRepo.contribute(goal.id, {
+            const afterFirstContribution = await savingsGoalRepo.contribute(userId, goal.id, {
                 amount: '200.00',
                 date: '2026-03-20',
                 note: 'Initial transfer',
@@ -123,7 +126,7 @@ describe('Drizzle wallet repositories', () => {
             expect(afterFirstContribution!.currentAmount).toBe('200.00');
             expect(afterFirstContribution!.isCompleted).toBe(false);
 
-            const completed = await savingsGoalRepo.contribute(goal.id, {
+            const completed = await savingsGoalRepo.contribute(userId, goal.id, {
                 amount: '300.00',
                 date: '2026-03-21',
             });
@@ -135,14 +138,14 @@ describe('Drizzle wallet repositories', () => {
 
     describe('investments', () => {
         it('creates and updates investments without losing optional fields', async () => {
-            const account = await accountRepo.create({
+            const account = await accountRepo.create(userId, {
                 name: 'Brokerage',
                 currency: 'USD',
                 type: 'investment',
                 initialBalance: '0',
             });
 
-            const created = await investmentRepo.create({
+            const created = await investmentRepo.create(userId, {
                 name: 'S&P 500 ETF',
                 type: 'cedear',
                 accountId: account.id,
@@ -154,7 +157,7 @@ describe('Drizzle wallet repositories', () => {
                 notes: 'Long term position',
             });
 
-            const updated = await investmentRepo.update(created.id, {
+            const updated = await investmentRepo.update(userId, created.id, {
                 currentValue: '1180.75',
                 notes: 'Revalued after earnings',
             });

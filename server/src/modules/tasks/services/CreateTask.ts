@@ -15,15 +15,15 @@ export class CreateTask {
         private findSimilarTasks: FindSimilarTasks,
     ) {}
 
-    async execute(data: CreateTaskData, checkDuplicates = false): Promise<CreateTaskResult> {
+    async execute(userId: string, data: CreateTaskData, checkDuplicates = false): Promise<CreateTaskResult> {
         let similarTasks: SimilarTaskResult[] | undefined;
 
         if (checkDuplicates) {
-            similarTasks = await this.findSimilarTasks.execute(data.title, 3, 0.6);
+            similarTasks = await this.findSimilarTasks.execute(userId, data.title, 3, 0.6);
         }
 
-        const task = await this.repository.createTask(data);
-        this.embedTask.execute(task.id).catch((err: unknown) => {
+        const task = await this.repository.createTask(userId, data);
+        this.embedTask.execute(userId, task.id).catch((err: unknown) => {
             console.warn('[EmbedTask] failed for task', task.id, err instanceof Error ? err.message : err);
         });
 

@@ -1,23 +1,23 @@
 import { Task, TaskStatus } from './Task';
 
 export abstract class TaskRepository {
-    abstract getTask(id: string): Promise<Task | null>;
-    abstract getTasksByIds(ids: string[]): Promise<Task[]>;
-    abstract listTasks(filters: TaskFilters): Promise<PagedTasks>;
-    abstract createTask(data: CreateTaskData): Promise<Task>;
-    abstract updateTask(id: string, data: UpdateTaskData): Promise<Task | null>;
-    abstract deleteTask(id: string): Promise<Task | null>;
+    abstract getTask(userId: string, id: string): Promise<Task | null>;
+    abstract getTasksByIds(userId: string, ids: string[]): Promise<Task[]>;
+    abstract listTasks(userId: string, filters: TaskFilters): Promise<PagedTasks>;
+    abstract createTask(userId: string, data: CreateTaskData): Promise<Task>;
+    abstract updateTask(userId: string, id: string, data: UpdateTaskData): Promise<Task | null>;
+    abstract deleteTask(userId: string, id: string): Promise<Task | null>;
 
-    abstract save(task: Task): Promise<Task>;
+    abstract save(userId: string, task: Task): Promise<Task>;
 
-    abstract getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]>;
-    abstract getTasksByDate(date: string): Promise<Task[]>;
-    abstract countByDateAndStatus(date: string, status: TaskStatus): Promise<number>;
-    abstract countByDate(date: string): Promise<DateCounts>;
-    abstract getTrendByDateRange(fromDate: string, toDate: string): Promise<DateTrendRow[]>;
+    abstract getTasksByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<Task[]>;
+    abstract getTasksByDate(userId: string, date: string): Promise<Task[]>;
+    abstract countByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<number>;
+    abstract countByDate(userId: string, date: string): Promise<DateCounts>;
+    abstract getTrendByDateRange(userId: string, fromDate: string, toDate: string): Promise<DateTrendRow[]>;
 
-    abstract getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]>;
-    abstract getCarryOverStats(fromDate: string, toDate: string): Promise<CarryOverStats>;
+    abstract getCompletionByDomain(userId: string, from?: string, to?: string): Promise<DomainStat[]>;
+    abstract getCarryOverStats(userId: string, fromDate: string, toDate: string): Promise<CarryOverStats>;
 }
 
 export type TaskFilters = {

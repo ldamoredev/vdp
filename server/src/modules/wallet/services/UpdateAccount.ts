@@ -4,7 +4,7 @@ import { AccountRepository } from '../domain/AccountRepository';
 export class UpdateAccount {
     constructor(private readonly accounts: AccountRepository) {}
 
-    async execute(id: string, data: UpdateAccountData): Promise<Account | null> {
-        return this.accounts.update(id, data);
+    async execute(userId: string, id: string, data: UpdateAccountData): Promise<Account | null> {
+        return this.accounts.update(userId, id, data);
     }
 }

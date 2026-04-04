@@ -18,6 +18,7 @@ import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbed
 import { DomainModuleFactory } from '../../../common/base/modules/DomainModuleFactory';
 import { Logger } from '../../../common/base/observability/logging/Logger';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
 
 export class TestCoreConfiguration implements CoreConfig {
@@ -28,6 +29,7 @@ export class TestCoreConfiguration implements CoreConfig {
     embeddingProvider: EmbeddingProvider;
     moduleFactories: DomainModuleFactory[];
     logger: Logger;
+    authContextStorage: AuthContextStorage;
 
     constructor() {
         this.logger = new NoOpLogger();
@@ -36,6 +38,7 @@ export class TestCoreConfiguration implements CoreConfig {
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();
         this.embeddingProvider = new NoOpEmbeddingProvider();
+        this.authContextStorage = new AuthContextStorage();
         this.moduleFactories = [(context) => new TaskModule(context)];
     }
 }

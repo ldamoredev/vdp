@@ -4,8 +4,9 @@ import { CreateSavingsGoal } from '../../../services/CreateSavingsGoal';
 import { UpdateSavingsGoal } from '../../../services/UpdateSavingsGoal';
 import { ContributeSavings } from '../../../services/ContributeSavings';
 import { CURRENCIES, jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createSavingsTools(services: ServiceProvider) {
+export function createSavingsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'list_savings_goals',
@@ -16,7 +17,10 @@ export function createSavingsTools(services: ServiceProvider) {
                 properties: {},
                 required: [],
             },
-            execute: async () => services.get(GetSavingsGoals).execute(),
+            execute: async () => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetSavingsGoals).execute(userId);
+            },
         }),
         jsonTool({
             name: 'create_savings_goal',
@@ -35,13 +39,15 @@ export function createSavingsTools(services: ServiceProvider) {
                 },
                 required: ['name', 'targetAmount', 'currency'],
             },
-            execute: async (input) =>
-                services.get(CreateSavingsGoal).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(CreateSavingsGoal).execute(userId, {
                     name: input.name,
                     targetAmount: input.targetAmount,
                     currency: input.currency,
                     deadline: input.deadline ?? null,
-                }),
+                });
+            },
         }),
         jsonTool({
             name: 'update_savings_goal',
@@ -62,7 +68,8 @@ export function createSavingsTools(services: ServiceProvider) {
                 required: ['goalId'],
             },
             execute: async (input) => {
-                const goal = await services.get(UpdateSavingsGoal).execute(input.goalId, {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const goal = await services.get(UpdateSavingsGoal).execute(userId, input.goalId, {
                     name: input.name,
                     targetAmount: input.targetAmount,
                     currency: input.currency,
@@ -87,7 +94,8 @@ export function createSavingsTools(services: ServiceProvider) {
                 required: ['goalId', 'amount'],
             },
             execute: async (input) => {
-                const goal = await services.get(ContributeSavings).execute({
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const goal = await services.get(ContributeSavings).execute(userId, {
                     goalId: input.goalId,
                     amount: input.amount,
                     date: input.date,

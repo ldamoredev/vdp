@@ -10,8 +10,8 @@ export class CompleteTask {
         private eventBus: EventBus,
     ) {}
 
-    async execute(id: string): Promise<Task | null> {
-        const task = await this.repository.getTask(id);
+    async execute(userId: string, id: string): Promise<Task | null> {
+        const task = await this.repository.getTask(userId, id);
         if (!task) return null;
 
         if (task.status !== 'pending') {
@@ -19,9 +19,10 @@ export class CompleteTask {
         }
 
         task.complete();
-        const saved = await this.repository.save(task);
+        const saved = await this.repository.save(userId, task);
 
         await this.eventBus.emit(new TaskCompleted({
+            userId,
             taskId: saved.id,
             scheduledDate: saved.scheduledDate,
         }));

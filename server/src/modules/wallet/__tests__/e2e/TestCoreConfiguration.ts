@@ -14,6 +14,7 @@ import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbed
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 import { WalletModule } from '../../WalletModule';
 
 export class TestCoreConfiguration implements CoreConfig {
@@ -24,6 +25,7 @@ export class TestCoreConfiguration implements CoreConfig {
     embeddingProvider: EmbeddingProvider;
     moduleFactories: DomainModuleFactory[];
     logger: Logger;
+    authContextStorage: AuthContextStorage;
 
     constructor() {
         this.logger = new NoOpLogger();
@@ -32,6 +34,7 @@ export class TestCoreConfiguration implements CoreConfig {
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();
         this.embeddingProvider = new NoOpEmbeddingProvider();
+        this.authContextStorage = new AuthContextStorage();
         this.moduleFactories = [(context) => new WalletModule(context)];
     }
 }

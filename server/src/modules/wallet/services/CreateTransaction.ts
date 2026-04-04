@@ -9,10 +9,11 @@ export class CreateTransaction {
         private readonly eventBus: EventBus,
     ) {}
 
-    async execute(data: CreateTransactionData): Promise<Transaction> {
-        const tx = await this.transactions.create(data);
+    async execute(userId: string, data: CreateTransactionData): Promise<Transaction> {
+        const tx = await this.transactions.create(userId, data);
         await this.eventBus.emit(
             new TransactionCreated({
+                userId,
                 transactionId: tx.id,
                 type: tx.type,
                 amount: tx.amount,

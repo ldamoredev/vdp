@@ -3,8 +3,9 @@ import { GetInvestments } from '../../../services/GetInvestments';
 import { CreateInvestment } from '../../../services/CreateInvestment';
 import { UpdateInvestment } from '../../../services/UpdateInvestment';
 import { CURRENCIES, INVESTMENT_TYPES, jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createInvestmentTools(services: ServiceProvider) {
+export function createInvestmentTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'list_investments',
@@ -15,7 +16,10 @@ export function createInvestmentTools(services: ServiceProvider) {
                 properties: {},
                 required: [],
             },
-            execute: async () => services.get(GetInvestments).execute(),
+            execute: async () => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetInvestments).execute(userId);
+            },
         }),
         jsonTool({
             name: 'create_investment',
@@ -37,8 +41,9 @@ export function createInvestmentTools(services: ServiceProvider) {
                 },
                 required: ['name', 'type', 'currency', 'investedAmount', 'currentValue', 'startDate'],
             },
-            execute: async (input) =>
-                services.get(CreateInvestment).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(CreateInvestment).execute(userId, {
                     name: input.name,
                     type: input.type,
                     accountId: input.accountId ?? null,
@@ -49,7 +54,8 @@ export function createInvestmentTools(services: ServiceProvider) {
                     endDate: input.endDate ?? null,
                     rate: input.rate ?? null,
                     notes: input.notes ?? null,
-                }),
+                });
+            },
         }),
         jsonTool({
             name: 'update_investment',
@@ -73,7 +79,8 @@ export function createInvestmentTools(services: ServiceProvider) {
                 required: ['investmentId'],
             },
             execute: async (input) => {
-                const investment = await services.get(UpdateInvestment).execute(input.investmentId, {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const investment = await services.get(UpdateInvestment).execute(userId, input.investmentId, {
                     name: input.name,
                     type: input.type,
                     accountId: 'accountId' in input ? input.accountId : undefined,

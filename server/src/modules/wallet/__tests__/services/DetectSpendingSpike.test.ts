@@ -49,6 +49,7 @@ describe('DetectSpendingSpike', () => {
     let eventBus: EventBus;
     let service: DetectSpendingSpike;
     const logger = new NoOpLogger();
+    const userId = 'test-user-id';
 
     beforeEach(() => {
         transactions = new FakeTransactionRepository();
@@ -60,7 +61,7 @@ describe('DetectSpendingSpike', () => {
         const emitted: DomainEvent[] = [];
         eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(0);
     });
@@ -78,7 +79,7 @@ describe('DetectSpendingSpike', () => {
 
         transactions.seed([createTransaction({ amount: '500', date: todayStr })]);
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(0);
     });
@@ -102,7 +103,7 @@ describe('DetectSpendingSpike', () => {
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         transactions.seed([createTransaction({ amount: '200', date: todayStr })]);
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(1);
 
@@ -132,7 +133,7 @@ describe('DetectSpendingSpike', () => {
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         transactions.seed([createTransaction({ amount: '140', date: todayStr })]);
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(0);
     });
@@ -156,7 +157,7 @@ describe('DetectSpendingSpike', () => {
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         transactions.seed([createTransaction({ amount: '150', date: todayStr })]);
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(1);
         const payload = emitted[0].payload as Record<string, unknown>;
@@ -182,7 +183,7 @@ describe('DetectSpendingSpike', () => {
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         transactions.seed([createTransaction({ amount: '-200', date: todayStr })]);
 
-        await service.execute();
+        await service.execute(userId);
 
         expect(emitted).toHaveLength(1);
     });

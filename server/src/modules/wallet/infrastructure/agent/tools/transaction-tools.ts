@@ -3,8 +3,9 @@ import { todayISO } from '../../../../common/base/time/dates';
 import { GetTransactions } from '../../../services/GetTransactions';
 import { CreateTransaction } from '../../../services/CreateTransaction';
 import { CURRENCIES, TRANSACTION_TYPES, jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createTransactionTools(services: ServiceProvider) {
+export function createTransactionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'list_transactions',
@@ -24,8 +25,9 @@ export function createTransactionTools(services: ServiceProvider) {
                 },
                 required: [],
             },
-            execute: async (input) =>
-                services.get(GetTransactions).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetTransactions).execute(userId, {
                     accountId: input.accountId,
                     categoryId: input.categoryId,
                     type: input.type,
@@ -34,7 +36,8 @@ export function createTransactionTools(services: ServiceProvider) {
                     search: input.search,
                     limit: input.limit ?? 50,
                     offset: 0,
-                }),
+                });
+            },
         }),
         jsonTool({
             name: 'log_transaction',
@@ -56,8 +59,9 @@ export function createTransactionTools(services: ServiceProvider) {
                 },
                 required: ['accountId', 'type', 'amount', 'currency'],
             },
-            execute: async (input) =>
-                services.get(CreateTransaction).execute({
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(CreateTransaction).execute(userId, {
                     accountId: input.accountId,
                     type: input.type,
                     amount: input.amount,
@@ -67,7 +71,8 @@ export function createTransactionTools(services: ServiceProvider) {
                     categoryId: input.categoryId ?? null,
                     transferToAccountId: input.transferToAccountId ?? null,
                     tags: input.tags ?? [],
-                }),
+                });
+            },
         }),
     ];
 }

@@ -5,8 +5,8 @@ export class GetTasks {
     constructor(private repository: TaskRepository) {
     }
 
-    async execute(filters: Request) {
-        return await this.repository.listTasks(filters);
+    async execute(userId: string, filters: Request) {
+        return await this.repository.listTasks(userId, filters);
     }
 }
 

@@ -8,6 +8,7 @@ import { EmbedTask } from '../../services/EmbedTask';
 import { FindSimilarTasks } from '../../services/FindSimilarTasks';
 
 describe('CreateTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let service: CreateTask;
     let findSimilar: FindSimilarTasks;
@@ -22,7 +23,7 @@ describe('CreateTask', () => {
     });
 
     it('creates a task with required fields', async () => {
-        const result = await service.execute({ title: 'New task' });
+        const result = await service.execute(userId, { title: 'New task' });
 
         expect(result.task.title).toBe('New task');
         expect(result.task.status).toBe('pending');
@@ -31,7 +32,7 @@ describe('CreateTask', () => {
     });
 
     it('creates a task with all optional fields', async () => {
-        const result = await service.execute({
+        const result = await service.execute(userId, {
             title: 'Full task',
             description: 'A description',
             priority: 1,
@@ -48,14 +49,14 @@ describe('CreateTask', () => {
 
     it('returns similar tasks when checkDuplicates is true', async () => {
         // Setup: Create an existing task and its embedding
-        await repo.createTask({ title: 'Existing similar task' });
+        await repo.createTask(userId, { title: 'Existing similar task' });
         // Manually setup simulation since Fakes might not automatically embed on create in this test setup
         const embeddingRepo = (service as any).findSimilarTasks.embeddingRepository;
         const provider = (service as any).findSimilarTasks.embeddingProvider;
         const embedding = await provider.embed('Existing similar task');
-        await embeddingRepo.upsert('task-1', 'Existing similar task', embedding);
+        await embeddingRepo.upsert(userId, 'task-1', 'Existing similar task', embedding);
 
-        const result = await service.execute({ title: 'Existing similar task' }, true);
+        const result = await service.execute(userId, { title: 'Existing similar task' }, true);
 
         expect(result.similarTasks).toBeDefined();
         expect(result.similarTasks?.length).toBeGreaterThan(0);

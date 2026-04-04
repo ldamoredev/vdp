@@ -13,6 +13,8 @@ import {
 } from '@vdp/shared';
 import { z } from 'zod';
 
+import { FastifyRequest, FastifyReply } from 'fastify';
+
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { paginatedCollection, sendCreated, sendMessage } from '../../../common/http/responses';
 import { ServiceResolver } from '../../../common/http/ServiceResolver';
@@ -141,93 +143,112 @@ export class WalletController extends HttpController {
 
     // ─── Accounts ────────────────────────────────────────────
 
-    private readonly listAccounts = async (_request: unknown, reply: { send: (data: unknown) => void }) => {
-        const accounts = await this.services.get(GetAccounts).execute();
+    private readonly listAccounts = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
+        const accounts = await this.services.get(GetAccounts).execute(userId);
         return reply.send(accounts);
     };
 
     private readonly createAccount: RouteContextHandler<undefined, undefined, CreateAccountBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const account = await this.services.get(CreateAccount).execute(body!);
+        const userId = request.auth.userId!;
+        const account = await this.services.get(CreateAccount).execute(userId, body!);
         return sendCreated(reply, account);
     };
 
     private readonly updateAccount: RouteContextHandler<IdParams, undefined, UpdateAccountBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateAccount).execute(params!.id, body!),
+            await this.services.get(UpdateAccount).execute(userId, params!.id, body!),
             'Account not found',
         );
         return reply.send(updated);
     };
 
     private readonly deleteAccount: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
-        assertFound(await this.services.get(DeleteAccount).execute(params!.id), 'Account not found');
+        const userId = request.auth.userId!;
+        assertFound(await this.services.get(DeleteAccount).execute(userId, params!.id), 'Account not found');
         return sendMessage(reply, 'Account deleted');
     };
 
     // ─── Categories ──────────────────────────────────────────
 
     private readonly listCategories: RouteContextHandler<undefined, CategoryQuery, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const categories = await this.services.get(GetCategories).execute(query?.type);
+        const userId = request.auth.userId!;
+        const categories = await this.services.get(GetCategories).execute(userId, query?.type);
         return reply.send(categories);
     };
 
     private readonly createCategory: RouteContextHandler<undefined, undefined, CreateCategoryBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const category = await this.services.get(CreateCategory).execute(body!);
+        const userId = request.auth.userId!;
+        const category = await this.services.get(CreateCategory).execute(userId, body!);
         return sendCreated(reply, category);
     };
 
     // ─── Transactions ────────────────────────────────────────
 
     private readonly listTransactions: RouteContextHandler<undefined, TransactionFilters, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetTransactions).execute(query!);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetTransactions).execute(userId, query!);
         return reply.send(paginatedCollection('transactions', result.transactions, result));
     };
 
     private readonly createTransaction: RouteContextHandler<undefined, undefined, CreateTransactionBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const tx = await this.services.get(CreateTransaction).execute(body!);
+        const userId = request.auth.userId!;
+        const tx = await this.services.get(CreateTransaction).execute(userId, body!);
         return sendCreated(reply, tx);
     };
 
     private readonly updateTransaction: RouteContextHandler<IdParams, undefined, UpdateTransactionBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateTransaction).execute(params!.id, body!),
+            await this.services.get(UpdateTransaction).execute(userId, params!.id, body!),
             'Transaction not found',
         );
         return reply.send(updated);
     };
 
     private readonly deleteTransaction: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         assertFound(
-            await this.services.get(DeleteTransaction).execute(params!.id),
+            await this.services.get(DeleteTransaction).execute(userId, params!.id),
             'Transaction not found',
         );
         return sendMessage(reply, 'Transaction deleted');
@@ -236,63 +257,76 @@ export class WalletController extends HttpController {
     // ─── Stats ───────────────────────────────────────────────
 
     private readonly getStatsSummary: RouteContextHandler<undefined, StatsQuery, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetSpendingStats).executeSummary(query?.from, query?.to);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetSpendingStats).executeSummary(userId, query?.from, query?.to);
         return reply.send(result);
     };
 
     private readonly getStatsByCategory: RouteContextHandler<undefined, StatsQuery, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetSpendingStats).executeByCategory(query?.from, query?.to);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetSpendingStats).executeByCategory(userId, query?.from, query?.to);
         return reply.send(result);
     };
 
     private readonly getMonthlyTrend: RouteContextHandler<undefined, StatsQuery, undefined> = async ({
+        request,
         query,
         reply,
     }) => {
-        const result = await this.services.get(GetSpendingStats).executeMonthlyTrend(query?.year);
+        const userId = request.auth.userId!;
+        const result = await this.services.get(GetSpendingStats).executeMonthlyTrend(userId, query?.year);
         return reply.send(result);
     };
 
     // ─── Savings ───────────────────────────────────────────
 
-    private readonly listSavingsGoals = async (_request: unknown, reply: { send: (data: unknown) => void }) => {
-        const goals = await this.services.get(GetSavingsGoals).execute();
+    private readonly listSavingsGoals = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
+        const goals = await this.services.get(GetSavingsGoals).execute(userId);
         return reply.send(goals);
     };
 
     private readonly createSavingsGoal: RouteContextHandler<undefined, undefined, CreateSavingsGoalBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const goal = await this.services.get(CreateSavingsGoal).execute(body!);
+        const userId = request.auth.userId!;
+        const goal = await this.services.get(CreateSavingsGoal).execute(userId, body!);
         return sendCreated(reply, goal);
     };
 
     private readonly updateSavingsGoal: RouteContextHandler<IdParams, undefined, UpdateSavingsGoalBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateSavingsGoal).execute(params!.id, body!),
+            await this.services.get(UpdateSavingsGoal).execute(userId, params!.id, body!),
             'Savings goal not found',
         );
         return reply.send(updated);
     };
 
     private readonly contributeSavings: RouteContextHandler<IdParams, undefined, ContributionBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(ContributeSavings).execute({
+            await this.services.get(ContributeSavings).execute(userId, {
                 goalId: params!.id,
                 amount: body!.amount,
                 date: body!.date,
@@ -306,26 +340,31 @@ export class WalletController extends HttpController {
 
     // ─── Investments ──────────────────────────────────────
 
-    private readonly listInvestments = async (_request: unknown, reply: { send: (data: unknown) => void }) => {
-        const investments = await this.services.get(GetInvestments).execute();
+    private readonly listInvestments = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
+        const investments = await this.services.get(GetInvestments).execute(userId);
         return reply.send(investments);
     };
 
     private readonly createInvestment: RouteContextHandler<undefined, undefined, CreateInvestmentBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const investment = await this.services.get(CreateInvestment).execute(body!);
+        const userId = request.auth.userId!;
+        const investment = await this.services.get(CreateInvestment).execute(userId, body!);
         return sendCreated(reply, investment);
     };
 
     private readonly updateInvestment: RouteContextHandler<IdParams, undefined, UpdateInvestmentBody> = async ({
+        request,
         params,
         body,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateInvestment).execute(params!.id, body!),
+            await this.services.get(UpdateInvestment).execute(userId, params!.id, body!),
             'Investment not found',
         );
         return reply.send(updated);
@@ -333,7 +372,7 @@ export class WalletController extends HttpController {
 
     // ─── Exchange Rates ───────────────────────────────────
 
-    private readonly getLatestExchangeRates = async (_request: unknown, reply: { send: (data: unknown) => void }) => {
+    private readonly getLatestExchangeRates = async (_request: FastifyRequest, reply: FastifyReply) => {
         const rates = await this.services.get(GetExchangeRates).executeLatest();
         return reply.send(rates);
     };

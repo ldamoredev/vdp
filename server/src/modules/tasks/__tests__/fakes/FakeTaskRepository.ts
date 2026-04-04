@@ -34,19 +34,19 @@ export class FakeTaskRepository extends TaskRepository {
 
     // ─── CRUD ──────────────────────────────────────────
 
-    async getTask(id: string): Promise<Task | null> {
+    async getTask(_userId: string, id: string): Promise<Task | null> {
         const snapshot = this.store.get(id);
         return snapshot ? Task.fromSnapshot(snapshot) : null;
     }
 
-    async getTasksByIds(ids: string[]): Promise<Task[]> {
+    async getTasksByIds(_userId: string, ids: string[]): Promise<Task[]> {
         return ids
             .map(id => this.store.get(id))
             .filter((s): s is TaskSnapshot => s !== undefined)
             .map(Task.fromSnapshot);
     }
 
-    async listTasks(filters: TaskFilters): Promise<PagedTasks> {
+    async listTasks(_userId: string, filters: TaskFilters): Promise<PagedTasks> {
         let tasks = Array.from(this.store.values()).map(Task.fromSnapshot);
 
         if (filters.scheduledDate) tasks = tasks.filter(t => t.scheduledDate === filters.scheduledDate);
@@ -66,7 +66,7 @@ export class FakeTaskRepository extends TaskRepository {
         };
     }
 
-    async createTask(data: CreateTaskData): Promise<Task> {
+    async createTask(_userId: string, data: CreateTaskData): Promise<Task> {
         const now = new Date();
         const task = new Task(
             randomUUID(),
@@ -85,7 +85,7 @@ export class FakeTaskRepository extends TaskRepository {
         return task;
     }
 
-    async updateTask(id: string, data: UpdateTaskData): Promise<Task | null> {
+    async updateTask(_userId: string, id: string, data: UpdateTaskData): Promise<Task | null> {
         const snapshot = this.store.get(id);
         if (!snapshot) return null;
 
@@ -101,7 +101,7 @@ export class FakeTaskRepository extends TaskRepository {
         return task;
     }
 
-    async deleteTask(id: string): Promise<Task | null> {
+    async deleteTask(_userId: string, id: string): Promise<Task | null> {
         const snapshot = this.store.get(id);
         if (!snapshot) return null;
 
@@ -109,32 +109,32 @@ export class FakeTaskRepository extends TaskRepository {
         return Task.fromSnapshot(snapshot);
     }
 
-    async save(task: Task): Promise<Task> {
+    async save(_userId: string, task: Task): Promise<Task> {
         this.store.set(task.id, task.toSnapshot());
         return task;
     }
 
     // ─── Queries ───────────────────────────────────────
 
-    async getTasksByDateAndStatus(date: string, status: TaskStatus): Promise<Task[]> {
+    async getTasksByDateAndStatus(_userId: string, date: string, status: TaskStatus): Promise<Task[]> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date && s.status === status)
             .map(Task.fromSnapshot);
     }
 
-    async getTasksByDate(date: string): Promise<Task[]> {
+    async getTasksByDate(_userId: string, date: string): Promise<Task[]> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date)
             .map(Task.fromSnapshot);
     }
 
-    async countByDateAndStatus(date: string, status: TaskStatus): Promise<number> {
+    async countByDateAndStatus(_userId: string, date: string, status: TaskStatus): Promise<number> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date && s.status === status)
             .length;
     }
 
-    async countByDate(date: string): Promise<DateCounts> {
+    async countByDate(_userId: string, date: string): Promise<DateCounts> {
         const all = Array.from(this.store.values()).filter(s => s.scheduledDate === date);
         return {
             pending: all.filter(s => s.status === 'pending').length,
@@ -144,7 +144,7 @@ export class FakeTaskRepository extends TaskRepository {
         };
     }
 
-    async getTrendByDateRange(fromDate: string, toDate: string): Promise<DateTrendRow[]> {
+    async getTrendByDateRange(_userId: string, fromDate: string, toDate: string): Promise<DateTrendRow[]> {
         const all = Array.from(this.store.values())
             .filter(s => s.scheduledDate >= fromDate && s.scheduledDate <= toDate);
 
@@ -171,7 +171,7 @@ export class FakeTaskRepository extends TaskRepository {
 
     // ─── Stats ─────────────────────────────────────────
 
-    async getCompletionByDomain(from?: string, to?: string): Promise<DomainStat[]> {
+    async getCompletionByDomain(_userId: string, from?: string, to?: string): Promise<DomainStat[]> {
         const tasks = Array.from(this.store.values())
             .filter(s => s.status === "done")
             .filter(s => {
@@ -188,7 +188,7 @@ export class FakeTaskRepository extends TaskRepository {
         return Array.from(counts.entries()).map(([domain, count]) => ({ domain, count }));
     }
 
-    async getCarryOverStats(fromDate: string, toDate: string): Promise<CarryOverStats> {
+    async getCarryOverStats(_userId: string, fromDate: string, toDate: string): Promise<CarryOverStats> {
         const tasks = Array.from(this.store.values())
             .filter(s => s.scheduledDate >= fromDate && s.scheduledDate <= toDate);
 

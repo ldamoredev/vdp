@@ -10,14 +10,14 @@ export class AddTaskNote {
         private embedTask: EmbedTask,
     ) {}
 
-    async execute(taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
-        const task = await this.taskRepository.getTask(taskId);
+    async execute(userId: string, taskId: string, content: string, type: TaskNoteType = 'note'): Promise<TaskNote> {
+        const task = await this.taskRepository.getTask(userId, taskId);
         if (!task) {
             throw new NotFoundHttpError('Task not found');
         }
 
-        const note = await this.noteRepository.addNote(taskId, content, type);
-        this.embedTask.execute(taskId).catch((err: unknown) => {
+        const note = await this.noteRepository.addNote(userId, taskId, content, type);
+        this.embedTask.execute(userId, taskId).catch((err: unknown) => {
             console.warn('[EmbedTask] failed for task', taskId, err instanceof Error ? err.message : err);
         });
         return note;

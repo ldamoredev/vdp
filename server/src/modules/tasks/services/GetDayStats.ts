@@ -14,8 +14,8 @@ export type DayStats = {
 export class GetDayStats {
     constructor(private repository: TaskRepository) {}
 
-    async execute(date: string): Promise<DayStats> {
-        const dayTasks = await this.repository.getTasksByDate(date);
+    async execute(userId: string, date: string): Promise<DayStats> {
+        const dayTasks = await this.repository.getTasksByDate(userId, date);
 
         const completed = dayTasks.filter((t) => t.status === "done").length;
         const carriedOver = dayTasks.filter((t) => t.carryOverCount > 0).length;
@@ -32,17 +32,17 @@ export class GetDayStats {
         };
     }
 
-    async executeToday(): Promise<DayStats> {
-        return this.execute(todayISO());
+    async executeToday(userId: string): Promise<DayStats> {
+        return this.execute(userId, todayISO());
     }
 
-    async executeTrend(days: number = 7): Promise<DayStats[]> {
+    async executeTrend(userId: string, days: number = 7): Promise<DayStats[]> {
         const date = new Date();
         const toDate = localDateISO(date);
         date.setDate(date.getDate() - (days - 1));
         const fromDate = localDateISO(date);
 
-        const rows = await this.repository.getTrendByDateRange(fromDate, toDate);
+        const rows = await this.repository.getTrendByDateRange(userId, fromDate, toDate);
         const rowMap = new Map(rows.map(r => [r.date, r]));
 
         // Fill in missing dates (days with zero tasks)

@@ -2,8 +2,9 @@ import { AuditLogRepository } from '../base/auth/AuditLogRepository';
 import { SessionRepository } from '../base/auth/SessionRepository';
 import { UserRecord, UserRepository } from '../base/auth/UserRepository';
 import { ConflictHttpError, UnauthorizedHttpError } from '../http/errors';
-import { generateSessionToken, hashSessionToken } from './sessions';
-import { hashPassword, verifyPassword } from './passwords';
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
+import { createHash } from 'crypto';
 
 export type AuthenticatedUser = {
     id: string;
@@ -11,6 +12,9 @@ export type AuthenticatedUser = {
     displayName: string;
     role: 'user';
 };
+
+const scrypt = promisify(scryptCallback);
+const KEY_LENGTH = 64;
 
 export class AuthService {
     constructor(
@@ -38,7 +42,7 @@ export class AuthService {
         const user = await this.users.createUser({
             email: input.email.toLowerCase(),
             displayName: input.displayName,
-            passwordHash: await hashPassword(input.password),
+            passwordHash: await this.hashPassword(input.password),
             role,
         });
 
@@ -68,7 +72,7 @@ export class AuthService {
             throw new UnauthorizedHttpError('Invalid credentials');
         }
 
-        const isValid = await verifyPassword(input.password, user.passwordHash);
+        const isValid = await this.verifyPassword(input.password, user.passwordHash);
         if (!isValid) {
             throw new UnauthorizedHttpError('Invalid credentials');
         }
@@ -88,7 +92,7 @@ export class AuthService {
     }
 
     async getAuthenticatedUser(sessionToken: string): Promise<{ user: AuthenticatedUser; sessionId: string }> {
-        const session = await this.sessions.findByTokenHash(hashSessionToken(sessionToken));
+        const session = await this.sessions.findByTokenHash(this.hashSessionToken(sessionToken));
         if (!session || session.expiresAt <= new Date()) {
             throw new UnauthorizedHttpError('Session expired or invalid');
         }
@@ -107,7 +111,7 @@ export class AuthService {
     }
 
     async logout(sessionToken: string): Promise<void> {
-        const session = await this.sessions.findByTokenHash(hashSessionToken(sessionToken));
+        const session = await this.sessions.findByTokenHash(this.hashSessionToken(sessionToken));
         if (!session) return;
 
         await this.sessions.revokeSession(session.id, new Date());
@@ -125,10 +129,10 @@ export class AuthService {
         userAgent?: string | null,
         ipAddress?: string | null,
     ): Promise<{ id: string; token: string }> {
-        const token = generateSessionToken();
+        const token = this.generateSessionToken();
         const session = await this.sessions.createSession({
             userId,
-            tokenHash: hashSessionToken(token),
+            tokenHash: this.hashSessionToken(token),
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
             userAgent,
             ipAddress,
@@ -144,4 +148,37 @@ export class AuthService {
             role: user.role,
         };
     }
+
+    private async hashPassword(password: string): Promise<string> {
+        const salt = randomBytes(16).toString('hex');
+        const derived = await scrypt(password, salt, KEY_LENGTH) as Buffer;
+        return `${salt}:${derived.toString('hex')}`;
+    }
+
+    private async verifyPassword(password: string, passwordHash: string): Promise<boolean> {
+        const [salt, storedHash] = passwordHash.split(':');
+        if (!salt || !storedHash) return false;
+
+        const derived = await scrypt(password, salt, KEY_LENGTH) as Buffer;
+        const stored = Buffer.from(storedHash, 'hex');
+
+        if (stored.length !== derived.length) {
+            return false;
+        }
+
+        return timingSafeEqual(stored, derived);
+    }
+
+    private generateSessionToken(): string {
+        return randomBytes(32).toString('base64url');
+    }
+
+    private hashSessionToken(token: string): string {
+        return createHash('sha256').update(token).digest('hex');
+    }
 }
+
+
+
+
+

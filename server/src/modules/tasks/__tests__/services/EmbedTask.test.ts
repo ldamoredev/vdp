@@ -7,6 +7,7 @@ import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
 import { createTask } from '../fakes/task-factory';
 
 describe('EmbedTask', () => {
+    const userId = 'test-user-id';
     let taskRepo: FakeTaskRepository;
     let noteRepo: FakeTaskNoteRepository;
     let embeddingRepo: FakeTaskEmbeddingRepository;
@@ -25,7 +26,7 @@ describe('EmbedTask', () => {
         const task = createTask({ id: 'task-1', title: 'Buy groceries' });
         taskRepo.seed([task]);
 
-        await service.execute('task-1');
+        await service.execute(userId, 'task-1');
 
         const stored = embeddingRepo.getByTaskId('task-1');
         expect(stored).toBeDefined();
@@ -37,7 +38,7 @@ describe('EmbedTask', () => {
         const task = createTask({ id: 'task-1', title: 'Deploy', description: 'Push to production' });
         taskRepo.seed([task]);
 
-        await service.execute('task-1');
+        await service.execute(userId, 'task-1');
 
         const stored = embeddingRepo.getByTaskId('task-1');
         expect(stored!.content).toBe('Deploy | Push to production');
@@ -46,29 +47,29 @@ describe('EmbedTask', () => {
     it('includes notes in embedding content', async () => {
         const task = createTask({ id: 'task-1', title: 'Plan sprint' });
         taskRepo.seed([task]);
-        await noteRepo.addNote('task-1', 'Define priorities');
-        await noteRepo.addNote('task-1', 'Assign tasks');
+        await noteRepo.addNote(userId, 'task-1', 'Define priorities');
+        await noteRepo.addNote(userId, 'task-1', 'Assign tasks');
 
-        await service.execute('task-1');
+        await service.execute(userId, 'task-1');
 
         const stored = embeddingRepo.getByTaskId('task-1');
         expect(stored!.content).toBe('Plan sprint | Define priorities | Assign tasks');
     });
 
     it('does nothing when task does not exist', async () => {
-        await service.execute('nonexistent');
+        await service.execute(userId, 'nonexistent');
         expect(embeddingRepo.size).toBe(0);
     });
 
     it('upserts (overwrites) existing embedding', async () => {
         const task = createTask({ id: 'task-1', title: 'V1' });
         taskRepo.seed([task]);
-        await service.execute('task-1');
+        await service.execute(userId, 'task-1');
 
-        const fetched = await taskRepo.getTask('task-1');
+        const fetched = await taskRepo.getTask(userId, 'task-1');
         fetched!.title = 'V2';
-        await taskRepo.save(fetched!);
-        await service.execute('task-1');
+        await taskRepo.save(userId, fetched!);
+        await service.execute(userId, 'task-1');
 
         const stored = embeddingRepo.getByTaskId('task-1');
         expect(stored!.content).toBe('V2');

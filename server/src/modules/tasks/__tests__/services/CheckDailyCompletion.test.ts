@@ -33,7 +33,7 @@ describe('CheckDailyCompletion', () => {
             createTask({ scheduledDate: DATE, status: 'pending' }),
         ]);
 
-        await eventBus.emit(new TaskCompleted({ taskId: 'any', scheduledDate: DATE }));
+        await eventBus.emit(new TaskCompleted({ userId: 'test-user-id', taskId: 'any', scheduledDate: DATE }));
 
         expect(emittedEvents).toHaveLength(0);
     });
@@ -44,13 +44,14 @@ describe('CheckDailyCompletion', () => {
             createTask({ scheduledDate: DATE, status: 'done' }),
         ]);
 
-        await eventBus.emit(new TaskCompleted({ taskId: 'any', scheduledDate: DATE }));
+        await eventBus.emit(new TaskCompleted({ userId: 'test-user-id', taskId: 'any', scheduledDate: DATE }));
 
         // Allow async handler to resolve
         await new Promise((r) => setTimeout(r, 10));
 
         expect(emittedEvents).toHaveLength(1);
         expect(emittedEvents[0].payload).toEqual({
+            userId: 'test-user-id',
             date: DATE,
             count: 2,
         });
@@ -59,7 +60,7 @@ describe('CheckDailyCompletion', () => {
     it('does NOT emit when there are zero tasks', async () => {
         // No tasks seeded for this date
 
-        await eventBus.emit(new TaskCompleted({ taskId: 'any', scheduledDate: DATE }));
+        await eventBus.emit(new TaskCompleted({ userId: 'test-user-id', taskId: 'any', scheduledDate: DATE }));
 
         await new Promise((r) => setTimeout(r, 10));
 

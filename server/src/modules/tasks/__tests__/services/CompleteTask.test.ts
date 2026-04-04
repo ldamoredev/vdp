@@ -7,6 +7,7 @@ import type { DomainEvent } from '../../../common/base/event-bus/DomainEvent';
 import { DomainHttpError } from '../../../common/http/errors';
 
 describe('CompleteTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let eventBus: EventBus;
     let service: CompleteTask;
@@ -24,7 +25,7 @@ describe('CompleteTask', () => {
     });
 
     it('returns null when task does not exist', async () => {
-        const result = await service.execute('nonexistent-id');
+        const result = await service.execute(userId, 'nonexistent-id');
         expect(result).toBeNull();
     });
 
@@ -32,14 +33,14 @@ describe('CompleteTask', () => {
         const task = createTask({ status: 'pending' });
         repo.seed([task]);
 
-        const result = await service.execute(task.id);
+        const result = await service.execute(userId, task.id);
 
         expect(result).not.toBeNull();
         expect(result!.status).toBe('done');
         expect(result!.completedAt).toBeInstanceOf(Date);
 
         // Verify persisted
-        const saved = await repo.getTask(task.id);
+        const saved = await repo.getTask(userId, task.id);
         expect(saved!.status).toBe('done');
     });
 
@@ -47,26 +48,27 @@ describe('CompleteTask', () => {
         const task = createTask({ status: 'done', completedAt: new Date() });
         repo.seed([task]);
 
-        await expect(service.execute(task.id)).rejects.toThrow(DomainHttpError);
+        await expect(service.execute(userId, task.id)).rejects.toThrow(DomainHttpError);
     });
 
     it('rejects completing a discarded task', async () => {
         const task = createTask({ status: 'discarded' });
         repo.seed([task]);
 
-        await expect(service.execute(task.id)).rejects.toThrow(DomainHttpError);
+        await expect(service.execute(userId, task.id)).rejects.toThrow(DomainHttpError);
     });
 
     it('emits TaskCompleted event with correct payload', async () => {
         const task = createTask({ scheduledDate: '2026-03-18' });
         repo.seed([task]);
 
-        await service.execute(task.id);
+        await service.execute(userId, task.id);
 
         expect(emittedEvents).toHaveLength(1);
         expect(emittedEvents[0].domain).toBe('tasks');
         expect(emittedEvents[0].type).toBe('task.completed');
         expect(emittedEvents[0].payload).toEqual({
+            userId: 'test-user-id',
             taskId: task.id,
             scheduledDate: '2026-03-18',
         });

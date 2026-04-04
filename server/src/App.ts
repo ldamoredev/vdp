@@ -11,15 +11,16 @@ import { AuthService } from './modules/common/auth/AuthService';
 import { HttpController } from './modules/common/http/HttpController';
 import { AuthController } from './modules/common/http/AuthController';
 import { RequestAuditLogger } from './modules/common/http/RequestAuditLogger';
-import { SessionAuthentication } from './modules/common/http/SessionAuthentication';
+import { HttpSessionAuthentication } from './modules/common/http/HttpSessionAuthentication';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
+import { AuthContextStorage } from './modules/common/auth/AuthContextStorage';
 
 export class App {
     public app = Fastify({ logger: true });
     private stopPromise: Promise<void> | null = null;
     private readonly authService: AuthService;
-    private readonly sessionAuthentication: SessionAuthentication;
+    private readonly sessionAuthentication: HttpSessionAuthentication;
     private readonly requestAuditLogger: RequestAuditLogger;
 
     constructor(public readonly core: Core) {
@@ -28,10 +29,8 @@ export class App {
             this.core.getRepository(SessionRepository),
             this.core.getRepository(AuditLogRepository),
         );
-        this.sessionAuthentication = new SessionAuthentication(this.authService);
-        this.requestAuditLogger = new RequestAuditLogger(
-            this.core.getRepository(AuditLogRepository),
-        );
+        this.sessionAuthentication = new HttpSessionAuthentication(this.authService, this.core.getAuthContextStorage());
+        this.requestAuditLogger = new RequestAuditLogger(this.core.getRepository(AuditLogRepository), this.core.getAuthContextStorage());
         this.registerPlugins();
         this.registerControllers();
         this.registerTimelineLogging();

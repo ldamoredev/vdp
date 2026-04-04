@@ -14,6 +14,7 @@ import { TraceService, TraceSpan } from '../../base/observability/trace/TraceSer
 import { NoOpLangfuseLLMTraceService } from '../../infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { HttpController, RouteRegister } from '../../http/HttpController';
 import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
+import { AuthContextStorage } from '../../auth/AuthContextStorage';
 
 class FakeRepositoryProvider extends RepositoryProvider {
     protected create<T>(_token: abstract new (...args: any[]) => T): T {
@@ -113,6 +114,7 @@ function createConfig(
         embeddingProvider: new NoOpEmbeddingProvider(),
         moduleFactories,
         logger: new NoOpLogger(),
+        authContextStorage: new AuthContextStorage(),
     };
 }
 

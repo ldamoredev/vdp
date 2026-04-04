@@ -4,7 +4,7 @@ import { InvestmentRepository } from '../domain/InvestmentRepository';
 export class CreateInvestment {
     constructor(private readonly investments: InvestmentRepository) {}
 
-    async execute(data: CreateInvestmentData): Promise<Investment> {
-        return this.investments.create(data);
+    async execute(userId: string, data: CreateInvestmentData): Promise<Investment> {
+        return this.investments.create(userId, data);
     }
 }

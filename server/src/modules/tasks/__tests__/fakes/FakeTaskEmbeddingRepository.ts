@@ -8,11 +8,11 @@ type StoredEmbedding = {
 export class FakeTaskEmbeddingRepository extends TaskEmbeddingRepository {
     private store = new Map<string, StoredEmbedding>();
 
-    async upsert(taskId: string, content: string, embedding: number[]): Promise<void> {
+    async upsert(_userId: string, taskId: string, content: string, embedding: number[]): Promise<void> {
         this.store.set(taskId, { content, embedding });
     }
 
-    async findSimilar(embedding: number[], limit: number, threshold = 0.7): Promise<SimilarTask[]> {
+    async findSimilar(_userId: string, embedding: number[], limit: number, threshold = 0.7): Promise<SimilarTask[]> {
         const results: SimilarTask[] = [];
 
         for (const [taskId, stored] of this.store) {
@@ -27,7 +27,7 @@ export class FakeTaskEmbeddingRepository extends TaskEmbeddingRepository {
             .slice(0, limit);
     }
 
-    async deleteByTaskId(taskId: string): Promise<void> {
+    async deleteByTaskId(_userId: string, taskId: string): Promise<void> {
         this.store.delete(taskId);
     }
 

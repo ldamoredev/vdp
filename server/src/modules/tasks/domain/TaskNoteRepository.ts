@@ -1,7 +1,7 @@
 export abstract class TaskNoteRepository {
-    abstract addNote(taskId: string, content: string, type?: TaskNoteType): Promise<TaskNote>;
-    abstract listNotes(taskId: string): Promise<TaskNote[]>;
-    abstract deleteByTaskId(taskId: string): Promise<void>;
+    abstract addNote(userId: string, taskId: string, content: string, type?: TaskNoteType): Promise<TaskNote>;
+    abstract listNotes(userId: string, taskId: string): Promise<TaskNote[]>;
+    abstract deleteByTaskId(userId: string, taskId: string): Promise<void>;
 }
 
 export type TaskNoteType = 'note' | 'breakdown_step' | 'blocker';

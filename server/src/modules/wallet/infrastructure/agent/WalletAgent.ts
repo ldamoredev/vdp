@@ -9,6 +9,7 @@ import { TraceService } from '../../../common/base/observability/trace/TraceServ
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 import { Logger } from '../../../common/base/observability/logging/Logger';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 
 export class WalletAgent extends BaseAgent {
     readonly domain: DomainName = 'wallet';
@@ -23,8 +24,9 @@ export class WalletAgent extends BaseAgent {
         openTelemetry: TraceService,
         agentProvider: AgentProvider,
         logger: Logger,
+        authContextStorage: AuthContextStorage
     ) {
         super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
-        this.tools = WalletTools.createWalletTools(services);
+        this.tools = WalletTools.createWalletTools(services, authContextStorage);
     }
 }

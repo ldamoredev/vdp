@@ -2,8 +2,9 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { GetSpendingStats } from '../../../services/GetSpendingStats';
 import { jsonTool } from './shared';
+import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
 
-export function createStatsTools(services: ServiceProvider) {
+export function createStatsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
         jsonTool({
             name: 'get_balance',
@@ -18,7 +19,8 @@ export function createStatsTools(services: ServiceProvider) {
                 required: [],
             },
             execute: async (input) => {
-                const accounts = await services.get(GetAccounts).execute();
+                const userId = authContextStorage.getRequestAuth().userId!;
+                const accounts = await services.get(GetAccounts).execute(userId);
                 if (input.accountId) {
                     const account = accounts.find((a) => a.id === input.accountId);
                     return account ?? { error: 'Account not found' };
@@ -51,8 +53,10 @@ export function createStatsTools(services: ServiceProvider) {
                 },
                 required: [],
             },
-            execute: async (input) =>
-                services.get(GetSpendingStats).executeSummary(input.from, input.to),
+            execute: async (input) => {
+                const userId = authContextStorage.getRequestAuth().userId!;
+                return services.get(GetSpendingStats).executeSummary(userId, input.from, input.to);
+            },
         }),
     ];
 }

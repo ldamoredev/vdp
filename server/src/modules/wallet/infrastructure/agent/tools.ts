@@ -5,15 +5,16 @@ import { createInvestmentTools } from './tools/investment-tools';
 import { createSavingsTools } from './tools/savings-tools';
 import { createTransactionTools } from './tools/transaction-tools';
 import { createStatsTools } from './tools/stats-tools';
+import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
 
 export class WalletTools {
-    static createWalletTools(services: ServiceProvider) {
+    static createWalletTools(services: ServiceProvider, authContext: AuthContextStorage) {
         return [
-            ...createAccountTools(services),
-            ...createTransactionTools(services),
-            ...createStatsTools(services),
-            ...createSavingsTools(services),
-            ...createInvestmentTools(services),
+            ...createAccountTools(services, authContext),
+            ...createTransactionTools(services, authContext),
+            ...createStatsTools(services, authContext),
+            ...createSavingsTools(services, authContext),
+            ...createInvestmentTools(services, authContext),
             ...createExchangeRateTools(services),
         ];
     }

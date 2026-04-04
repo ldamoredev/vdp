@@ -11,13 +11,13 @@ export type CarryOverRate = {
 export class GetCarryOverRate {
     constructor(private repository: TaskRepository) {}
 
-    async execute(days: number = 7): Promise<CarryOverRate> {
+    async execute(userId: string, days: number = 7): Promise<CarryOverRate> {
         const fromDate = new Date();
         fromDate.setDate(fromDate.getDate() - days);
         const fromStr = localDateISO(fromDate);
         const toStr = todayISO();
 
-        const { total, carriedOver } = await this.repository.getCarryOverStats(fromStr, toStr);
+        const { total, carriedOver } = await this.repository.getCarryOverStats(userId, fromStr, toStr);
         const rate = total > 0 ? Math.round((carriedOver / total) * 100) : 0;
 
         return { total, carriedOver, rate, days };

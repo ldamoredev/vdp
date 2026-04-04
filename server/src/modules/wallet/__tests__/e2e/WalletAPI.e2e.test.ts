@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
+const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 import { TestDatabase } from '../integration/test-database';
 import { TestApp } from './TestApp';
 
@@ -373,11 +374,11 @@ describe('Wallet API — E2E', () => {
 
         it('returns wallet conversations and messages only for the wallet domain', async () => {
             const agentRepository = testApp.core.getRepository(AgentRepository);
-            const conversation = await agentRepository.createConversation('wallet', 'Wallet history');
+            const conversation = await agentRepository.createConversation(DEFAULT_TEST_USER_ID, 'wallet', 'Wallet history');
             await agentRepository.createMessage(conversation.id, 'user', 'Resumen');
             await agentRepository.createAgentMessage(conversation.id, 'assistant', 'Aca va tu resumen', null);
 
-            await agentRepository.createConversation('tasks', 'Task history');
+            await agentRepository.createConversation(DEFAULT_TEST_USER_ID, 'tasks', 'Task history');
 
             const conversationsResponse = await testApp.app.inject({
                 method: 'GET',

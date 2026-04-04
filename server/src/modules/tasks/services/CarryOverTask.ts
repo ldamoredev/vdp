@@ -13,8 +13,8 @@ export class CarryOverTask {
         private detectRepeatPattern: DetectRepeatPattern,
     ) {}
 
-    async execute(id: string, toDate?: string): Promise<Task | null> {
-        const task = await this.repository.getTask(id);
+    async execute(userId: string, id: string, toDate?: string): Promise<Task | null> {
+        const task = await this.repository.getTask(userId, id);
         if (!task) return null;
 
         if (task.status !== 'pending') {
@@ -24,17 +24,18 @@ export class CarryOverTask {
         const targetDate = toDate || this.tomorrow();
         task.carryOver(targetDate);
 
-        const saved = await this.repository.save(task);
+        const saved = await this.repository.save(userId, task);
 
         if (saved.isStuck()) {
             await this.eventBus.emit(new TaskStuck({
+                userId,
                 taskId: saved.id,
                 title: saved.title,
                 carryOverCount: saved.carryOverCount,
             }));
         }
 
-        await this.detectRepeatPattern.execute(saved);
+        await this.detectRepeatPattern.execute(userId, saved);
 
         return saved;
     }

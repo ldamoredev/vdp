@@ -5,8 +5,8 @@ import { DomainHttpError } from '../../common/http/errors';
 export class DiscardTask {
     constructor(private repository: TaskRepository) {}
 
-    async execute(id: string): Promise<Task | null> {
-        const task = await this.repository.getTask(id);
+    async execute(userId: string, id: string): Promise<Task | null> {
+        const task = await this.repository.getTask(userId, id);
         if (!task) return null;
 
         if (task.status !== 'pending') {
@@ -14,6 +14,6 @@ export class DiscardTask {
         }
 
         task.discard();
-        return this.repository.save(task);
+        return this.repository.save(userId, task);
     }
 }

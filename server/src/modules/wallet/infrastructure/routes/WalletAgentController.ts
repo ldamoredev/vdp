@@ -30,17 +30,20 @@ export class WalletAgentController extends HttpController {
             }));
     }
 
-    private readonly conversations = async (_request: FastifyRequest, reply: FastifyReply) => {
-        const conversations = await this.agentRepository.listConversations('wallet');
+    private readonly conversations = async (request: FastifyRequest, reply: FastifyReply) => {
+        const userId = request.auth.userId!;
+        const conversations = await this.agentRepository.listConversations(userId, 'wallet');
         return reply.send(conversations);
     };
 
     private readonly conversationMessages: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
         params,
         reply,
     }) => {
+        const userId = request.auth.userId!;
         const messages = assertFound(
-            await this.agentRepository.loadConversationMessages('wallet', params!.id),
+            await this.agentRepository.loadConversationMessages(userId, 'wallet', params!.id),
             'Conversation not found',
         );
         return reply.send(messages);

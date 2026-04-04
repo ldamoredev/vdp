@@ -9,6 +9,7 @@ import { localDateISO } from '../../../common/base/time/dates';
 import { DomainHttpError } from '../../../common/http/errors';
 
 describe('CarryOverTask', () => {
+    const userId = 'test-user-id';
     let repo: FakeTaskRepository;
     let eventBus: EventBus;
     let detectRepeatPattern: DetectRepeatPattern;
@@ -28,7 +29,7 @@ describe('CarryOverTask', () => {
     });
 
     it('returns null when task does not exist', async () => {
-        const result = await service.execute('nonexistent-id');
+        const result = await service.execute(userId, 'nonexistent-id');
         expect(result).toBeNull();
     });
 
@@ -36,21 +37,21 @@ describe('CarryOverTask', () => {
         const task = createTask({ status: 'done', completedAt: new Date() });
         repo.seed([task]);
 
-        await expect(service.execute(task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
+        await expect(service.execute(userId, task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
     });
 
     it('rejects carrying over a discarded task', async () => {
         const task = createTask({ status: 'discarded' });
         repo.seed([task]);
 
-        await expect(service.execute(task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
+        await expect(service.execute(userId, task.id, '2026-03-20')).rejects.toThrow(DomainHttpError);
     });
 
     it('carries over task with explicit toDate', async () => {
         const task = createTask({ scheduledDate: '2026-03-18', carryOverCount: 0 });
         repo.seed([task]);
 
-        const result = await service.execute(task.id, '2026-03-20');
+        const result = await service.execute(userId, task.id, '2026-03-20');
 
         expect(result!.scheduledDate).toBe('2026-03-20');
         expect(result!.carryOverCount).toBe(1);
@@ -61,7 +62,7 @@ describe('CarryOverTask', () => {
         const task = createTask({ carryOverCount: 0 });
         repo.seed([task]);
 
-        const result = await service.execute(task.id);
+        const result = await service.execute(userId, task.id);
 
         // Should be tomorrow's date
         const tomorrow = new Date();
@@ -76,7 +77,7 @@ describe('CarryOverTask', () => {
         const task = createTask({ carryOverCount: 1 }); // will be 2 after carry over
         repo.seed([task]);
 
-        await service.execute(task.id, '2026-03-19');
+        await service.execute(userId, task.id, '2026-03-19');
 
         expect(emittedEvents.filter(e => e.type === 'task.stuck')).toHaveLength(0);
     });
@@ -85,11 +86,12 @@ describe('CarryOverTask', () => {
         const task = createTask({ carryOverCount: 2, title: 'Stuck task' }); // will be 3 after carry over
         repo.seed([task]);
 
-        await service.execute(task.id, '2026-03-19');
+        await service.execute(userId, task.id, '2026-03-19');
 
         const stuckEvent = emittedEvents.find(e => e.type === 'task.stuck');
         expect(stuckEvent).toBeDefined();
         expect(stuckEvent!.payload).toEqual({
+            userId,
             taskId: task.id,
             title: 'Stuck task',
             carryOverCount: 3,
@@ -100,7 +102,7 @@ describe('CarryOverTask', () => {
         const task = createTask({ carryOverCount: 0 });
         repo.seed([task]);
 
-        await service.execute(task.id);
+        await service.execute(userId, task.id);
 
         expect(detectRepeatPattern.execute).toHaveBeenCalled();
     });

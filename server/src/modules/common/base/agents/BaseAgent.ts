@@ -95,6 +95,7 @@ export abstract class BaseAgent {
      * Creates/loads conversation, saves messages, runs the agent loop.
      */
     async chat(options: {
+        userId: string;
         message: string;
         conversationId?: string;
         callbacks: ChatCallbacks;
@@ -113,6 +114,7 @@ export abstract class BaseAgent {
 
         try {
             const conversationId = await this.conversationStore.ensureConversation(
+                options.userId,
                 this.domain,
                 message,
                 options.conversationId,
