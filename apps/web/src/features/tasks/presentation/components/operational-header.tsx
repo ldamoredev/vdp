@@ -27,17 +27,17 @@ export function OperationalHeader() {
 
   return (
     <div className="glass-card-static overflow-hidden">
-      <div className="border-b border-[var(--glass-border)] p-6">
+      <div className="border-b border-[var(--divider)] p-5 md:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
-              <Sparkles size={12} />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-[var(--muted)]">
+              <Sparkles size={11} />
               Centro operativo
             </div>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[var(--foreground)]">
               Ejecuta hoy sin perder el hilo
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
               Este tablero esta sincronizado con el chat. Las acciones del
               asistente y las manuales impactan la misma cola de trabajo en
               tiempo real.
@@ -49,39 +49,39 @@ export function OperationalHeader() {
               type="button"
               onClick={carryOverAll}
               disabled={pendingTasks.length === 0 || isCarryingOverAll}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-4 py-2 text-sm font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] px-3.5 py-2 text-[13px] font-medium text-[var(--amber-soft-text)] transition-all hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <CalendarClock size={15} />
-              Reprogramar pendientes
+              <CalendarClock size={14} />
+              Reprogramar
             </button>
             <Link
               href="/tasks/history"
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-2 text-[13px] font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px] hover:bg-[var(--hover-overlay-strong)]"
             >
-              <History size={15} />
+              <History size={14} />
               Historial
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 p-6 md:grid-cols-3">
-        <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+      <div className="grid gap-3 p-5 md:p-6 md:grid-cols-3">
+        <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)] font-medium">
               Cumplimiento
             </span>
-            <Target size={16} style={{ color: "var(--violet-soft-text)" }} />
+            <Target size={15} style={{ color: "var(--violet-soft-text)" }} />
           </div>
-          <div className="mt-3 flex items-end gap-2">
-            <div className="text-3xl font-semibold text-[var(--foreground)]">
+          <div className="mt-2.5 flex items-end gap-1.5">
+            <div className="text-3xl font-bold tracking-tight text-[var(--foreground)]">
               {completionRate}%
             </div>
             <div className="pb-1 text-xs text-[var(--muted)]">
-              {completed}/{total} hechas
+              {completed}/{total}
             </div>
           </div>
-          <div className="progress-bar mt-4">
+          <div className="progress-bar mt-3">
             <div
               className="progress-bar-fill"
               style={{
@@ -93,37 +93,35 @@ export function OperationalHeader() {
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] p-4">
+        <div className="rounded-xl border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)] font-medium">
               Presion
             </span>
-            <Flame size={16} style={{ color: "var(--amber-soft-text)" }} />
+            <Flame size={15} style={{ color: "var(--amber-soft-text)" }} />
           </div>
-          <div className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
+          <div className="mt-2.5 text-3xl font-bold tracking-tight text-[var(--foreground)]">
             {urgentTasks.length}
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">
             {urgentTasks.length === 0
-              ? "No hay tareas calientes en este momento."
-              : `${stuckTasks.length} bloqueada${stuckTasks.length === 1 ? "" : "s"} por carry-over y ${pendingTasks.filter((task) => task.priority === 3).length} de prioridad alta.`}
+              ? "Sin tareas calientes."
+              : `${stuckTasks.length} bloqueada${stuckTasks.length === 1 ? "" : "s"}, ${pendingTasks.filter((task) => task.priority === 3).length} alta prioridad.`}
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+        <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--muted)] font-medium">
               Ritmo 7d
             </span>
-            <BarChart3 size={16} style={{ color: "var(--violet-soft-text)" }} />
+            <BarChart3 size={15} style={{ color: "var(--violet-soft-text)" }} />
           </div>
-          <div className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
+          <div className="mt-2.5 text-3xl font-bold tracking-tight text-[var(--foreground)]">
             {completionAverage}%
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
-            Promedio semanal. Hoy hay {pendingTasks.length} pendiente
-            {pendingTasks.length === 1 ? "" : "s"} y {doneTasks.length} ya
-            cerrada{doneTasks.length === 1 ? "" : "s"}.
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">
+            {pendingTasks.length} pendiente{pendingTasks.length === 1 ? "" : "s"}, {doneTasks.length} cerrada{doneTasks.length === 1 ? "" : "s"}.
           </p>
         </div>
       </div>

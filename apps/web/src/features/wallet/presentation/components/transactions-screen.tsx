@@ -22,19 +22,19 @@ function getTypeIcon(type: TransactionType) {
   switch (type) {
     case "income":
       return (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-green-glow)]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-green-glow)]">
           <ArrowDownLeft size={14} className="text-[var(--accent-green)]" />
         </div>
       );
     case "expense":
       return (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-red-glow)]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-red-glow)]">
           <ArrowUpRight size={14} className="text-[var(--accent-red)]" />
         </div>
       );
     default:
       return (
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-glow)]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-glow)]">
           <ArrowLeftRight size={14} className="text-[var(--accent)]" />
         </div>
       );

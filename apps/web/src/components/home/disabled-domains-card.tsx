@@ -1,4 +1,4 @@
-import { CalendarDays, Lock } from "lucide-react";
+import { Layers, Lock } from "lucide-react";
 import type { DomainConfig } from "@/lib/navigation";
 
 export interface DisabledDomainsCardProps {
@@ -10,18 +10,18 @@ export function DisabledDomainsCard({ domains }: DisabledDomainsCardProps) {
     <div className="glass-card-static overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
         <div className="flex items-center gap-2">
-          <CalendarDays size={16} style={{ color: "var(--violet-soft-text)" }} />
+          <Layers size={16} style={{ color: "var(--muted)" }} />
           <h3 className="text-sm font-medium text-[var(--foreground)]">
-            Dominios
+            Próximos módulos
           </h3>
         </div>
-        <span className="text-xs text-[var(--muted)]">Vida digital</span>
+        <span className="text-xs text-[var(--muted)]">{domains.length}</span>
       </div>
-      <div className="space-y-2 p-4">
+      <div className="space-y-1.5 p-3">
         {domains.map((domain) => (
           <div
             key={domain.key}
-            className="flex items-center gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3 opacity-40"
+            className="flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3 opacity-50"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--glass-border)] bg-[var(--background-secondary)]">
               <span className="text-xs font-bold text-[var(--muted)]">
@@ -32,12 +32,12 @@ export function DisabledDomainsCard({ domains }: DisabledDomainsCardProps) {
               <div className="text-sm font-medium text-[var(--foreground)]">
                 {domain.label}
               </div>
-              <div className="text-[11px] text-[var(--muted)]">
+              <div className="text-[11px] text-[var(--muted)] truncate">
                 {domain.subtitle}
               </div>
             </div>
             <div className="flex items-center gap-1 rounded-full border border-[var(--glass-border)] px-2 py-0.5">
-              <Lock size={10} className="text-[var(--muted)]" />
+              <Lock size={9} className="text-[var(--muted)]" />
               <span className="text-[10px] font-medium text-[var(--muted)]">
                 Pronto
               </span>

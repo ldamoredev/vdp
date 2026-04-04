@@ -18,11 +18,11 @@ export function StatsSummary({
           <span className="text-sm text-[var(--foreground-muted)]">
             Ingresos del mes
           </span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-green-glow)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-green-glow)]">
             <TrendingUp size={15} className="text-[var(--accent-green)]" />
           </div>
         </div>
-        <div className="text-xl font-semibold text-[var(--accent-green)]">
+        <div className="text-xl font-bold tracking-tight text-[var(--accent-green)]">
           +{formatMoney(income, "ARS")}
         </div>
       </div>
@@ -32,14 +32,14 @@ export function StatsSummary({
           <span className="text-sm text-[var(--foreground-muted)]">
             Gastos del mes
           </span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-red-glow)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-red-glow)]">
             <TrendingDown
               size={15}
               className="text-[var(--accent-red)]"
             />
           </div>
         </div>
-        <div className="text-xl font-semibold text-[var(--accent-red)]">
+        <div className="text-xl font-bold tracking-tight text-[var(--accent-red)]">
           -{formatMoney(expenses, "ARS")}
         </div>
       </div>
@@ -47,11 +47,11 @@ export function StatsSummary({
       <div className="glass-card-static p-5">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm text-[var(--foreground-muted)]">Neto</span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--hover-overlay)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--hover-overlay)]">
             <Minus size={15} className="text-[var(--foreground-muted)]" />
           </div>
         </div>
-        <div className="text-xl font-semibold">{formatMoney(net, "ARS")}</div>
+        <div className="text-xl font-bold tracking-tight">{formatMoney(net, "ARS")}</div>
       </div>
     </div>
   );

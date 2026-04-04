@@ -142,7 +142,7 @@ export function AccountsScreen() {
               <div key={account.id} className="glass-card p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-glow)]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-glow)]">
                       <Wallet2 size={18} className="text-[var(--accent)]" />
                     </div>
                     <div>
@@ -214,19 +214,19 @@ export function AccountsScreen() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                  <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3.5">
                     <p className="text-xs uppercase tracking-wider text-[var(--foreground-muted)]">
                       Balance actual
                     </p>
-                    <p className="mt-2 text-lg font-semibold">
+                    <p className="mt-1.5 text-lg font-bold tracking-tight">
                       {formatMoney(balance, account.currency as "ARS" | "USD")}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
+                  <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3.5">
                     <p className="text-xs uppercase tracking-wider text-[var(--foreground-muted)]">
                       Saldo inicial
                     </p>
-                    <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+                    <p className="mt-1.5 text-lg font-bold tracking-tight">
                       {formatMoney(
                         Number(account.initialBalance),
                         account.currency as "ARS" | "USD",

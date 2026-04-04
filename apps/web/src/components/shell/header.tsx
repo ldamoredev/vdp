@@ -36,7 +36,7 @@ export function Header() {
   }
 
   return (
-    <header className="h-16 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-4 md:px-8">
+    <header className="h-14 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={shellStore.toggle}
@@ -44,25 +44,21 @@ export function Header() {
         >
           <Menu size={18} strokeWidth={1.8} />
         </button>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-[var(--muted)]">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)]" />
-          <span>Conectado</span>
-        </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {currentUser && (
-          <div className="hidden lg:flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2">
+          <div className="hidden lg:flex items-center gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-xs font-bold">
+              {currentUser.displayName?.[0]?.toUpperCase() ?? "U"}
+            </div>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-[var(--foreground)]">
+              <div className="text-sm font-medium text-[var(--foreground)] leading-tight">
                 {currentUser.displayName}
-              </div>
-              <div className="max-w-48 truncate text-xs text-[var(--foreground-muted)]">
-                {currentUser.email}
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="text-xs font-medium text-[var(--foreground-muted)] transition-colors hover:text-[var(--foreground)]"
+              className="text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] ml-1"
             >
               Salir
             </button>
@@ -71,15 +67,15 @@ export function Header() {
         <ThemeToggle />
         <button
           onClick={chatStore.toggle}
-          className="flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--hover-overlay)] hover:bg-[var(--hover-overlay-strong)] border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-all cursor-pointer group"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--hover-overlay)] hover:bg-[var(--hover-overlay-strong)] border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-all cursor-pointer group"
         >
           <div className="relative">
-            <MessageCircle size={16} strokeWidth={1.8} />
-            <Sparkles size={8} className="absolute -top-1 -right-1 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <MessageCircle size={15} strokeWidth={1.8} />
+            <Sparkles size={7} className="absolute -top-1 -right-1 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="hidden md:inline">Chat IA</span>
+          <span className="hidden md:inline text-[13px]">Chat IA</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--hover-overlay)] border border-[var(--glass-border)] text-[var(--muted)]">
-            {isMac ? "⌘" : "Ctrl"} K
+            {isMac ? "⌘" : "Ctrl"}K
           </kbd>
         </button>
       </div>

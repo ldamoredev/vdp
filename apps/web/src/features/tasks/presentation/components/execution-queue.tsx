@@ -32,29 +32,29 @@ export function ExecutionQueue() {
 
   return (
     <div className="glass-card-static overflow-hidden">
-      <div className="border-b border-[var(--glass-border)] p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="border-b border-[var(--divider)] p-4 md:p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--foreground)]">
+            <h3 className="text-base font-semibold tracking-tight text-[var(--foreground)]">
               Cola de ejecucion
             </h3>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Acciones visibles, sin hover escondido. Lo importante queda al
-              frente.
+            <p className="mt-0.5 text-[13px] text-[var(--muted)]">
+              Lo importante queda al frente
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {filterOptions.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => setFilter(item.key)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                   filter === item.key
-                    ? "bg-[var(--accent)] text-white shadow-lg"
-                    : "bg-[var(--hover-overlay)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                    ? "bg-[var(--accent)] text-white"
+                    : "bg-[var(--hover-overlay)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay-strong)]"
                 }`}
+                style={filter === item.key ? { boxShadow: "0 2px 8px var(--accent-glow)" } : undefined}
               >
                 {item.label} · {item.count}
               </button>
@@ -63,7 +63,7 @@ export function ExecutionQueue() {
         </div>
       </div>
 
-      <div className="space-y-3 p-5">
+      <div className="space-y-2.5 p-4 md:p-5">
         {visibleTasks.length === 0 && <EmptyTaskList filter={filter} />}
 
         <div className="stagger-children space-y-3">

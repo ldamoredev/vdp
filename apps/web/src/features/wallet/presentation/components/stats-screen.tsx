@@ -56,7 +56,7 @@ export function StatsScreen() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="glass-card-static p-5">
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-glow)]">
               <BarChart3 size={15} className="text-[var(--accent)]" />
             </div>
@@ -113,7 +113,7 @@ export function StatsScreen() {
         </div>
 
         <div className="glass-card-static p-5">
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--blue-soft-border)] bg-[var(--blue-soft-bg)] text-[var(--blue-soft-text)]">
               <ArrowRightLeft size={15} />
             </div>
@@ -133,7 +133,7 @@ export function StatsScreen() {
               {dollarRates.map((rate) => (
                 <div
                   key={rate.id}
-                  className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3"
+                  className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 transition-all hover:shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -145,7 +145,7 @@ export function StatsScreen() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-semibold">
+                      <p className="text-lg font-bold tracking-tight">
                         {formatMoney(rate.rate, "ARS")}
                       </p>
                       <p className="text-xs text-[var(--muted)]">por 1 USD</p>
@@ -213,7 +213,7 @@ export function StatsScreen() {
               {byCategory.map((item, index) => (
                 <div
                   key={item.categoryId ?? `legend-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 transition-all hover:shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div

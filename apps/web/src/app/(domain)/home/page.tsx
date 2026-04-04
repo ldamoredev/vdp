@@ -48,16 +48,23 @@ export default function HomePage() {
 
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-          Centro de comando
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Tu sistema operativo personal — un dominio a la vez
-        </p>
+      {/* Page header */}
+      <div className="flex items-end justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+            Centro de comando
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Tu sistema operativo personal — un dominio a la vez
+          </p>
+        </div>
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-[var(--muted)]">
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)]" />
+          <span>En línea</span>
+        </div>
       </div>
 
-      {/* ─── Active: Tasks stats row ─── */}
+      {/* Stats row */}
       <TaskStatsRow
         tasksCompleted={tasksCompleted}
         tasksTotal={tasksTotal}
@@ -66,7 +73,7 @@ export default function HomePage() {
         averageCompletion={averageCompletion}
       />
 
-      {/* ─── Main content grid ─── */}
+      {/* Main content grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <TodayTasksCard tasks={activeTasks} />

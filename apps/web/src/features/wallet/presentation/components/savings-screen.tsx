@@ -180,7 +180,7 @@ export function SavingsScreen() {
 
                 <div className="mb-4">
                   <div className="mb-2 flex items-baseline justify-between">
-                    <span className="text-lg font-semibold">
+                    <span className="text-lg font-bold tracking-tight">
                       {formatMoney(current, goal.currency as "ARS" | "USD")}
                     </span>
                     <span className="text-sm text-[var(--muted)]">

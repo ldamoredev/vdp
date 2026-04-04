@@ -67,7 +67,7 @@ export function InvestmentsScreen() {
             <span className="text-xs font-medium uppercase tracking-wider text-[var(--foreground-muted)]">
               Total invertido
             </span>
-            <div className="mt-2 text-xl font-semibold">
+            <div className="mt-2 text-xl font-bold tracking-tight">
               {formatMoney(investmentSummary.totalInvested, "ARS")}
             </div>
           </div>
@@ -75,7 +75,7 @@ export function InvestmentsScreen() {
             <span className="text-xs font-medium uppercase tracking-wider text-[var(--foreground-muted)]">
               Valor actual
             </span>
-            <div className="mt-2 text-xl font-semibold">
+            <div className="mt-2 text-xl font-bold tracking-tight">
               {formatMoney(investmentSummary.totalCurrent, "ARS")}
             </div>
           </div>
@@ -88,7 +88,7 @@ export function InvestmentsScreen() {
               Retorno total
             </span>
             <div
-              className={`mt-2 flex items-center gap-2 text-xl font-semibold ${
+              className={`mt-2 flex items-center gap-2 text-xl font-bold tracking-tight ${
                 investmentSummary.positive
                   ? "text-[var(--accent-green)]"
                   : "text-[var(--accent-red)]"

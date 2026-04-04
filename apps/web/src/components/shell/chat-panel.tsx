@@ -91,20 +91,21 @@ export function ChatPanel() {
         })()}
 
         {chat.messages.length === 0 && !chat.isLoadingHistory && (
-          <div className="text-center py-12">
+          <div className="text-center py-16 animate-fade-in">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
               style={{
                 background:
-                  "color-mix(in srgb, var(--accent) 15%, transparent)",
+                  "color-mix(in srgb, var(--accent) 12%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--accent) 15%, transparent)",
               }}
             >
-              <Bot size={24} className="text-[var(--accent)]" />
+              <Bot size={22} className="text-[var(--accent)]" />
             </div>
-            <p className="text-sm font-medium mb-1 text-[var(--foreground)]">
+            <p className="text-sm font-semibold tracking-tight mb-1.5 text-[var(--foreground)]">
               {domain.chatWelcome}
             </p>
-            <p className="text-xs text-[var(--muted)] max-w-[250px] mx-auto leading-relaxed">
+            <p className="text-xs text-[var(--muted)] max-w-[220px] mx-auto leading-relaxed">
               {domain.chatDescription}
             </p>
           </div>
@@ -120,27 +121,23 @@ export function ChatPanel() {
 
       <form
         onSubmit={(e) => stream.handleSubmit(e, domain.agentEndpoint, chat.conversationId)}
-        className="p-4 border-t border-[var(--glass-border)]"
+        className="p-3 border-t border-[var(--glass-border)]"
       >
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <input
             ref={inputRef}
             value={stream.input}
             onChange={(e) => stream.setInput(e.target.value)}
             placeholder={domain.chatPlaceholder}
-            className="glass-input flex-1 px-4 py-2.5 text-sm"
+            className="glass-input flex-1 px-3.5 py-2.5 text-[13px]"
             disabled={stream.isStreaming}
           />
           <button
             type="submit"
             disabled={stream.isStreaming || !stream.input.trim()}
-            className="p-2.5 text-white rounded-xl disabled:opacity-30 hover:shadow-lg transition-all cursor-pointer"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--accent), var(--accent-secondary))",
-            }}
+            className="btn-primary p-2.5 disabled:opacity-30"
           >
-            <Send size={16} />
+            <Send size={15} />
           </button>
         </div>
       </form>

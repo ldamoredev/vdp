@@ -11,7 +11,7 @@ export function FocusRecommendation() {
   const focusTasks = planning.focusTasks;
 
   return (
-    <div className="glass-card-static p-6">
+    <div className="glass-card-static p-5">
       <div className="flex items-center gap-2">
         <Sparkles size={15} style={{ color: "var(--violet-soft-text)" }} />
         <h3 className="text-sm font-medium text-[var(--foreground)]">
@@ -20,20 +20,20 @@ export function FocusRecommendation() {
       </div>
 
       {focusTasks.length > 0 ? (
-        <div className="mt-4 space-y-3">
+        <div className="mt-3.5 space-y-2.5">
           {focusTasks.map((task, index) => (
             <button
               key={task.id}
               type="button"
               onClick={() => openBreakdownStudio(task.id)}
-              className={`rounded-[24px] border p-4 ${
+              className={`w-full text-left rounded-xl border p-3.5 transition-all hover:shadow-sm ${
                 task.id === activeSelectedTaskId
                   ? "border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)]"
                   : "border-[var(--glass-border)] bg-[var(--hover-overlay)]"
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-xs font-semibold text-white">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] text-xs font-bold text-white">
                   {index + 1}
                 </div>
                 <div className="min-w-0 flex-1">

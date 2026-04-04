@@ -169,216 +169,186 @@ export function LoginPageClient({ nextPath }: { nextPath: string }) {
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: "var(--background)" }}>
+      {/* Background mesh */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-80"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 28%), radial-gradient(circle at 80% 18%, color-mix(in srgb, var(--accent-green) 14%, transparent), transparent 24%), radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 30%)",
+            "radial-gradient(ellipse 60% 40% at 30% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent), radial-gradient(ellipse 50% 50% at 75% 15%, color-mix(in srgb, var(--accent-purple) 10%, transparent), transparent), radial-gradient(ellipse 40% 35% at 50% 90%, color-mix(in srgb, var(--accent) 8%, transparent), transparent)",
         }}
       />
+
       <div className="relative flex min-h-screen items-center justify-center p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm flex flex-col gap-5 rounded-[28px] p-8 shadow-2xl"
-        style={{
-          background: "var(--glass)",
-          border: "1px solid var(--glass-border)",
-          backdropFilter: "blur(20px)",
-        }}
-      >
-        <div className="flex justify-center">
-          <div
-            className="rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em]"
-            style={{
-              color: "var(--foreground-muted)",
-              background: "var(--hover-overlay)",
-              border: "1px solid var(--glass-border)",
-            }}
-          >
-            Acceso seguro
+        {/* Brand mark */}
+        <div className="absolute top-6 left-6 flex items-center gap-2.5 animate-fade-in">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] text-white text-sm font-bold shadow-md">
+            V
           </div>
+          <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">VDP</span>
         </div>
 
-        <div className="text-center">
-          <h1
-            className="text-3xl font-semibold tracking-tight"
-            style={{ color: "var(--foreground)" }}
-          >
-            VDP
-          </h1>
-          <p
-            className="mt-4 text-xl font-medium"
-            style={{ color: "var(--foreground)" }}
-          >
-            {title}
-          </p>
-          <p
-            className="text-sm mt-2 leading-6"
-            style={{ color: "var(--foreground-muted)" }}
-          >
-            {description}
-          </p>
-        </div>
-
-        {!isLoadingMode && (
-          <div
-            className="grid grid-cols-2 gap-2 rounded-2xl p-1"
-            style={{
-              background: "var(--input-bg)",
-              border: "1px solid var(--glass-border)",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setError("");
-                setMode("login");
-              }}
-              className="rounded-xl px-3 py-2 text-sm font-medium transition-all"
-              style={{
-                background: mode === "login" ? "var(--accent)" : "transparent",
-                color: mode === "login" ? "#fff" : "var(--foreground-muted)",
-              }}
-            >
-              Iniciar sesion
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setError("");
-                setMode("register");
-              }}
-              className="rounded-xl px-3 py-2 text-sm font-medium transition-all"
-              style={{
-                background: mode === "register" ? "var(--accent)" : "transparent",
-                color: mode === "register" ? "#fff" : "var(--foreground-muted)",
-              }}
-            >
-              Crear cuenta
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4">
-          {isRegisterMode && (
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
-                Nombre visible
-              </span>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Como quieres que te veamos"
-                autoFocus
-                required
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                style={{
-                  background: "var(--input-bg)",
-                  border: "1px solid var(--glass-border)",
-                  color: "var(--foreground)",
-                }}
-              />
-            </label>
-          )}
-
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
-              Email
-            </span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-              autoFocus={!isRegisterMode}
-              required
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-              style={{
-                background: "var(--input-bg)",
-                border: "1px solid var(--glass-border)",
-                color: "var(--foreground)",
-              }}
-            />
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
-                Contrasena
-              </span>
-              {isRegisterMode && (
-                <span className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-                  Minimo 8 caracteres
-                </span>
-              )}
-            </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={isRegisterMode ? "Crea una contrasena segura" : "Tu contrasena"}
-              required
-              minLength={8}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-              style={{
-                background: "var(--input-bg)",
-                border: "1px solid var(--glass-border)",
-                color: "var(--foreground)",
-              }}
-            />
-          </label>
-        </div>
-
-        {isRegisterMode && (
-          <div
-            className="rounded-2xl px-4 py-3 text-sm leading-6"
-            style={{
-              background: "var(--hover-overlay)",
-              border: "1px solid var(--glass-border)",
-              color: "var(--foreground-muted)",
-            }}
-          >
-            Al crear tu cuenta entraras directamente a tu espacio personal de tareas, wallet y chat.
-          </div>
-        )}
-
-        {error && (
-          <p
-            className="text-sm text-center"
-            style={{ color: "var(--accent-red)" }}
-            aria-live="polite"
-          >
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={
-            loading ||
-            isLoadingMode ||
-            !email ||
-            !password ||
-            (isRegisterMode && !displayName)
-          }
-          className="w-full py-3 rounded-xl text-sm font-medium transition-opacity disabled:opacity-40"
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-sm flex flex-col gap-5 rounded-2xl p-8 animate-fade-in-up"
           style={{
-            background: "var(--accent)",
-            color: "#fff",
+            background: "var(--glass)",
+            border: "1px solid var(--glass-border)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            boxShadow: "var(--shadow-xl)",
           }}
         >
-          {loading ? (isRegisterMode ? "Creando cuenta..." : "Entrando...") : title}
-        </button>
+          {/* Header */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] mb-5 text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--muted)]">
+              <div className="w-1 h-1 rounded-full bg-[var(--accent-green)]" />
+              Acceso seguro
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] mb-1">
+              {title}
+            </h1>
+            <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
+              {description}
+            </p>
+          </div>
 
-        {!isLoadingMode && (
-          <p className="text-center text-xs leading-5" style={{ color: "var(--foreground-muted)" }}>
-            {isRegisterMode
-              ? "Tu sesion se iniciara automaticamente despues de crear la cuenta."
-              : "Si todavia no tienes cuenta, puedes crearla desde esta misma pantalla."}
-          </p>
-        )}
-      </form>
+          {/* Mode toggle */}
+          {!isLoadingMode && (
+            <div
+              className="grid grid-cols-2 gap-1 rounded-xl p-1"
+              style={{
+                background: "var(--input-bg)",
+                border: "1px solid var(--glass-border)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setMode("login");
+                }}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-all"
+                style={{
+                  background: mode === "login" ? "var(--accent)" : "transparent",
+                  color: mode === "login" ? "#fff" : "var(--foreground-muted)",
+                  boxShadow: mode === "login" ? "0 2px 8px var(--accent-glow)" : "none",
+                }}
+              >
+                Iniciar sesion
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setMode("register");
+                }}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-all"
+                style={{
+                  background: mode === "register" ? "var(--accent)" : "transparent",
+                  color: mode === "register" ? "#fff" : "var(--foreground-muted)",
+                  boxShadow: mode === "register" ? "0 2px 8px var(--accent-glow)" : "none",
+                }}
+              >
+                Crear cuenta
+              </button>
+            </div>
+          )}
+
+          {/* Form fields */}
+          <div className="flex flex-col gap-4">
+            {isRegisterMode && (
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Nombre visible
+                </span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Como quieres que te veamos"
+                  autoFocus
+                  required
+                  className="glass-input w-full px-4 py-2.5 text-sm"
+                />
+              </label>
+            )}
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                Email
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                autoFocus={!isRegisterMode}
+                required
+                className="glass-input w-full px-4 py-2.5 text-sm"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Contrasena
+                </span>
+                {isRegisterMode && (
+                  <span className="text-[11px] text-[var(--muted)]">
+                    Min. 8 caracteres
+                  </span>
+                )}
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={isRegisterMode ? "Crea una contrasena segura" : "Tu contrasena"}
+                required
+                minLength={8}
+                className="glass-input w-full px-4 py-2.5 text-sm"
+              />
+            </label>
+          </div>
+
+          {isRegisterMode && (
+            <div className="rounded-xl px-4 py-3 text-[13px] leading-relaxed text-[var(--foreground-muted)] bg-[var(--hover-overlay)] border border-[var(--glass-border)]">
+              Al crear tu cuenta entraras directamente a tu espacio personal de tareas, wallet y chat.
+            </div>
+          )}
+
+          {error && (
+            <p
+              className="text-sm text-center font-medium"
+              style={{ color: "var(--accent-red)" }}
+              aria-live="polite"
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              isLoadingMode ||
+              !email ||
+              !password ||
+              (isRegisterMode && !displayName)
+            }
+            className="btn-primary w-full justify-center py-3 text-sm"
+          >
+            {loading ? (isRegisterMode ? "Creando cuenta..." : "Entrando...") : title}
+          </button>
+
+          {!isLoadingMode && (
+            <p className="text-center text-xs text-[var(--muted)] leading-relaxed">
+              {isRegisterMode
+                ? "Tu sesion se iniciara automaticamente despues de crear la cuenta."
+                : "Si todavia no tienes cuenta, puedes crearla desde esta misma pantalla."}
+            </p>
+          )}
+        </form>
       </div>
     </div>
   );

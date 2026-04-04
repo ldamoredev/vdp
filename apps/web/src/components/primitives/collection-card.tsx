@@ -12,7 +12,7 @@ export function CollectionCard({
   icon,
   action,
   headerPadding = "5",
-  bodyClassName = "divide-y divide-[var(--glass-border)]",
+  bodyClassName = "divide-y divide-[var(--divider)]",
   children,
 }: {
   title: ReactNode;
@@ -25,11 +25,11 @@ export function CollectionCard({
   return (
     <div className="glass-card-static overflow-hidden">
       <div
-        className={`flex items-center justify-between border-b border-[var(--glass-border)] ${headerPaddingClassName[headerPadding]}`}
+        className={`flex items-center justify-between border-b border-[var(--divider)] ${headerPaddingClassName[headerPadding]}`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {icon}
-          <h3 className="text-sm font-medium text-[var(--foreground)]">
+          <h3 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
             {title}
           </h3>
         </div>

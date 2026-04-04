@@ -10,7 +10,7 @@ function DomainIcon({ domain, isActive }: { domain: DomainConfig; isActive: bool
     return (
       <div
         title={`${domain.label} — Proximamente`}
-        className="w-10 h-10 rounded-xl flex items-center justify-center opacity-30 cursor-default group relative"
+        className="w-10 h-10 rounded-xl flex items-center justify-center opacity-25 cursor-default group relative"
       >
         <span className="relative text-sm font-bold text-[var(--muted)]">
           {domain.iconLetter}
@@ -37,7 +37,7 @@ function DomainIcon({ domain, isActive }: { domain: DomainConfig; isActive: bool
     >
       {isActive && (
         <div
-          className="absolute inset-0 rounded-xl opacity-90"
+          className="absolute inset-0 rounded-xl"
           style={{
             background: `linear-gradient(135deg, var(--accent), var(--accent-secondary))`,
             boxShadow: `0 2px 12px var(--accent-glow)`,
@@ -61,11 +61,11 @@ export function IconRail() {
   const activeDomain = getDomainFromPathname(pathname);
 
   return (
-    <div className="w-16 flex flex-col items-center py-4 bg-[var(--icon-rail-bg)] border-r border-[var(--sidebar-border)]">
+    <div className="w-14 flex flex-col items-center py-3 bg-[var(--icon-rail-bg)] border-r border-[var(--sidebar-border)]">
       {/* Home */}
       <Link
         href="/home"
-        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-6 transition-all cursor-pointer ${
+        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all cursor-pointer ${
           pathname === "/home"
             ? "bg-[var(--active-overlay)] text-[var(--foreground)]"
             : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay)]"
@@ -74,8 +74,11 @@ export function IconRail() {
         <Home size={18} strokeWidth={1.8} />
       </Link>
 
+      {/* Divider */}
+      <div className="w-6 h-px bg-[var(--divider)] mb-4" />
+
       {/* Domain icons */}
-      <div className="flex flex-col gap-2 flex-1">
+      <div className="flex flex-col gap-1.5 flex-1">
         {domains.map((domain) => (
           <DomainIcon
             key={domain.key}

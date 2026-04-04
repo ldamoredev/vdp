@@ -36,7 +36,7 @@ export function RecentTransactions({
           </>
         ) : transactions.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--hover-overlay)]">
               <ArrowUpRight size={20} className="text-[var(--muted)]" />
             </div>
             <p className="text-sm text-[var(--muted)]">
@@ -50,7 +50,7 @@ export function RecentTransactions({
           transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between p-4 transition-colors hover:bg-[var(--hover-overlay)]"
+              className="flex items-center justify-between p-4 transition-all hover:bg-[var(--hover-overlay)] hover:translate-x-0.5"
             >
               <div className="flex items-center gap-3">
                 <div

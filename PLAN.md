@@ -6,7 +6,7 @@ Status note:
 
 - For current repository state verified directly from code on 2026-04-03, trust [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) first.
 - Use this file primarily as roadmap and execution guidance.
-- Authentication modernization is now the immediate platform priority before starting another domain module.
+- Authentication V1 is now implemented. The immediate platform priority is auth hardening and multi-user verification before starting another domain module.
 
 ## 1. Purpose
 
@@ -206,10 +206,39 @@ Confirmed in code and memory:
 - repeat-detection flow exists in code
 - `TaskRepeatDetected` event handling exists in code
 - `get_recommendations` agent tool exists in code
-- auth gate via `ACCESS_SECRET` exists in frontend and backend
 - OpenAI-compatible provider support exists in code
 
-### 5.2 Recent Tasks polish from 2026-03-27 session memory
+### 5.2 Authentication V1 completed (verified 2026-04-03)
+
+The first multi-user auth slice is now implemented in the repo.
+
+Completed platform changes:
+
+- real `core.users`, `core.sessions`, and `core.audit_logs`
+- session-based auth with `httpOnly` `vdp_session` cookie
+- real login, register, logout, and current-user flow
+- backend request auth context on Fastify request lifecycle
+- per-user ownership across Tasks, Wallet, and agent conversations
+- same-origin auth/proxy flow in the web app
+- removal of the previous `ACCESS_SECRET` browser login flow
+- cleaned migration history with one active baseline migration
+
+Product/UX changes:
+
+- auth model is plain users only for now; there is no admin role
+- login and register are both available from the same access screen
+- the web app now bootstraps auth through `/api/auth/me`
+
+Validation completed in this auth slice:
+
+- server TypeScript passed
+- web TypeScript passed
+- server unit tests passed: `175/175`
+- web tests passed: `114/114`
+- server e2e passed: `31/31`
+- production builds passed
+
+### 5.3 Recent Tasks polish from 2026-03-27 session memory
 
 The latest Claude session log shows additional Tasks work completed on 2026-03-27:
 
@@ -218,7 +247,7 @@ The latest Claude session log shows additional Tasks work completed on 2026-03-2
 - staggered task-list transitions
 - quick-capture modal with keyboard shortcut
 
-### 5.3 Verification captured in latest session memory
+### 5.4 Verification captured in latest session memory
 
 The latest session memory also records successful verification on 2026-03-27:
 
@@ -264,7 +293,7 @@ A full coverage audit was performed against all uncommitted changes. Key finding
 
 **Verdict:** Wallet is no longer missing the major backend tests and mutation surface previously reported here. Frontend coverage improved materially, but it is still not yet equivalent to the overall confidence level of the Tasks module.
 
-### 5.4 Wallet work currently visible in the repo
+### 5.5 Wallet work currently visible in the repo
 
 Current Wallet work in the repo includes:
 
@@ -531,172 +560,66 @@ Only after Tasks + Wallet are both real:
 
 ---
 
-## 10. Authentication Reset Plan
+## 10. Authentication Status and Next Slice
 
-This project is no longer only for personal use. The current `ACCESS_SECRET` mechanism is not sufficient.
+This project is no longer only for personal use. The old `ACCESS_SECRET` mechanism has now been replaced in the active codebase.
 
-The next platform milestone is a clean cutover to real multi-user authentication.
+The remaining auth work is no longer the initial cutover. It is hardening, verification, and user-lifecycle follow-through.
 
-### 10.1 Current auth state to replace
+### 10.1 What is now done
 
-Current behavior in the repo:
+Completed in the repo:
 
-- frontend login uses a shared secret
-- backend API access uses the same shared secret
-- there is no `User` model
-- domain data is not owned by a user
-- agent conversations are not scoped to a user
+- `User` model exists
+- session model exists
+- audit log foundation exists
+- frontend login/register use session auth
+- backend request auth context exists
+- Tasks are user-scoped
+- Wallet is user-scoped
+- agent conversations are user-scoped
+- the old shared-secret browser auth flow is removed from the active path
 
-This model should be treated as temporary and should be removed.
+### 10.2 Current auth model
 
-### 10.2 Product goal
-
-Introduce a real user model so the system can:
-
-- identify who performed each action
-- isolate each user's Tasks, Wallet data, and conversations
-- support multiple human users safely
-- create a foundation for future authorization and auditability
-
-### 10.3 Migration constraint
-
-Important product decision:
-
-- the app is not currently used by anyone
-- production data can be discarded
-
-This means the project should **not** spend time on backward-compatible auth migration for production.
-
-### 10.4 Delivery strategy
-
-Use a clean auth cutover instead of a legacy migration layer:
-
-1. implement the final multi-user auth model
-2. update the schema to the final user-owned shape
-3. remove the shared-secret auth flow
-4. reset production data
-5. deploy the new auth-aware system
-
-Do **not**:
-
-- backfill legacy production data
-- maintain dual auth modes in production
-- keep `ACCESS_SECRET` as the long-term human login mechanism
-
-### 10.5 Target auth model
-
-Recommended first version:
+Current implemented model:
 
 - first-party users with email + password
 - server-managed sessions
-- `httpOnly` session cookie for the web app
-- backend request auth context with the authenticated user
-- audit log for actor attribution
+- `httpOnly` cookie for the web app
+- same-origin web auth routes
+- plain `user` role only for now
+- no admin role, no RBAC, no organizations
 
-This is intentionally narrower than full RBAC, organizations, or SSO.
+### 10.3 What remains next
 
-### 10.6 Required new core data
+The next auth slice should focus on trust and hardening:
 
-Add to `core`:
+1. add dedicated auth route coverage for register, login, `/api/auth/me`, and logout
+2. add explicit cross-user isolation tests
+3. verify repository-level user scoping everywhere, not only controller-level access
+4. review audit-log attribution for user vs system actions
+5. add user lifecycle basics such as profile updates and password change
+6. decide whether the current single-value `role` field should stay as future-proofing or be removed
 
-- `users`
-- `sessions`
-- `audit_logs`
+### 10.4 Production reset constraint
 
-Recommended semantics:
+The product decision remains:
 
-- `users`: identity and account status
-- `sessions`: browser/server session tracking and revocation
-- `audit_logs`: who did what, when, and to which resource
+- the app is not currently used by anyone
+- production data can be discarded
+- the production database can be reset instead of migrated for legacy compatibility
 
-### 10.7 Ownership model
+This means the project should still avoid spending time on backward-compatible auth migration logic.
 
-All user-owned domain records must be explicitly scoped to a user.
-
-Must become user-owned:
-
-- tasks
-- task notes
-- wallet accounts
-- wallet categories
-- wallet transactions
-- wallet savings goals
-- wallet savings contributions
-- wallet investments
-- agent conversations
-
-Can remain shared/system-level:
-
-- exchange rates
-
-### 10.8 Architectural rule for auth
-
-User scoping must not live only in controllers.
-
-Required rule:
-
-- controllers authenticate the request
-- repositories enforce user ownership in reads and writes
-- services remain focused on domain behavior, but accept actor/user context where needed
-
-This is mandatory to avoid accidental cross-user data leaks.
-
-### 10.9 Actor attribution
-
-The system must distinguish:
-
-- user-initiated actions
-- system-initiated actions
-
-Examples:
-
-- a task created from the UI should be attributable to a specific user
-- a task created automatically from `wallet.spending.spike` should be attributable to the system on behalf of that user
-
-This should be captured through actor context and audit logging.
-
-### 10.10 Scope of the first auth release
-
-Must include:
-
-- real users
-- sessions
-- logout/current-user flow
-- per-user Tasks
-- per-user Wallet
-- per-user agent conversations
-- audit log foundation
-- cross-user isolation tests
-
-Must not expand yet into:
-
-- organizations/workspaces
-- fine-grained RBAC
-- social login
-- enterprise SSO
-
-### 10.11 Execution order
-
-Recommended order:
-
-1. finalize auth architecture and request-context shape
-2. add `core.users`, `core.sessions`, and `core.audit_logs`
-3. add ownership columns to user-owned domain tables
-4. scope repositories and agent-conversation storage by user
-5. replace `ACCESS_SECRET` login and API key flow with session auth
-6. update the frontend to bootstrap and enforce session-based auth
-7. add actor attribution for mutations and cross-domain automation
-8. reset production data and deploy the new schema
-9. create the first admin user
-
-### 10.12 Gating rule
+### 10.5 Gating rule before another module
 
 Do not start another domain module until:
 
-- auth is multi-user
-- Tasks and Wallet are user-scoped
-- agent conversations are user-scoped
+- the current auth/session flow is stable in production
 - cross-user isolation is tested
+- repository ownership enforcement is verified
+- Tasks and Wallet are confirmed safe under multi-user access
 
 ---
 
@@ -716,4 +639,5 @@ Current concise summary:
 - `Wallet` is the second active domain and remains newer than `Tasks`
 - the rest are inactive
 - the architecture is sound
-- the immediate platform challenge is authentication and user ownership, not adding another module
+- auth V1 is implemented
+- the immediate platform challenge is auth hardening, multi-user verification, and isolation testing before adding another module

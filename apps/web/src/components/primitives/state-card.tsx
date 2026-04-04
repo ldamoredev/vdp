@@ -5,8 +5,8 @@ type Size = "sm" | "md" | "lg";
 
 const containerClassName: Record<Tone, string> = {
   default:
-    "rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)]",
-  soft: "rounded-[28px] border border-dashed border-[var(--glass-border)] bg-[var(--hover-overlay)]",
+    "rounded-xl border border-dashed border-[var(--divider)] bg-[var(--hover-overlay)]",
+  soft: "rounded-2xl border border-dashed border-[var(--divider)] bg-[var(--hover-overlay)]",
 };
 
 const paddingClassName: Record<Size, string> = {

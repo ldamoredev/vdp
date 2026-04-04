@@ -20,7 +20,7 @@ export function DashboardScreen() {
   return (
     <ModulePage width="5xl" spacing="8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Resumen de tus finanzas personales
         </p>

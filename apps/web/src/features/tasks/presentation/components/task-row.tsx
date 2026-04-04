@@ -118,7 +118,7 @@ export function TaskRow({
 
   return (
     <div
-      className={`rounded-[20px] md:rounded-2xl border px-4 py-3 transition-all ${getTaskTone(task)}`}
+      className={`rounded-xl border px-4 py-3 transition-all hover:shadow-sm ${getTaskTone(task)}`}
     >
       {/* Desktop */}
       <div className="hidden md:flex items-center gap-3">
