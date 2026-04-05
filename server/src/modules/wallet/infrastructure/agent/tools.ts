@@ -5,7 +5,7 @@ import { createInvestmentTools } from './tools/investment-tools';
 import { createSavingsTools } from './tools/savings-tools';
 import { createTransactionTools } from './tools/transaction-tools';
 import { createStatsTools } from './tools/stats-tools';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 
 export class WalletTools {
     static createWalletTools(services: ServiceProvider, authContext: AuthContextStorage) {

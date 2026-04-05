@@ -168,7 +168,7 @@
 ## 8. Scripts & Config
 
 ### Production Start Scripts
-- ✅ Server: `"start": "node dist/main.js"`
+- ✅ Server: `"start": "node dist/index.js"`
 - ✅ Web: `"start": "next start --port 3000"`
 
 ### Docker
@@ -209,7 +209,7 @@
 
 | # | Issue | Priority | Fix |
 |---|-------|----------|-----|
-| 1 | No env var validation at startup | High | Add Zod schema to validate `process.env` in `main.ts` |
+| 1 | No env var validation at startup | High | Add Zod schema to validate `process.env` in `index.ts` |
 | 2 | Health endpoint doesn't check DB | Medium | Add pg pool query to `/api/health` |
 | 3 | No log level env var | Medium | Add `LOG_LEVEL`, configure pino |
 | 4 | Source maps in prod build | Low | Set `"sourceMap": false` or use tsconfig.build.json |

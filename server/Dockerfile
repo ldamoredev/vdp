@@ -46,4 +46,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:4000/api/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
 
-CMD ["node_modules/.bin/tsx", "dist/main.js"]
+CMD ["node_modules/.bin/tsx", "dist/index.js"]

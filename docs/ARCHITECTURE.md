@@ -144,7 +144,7 @@ Before enabling a new domain in the shell, confirm all of the following:
 
 ## Reintroduction criteria for new domains
 
-Do not restore Wallet, Health, or other domains to the main navigation until they match the Tasks template:
+Do not restore Wallet, Health, or other domains to the index navigation until they match the Tasks template:
 
 1. Shared request schemas
 2. Thin controller layer

@@ -13,7 +13,8 @@ import { RepositoryProvider } from '../db/RepositoryProvider';
 import { AgentProvider } from '../agents/providers/AgentProvider';
 import { EmbeddingProvider } from '../embeddings/EmbeddingProvider';
 import { Logger } from '../observability/logging/Logger';
-import { AuthContextStorage } from '../../auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 export abstract class BaseModule implements DomainModule {
     protected readonly repositories: RepositoryProvider;
@@ -62,6 +63,8 @@ export abstract class BaseModule implements DomainModule {
     }
 
     abstract getControllers(): HttpController[];
+
+    abstract getMiddlewares(): HttpMiddleWare[];
 
     abstract getDescriptor(): DomainModuleDescriptor;
 }

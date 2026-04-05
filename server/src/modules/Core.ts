@@ -13,7 +13,8 @@ import { TraceService } from './common/base/observability/trace/TraceService';
 import { AgentProvider } from './common/base/agents/providers/AgentProvider';
 import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { Logger } from './common/base/observability/logging/Logger';
-import { AuthContextStorage } from './common/auth/AuthContextStorage';
+import { AuthContextStorage } from './auth/infrastructure/http/AuthContextStorage';
+import { HttpMiddleWare } from './common/http/HttpMiddleWare';
 
 export class Core {
     public readonly logger: Logger;
@@ -67,6 +68,10 @@ export class Core {
 
     getRepository<T>(token: abstract new (...args: any[]) => T): T {
         return this.repositories.get(token);
+    }
+
+    getMiddlewares(): HttpMiddleWare[] {
+        return this.modules.flatMap((module) => module.getMiddlewares());
     }
 
     getControllers(): HttpController[] {

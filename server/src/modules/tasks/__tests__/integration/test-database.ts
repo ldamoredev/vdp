@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as authSchema from '../../../common/infrastructure/auth/schema';
+import * as authSchema from '../../../auth/infrastructure/schema';
 import * as agentSchema from '../../../common/infrastructure/agents/schema';
 import * as walletSchema from '../../../wallet/schema';
 import * as tasksSchema from '../../infrastructure/db/schema';

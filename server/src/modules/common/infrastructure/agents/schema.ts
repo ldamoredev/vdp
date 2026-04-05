@@ -7,7 +7,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { users } from '../auth/schema';
+import { users } from '../../../auth/infrastructure/schema';
 
 export const coreSchema = pgSchema("core");
 

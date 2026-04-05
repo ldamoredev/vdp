@@ -4,7 +4,7 @@ import { GetCompletionByDomain } from '../../../services/GetCompletionByDomain';
 import { GetDayStats } from '../../../services/GetDayStats';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { EMPTY_OBJECT_SCHEMA, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskReviewTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -21,7 +21,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetEndOfDayReview).execute(userId, input.date);
             },
         }),
@@ -31,7 +31,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 "Get today's task stats: completed, pending, completion rate. Useful when helping the user plan the day or assess load.",
             inputSchema: EMPTY_OBJECT_SCHEMA,
             execute: async () => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetDayStats).executeToday(userId);
             },
         }),
@@ -47,7 +47,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetDayStats).executeTrend(userId, input.days || 7);
             },
         }),

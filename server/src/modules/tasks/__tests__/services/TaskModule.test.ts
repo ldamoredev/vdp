@@ -12,7 +12,7 @@ import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
 import { TaskEmbeddingRepository } from '../../domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from '../../domain/TaskNoteRepository';

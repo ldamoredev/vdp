@@ -2,7 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { CreateAccount } from '../../../services/CreateAccount';
 import { ACCOUNT_TYPES, CURRENCIES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createAccountTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -17,7 +17,7 @@ export function createAccountTools(services: ServiceProvider, authContextStorage
                 required: [],
             },
             execute: async () => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetAccounts).execute(userId);
             },
         }),
@@ -37,7 +37,7 @@ export function createAccountTools(services: ServiceProvider, authContextStorage
                 required: ['name', 'currency', 'type'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(CreateAccount).execute(userId, {
                     name: input.name,
                     currency: input.currency,

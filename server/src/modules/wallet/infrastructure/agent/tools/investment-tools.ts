@@ -3,7 +3,7 @@ import { GetInvestments } from '../../../services/GetInvestments';
 import { CreateInvestment } from '../../../services/CreateInvestment';
 import { UpdateInvestment } from '../../../services/UpdateInvestment';
 import { CURRENCIES, INVESTMENT_TYPES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createInvestmentTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -17,7 +17,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async () => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetInvestments).execute(userId);
             },
         }),
@@ -42,7 +42,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: ['name', 'type', 'currency', 'investedAmount', 'currentValue', 'startDate'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(CreateInvestment).execute(userId, {
                     name: input.name,
                     type: input.type,
@@ -79,7 +79,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: ['investmentId'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 const investment = await services.get(UpdateInvestment).execute(userId, input.investmentId, {
                     name: input.name,
                     type: input.type,

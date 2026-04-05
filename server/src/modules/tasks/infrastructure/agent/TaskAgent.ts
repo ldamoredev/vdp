@@ -10,7 +10,7 @@ import { TraceService } from '../../../common/base/observability/trace/TraceServ
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 import { Logger } from '../../../common/base/observability/logging/Logger';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 
 export class TaskAgent extends BaseAgent {
     readonly domain: DomainName = 'tasks';

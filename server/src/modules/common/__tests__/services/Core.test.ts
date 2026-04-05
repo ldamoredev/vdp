@@ -14,7 +14,8 @@ import { TraceService, TraceSpan } from '../../base/observability/trace/TraceSer
 import { NoOpLangfuseLLMTraceService } from '../../infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { HttpController, RouteRegister } from '../../http/HttpController';
 import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
-import { AuthContextStorage } from '../../auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 class FakeRepositoryProvider extends RepositoryProvider {
     protected create<T>(_token: abstract new (...args: any[]) => T): T {
@@ -95,6 +96,10 @@ class RecordingModule extends BaseModule {
 
     getControllers(): HttpController[] {
         return [new RecordingController(this.descriptor.domain)];
+    }
+
+    getMiddlewares(): HttpMiddleWare[] {
+        return [];
     }
 
     getDescriptor(): DomainModuleDescriptor {

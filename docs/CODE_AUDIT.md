@@ -308,4 +308,4 @@
 | **Frontend** | 7/10 | Good architecture, demo pages need typing |
 | **Agent/AI** | 7/10 | Clean tool definitions, prompts hardcoded but functional |
 | **Security** | 9/10 | Helmet, rate-limit, auth gate, CORS locked, no secrets in code |
-| **Overall** | **7.5/10** | Solid foundation, type safety is the main gap |
+| **Overall** | **7.5/10** | Solid foundation, type safety is the index gap |

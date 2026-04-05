@@ -4,7 +4,7 @@ import { GetPlanningContext } from '../../../services/GetPlanningContext';
 import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskIntelligenceTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -28,7 +28,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 required: ['query'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 const results = await services.get(FindSimilarTasks).execute(userId, input.query, input.limit);
 
                 if (results.length === 0) {
@@ -45,7 +45,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 'Use this when the user asks for planning help, a daily summary, or when starting a new day.',
             inputSchema: { type: 'object', properties: {} },
             execute: async () => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetPlanningContext).execute(userId);
             },
         }),
@@ -61,7 +61,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 },
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetWeeklySummary).execute(userId, input.days);
             },
         }),
@@ -78,7 +78,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 },
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 const review = await services.get(GetEndOfDayReview).execute(userId, input.date);
                 return {
                     date: review.date,

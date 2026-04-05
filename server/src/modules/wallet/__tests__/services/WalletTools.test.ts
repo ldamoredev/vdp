@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { WalletTools } from '../../infrastructure/agent/tools';
 
 describe('WalletTools', () => {

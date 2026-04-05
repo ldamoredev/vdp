@@ -2,9 +2,9 @@
   "name": "@vdp/server",
   "version": "0.1.0",
   "type": "module",
-  "main": "src/main.ts",
+  "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "tsx dist/main.js",
     "db:generate": "drizzle-kit generate",

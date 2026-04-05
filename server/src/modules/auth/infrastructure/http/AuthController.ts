@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
-import { AuthService } from '../auth/AuthService';
-import { HttpController, RouteRegister } from './HttpController';
-import { RouteContextHandler } from './routes';
-import { UnauthorizedHttpError } from './errors';
+import { GetSetupStatus } from '../../services/GetSetupStatus';
+import { RegisterUser } from '../../services/RegisterUser';
+import { LoginUser } from '../../services/LoginUser';
+import { LogoutUser } from '../../services/LogoutUser';
+import { HttpController, RouteRegister } from '../../../common/http/HttpController';
+import { RouteContextHandler } from '../../../common/http/routes';
+import { UnauthorizedHttpError } from '../../../common/http/errors';
 
 const registerSchema = z.object({
     email: z.string().trim().email(),
@@ -22,7 +25,12 @@ type LoginBody = z.infer<typeof loginSchema>;
 export class AuthController extends HttpController {
     readonly prefix = '/api/auth';
 
-    constructor(private readonly authService: AuthService) {
+    constructor(
+        private readonly getSetupStatus: GetSetupStatus,
+        private readonly registerUser: RegisterUser,
+        private readonly loginUser: LoginUser,
+        private readonly logoutUser: LogoutUser,
+    ) {
         super();
     }
 
@@ -30,13 +38,13 @@ export class AuthController extends HttpController {
         routes
             .get('/setup', {}, this.setup)
             .get('/me', {}, this.me)
-            .post('/register', { body: registerSchema }, this.registerUser)
+            .post('/register', { body: registerSchema }, this.handleRegister)
             .post('/login', { body: loginSchema }, this.login)
             .post('/logout', {}, this.logout);
     }
 
     private readonly setup: RouteContextHandler<undefined, undefined, undefined> = async ({ reply }) => {
-        return reply.send(await this.authService.getSetupStatus());
+        return reply.send(await this.getSetupStatus.execute());
     };
 
     private readonly me: RouteContextHandler<undefined, undefined, undefined> = async ({
@@ -59,11 +67,11 @@ export class AuthController extends HttpController {
         });
     };
 
-    private readonly registerUser: RouteContextHandler<undefined, undefined, RegisterBody> = async ({
+    private readonly handleRegister: RouteContextHandler<undefined, undefined, RegisterBody> = async ({
         body,
         reply,
     }) => {
-        const result = await this.authService.register({
+        const result = await this.registerUser.execute({
             email: body!.email,
             displayName: body!.displayName,
             password: body!.password,
@@ -77,7 +85,7 @@ export class AuthController extends HttpController {
         body,
         reply,
     }) => {
-        const result = await this.authService.login({
+        const result = await this.loginUser.execute({
             email: body!.email,
             password: body!.password,
             userAgent: request.headers['user-agent'] ?? null,
@@ -93,7 +101,7 @@ export class AuthController extends HttpController {
     }) => {
         const token = request.headers['x-session-token'];
         if (typeof token === 'string' && token) {
-            await this.authService.logout(token);
+            await this.logoutUser.execute(token);
         }
 
         return reply.send({ ok: true });

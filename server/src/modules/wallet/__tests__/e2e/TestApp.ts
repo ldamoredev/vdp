@@ -2,7 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
 import { httpErrorHandler } from '../../../common/http/errors';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { TestCoreConfiguration } from './TestCoreConfiguration';
 
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';

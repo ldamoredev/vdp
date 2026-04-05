@@ -49,7 +49,7 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 |---------|-------------|
 | `pnpm --filter @vdp/server dev` | Start backend with hot reload (tsx watch) |
 | `pnpm --filter @vdp/server build` | Compile TypeScript to dist/ |
-| `pnpm --filter @vdp/server start` | Run compiled server (tsx dist/main.js) |
+| `pnpm --filter @vdp/server start` | Run compiled server (tsx dist/index.js) |
 | `pnpm --filter @vdp/server test` | Run all tests (unit + integration + e2e) |
 | `pnpm --filter @vdp/server test:unit` | Run unit tests only |
 | `pnpm --filter @vdp/server test:integration` | Run integration tests (requires test DB) |

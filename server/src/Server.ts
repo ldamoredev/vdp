@@ -1,12 +1,10 @@
 import { App } from './App';
-import { RuntimeLifecycle } from './runtime/RuntimeLifecycle';
 
-export class AppRunner {
+export class Server {
     private signalHandlersRegistered = false;
 
     constructor(
         private readonly app: App,
-        private readonly runtime: RuntimeLifecycle,
     ) {}
 
     async run(port: number, host: string): Promise<void> {
@@ -16,21 +14,30 @@ export class AppRunner {
             await this.app.start(port, host);
         } catch (error) {
             await this.app.stop(error);
-            this.runtime.exit(1);
+            this.exit(1);
         }
     }
 
-    registerSignalHandlers(): void {
+    private registerSignalHandlers(): void {
         if (this.signalHandlersRegistered) {
             return;
         }
 
         const stop = () => {
-            this.app.stop().finally(() => this.runtime.exit(0));
+            this.app.stop().finally(() => this.exit(0));
         };
 
-        this.runtime.once('SIGINT', stop);
-        this.runtime.once('SIGTERM', stop);
+        this.once('SIGINT', stop);
+        this.once('SIGTERM', stop);
         this.signalHandlersRegistered = true;
     }
+
+    private once(signal: 'SIGINT' | 'SIGTERM', handler: () => void): void {
+        process.once(signal, handler);
+    }
+
+    private exit(code: number): never {
+        process.exit(code);
+    }
 }
+

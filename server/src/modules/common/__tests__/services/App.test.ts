@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { App } from '../../../../App';
 import { AgentRegistry } from '../../base/agents/AgentRegistry';
-import { AuditLogRepository } from '../../base/auth/AuditLogRepository';
-import { CreateSessionData, SessionRecord, SessionRepository } from '../../base/auth/SessionRepository';
-import { CreateUserData, UserRecord, UserRepository } from '../../base/auth/UserRepository';
+import { AuditLogRepository } from '../../../auth/domain/AuditLogRepository';
+import { CreateSessionData, SessionRecord, SessionRepository } from '../../../auth/domain/SessionRepository';
+import { CreateUserData, UserRecord, UserRepository } from '../../../auth/domain/UserRepository';
 import { EventBus } from '../../base/event-bus/EventBus';
 import { DomainModuleDescriptor } from '../../base/modules/DomainModuleDescriptor';
 import { HttpController } from '../../http/HttpController';
-import { AuthContextStorage } from '../../auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 class FakeCore {
     public readonly eventBus = new EventBus();
@@ -37,6 +38,10 @@ class FakeCore {
 
     getAuthContextStorage(): AuthContextStorage {
         return this.authContextStorage;
+    }
+
+    getMiddlewares(): HttpMiddleWare[] {
+        return [];
     }
 
     getModuleDescriptors(): DomainModuleDescriptor[] {

@@ -1,12 +1,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { AuthService } from '../auth/AuthService';
-import { AuthContextStorage } from '../auth/AuthContextStorage';
-import { AuthContext } from '../auth/AuthContext';
+import { AuthContextStorage } from './AuthContextStorage';
+import { AuthContext } from './AuthContext';
+import { HttpMiddleWare } from '../../../common/http/HttpMiddleWare';
+import { SessionService } from '../../services/SessionService';
+import { UserRepository } from '../../domain/UserRepository';
+import { UnauthorizedHttpError } from '../../../common/http/errors';
 
 type PublicPath = '/api/health' | '/api/auth/login' | '/api/auth/register' | '/api/auth/setup';
 
-export class HttpSessionAuthentication {
+export class SessionTokenAuthenticationMiddleware extends HttpMiddleWare {
     private readonly PUBLIC_PATHS: PublicPath[] = [
         '/api/health',
         '/api/auth/login',
@@ -14,17 +17,18 @@ export class HttpSessionAuthentication {
         '/api/auth/setup',
     ];
 
-    constructor(private readonly authService: AuthService, private readonly authContextStorage: AuthContextStorage) {}
+    constructor(
+        private readonly authContextStorage: AuthContextStorage,
+        private readonly sessionService: SessionService,
+        private readonly users: UserRepository,
+    ) {
+        super();
+    }
 
-    plugin = async (fastify: FastifyInstance) => {
+    async plugin(fastify: FastifyInstance) {
         fastify.decorateRequest('auth');
 
         fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-            const context = this.authContextStorage.unauthenticatedAuth();
-
-            request.auth = { ...context };
-            this.authContextStorage.setAuthContext({ ...context });
-
             const sessionToken = this.getSessionToken(request);
 
             if (!sessionToken) {
@@ -36,34 +40,36 @@ export class HttpSessionAuthentication {
             }
 
             try {
-                const { user, sessionId } = await this.authService.getAuthenticatedUser(sessionToken);
+                const session = await this.sessionService.findByToken(sessionToken);
+                if (!session) {
+                    throw new UnauthorizedHttpError('Invalid session');
+                }
+
+                const user = await this.users.findById(session.userId);
+                if (!user || !user.isActive) {
+                    throw new UnauthorizedHttpError('Session expired or invalid');
+                }
+
                 const authenticatedContext: AuthContext = {
                     isAuthenticated: true,
                     userId: user.id,
-                    sessionId,
+                    sessionId: session.id,
                     role: user.role,
                     email: user.email,
                     displayName: user.displayName,
                 };
+
                 request.auth = authenticatedContext;
                 this.authContextStorage.setAuthContext({ ...authenticatedContext });
             } catch (error) {
-                if (this.isPublicPath(request.url)) {
-                    return;
-                }
-
+                if (this.isPublicPath(request.url)) return;
                 return reply.status(401).send({
                     error: 'UNAUTHORIZED',
                     message: error instanceof Error ? error.message : 'Invalid session',
                 });
             }
         });
-
-        fastify.addHook('preHandler', async (request, _reply) => {
-            const currentAuth = request.auth ?? this.authContextStorage.unauthenticatedAuth();
-            this.authContextStorage.setAuthContext({ ...currentAuth });
-        });
-    };
+    }
 
     private isPublicPath(url: string): boolean {
         return this.PUBLIC_PATHS.some((path) => url === path || url.startsWith(`${path}?`));

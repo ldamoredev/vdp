@@ -20,12 +20,12 @@ import { InvestmentRepository } from '../../../wallet/domain/InvestmentRepositor
 import { DrizzleInvestmentRepository } from '../../../wallet/infrastructure/db/DrizzleInvestmentRepository';
 import { ExchangeRateRepository } from '../../../wallet/domain/ExchangeRateRepository';
 import { DrizzleExchangeRateRepository } from '../../../wallet/infrastructure/db/DrizzleExchangeRateRepository';
-import { UserRepository } from '../../base/auth/UserRepository';
-import { SessionRepository } from '../../base/auth/SessionRepository';
-import { AuditLogRepository } from '../../base/auth/AuditLogRepository';
-import { DrizzleUserRepository } from '../auth/DrizzleUserRepository';
-import { DrizzleSessionRepository } from '../auth/DrizzleSessionRepository';
-import { DrizzleAuditLogRepository } from '../auth/DrizzleAuditLogRepository';
+import { UserRepository } from '../../../auth/domain/UserRepository';
+import { SessionRepository } from '../../../auth/domain/SessionRepository';
+import { AuditLogRepository } from '../../../auth/domain/AuditLogRepository';
+import { DrizzleUserRepository } from '../../../auth/infrastructure/db/DrizzleUserRepository';
+import { DrizzleSessionRepository } from '../../../auth/infrastructure/db/DrizzleSessionRepository';
+import { DrizzleAuditLogRepository } from '../../../auth/infrastructure/db/DrizzleAuditLogRepository';
 
 export class DrizzleRepositoryProvider extends RepositoryProvider {
     constructor(private db: Database) {

@@ -4,34 +4,18 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 
 import { Core } from './modules/Core';
-import { AuditLogRepository } from './modules/common/base/auth/AuditLogRepository';
-import { SessionRepository } from './modules/common/base/auth/SessionRepository';
-import { UserRepository } from './modules/common/base/auth/UserRepository';
-import { AuthService } from './modules/common/auth/AuthService';
 import { HttpController } from './modules/common/http/HttpController';
-import { AuthController } from './modules/common/http/AuthController';
-import { RequestAuditLogger } from './modules/common/http/RequestAuditLogger';
-import { HttpSessionAuthentication } from './modules/common/http/HttpSessionAuthentication';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
-import { AuthContextStorage } from './modules/common/auth/AuthContextStorage';
+import { HttpMiddleWare } from './modules/common/http/HttpMiddleWare';
 
 export class App {
     public app = Fastify({ logger: true });
     private stopPromise: Promise<void> | null = null;
-    private readonly authService: AuthService;
-    private readonly sessionAuthentication: HttpSessionAuthentication;
-    private readonly requestAuditLogger: RequestAuditLogger;
 
     constructor(public readonly core: Core) {
-        this.authService = new AuthService(
-            this.core.getRepository(UserRepository),
-            this.core.getRepository(SessionRepository),
-            this.core.getRepository(AuditLogRepository),
-        );
-        this.sessionAuthentication = new HttpSessionAuthentication(this.authService, this.core.getAuthContextStorage());
-        this.requestAuditLogger = new RequestAuditLogger(this.core.getRepository(AuditLogRepository), this.core.getAuthContextStorage());
         this.registerPlugins();
+        this.registerMiddlewares();
         this.registerControllers();
         this.registerTimelineLogging();
     }
@@ -47,20 +31,27 @@ export class App {
             max: 100,
             timeWindow: '1 minute',
         });
-        void this.sessionAuthentication.plugin(this.app);
-        void this.requestAuditLogger.plugin(this.app);
         this.app.setErrorHandler(httpErrorHandler);
     }
 
     private registerControllers() {
         const controllers: HttpController[] = [
             new StatusController(this.core.agentRegistry, this.core.getModuleDescriptors()),
-            new AuthController(this.authService),
             ...this.core.getControllers(),
         ];
 
         for (const controller of controllers) {
             controller.register(this.app);
+        }
+    }
+
+    private registerMiddlewares() {
+        const middlewares: HttpMiddleWare[] = [
+            ...this.core.getMiddlewares(),
+        ];
+
+        for (const middleware of middlewares) {
+            void middleware.plugin(this.app);
         }
     }
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-export type DomainName = 'wallet' | 'health' | 'tasks' | 'people' | 'work' | 'study' | 'system';
+export type DomainName = 'wallet' | 'health' | 'tasks' | 'people' | 'work' | 'study' | 'system' | 'auth';
 
 export abstract class DomainEvent<T = Record<string, unknown>> {
     public id: string;

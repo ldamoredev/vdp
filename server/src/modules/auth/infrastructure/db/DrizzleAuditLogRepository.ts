@@ -1,6 +1,6 @@
-import { Database } from '../../base/db/Database';
-import { AuditLogRepository, CreateAuditLogData } from '../../base/auth/AuditLogRepository';
-import { auditLogs } from './schema';
+import { Database } from '../../../common/base/db/Database';
+import { AuditLogRepository, CreateAuditLogData } from '../../domain/AuditLogRepository';
+import { auditLogs } from '../schema';
 
 export class DrizzleAuditLogRepository extends AuditLogRepository {
     constructor(private readonly db: Database) {

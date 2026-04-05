@@ -1,24 +1,24 @@
-import { TaskInsightsStore } from './services/TaskInsightsStore';
 import { HttpController } from '../common/http/HttpController';
 import { BaseModule } from '../common/base/modules/BaseModule';
 import { DomainModuleDescriptor } from '../common/base/modules/DomainModuleDescriptor';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
-import { TaskModuleRuntime } from './TaskModuleRuntime';
+import { AuthModuleRuntime } from './AuthModuleRuntime';
 import { HttpMiddleWare } from '../common/http/HttpMiddleWare';
 
-export class TaskModule extends BaseModule {
+export class AuthModule extends BaseModule {
     private static readonly descriptor: DomainModuleDescriptor = {
-        domain: 'tasks',
-        label: 'Tasks',
+        domain: 'auth',
+        label: 'auth',
     };
-
-    private readonly insightsStore: TaskInsightsStore;
-    private readonly runtime: TaskModuleRuntime;
+    private readonly runtime: AuthModuleRuntime;
 
     constructor(context: ModuleContext) {
         super(context);
-        this.insightsStore = new TaskInsightsStore(this.logger);
-        this.runtime = new TaskModuleRuntime({ ...context, insightsStore: this.insightsStore });
+        this.runtime = new AuthModuleRuntime({ ...context });
+    }
+
+    getControllers(): HttpController[] {
+        return this.runtime.createControllers();
     }
 
     protected registerServices() {
@@ -26,22 +26,16 @@ export class TaskModule extends BaseModule {
     }
 
     protected registerEventHandlers() {
-        this.runtime.registerEventHandlers();
     }
 
     protected registerAgents() {
-        this.runtime.registerAgent();
-    }
-
-    getControllers(): HttpController[] {
-        return this.runtime.createControllers();
     }
 
     getMiddlewares(): HttpMiddleWare[] {
-        return [];
+        return this.runtime.createMiddlewares();
     }
 
     getDescriptor(): DomainModuleDescriptor {
-        return TaskModule.descriptor;
+        return AuthModule.descriptor;
     }
 }

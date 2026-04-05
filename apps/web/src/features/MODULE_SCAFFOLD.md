@@ -123,5 +123,5 @@ export default function {Domain}Dashboard() {
 ## Reference Implementation
 
 See `features/tasks/presentation/` for the complete example:
-- `tasks-context.tsx` + `use-tasks-context.ts` (main dashboard)
+- `tasks-context.tsx` + `use-tasks-context.ts` (index dashboard)
 - `history-context.tsx` + `use-history-context.ts` (sub-page)

@@ -3,6 +3,7 @@ import { BaseModule } from '../common/base/modules/BaseModule';
 import { DomainModuleDescriptor } from '../common/base/modules/DomainModuleDescriptor';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { WalletModuleRuntime } from './WalletModuleRuntime';
+import { HttpMiddleWare } from '../common/http/HttpMiddleWare';
 
 export class WalletModule extends BaseModule {
     private static readonly descriptor: DomainModuleDescriptor = {
@@ -30,6 +31,10 @@ export class WalletModule extends BaseModule {
 
     getControllers(): HttpController[] {
         return this.runtime.createControllers();
+    }
+
+    getMiddlewares(): HttpMiddleWare[] {
+        return [];
     }
 
     getDescriptor(): DomainModuleDescriptor {

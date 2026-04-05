@@ -1,8 +1,8 @@
 import { and, eq, isNull } from 'drizzle-orm';
 
-import { Database } from '../../base/db/Database';
-import { CreateSessionData, SessionRecord, SessionRepository } from '../../base/auth/SessionRepository';
-import { sessions } from './schema';
+import { Database } from '../../../common/base/db/Database';
+import { CreateSessionData, SessionRecord, SessionRepository } from '../../domain/SessionRepository';
+import { sessions } from '../schema';
 
 export class DrizzleSessionRepository extends SessionRepository {
     constructor(private readonly db: Database) {

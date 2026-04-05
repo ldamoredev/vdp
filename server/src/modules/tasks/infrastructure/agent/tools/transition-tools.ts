@@ -4,7 +4,7 @@ import { CarryOverTask } from '../../../services/CarryOverTask';
 import { CompleteTask } from '../../../services/CompleteTask';
 import { DiscardTask } from '../../../services/DiscardTask';
 import { TASK_ID_INPUT_SCHEMA, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskTransitionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -13,7 +13,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
             description: 'Mark a task as done.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return (await services.get(CompleteTask).execute(userId, input.taskId)) || { error: 'Task not found' };
             },
         }),
@@ -30,7 +30,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 required: ['taskId'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return (await services.get(CarryOverTask).execute(userId, input.taskId, input.toDate)) || { error: 'Task not found' };
             },
         }),
@@ -39,7 +39,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
             description: "Discard a task (won't be carried over).",
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return (await services.get(DiscardTask).execute(userId, input.taskId)) || { error: 'Task not found' };
             },
         }),
@@ -56,7 +56,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 required: ['fromDate'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 const results = await services.get(CarryOverAllPending).execute(userId, input.fromDate, input.toDate);
                 return { carriedOver: results.length, tasks: results };
             },

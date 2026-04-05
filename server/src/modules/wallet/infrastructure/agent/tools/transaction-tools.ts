@@ -3,7 +3,7 @@ import { todayISO } from '../../../../common/base/time/dates';
 import { GetTransactions } from '../../../services/GetTransactions';
 import { CreateTransaction } from '../../../services/CreateTransaction';
 import { CURRENCIES, TRANSACTION_TYPES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTransactionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -26,7 +26,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetTransactions).execute(userId, {
                     accountId: input.accountId,
                     categoryId: input.categoryId,
@@ -60,7 +60,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                 required: ['accountId', 'type', 'amount', 'currency'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(CreateTransaction).execute(userId, {
                     accountId: input.accountId,
                     type: input.type,

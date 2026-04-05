@@ -10,7 +10,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { users } from '../common/infrastructure/auth/schema';
+import { users } from '../auth/infrastructure/schema';
 
 export const walletSchema = pgSchema("wallet");
 

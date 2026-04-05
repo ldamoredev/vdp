@@ -36,7 +36,7 @@ The frontend should not duplicate this logic.
 
 Application boot starts at:
 
-- `server/src/main.ts`
+- `server/src/index.ts`
 
 Current flow:
 

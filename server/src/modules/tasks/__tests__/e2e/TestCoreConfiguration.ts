@@ -18,7 +18,7 @@ import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbed
 import { DomainModuleFactory } from '../../../common/base/modules/DomainModuleFactory';
 import { Logger } from '../../../common/base/observability/logging/Logger';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
-import { AuthContextStorage } from '../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
 
 export class TestCoreConfiguration implements CoreConfig {

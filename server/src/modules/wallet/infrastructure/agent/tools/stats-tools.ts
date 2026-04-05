@@ -2,7 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { GetSpendingStats } from '../../../services/GetSpendingStats';
 import { jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../common/auth/AuthContextStorage';
+import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createStatsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [
@@ -19,7 +19,7 @@ export function createStatsTools(services: ServiceProvider, authContextStorage: 
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 const accounts = await services.get(GetAccounts).execute(userId);
                 if (input.accountId) {
                     const account = accounts.find((a) => a.id === input.accountId);
@@ -54,7 +54,7 @@ export function createStatsTools(services: ServiceProvider, authContextStorage: 
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getRequestAuth().userId!;
+                const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetSpendingStats).executeSummary(userId, input.from, input.to);
             },
         }),

@@ -23,7 +23,7 @@ export class AuthContextStorage {
         this.storage.enterWith(context);
     }
 
-    getRequestAuth(): AuthContext {
+    getAuthContext(): AuthContext {
         return this.storage.getStore() ?? this.unauthenticatedAuth();
     }
 }
