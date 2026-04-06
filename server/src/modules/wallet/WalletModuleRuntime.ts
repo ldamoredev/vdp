@@ -100,11 +100,20 @@ export class WalletModuleRuntime {
         );
         this.deps.services.register(
             CreateTransaction,
-            () => new CreateTransaction(this.transactionRepository(), this.deps.eventBus),
+            () => new CreateTransaction(
+                this.transactionRepository(),
+                this.deps.eventBus,
+                this.accountRepository(),
+                this.categoryRepository(),
+            ),
         );
         this.deps.services.register(
             UpdateTransaction,
-            () => new UpdateTransaction(this.transactionRepository()),
+            () => new UpdateTransaction(
+                this.transactionRepository(),
+                this.accountRepository(),
+                this.categoryRepository(),
+            ),
         );
         this.deps.services.register(
             DeleteTransaction,
@@ -145,7 +154,7 @@ export class WalletModuleRuntime {
         );
         this.deps.services.register(
             ContributeSavings,
-            () => new ContributeSavings(this.savingsGoalRepository()),
+            () => new ContributeSavings(this.savingsGoalRepository(), this.transactionRepository()),
         );
     }
 
@@ -156,11 +165,11 @@ export class WalletModuleRuntime {
         );
         this.deps.services.register(
             CreateInvestment,
-            () => new CreateInvestment(this.investmentRepository()),
+            () => new CreateInvestment(this.investmentRepository(), this.accountRepository()),
         );
         this.deps.services.register(
             UpdateInvestment,
-            () => new UpdateInvestment(this.investmentRepository()),
+            () => new UpdateInvestment(this.investmentRepository(), this.accountRepository()),
         );
     }
 

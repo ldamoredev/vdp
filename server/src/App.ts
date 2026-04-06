@@ -23,7 +23,7 @@ export class App {
     private registerPlugins() {
         const allowedOrigins = process.env.CORS_ORIGIN
             ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-            : true;
+            : ['http://localhost:3000'];
 
         this.app.register(cors, { origin: allowedOrigins });
         this.app.register(helmet, { contentSecurityPolicy: false });

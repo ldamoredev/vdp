@@ -75,6 +75,12 @@ class FakeUserRepository extends UserRepository {
     }
 
     async updateLastLoginAt(): Promise<void> {}
+
+    async updateProfile(): Promise<UserRecord | null> {
+        return null;
+    }
+
+    async updatePasswordHash(): Promise<void> {}
 }
 
 class FakeSessionRepository extends SessionRepository {
@@ -89,6 +95,8 @@ class FakeSessionRepository extends SessionRepository {
     async touchSession(): Promise<void> {}
 
     async revokeSession(): Promise<void> {}
+
+    async revokeSessionsForUser(): Promise<void> {}
 }
 
 class FakeAuditLogRepository extends AuditLogRepository {

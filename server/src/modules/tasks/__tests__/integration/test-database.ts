@@ -5,7 +5,7 @@ import * as agentSchema from '../../../common/infrastructure/agents/schema';
 import * as walletSchema from '../../../wallet/schema';
 import * as tasksSchema from '../../infrastructure/db/schema';
 import * as embeddingsSchema from '../../infrastructure/db/embeddings-schema';
-const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { DEFAULT_TEST_USERS, TestUser } from '../../../../test/testUsers';
 
 const SETUP_SQL = `
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -219,9 +219,6 @@ CREATE INDEX IF NOT EXISTS investments_account_id_idx ON wallet.investments(acco
 CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
     ON wallet.exchange_rates(from_currency, to_currency, type, date);
 
-INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
-VALUES ('00000000-0000-0000-0000-000000000001', 'test@vdp.local', 'Test User', 'test-password-hash', 'user', TRUE)
-ON CONFLICT (id) DO NOTHING;
 `;
 
 const CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
@@ -241,12 +238,13 @@ export class TestDatabase {
         const client = await this.pool.connect();
         try {
             await client.query(SETUP_SQL);
+            await this.seedUsers(DEFAULT_TEST_USERS);
         } finally {
             client.release();
         }
     }
 
-    async truncate(): Promise<void> {
+    async truncate(options?: { users?: readonly TestUser[] }): Promise<void> {
         const client = await this.pool.connect();
         try {
             await client.query(
@@ -268,11 +266,25 @@ export class TestDatabase {
                     wallet.accounts
                  CASCADE`,
             );
-            await client.query(
-                `INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
-                 VALUES ($1, 'test@vdp.local', 'Test User', 'test-password-hash', 'user', TRUE)`,
-                [DEFAULT_TEST_USER_ID],
-            );
+            await this.seedUsers(options?.users ?? DEFAULT_TEST_USERS);
+        } finally {
+            client.release();
+        }
+    }
+
+    async seedUsers(users: readonly TestUser[]): Promise<void> {
+        if (users.length === 0) return;
+
+        const client = await this.pool.connect();
+        try {
+            for (const user of users) {
+                await client.query(
+                    `INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
+                     VALUES ($1, $2, $3, 'test-password-hash', 'user', TRUE)
+                     ON CONFLICT (id) DO NOTHING`,
+                    [user.id, user.email, user.displayName],
+                );
+            }
         } finally {
             client.release();
         }

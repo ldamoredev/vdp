@@ -4,11 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { CurrentUser } from "@/lib/auth";
-
-type AuthErrorPayload = {
-  error?: string;
-  message?: string;
-};
+import { AuthErrorPayload, getFriendlyAuthError } from "./auth-messages";
 
 type AuthSuccessPayload = {
   user: CurrentUser;
@@ -33,42 +29,13 @@ async function waitForSessionConfirmation(): Promise<boolean> {
   return false;
 }
 
-function getFriendlyAuthError(
-  payload: AuthErrorPayload | null,
-  mode: "loading" | "login" | "register",
-): string {
-  if (!payload) {
-    return mode === "register"
-      ? "No pudimos crear tu usuario. Intenta de nuevo."
-      : "No pudimos iniciar sesion. Intenta de nuevo.";
-  }
-
-  if (payload.error === "CONFLICT") {
-    return "Ese email ya esta registrado.";
-  }
-
-  if (payload.error === "UNAUTHORIZED") {
-    return "Email o contrasena incorrectos.";
-  }
-
-  if (payload.error === "VALIDATION_ERROR") {
-    return payload.message || "Revisa los datos ingresados.";
-  }
-
-  if (payload.message === "Email already registered") {
-    return "Ese email ya esta registrado.";
-  }
-
-  if (payload.message === "Invalid credentials") {
-    return "Email o contrasena incorrectos.";
-  }
-
-  return mode === "register"
-    ? "No pudimos crear tu usuario. Intenta de nuevo."
-    : "No pudimos iniciar sesion. Intenta de nuevo.";
-}
-
-export function LoginPageClient({ nextPath }: { nextPath: string }) {
+export function LoginPageClient({
+  nextPath,
+  notice = "",
+}: {
+  nextPath: string;
+  notice?: string;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"loading" | "login" | "register">("loading");
@@ -325,6 +292,15 @@ export function LoginPageClient({ nextPath }: { nextPath: string }) {
             >
               {error}
             </p>
+          )}
+
+          {!error && notice && (
+            <div
+              className="rounded-xl border border-[var(--green-soft-border)] bg-[var(--green-soft-bg)] px-4 py-3 text-center text-sm font-medium text-[var(--green-soft-text)]"
+              aria-live="polite"
+            >
+              {notice}
+            </div>
           )}
 
           <button

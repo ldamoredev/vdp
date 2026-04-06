@@ -61,6 +61,8 @@ export class SessionTokenAuthenticationMiddleware extends HttpMiddleWare {
 
                 request.auth = authenticatedContext;
                 this.authContextStorage.setAuthContext({ ...authenticatedContext });
+
+                void this.sessionService.touchIfStale(session.id, session.lastSeenAt);
             } catch (error) {
                 if (this.isPublicPath(request.url)) return;
                 return reply.status(401).send({

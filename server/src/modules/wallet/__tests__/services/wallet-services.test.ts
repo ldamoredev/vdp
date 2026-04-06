@@ -292,16 +292,21 @@ describe('GetTransactions', () => {
 
 describe('CreateTransaction', () => {
     let txRepo: FakeTransactionRepository;
+    let accountRepo: FakeAccountRepository;
+    let categoryRepo: FakeCategoryRepository;
     let eventBus: EventBus;
     let service: CreateTransaction;
 
     beforeEach(() => {
         txRepo = new FakeTransactionRepository();
+        accountRepo = new FakeAccountRepository();
+        categoryRepo = new FakeCategoryRepository();
         eventBus = new EventBus();
-        service = new CreateTransaction(txRepo, eventBus);
+        service = new CreateTransaction(txRepo, eventBus, accountRepo, categoryRepo);
     });
 
     it('creates transaction and emits TransactionCreated event', async () => {
+        accountRepo.seed([createAccount({ id: 'acc-1' })]);
         const emitted: DomainEvent[] = [];
         eventBus.on('wallet.transaction.created', (event) => {
             emitted.push(event);
@@ -325,6 +330,7 @@ describe('CreateTransaction', () => {
     });
 
     it('event payload matches transaction', async () => {
+        accountRepo.seed([createAccount({ id: 'acc-1' })]);
         const emitted: DomainEvent[] = [];
         eventBus.on('wallet.transaction.created', (event) => {
             emitted.push(event);
@@ -350,11 +356,15 @@ describe('CreateTransaction', () => {
 
 describe('UpdateTransaction', () => {
     let txRepo: FakeTransactionRepository;
+    let accountRepo: FakeAccountRepository;
+    let categoryRepo: FakeCategoryRepository;
     let service: UpdateTransaction;
 
     beforeEach(() => {
         txRepo = new FakeTransactionRepository();
-        service = new UpdateTransaction(txRepo);
+        accountRepo = new FakeAccountRepository();
+        categoryRepo = new FakeCategoryRepository();
+        service = new UpdateTransaction(txRepo, accountRepo, categoryRepo);
     });
 
     it('updates existing transaction', async () => {
@@ -579,7 +589,7 @@ describe('Savings goals', () => {
 
     it('applies a contribution and marks completion when target is reached', async () => {
         goalRepo.seed([createSavingsGoal({ id: 'goal-1', targetAmount: '1000', currentAmount: '900' })]);
-        const service = new ContributeSavings(goalRepo);
+        const service = new ContributeSavings(goalRepo, new FakeTransactionRepository());
 
         const result = await service.execute(userId, {
             goalId: 'goal-1',
@@ -609,7 +619,8 @@ describe('Investments', () => {
     });
 
     it('creates an investment', async () => {
-        const service = new CreateInvestment(investmentRepo);
+        const accountRepo = new FakeAccountRepository();
+        const service = new CreateInvestment(investmentRepo, accountRepo);
 
         const result = await service.execute(userId, {
             name: 'Plazo fijo',
@@ -626,7 +637,8 @@ describe('Investments', () => {
 
     it('updates an investment', async () => {
         investmentRepo.seed([createInvestment({ id: 'inv-1', currentValue: '1000' })]);
-        const service = new UpdateInvestment(investmentRepo);
+        const accountRepo = new FakeAccountRepository();
+        const service = new UpdateInvestment(investmentRepo, accountRepo);
 
         const result = await service.execute(userId, 'inv-1', { currentValue: '1250' });
 

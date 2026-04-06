@@ -21,6 +21,13 @@ export type CreateSessionData = {
 export abstract class SessionRepository {
     abstract createSession(data: CreateSessionData): Promise<SessionRecord>;
     abstract findByTokenHash(tokenHash: string): Promise<SessionRecord | null>;
+    abstract listActiveSessionsForUser(userId: string): Promise<SessionRecord[]>;
     abstract touchSession(id: string, lastSeenAt: Date): Promise<void>;
     abstract revokeSession(id: string, revokedAt: Date): Promise<void>;
+    abstract revokeSessionsForUser(userId: string, revokedAt: Date): Promise<void>;
+    abstract revokeOtherSessionsForUser(
+        userId: string,
+        currentSessionId: string,
+        revokedAt: Date,
+    ): Promise<void>;
 }

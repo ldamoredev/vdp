@@ -45,6 +45,29 @@ export class DrizzleUserRepository extends UserRepository {
             .set({ lastLoginAt, updatedAt: new Date() })
             .where(eq(users.id, id));
     }
+
+    async updateProfile(id: string, data: { displayName: string }): Promise<UserRecord | null> {
+        const [row] = await this.db.query
+            .update(users)
+            .set({
+                displayName: data.displayName,
+                updatedAt: new Date(),
+            })
+            .where(eq(users.id, id))
+            .returning();
+
+        return row ? toUserRecord(row) : null;
+    }
+
+    async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+        await this.db.query
+            .update(users)
+            .set({
+                passwordHash,
+                updatedAt: new Date(),
+            })
+            .where(eq(users.id, id));
+    }
 }
 
 function toUserRecord(row: typeof users.$inferSelect): UserRecord {

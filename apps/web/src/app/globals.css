@@ -59,6 +59,8 @@
 
   /* Icon rail */
   --icon-rail-bg: rgba(4, 8, 20, 0.9);
+  --floating-panel: rgba(8, 15, 30, 0.94);
+  --floating-panel-border: rgba(148, 163, 184, 0.14);
 
   /* Shadows — layered for depth */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -145,18 +147,18 @@
   --foreground-muted: #64748B;
 
   /* Glass surfaces */
-  --glass: rgba(255, 255, 255, 0.72);
+  --glass: rgba(255, 255, 255, 0.86);
   --glass-border: rgba(15, 23, 42, 0.10);
   --glass-border-hover: rgba(15, 23, 42, 0.18);
   --glass-highlight: rgba(255, 255, 255, 0.5);
 
   /* Card system */
-  --card: rgba(255, 255, 255, 0.82);
+  --card: rgba(255, 255, 255, 0.93);
   --card-border: rgba(15, 23, 42, 0.10);
   --card-hover: rgba(255, 255, 255, 0.96);
 
   /* Input */
-  --input-bg: rgba(255, 255, 255, 0.8);
+  --input-bg: rgba(255, 255, 255, 0.94);
 
   /* Default accent */
   --accent: #2563EB;
@@ -176,11 +178,13 @@
   --muted-bg: rgba(241, 245, 249, 0.8);
 
   /* Sidebar */
-  --sidebar: rgba(241, 245, 249, 0.95);
+  --sidebar: rgba(248, 250, 252, 0.97);
   --sidebar-border: rgba(15, 23, 42, 0.08);
 
   /* Icon rail */
-  --icon-rail-bg: rgba(241, 245, 249, 0.98);
+  --icon-rail-bg: rgba(248, 250, 252, 0.985);
+  --floating-panel: rgba(255, 255, 255, 0.96);
+  --floating-panel-border: rgba(15, 23, 42, 0.12);
 
   /* Shadows — layered for depth */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -353,7 +357,7 @@ body::after {
 }
 
 [data-theme="light"] body::before {
-  opacity: 0.35;
+  opacity: 0.18;
 }
 
 [data-theme="light"] body::after {

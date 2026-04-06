@@ -27,6 +27,7 @@ import {
   BookOpen,
   Brain,
   Clock,
+  Settings2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,18 @@ export interface DomainConfig {
   aiDescription: string;
   navItems: NavItem[];
   disabled?: boolean;
+}
+
+export interface UtilityNavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export interface ShellNavState {
+  homeActive: boolean;
+  activeDomain: DomainKey | null;
+  settingsActive: boolean;
 }
 
 export const domains: DomainConfig[] = [
@@ -162,6 +175,12 @@ export const domains: DomainConfig[] = [
   },
 ];
 
+export const settingsNavItem: UtilityNavItem = {
+  href: "/settings",
+  label: "Cuenta",
+  icon: Settings2,
+};
+
 export function getDomainConfig(key: string): DomainConfig | undefined {
   return domains.find((d) => d.key === key);
 }
@@ -170,4 +189,16 @@ export function getDomainFromPathname(pathname: string): DomainKey | null {
   const segment = pathname.split("/")[1];
   if (domains.some((d) => d.key === segment)) return segment as DomainKey;
   return null;
+}
+
+export function isSettingsPath(pathname: string): boolean {
+  return pathname === "/settings" || pathname.startsWith("/settings/");
+}
+
+export function getShellNavState(pathname: string): ShellNavState {
+  return {
+    homeActive: pathname === "/home",
+    activeDomain: getDomainFromPathname(pathname),
+    settingsActive: isSettingsPath(pathname),
+  };
 }

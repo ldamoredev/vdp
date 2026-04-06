@@ -26,6 +26,12 @@ export class EmbedTask {
         const content = parts.join(' | ');
         const embedding = await this.embeddingProvider.embed(content);
 
-        await this.embeddingRepository.upsert(userId, taskId, content, embedding);
+        try {
+            await this.embeddingRepository.upsert(userId, taskId, content, embedding);
+        } catch (error) {
+            const existingTask = await this.taskRepository.getTask(userId, taskId);
+            if (!existingTask) return;
+            throw error;
+        }
     }
 }

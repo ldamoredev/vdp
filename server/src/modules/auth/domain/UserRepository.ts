@@ -23,4 +23,6 @@ export abstract class UserRepository {
     abstract findById(id: string): Promise<UserRecord | null>;
     abstract createUser(data: CreateUserData): Promise<UserRecord>;
     abstract updateLastLoginAt(id: string, lastLoginAt: Date): Promise<void>;
+    abstract updateProfile(id: string, data: { displayName: string }): Promise<UserRecord | null>;
+    abstract updatePasswordHash(id: string, passwordHash: string): Promise<void>;
 }

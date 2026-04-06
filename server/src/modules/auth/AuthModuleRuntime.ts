@@ -9,6 +9,10 @@ import { GetSetupStatus } from './services/GetSetupStatus';
 import { RegisterUser } from './services/RegisterUser';
 import { LoginUser } from './services/LoginUser';
 import { LogoutUser } from './services/LogoutUser';
+import { UpdateProfile } from './services/UpdateProfile';
+import { ChangePassword } from './services/ChangePassword';
+import { GetSecurityOverview } from './services/GetSecurityOverview';
+import { LogoutOtherSessions } from './services/LogoutOtherSessions';
 import { HttpController } from '../common/http/HttpController';
 import { AuthController } from './infrastructure/http/AuthController';
 
@@ -52,6 +56,36 @@ export class AuthModuleRuntime {
                 services.get(SessionService),
             ),
         );
+
+        services.register(UpdateProfile, () =>
+            new UpdateProfile(
+                repositories.get(UserRepository),
+                repositories.get(AuditLogRepository),
+            ),
+        );
+
+        services.register(ChangePassword, () =>
+            new ChangePassword(
+                repositories.get(UserRepository),
+                repositories.get(AuditLogRepository),
+                services.get(PasswordService),
+                services.get(SessionService),
+            ),
+        );
+
+        services.register(GetSecurityOverview, () =>
+            new GetSecurityOverview(
+                services.get(SessionService),
+                repositories.get(AuditLogRepository),
+            ),
+        );
+
+        services.register(LogoutOtherSessions, () =>
+            new LogoutOtherSessions(
+                repositories.get(AuditLogRepository),
+                services.get(SessionService),
+            ),
+        );
     }
 
     createMiddlewares() {
@@ -73,6 +107,10 @@ export class AuthModuleRuntime {
                 services.get(RegisterUser),
                 services.get(LoginUser),
                 services.get(LogoutUser),
+                services.get(UpdateProfile),
+                services.get(ChangePassword),
+                services.get(GetSecurityOverview),
+                services.get(LogoutOtherSessions),
             ),
         ];
     }

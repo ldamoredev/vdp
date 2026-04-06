@@ -3,8 +3,7 @@ import cors from '@fastify/cors';
 import { Core } from '../../../Core';
 import { httpErrorHandler } from '../../../common/http/errors';
 import { TestCoreConfiguration } from './TestCoreConfiguration';
-
-const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { getTestUser, PRIMARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 
 /**
  * Lightweight Fastify app wired to the test database.
@@ -24,13 +23,17 @@ export class TestApp {
         this.app.setErrorHandler(httpErrorHandler);
 
         this.app.addHook('preHandler', async (request) => {
+            const requestedUserId = request.headers[TEST_USER_ID_HEADER];
+            const user = getTestUser(
+                typeof requestedUserId === 'string' && requestedUserId ? requestedUserId : PRIMARY_TEST_USER.id,
+            );
             const authContext = {
                 isAuthenticated: true,
-                userId: DEFAULT_TEST_USER_ID,
+                userId: user.id,
                 sessionId: 'test-session',
                 role: 'user' as const,
-                email: 'test@vdp.local',
-                displayName: 'Test User',
+                email: user.email,
+                displayName: user.displayName,
             };
             request.auth = authContext;
             config.authContextStorage.setAuthContext({ ...authContext });

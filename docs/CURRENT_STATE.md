@@ -1,6 +1,6 @@
 # VDP Current State
 
-Code-verified on 2026-04-03.
+Code-verified on 2026-04-05.
 
 This document is the current status reference for the repository as verified from the codebase and local test runs on 2026-04-03.
 
@@ -149,11 +149,15 @@ These rules are implemented and should be treated as current architecture:
 
 ## 8. Auth and Runtime Notes
 
-- Frontend login flow exists and stores `access_secret` in a cookie.
-- Backend API key guard exists.
-- If `ACCESS_SECRET` is not set, both guards are effectively disabled.
+- Frontend login flow uses session auth.
+- Backend auth uses first-party users with email + password.
+- Session lookup accepts `x-session-token` and the `vdp_session` cookie.
+- Protected backend routes depend on the auth middleware and request auth context.
+- Registration is open only for the first user unless the server-side rule changes.
+- Profile updates are supported for the current user.
+- Password changes require the current password and revoke existing sessions.
 
-This behavior is intentional in the current code, but it means auth enforcement depends on runtime environment configuration.
+This is the active auth model in the current codebase and should be treated as the source of truth over older notes that mention `ACCESS_SECRET`.
 
 ## 9. Test Verification
 
@@ -184,14 +188,14 @@ Verified backend unit coverage includes:
 - spending spike detection
 - wallet agent behavior
 
-### Not fully verified in this session
+### Additional e2e verification completed on 2026-04-05
 
-Backend integration and e2e tests were not completed on 2026-04-03 because the environment could not connect to the local Postgres test database on `localhost:5433` and returned `EPERM`.
+The following backend e2e suites were run successfully against the local Postgres test database:
 
-That means:
-
-- the integration/e2e files exist in the repository
-- their runtime pass/fail status was not confirmed in this session
+- auth flow coverage for register, login, `/api/auth/me`, and logout
+- auth lifecycle coverage for profile update and password change
+- wallet cross-user isolation for account/category/goal reference ownership
+- tasks cross-user isolation for read, update, and delete
 
 ## 10. Inactive and Stale Areas
 
