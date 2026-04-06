@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { DetectSpendingSpike } from '../../services/DetectSpendingSpike';
@@ -50,11 +50,18 @@ describe('DetectSpendingSpike', () => {
     let service: DetectSpendingSpike;
     const logger = new NoOpLogger();
     const userId = 'test-user-id';
+    const fixedNow = new Date(2026, 3, 8, 12, 0, 0); // Wednesday, local time
 
     beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(fixedNow);
         transactions = new FakeTransactionRepository();
         eventBus = new EventBus();
         service = new DetectSpendingSpike(transactions, eventBus, logger);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('does not emit when current week expenses are zero', async () => {

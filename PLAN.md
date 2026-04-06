@@ -593,14 +593,22 @@ Current implemented model:
 
 ### 10.3 What remains next
 
-The next auth slice should focus on trust and hardening:
+The initial hardening slice is now done in the repo:
 
-1. add dedicated auth route coverage for register, login, `/api/auth/me`, and logout
-2. add explicit cross-user isolation tests
-3. verify repository-level user scoping everywhere, not only controller-level access
-4. review audit-log attribution for user vs system actions
-5. add user lifecycle basics such as profile updates and password change
-6. decide whether the current single-value `role` field should stay as future-proofing or be removed
+- dedicated auth route coverage exists for register, login, `/api/auth/me`, logout, profile update, password change, security overview, and remote-session revocation
+- explicit cross-user isolation tests exist for `Tasks` and `Wallet`
+- repository-level ownership enforcement has been tightened in active wallet flows
+- audit-log attribution covers the current user-lifecycle actions
+- profile updates and password change are implemented end to end
+- the authenticated shell includes account settings and a security center
+
+The next auth/platform slice should focus on operational trust and cleanup:
+
+1. keep repository ownership verification as a gate for any future domain module
+2. add failed-login visibility and rate-limit hardening if production exposure increases
+3. decide whether the current single-value `role` field should remain as future-proofing or be removed
+4. keep docs and onboarding material aligned with the current session-based auth model
+5. validate the current auth/session flow under real production deployment conditions before another backend domain is started
 
 ### 10.4 Production reset constraint
 
@@ -619,6 +627,7 @@ Do not start another domain module until:
 - the current auth/session flow is stable in production
 - cross-user isolation is tested
 - repository ownership enforcement is verified
+- the settings/security center behavior is trusted end to end
 - Tasks and Wallet are confirmed safe under multi-user access
 
 ---
@@ -639,5 +648,5 @@ Current concise summary:
 - `Wallet` is the second active domain and remains newer than `Tasks`
 - the rest are inactive
 - the architecture is sound
-- auth V1 is implemented
-- the immediate platform challenge is auth hardening, multi-user verification, and isolation testing before adding another module
+- auth is implemented across login, lifecycle, settings, and session security
+- the immediate platform challenge is keeping docs, production behavior, and future module work aligned with the now multi-user-safe base

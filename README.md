@@ -1,8 +1,13 @@
 # VDP — Vida Digital Personal
 
-A personal AI operating system. Current scope: **Tasks only**.
+A modular personal AI operating system.
 
-The project is temporarily reduced to the Tasks module so the architecture, API contract, validation flow, and agent chat path can be stabilized before other domains come back.
+Current active scope in the repository:
+
+- `Tasks`
+- `Wallet`
+
+The long-term product vision still includes `Health`, `People`, `Work`, and `Study`, but those domains are not currently verified as active backend modules.
 
 ## Production
 
@@ -13,7 +18,9 @@ The project is temporarily reduced to the Tasks module so the architecture, API 
 | Database | PostgreSQL + pgvector | Supabase (free tier) |
 | LLM | Groq (OpenAI-compatible) | Free tier |
 
-Login with the shared `ACCESS_SECRET` at `/login`.
+Authentication now uses first-party users with email/password plus server-managed sessions.
+
+The web app authenticates through same-origin auth routes and an `httpOnly` `vdp_session` cookie.
 
 ## Workspace
 
@@ -112,7 +119,6 @@ pnpm dev
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | **Yes** | — | PostgreSQL connection string |
 | `TEST_DATABASE_URL` | Tests only | — | Test database connection string |
-| `ACCESS_SECRET` | No | _(disabled)_ | Shared secret for API key guard. If unset, guard is disabled |
 | `PORT` | No | `4000` | Server port |
 | `NODE_ENV` | No | `development` | Environment (`development` / `production`) |
 | `CORS_ORIGIN` | No | _(allow all)_ | Comma-separated allowed origins |
@@ -152,7 +158,6 @@ pnpm dev
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | **Yes** | — | Backend API base URL (e.g., `http://localhost:4000/api/v1`) |
-| `ACCESS_SECRET` | No | _(disabled)_ | Must match server's `ACCESS_SECRET` for auth gate |
 <!-- END:AUTO-GENERATED:ENV -->
 
 <!-- AUTO-GENERATED:API -->
@@ -216,7 +221,20 @@ Base URL: `/api/v1`
 |--------|------|-------------|
 | `GET` | `/api/v1/tasks/insights/stream` | Server-Sent Events for task insights |
 
-**Authentication:** All endpoints (except `/api/health`) require `x-api-key` header matching `ACCESS_SECRET`. Disabled when `ACCESS_SECRET` is not set.
+### Current Auth Surface
+
+Verified auth routes in the active codebase include:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `PATCH /api/auth/profile`
+- `POST /api/auth/change-password`
+- `GET /api/auth/security`
+- `POST /api/auth/logout-others`
+
+**Authentication:** protected backend routes use session auth via request auth context. The backend accepts `x-session-token` and the `vdp_session` cookie. The web app uses the cookie-backed same-origin auth flow.
 <!-- END:AUTO-GENERATED:API -->
 
 ## Testing

@@ -2,7 +2,7 @@
 
 Code-verified on 2026-04-05.
 
-This document is the current status reference for the repository as verified from the codebase and local test runs on 2026-04-03.
+This document is the current status reference for the repository as verified from the codebase and local test runs on 2026-04-05.
 
 If this file conflicts with older memory, review notes, or stale local tooling config, trust this file and the current codebase first.
 
@@ -156,16 +156,19 @@ These rules are implemented and should be treated as current architecture:
 - Registration is open only for the first user unless the server-side rule changes.
 - Profile updates are supported for the current user.
 - Password changes require the current password and revoke existing sessions.
+- A dedicated `/settings` area exists in the authenticated web shell.
+- The settings area includes profile editing, password change, active-session visibility, recent auth events, and "log out other devices".
+- Auth audit logging now covers register, login, logout, profile update, password change, and remote-session revocation.
 
 This is the active auth model in the current codebase and should be treated as the source of truth over older notes that mention `ACCESS_SECRET`.
 
 ## 9. Test Verification
 
-Verified on 2026-04-03:
+Verified on 2026-04-05:
 
-- `apps/web`: 114 tests passed
-- `server` unit project: 175 tests passed
-- `packages/shared`: 76 tests passed
+- `apps/web`: 131 tests passed
+- auth integration suite passed against the local Postgres test database
+- auth e2e suite passed against the local Postgres test database
 
 Verified frontend test files:
 
@@ -176,6 +179,9 @@ Verified frontend test files:
 - wallet creation logic tests
 - wallet transaction creation logic tests
 - shared API client tests
+- auth client helper tests
+- auth/login message tests
+- shell navigation state tests
 
 Verified backend unit coverage includes:
 
@@ -190,10 +196,11 @@ Verified backend unit coverage includes:
 
 ### Additional e2e verification completed on 2026-04-05
 
-The following backend e2e suites were run successfully against the local Postgres test database:
+The following backend suites were run successfully against the local Postgres test database:
 
 - auth flow coverage for register, login, `/api/auth/me`, and logout
 - auth lifecycle coverage for profile update and password change
+- auth security overview and remote-session revocation
 - wallet cross-user isolation for account/category/goal reference ownership
 - tasks cross-user isolation for read, update, and delete
 
