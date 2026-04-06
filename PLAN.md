@@ -370,9 +370,8 @@ Wallet's backend and frontend surface are more complete than previously assessed
 
 Several docs are older than the current code and should not be treated as current truth by themselves:
 
-- `docs/PRODUCT.md` is still vision-heavy
 - `.claude/launch.json` references packages that do not exist in the current workspace
-- older review docs contain outdated test counts and outdated gap lists
+- older external review notes may contain outdated test counts and outdated gap lists
 
 ### 7.2 Dirty worktree
 
@@ -638,8 +637,8 @@ When reconstructing project state in future sessions:
 
 - trust the current codebase first
 - trust `README.md` and this `PLAN.md` second
+- trust `docs/CURRENT_STATE.md` for code-verified status snapshots
 - use Claude memory summaries as historical context
-- treat `docs/PRODUCT.md` as vision, not current scope
 - treat older review docs as useful but not automatically current
 
 Current concise summary:

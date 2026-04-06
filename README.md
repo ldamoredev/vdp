@@ -291,12 +291,10 @@ Migrations managed by Drizzle Kit in `server/src/migrations/`.
 | File | Purpose |
 |------|---------|
 | `README.md` | This file — setup, commands, API reference |
-| `ARCHITECTURE.md` | Module architecture, patterns, new domain checklist |
-| `PRODUCT.md` / `PRODUCT_es.md` | Product specification |
-| `PLAN.md` | Implementation plan |
-| `CODE_AUDIT.md` | Code health audit report |
-| `PRODUCT_REVIEW.md` | Product review and 30-day roadmap |
-| `database-review.md` | Database schema, query, and connection review |
-| `DEPLOY_REVIEW.md` | Production readiness review |
+| `PLAN.md` | Roadmap and execution priorities |
+| `docs/CURRENT_STATE.md` | Code-verified repository status |
+| `docs/architecture/` | Current frontend/backend architecture reference |
+| `docs/superpowers/specs/` | Approved design specs |
+| `docs/superpowers/plans/` | Implementation plans |
 | `server/.env.example` | Server environment template |
 | `apps/web/.env.example` | Web environment template |
