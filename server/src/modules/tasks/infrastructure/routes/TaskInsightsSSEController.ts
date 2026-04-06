@@ -22,8 +22,16 @@ export class TaskInsightsSSEController extends HttpController {
     }
 
     registerRoutes(routes: RouteRegister): void {
+        routes.get('/', this.list);
         routes.get('/stream', this.stream);
     }
+
+    private readonly list = async (request: FastifyRequest, reply: FastifyReply) => {
+        const limit = this.parseLimit(request.query);
+        return reply.send({
+            insights: this.insightsStore.getRecentInsights(limit),
+        });
+    };
 
     private readonly stream = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
         // Prevent Fastify from managing the response lifecycle
@@ -48,4 +56,21 @@ export class TaskInsightsSSEController extends HttpController {
             this.broadcaster.removeClient(res);
         });
     };
+
+    private parseLimit(query: FastifyRequest['query']): number {
+        const rawLimit = typeof query === 'object' && query !== null && 'limit' in query
+            ? (query as { limit?: unknown }).limit
+            : undefined;
+
+        if (typeof rawLimit !== 'string') {
+            return 5;
+        }
+
+        const parsed = Number.parseInt(rawLimit, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+            return 5;
+        }
+
+        return Math.min(parsed, 20);
+    }
 }

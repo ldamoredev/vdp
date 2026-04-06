@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vites
 import { TestApp } from './TestApp';
 import { TestDatabase } from '../integration/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
+import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -82,6 +83,64 @@ describe('Tasks API — E2E', () => {
 
             expect(body.tasks).toHaveLength(1);
             expect(body.tasks[0].status).toBe('done');
+        });
+    });
+
+    describe('GET /api/v1/tasks/insights', () => {
+        it('returns recent task insights with action metadata for home surfaces', async () => {
+            const { body: task } = await createTask({ title: 'Revisar presupuesto semanal' });
+
+            const completeRes = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/complete`,
+            });
+            expect(completeRes.statusCode).toBe(200);
+
+            await testApp.core.eventBus.emit(
+                new SpendingSpike({
+                    userId,
+                    totalExpenses: '350000',
+                    previousAverage: '200000',
+                    percentageIncrease: 75,
+                    currency: 'ARS',
+                    periodFrom: '2026-03-23',
+                    periodTo: '2026-03-29',
+                }),
+            );
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+            });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.insights).toHaveLength(2);
+            expect(body.insights[0]).toMatchObject({
+                title: 'Gasto elevado esta semana',
+                type: 'warning',
+                read: false,
+                action: {
+                    href: '/wallet',
+                    label: 'Abrir Wallet',
+                    domain: 'wallet',
+                },
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    percentageIncrease: 75,
+                },
+            });
+            expect(body.insights[1]).toMatchObject({
+                title: 'Tarea completada',
+                type: 'achievement',
+                action: {
+                    href: '/tasks/history',
+                    label: 'Ver historial',
+                    domain: 'tasks',
+                },
+            });
+            expect(typeof body.insights[0].createdAt).toBe('string');
+            expect(body.insights[0].createdAt >= body.insights[1].createdAt).toBe(true);
         });
     });
 

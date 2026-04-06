@@ -30,6 +30,23 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface TaskInsightAction {
+  href: string;
+  label: string;
+  domain: string;
+}
+
+export interface TaskInsight {
+  id: string;
+  type: "achievement" | "warning" | "suggestion";
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  metadata?: Record<string, unknown>;
+  action?: TaskInsightAction;
+}
+
 export interface TaskStats {
   total: number;
   completed: number;

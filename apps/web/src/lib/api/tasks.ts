@@ -3,6 +3,7 @@ import type {
   CarryOverAllResult,
   CarryOverRateResponse,
   DomainStat,
+  TaskInsight,
   Task,
   TaskDetailsResponse,
   TaskListResponse,
@@ -52,6 +53,10 @@ export const tasksApi = {
   // ─── Review & Notes ─────────────────────────────────────
   getReview: (date?: string) =>
     request<TaskReview>(withQueryParams("/tasks/review", { date })),
+  getRecentInsights: (limit = 5) =>
+    request<{ insights: TaskInsight[] }>(
+      withQueryParams("/tasks/insights", { limit }),
+    ).then((res) => res.insights),
   getTaskNotes: (taskId: string) => request<TaskNote[]>(`/tasks/${taskId}/notes`),
   addNote: (taskId: string, content: string, type: TaskNote["type"] = "note") =>
     request<TaskNote>(`/tasks/${taskId}/notes`, {

@@ -12,6 +12,7 @@ import { DayReviewCard } from "@/components/home/day-review-card";
 import { WeeklyTrendCard } from "@/components/home/weekly-trend-card";
 import { WalletSnapshotCard } from "@/components/home/wallet-snapshot-card";
 import { ProductFocusCard } from "@/components/home/product-focus-card";
+import { CrossDomainSignalsCard } from "@/components/home/cross-domain-signals-card";
 
 export default function HomePage() {
   const today = getTodayISO();
@@ -34,6 +35,11 @@ export default function HomePage() {
   const { data: trend } = useQuery({
     queryKey: homeTaskQueryKeys.trend(7),
     queryFn: () => tasksApi.getTrend(7),
+  });
+
+  const { data: recentInsights } = useQuery({
+    queryKey: ["home", "tasks", "insights"],
+    queryFn: () => tasksApi.getRecentInsights(5),
   });
 
   const { data: walletStats, isLoading: isLoadingWalletStats } = useQuery({
@@ -106,6 +112,7 @@ export default function HomePage() {
             recentTransactions={recentWalletTransactions}
             isLoading={isLoadingWallet}
           />
+          <CrossDomainSignalsCard insights={recentInsights ?? []} />
           <WeeklyTrendCard trend={trend} />
           <ProductFocusCard />
         </div>

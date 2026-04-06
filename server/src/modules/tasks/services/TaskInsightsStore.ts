@@ -30,6 +30,16 @@ export interface StreakData {
     lastCompletedDate: string | null;
 }
 
+export interface TaskInsightAction {
+    href: string;
+    label: string;
+    domain: string;
+}
+
+export interface RecentInsight extends Insight {
+    action?: TaskInsightAction;
+}
+
 export type InsightListener = (insight: Insight) => void;
 export type NewInsight = {
     type: InsightType;
@@ -102,6 +112,17 @@ export class TaskInsightsStore {
         return this.insights.slice(-limit);
     }
 
+    getRecentInsights(limit = 5): RecentInsight[] {
+        return [...this.insights]
+            .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+            .slice(0, limit)
+            .map((insight) => ({
+                ...insight,
+                metadata: insight.metadata ? { ...insight.metadata } : undefined,
+                action: this.resolveAction(insight),
+            }));
+    }
+
     markAllRead(): void {
         for (const insight of this.insights) {
             insight.read = true;
@@ -154,6 +175,56 @@ export class TaskInsightsStore {
             streak: this.getStreak(),
             totalInsights: this.insights.length,
         };
+    }
+
+    private resolveAction(insight: Insight): TaskInsightAction | undefined {
+        const explicitAction = this.resolveExplicitAction(insight.metadata);
+        if (explicitAction) {
+            return explicitAction;
+        }
+
+        const source = this.readMetadataString(insight.metadata, 'source');
+        if (source === 'wallet.spending.spike') {
+            return {
+                href: '/wallet',
+                label: 'Abrir Wallet',
+                domain: 'wallet',
+            };
+        }
+
+        if (insight.type === 'achievement') {
+            return {
+                href: '/tasks/history',
+                label: 'Ver historial',
+                domain: 'tasks',
+            };
+        }
+
+        return {
+            href: '/tasks',
+            label: 'Ir a Tasks',
+            domain: 'tasks',
+        };
+    }
+
+    private resolveExplicitAction(metadata?: Record<string, unknown>): TaskInsightAction | undefined {
+        const href = this.readMetadataString(metadata, 'actionHref');
+        const label = this.readMetadataString(metadata, 'actionLabel');
+        const domain = this.readMetadataString(metadata, 'actionDomain');
+
+        if (!href || !label || !domain) {
+            return undefined;
+        }
+
+        return { href, label, domain };
+    }
+
+    private readMetadataString(
+        metadata: Record<string, unknown> | undefined,
+        key: string,
+    ): string | undefined {
+        const value = metadata?.[key];
+        return typeof value === 'string' && value.length > 0 ? value : undefined;
     }
 }
 
