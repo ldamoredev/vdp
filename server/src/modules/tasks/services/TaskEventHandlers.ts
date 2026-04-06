@@ -50,8 +50,8 @@ export class TaskEventHandlers implements EventSubscriber {
     }
 
     private async onDailyAllCompleted(event: DomainEvent<DailyAllCompletedPayload>): Promise<void> {
-        this.insightsStore.recordPerfectDay(event.payload.date);
-        const streak = this.insightsStore.getStreak();
+        this.insightsStore.recordPerfectDay(event.payload.userId, event.payload.date);
+        const streak = this.insightsStore.getStreak(event.payload.userId);
         this.insightsStore.addInsight(TaskInsightFactory.dailyAllCompleted(event.payload, streak));
     }
 

@@ -32,6 +32,7 @@ export class CrossDomainEventHandlers implements EventSubscriber {
 
     private handleSpendingSpike(payload: SpendingSpikePayload): void {
         this.insightsStore.addInsight({
+            userId: payload.userId,
             type: 'warning',
             title: 'Gasto elevado esta semana',
             message:

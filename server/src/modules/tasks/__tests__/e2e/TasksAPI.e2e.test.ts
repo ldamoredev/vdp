@@ -3,6 +3,7 @@ import { TestApp } from './TestApp';
 import { TestDatabase } from '../integration/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
+import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -141,6 +142,27 @@ describe('Tasks API — E2E', () => {
             });
             expect(typeof body.insights[0].createdAt).toBe('string');
             expect(body.insights[0].createdAt >= body.insights[1].createdAt).toBe(true);
+        });
+
+        it('does not expose another users insights', async () => {
+            const { body: task } = await createTask({ title: 'Insight privado' });
+
+            const completeRes = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/complete`,
+            });
+            expect(completeRes.statusCode).toBe(200);
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+                headers: {
+                    [TEST_USER_ID_HEADER]: SECONDARY_TEST_USER.id,
+                },
+            });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.json()).toEqual({ insights: [] });
         });
     });
 

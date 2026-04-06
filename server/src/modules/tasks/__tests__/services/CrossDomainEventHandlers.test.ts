@@ -42,8 +42,11 @@ describe('CrossDomainEventHandlers', () => {
         }));
 
         expect(addSpy).toHaveBeenCalledOnce();
-        expect(addSpy.mock.calls[0][0].type).toBe('warning');
-        expect(addSpy.mock.calls[0][0].title).toBe('Gasto elevado esta semana');
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            userId: 'test-user-id',
+            type: 'warning',
+            title: 'Gasto elevado esta semana',
+        });
     });
 
     it('creates a task on spending spike', async () => {

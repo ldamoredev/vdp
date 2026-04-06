@@ -28,8 +28,9 @@ export class TaskInsightsSSEController extends HttpController {
 
     private readonly list = async (request: FastifyRequest, reply: FastifyReply) => {
         const limit = this.parseLimit(request.query);
+        const userId = request.auth.userId!;
         return reply.send({
-            insights: this.insightsStore.getRecentInsights(limit),
+            insights: this.insightsStore.getRecentInsights(userId, limit),
         });
     };
 
@@ -45,10 +46,11 @@ export class TaskInsightsSSEController extends HttpController {
         this.broadcaster.addClient(res, origin);
 
         // Send current unread insights as initial payload, then mark as read
-        const snapshot = this.insightsStore.getSnapshot();
+        const userId = request.auth.userId!;
+        const snapshot = this.insightsStore.getSnapshot(userId);
         if (snapshot.unread.length > 0) {
             res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);
-            this.insightsStore.markAllRead();
+            this.insightsStore.markAllRead(userId);
         }
 
         // Cleanup on disconnect

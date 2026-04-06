@@ -16,6 +16,7 @@ export type {
 export class TaskInsightFactory {
     static taskCompleted(payload: TaskCompletedPayload): NewInsight {
         return this.buildInsight(
+            payload.userId,
             'achievement',
             'Tarea completada',
             `Completaste una tarea programada para ${payload.scheduledDate}. ¡Seguí así!`,
@@ -29,6 +30,7 @@ export class TaskInsightFactory {
     ): NewInsight {
         if (streak.current >= 7) {
             return this.buildInsight(
+                payload.userId,
                 'achievement',
                 `🔥 Racha de ${streak.current} días`,
                 `¡Impresionante! Completaste todas tus tareas ${streak.current} días seguidos. ` +
@@ -43,6 +45,7 @@ export class TaskInsightFactory {
 
         if (streak.current >= 3) {
             return this.buildInsight(
+                payload.userId,
                 'achievement',
                 `⚡ Racha de ${streak.current} días`,
                 `¡Vas muy bien! ${payload.count} tareas completadas hoy. ` +
@@ -56,6 +59,7 @@ export class TaskInsightFactory {
         }
 
         return this.buildInsight(
+            payload.userId,
             'achievement',
             '✅ Día perfecto',
             `Completaste las ${payload.count} tareas del ${payload.date}. ` +
@@ -81,7 +85,7 @@ export class TaskInsightFactory {
                 `Tal vez sea muy grande o poco clara. ` +
                 `¿Querés que te ayude a dividirla en pasos más concretos?`;
 
-        return this.buildInsight('suggestion', '🔄 Tarea atascada', message, payload);
+        return this.buildInsight(payload.userId, 'suggestion', '🔄 Tarea atascada', message, payload);
     }
 
     static taskRepeatDetected(payload: TaskRepeatDetectedPayload): NewInsight {
@@ -101,7 +105,7 @@ export class TaskInsightFactory {
         const message = patternMessages[payload.pattern] ||
             `Se detectó un patrón repetido ("${payload.pattern}") en la tarea "${payload.title}" con ${payload.previousInstances} instancias previas.`;
 
-        return this.buildInsight('suggestion', '🔁 Patrón repetido detectado', message, payload);
+        return this.buildInsight(payload.userId, 'suggestion', '🔁 Patrón repetido detectado', message, payload);
     }
 
     static tasksOverloaded(payload: TasksOverloadedPayload): NewInsight {
@@ -115,15 +119,16 @@ export class TaskInsightFactory {
                 `Revisá si estás siendo realista con la planificación diaria. ` +
                 `¿Querés que analice cuáles tareas se postergan más?`;
 
-        return this.buildInsight('warning', '📊 Sobrecarga detectada', message, payload);
+        return this.buildInsight(payload.userId, 'warning', '📊 Sobrecarga detectada', message, payload);
     }
 
     private static buildInsight(
+        userId: string,
         type: InsightType,
         title: string,
         message: string,
         metadata?: Record<string, unknown>,
     ): NewInsight {
-        return { type, title, message, metadata };
+        return { userId, type, title, message, metadata };
     }
 }
