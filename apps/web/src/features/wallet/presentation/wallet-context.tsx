@@ -183,12 +183,14 @@ export const WalletActionsContext = createContext<WalletActionsValue | null>(
 
 export function WalletProvider({
   scope,
+  initialTransactionFilters,
   children,
 }: {
   scope: WalletScope;
+  initialTransactionFilters?: WalletTransactionFilters;
   children: React.ReactNode;
 }) {
-  const queries = useWalletQueries(scope);
+  const queries = useWalletQueries(scope, initialTransactionFilters);
   const mutations = useWalletMutations();
   const creation = useWalletCreation({
     createAccount: mutations.createAccount,

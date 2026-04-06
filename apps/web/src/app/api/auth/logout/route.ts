@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  SESSION_COOKIE_NAME,
   buildBackendUrl,
   createBackendHeaders,
-  getSessionCookieOptions,
+  clearSessionCookie,
+  SESSION_COOKIE_NAME,
 } from "@/lib/server/backend";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => undefined);
   }
 
-  cookieStore.set(SESSION_COOKIE_NAME, "", {
-    ...getSessionCookieOptions(),
-    maxAge: 0,
-  });
+  clearSessionCookie(cookieStore);
 
   return NextResponse.json({ ok: true });
 }

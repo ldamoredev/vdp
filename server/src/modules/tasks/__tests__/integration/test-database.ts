@@ -221,14 +221,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
 
 `;
 
-const CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
+export const TEST_DATABASE_CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
 
 export class TestDatabase {
     public query;
     private pool: pg.Pool;
 
     constructor() {
-        this.pool = new pg.Pool({ connectionString: CONNECTION_STRING });
+        this.pool = new pg.Pool({ connectionString: TEST_DATABASE_CONNECTION_STRING });
         this.query = drizzle(this.pool, {
             schema: { ...authSchema, ...agentSchema, ...walletSchema, ...tasksSchema, ...embeddingsSchema },
         });

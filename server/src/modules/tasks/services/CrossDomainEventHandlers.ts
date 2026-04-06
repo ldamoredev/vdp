@@ -32,6 +32,7 @@ export class CrossDomainEventHandlers implements EventSubscriber {
 
     private handleSpendingSpike(payload: SpendingSpikePayload): void {
         this.insightsStore.addInsight({
+            userId: payload.userId,
             type: 'warning',
             title: 'Gasto elevado esta semana',
             message:
@@ -44,6 +45,10 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 previousAverage: payload.previousAverage,
                 percentageIncrease: payload.percentageIncrease,
                 currency: payload.currency,
+                periodFrom: payload.periodFrom,
+                periodTo: payload.periodTo,
+                actionHref: `/wallet/transactions?from=${payload.periodFrom}&to=${payload.periodTo}`,
+                actionLabel: 'Revisar movimientos',
             },
         });
 

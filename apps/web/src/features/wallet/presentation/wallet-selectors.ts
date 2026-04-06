@@ -42,6 +42,11 @@ export type WalletTransactionFilters = {
   to?: string;
 };
 
+type WalletTransactionFilterSeed = {
+  from?: string | string[];
+  to?: string | string[];
+};
+
 export type SavingsFormState = {
   name: string;
   targetAmount: string;
@@ -150,6 +155,21 @@ export function buildTransactionPagination(
     totalPages: Math.ceil(total / limit),
     canGoPrevious: offset > 0,
     canGoNext: offset + limit < total,
+  };
+}
+
+function takeFirstQueryValue(value?: string | string[]) {
+  return typeof value === "string" ? value : value?.[0];
+}
+
+export function buildInitialTransactionFilters(
+  seed?: WalletTransactionFilterSeed,
+): WalletTransactionFilters {
+  return {
+    limit: "20",
+    offset: "0",
+    from: takeFirstQueryValue(seed?.from) || undefined,
+    to: takeFirstQueryValue(seed?.to) || undefined,
   };
 }
 

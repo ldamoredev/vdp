@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildInitialTransactionFilters,
   buildInvestmentSummary,
   buildTransactionPagination,
   calculateSavingsProgress,
@@ -94,5 +95,19 @@ describe("wallet-selectors", () => {
     expect(result.totalPages).toBe(3);
     expect(result.canGoPrevious).toBe(true);
     expect(result.canGoNext).toBe(true);
+  });
+
+  it("seeds transaction filters from route query params", () => {
+    const result = buildInitialTransactionFilters({
+      from: "2026-03-30",
+      to: "2026-04-05",
+    });
+
+    expect(result).toEqual({
+      limit: "20",
+      offset: "0",
+      from: "2026-03-30",
+      to: "2026-04-05",
+    });
   });
 });

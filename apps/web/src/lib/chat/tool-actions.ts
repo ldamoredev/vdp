@@ -68,6 +68,36 @@ function formatTaskSummary(task: Record<string, unknown>) {
 
 export function getToolDisplayName(tool: string) {
   switch (tool) {
+    case "get_accounts":
+      return "Ver cuentas";
+    case "create_account":
+      return "Crear cuenta";
+    case "list_transactions":
+      return "Ver movimientos";
+    case "log_transaction":
+      return "Registrar movimiento";
+    case "get_balance":
+      return "Ver balance";
+    case "spending_summary":
+      return "Resumen de gastos";
+    case "list_savings_goals":
+      return "Ver ahorros";
+    case "create_savings_goal":
+      return "Crear objetivo de ahorro";
+    case "update_savings_goal":
+      return "Actualizar objetivo de ahorro";
+    case "contribute_savings":
+      return "Aportar a ahorros";
+    case "list_investments":
+      return "Ver inversiones";
+    case "create_investment":
+      return "Crear inversion";
+    case "update_investment":
+      return "Actualizar inversion";
+    case "get_exchange_rates":
+      return "Ver cotizaciones";
+    case "create_exchange_rate":
+      return "Registrar cotizacion";
     case "create_task":
       return "Crear tarea";
     case "list_tasks":
@@ -169,6 +199,38 @@ export function parseToolAction(tool: string, result?: string | null): ToolActio
       title: "Nota agregada",
       detail: asString(parsed.content) || "La nota se guardo en la tarea",
       tone: "success",
+    };
+  }
+
+  if (tool === "log_transaction" && isRecord(parsed)) {
+    return {
+      title: `Movimiento registrado: ${asString(parsed.description) || "Sin descripcion"}`,
+      detail: `${asString(parsed.amount) || "0.00"} ${asString(parsed.currency) || "ARS"} · ${asString(parsed.date) || "Sin fecha"}`,
+      tone: "success",
+    };
+  }
+
+  if (tool === "spending_summary" && isRecord(parsed)) {
+    const totalExpenses = asString(parsed.totalExpenses) || "0.00";
+    const totalIncome = asString(parsed.totalIncome) || "0.00";
+    const netBalance = asString(parsed.netBalance) || "0.00";
+    const transactionCount = asNumber(parsed.transactionCount);
+    const detailParts = [
+      `${totalExpenses} gastos`,
+      `${totalIncome} ingresos`,
+      `balance neto ${netBalance}`,
+    ];
+
+    if (typeof transactionCount === "number") {
+      detailParts.push(
+        `${transactionCount} movimiento${transactionCount === 1 ? "" : "s"}`,
+      );
+    }
+
+    return {
+      title: "Resumen de gastos",
+      detail: detailParts.join(" · "),
+      tone: "info",
     };
   }
 

@@ -20,7 +20,7 @@ describe('TaskEventHandlers', () => {
         await eventBus.emit(new TaskStuck({ userId: 'test-user-id', taskId: 'task-2', title: 'Cerrar tema', carryOverCount: 3 }));
         await eventBus.emit(new TasksOverloaded({ userId: 'test-user-id', carryOverRate: 72, period: 'last_7_days', currentLoad: 8, threshold: 5 }));
 
-        const insights = insightsStore.getUnreadInsights();
+        const insights = insightsStore.getUnreadInsights('test-user-id');
 
         expect(insights).toHaveLength(4);
         expect(insights.map((insight) => insight.title)).toEqual([
@@ -29,7 +29,7 @@ describe('TaskEventHandlers', () => {
             '🔄 Tarea atascada',
             '📊 Sobrecarga detectada',
         ]);
-        expect(insightsStore.getStreak()).toEqual({
+        expect(insightsStore.getStreak('test-user-id')).toEqual({
             current: 1,
             best: 1,
             lastCompletedDate: '2026-03-22',

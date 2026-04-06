@@ -43,8 +43,14 @@ export function RecentTransactions({
               No hay transacciones aun
             </p>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              Usa el chat o crea una manualmente
+              Empeza registrando tu primer movimiento.
             </p>
+            <Link
+              href="/wallet/transactions/new"
+              className="btn-primary mt-4 inline-flex"
+            >
+              Crear primera transaccion
+            </Link>
           </div>
         ) : (
           transactions.map((transaction) => (

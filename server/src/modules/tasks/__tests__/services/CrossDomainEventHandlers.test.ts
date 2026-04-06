@@ -42,8 +42,32 @@ describe('CrossDomainEventHandlers', () => {
         }));
 
         expect(addSpy).toHaveBeenCalledOnce();
-        expect(addSpy.mock.calls[0][0].type).toBe('warning');
-        expect(addSpy.mock.calls[0][0].title).toBe('Gasto elevado esta semana');
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            userId: 'test-user-id',
+            type: 'warning',
+            title: 'Gasto elevado esta semana',
+        });
+    });
+
+    it('includes a wallet drill-down action in the spending spike insight metadata', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new SpendingSpike({
+            userId: 'test-user-id',
+            totalExpenses: '750.00',
+            previousAverage: '300.00',
+            percentageIncrease: 150,
+            currency: 'ARS',
+            periodFrom: '2026-03-30',
+            periodTo: '2026-04-05',
+        }));
+
+        const metadata = addSpy.mock.calls[0][0].metadata as Record<string, unknown>;
+        expect(metadata.actionHref).toBe('/wallet/transactions?from=2026-03-30&to=2026-04-05');
+        expect(metadata.actionLabel).toBe('Revisar movimientos');
+        expect(metadata.source).toBe('wallet.spending.spike');
+        expect(metadata.periodFrom).toBe('2026-03-30');
+        expect(metadata.periodTo).toBe('2026-04-05');
     });
 
     it('creates a task on spending spike', async () => {

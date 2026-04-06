@@ -16,6 +16,7 @@ import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/obse
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
 import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { WalletModule } from '../../WalletModule';
+import { TEST_DATABASE_CONNECTION_STRING } from '../../../tasks/__tests__/integration/test-database';
 
 export class TestCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -29,7 +30,7 @@ export class TestCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new NoOpLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(process.env.TEST_DATABASE_URL));
+        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(TEST_DATABASE_CONNECTION_STRING));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();

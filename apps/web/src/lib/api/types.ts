@@ -30,6 +30,31 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface TaskInsightAction {
+  href: string;
+  label: string;
+  domain: string;
+}
+
+export interface TaskInsightMetadata extends Record<string, unknown> {
+  source?: string;
+  domain?: string;
+  actionHref?: string;
+  actionLabel?: string;
+  actionDomain?: string;
+}
+
+export interface TaskInsight {
+  id: string;
+  type: "achievement" | "warning" | "suggestion";
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  metadata?: TaskInsightMetadata;
+  action?: TaskInsightAction;
+}
+
 export interface TaskStats {
   total: number;
   completed: number;

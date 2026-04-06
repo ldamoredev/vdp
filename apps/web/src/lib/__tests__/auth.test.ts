@@ -33,7 +33,7 @@ describe("auth client helpers", () => {
       }),
     });
 
-    expect(fetchCurrentUser()).resolves.toEqual({
+    await expect(fetchCurrentUser()).resolves.toEqual({
       id: "user-1",
       email: "owner@vdp.local",
       displayName: "Owner",

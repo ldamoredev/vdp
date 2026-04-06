@@ -11,12 +11,14 @@ import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogge
  * Usage:
  *   const broadcaster = new SSEBroadcaster();
  *   // In route handler:
- *   broadcaster.addClient(reply.raw);
+ *   broadcaster.addClient(reply.raw, userId);
  *   // When something happens:
- *   broadcaster.broadcast('insight', { title: '...' });
+ *   broadcaster.broadcastToUser(userId, 'insight', { title: '...' });
  */
 export class SSEBroadcaster {
-    private clients = new Set<ServerResponse>();
+    private readonly clients = new Set<ServerResponse>();
+    private readonly audiences = new Map<string, Set<ServerResponse>>();
+    private readonly clientAudience = new Map<ServerResponse, string>();
     private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
     private heartbeatMs: number;
 
@@ -31,7 +33,7 @@ export class SSEBroadcaster {
      * Add a new SSE client connection.
      * Writes SSE headers and sends initial heartbeat.
      */
-    addClient(res: ServerResponse, origin?: string): void {
+    addClient(res: ServerResponse, userId: string, origin?: string): void {
         const headers: Record<string, string> = {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
@@ -52,9 +54,13 @@ export class SSEBroadcaster {
         res.write(': heartbeat\n\n');
 
         this.clients.add(res);
+        this.clientAudience.set(res, userId);
+        const audience = this.audiences.get(userId) ?? new Set<ServerResponse>();
+        audience.add(res);
+        this.audiences.set(userId, audience);
         this.ensureHeartbeat();
 
-        this.logger.info('sse client connected', { clients: this.clients.size });
+        this.logger.info('sse client connected', { clients: this.clients.size, userId });
     }
 
     /**
@@ -62,7 +68,20 @@ export class SSEBroadcaster {
      */
     removeClient(res: ServerResponse): void {
         this.clients.delete(res);
-        this.logger.info('sse client disconnected', { clients: this.clients.size });
+        const userId = this.clientAudience.get(res);
+        this.clientAudience.delete(res);
+
+        if (userId) {
+            const audience = this.audiences.get(userId);
+            if (audience) {
+                audience.delete(res);
+                if (audience.size === 0) {
+                    this.audiences.delete(userId);
+                }
+            }
+        }
+
+        this.logger.info('sse client disconnected', { clients: this.clients.size, userId });
 
         if (this.clients.size === 0) {
             this.stopHeartbeat();
@@ -73,17 +92,26 @@ export class SSEBroadcaster {
      * Broadcast a named event to all connected clients.
      * Format: `event: <name>\ndata: <json>\n\n`
      */
-    broadcast(event: string, data: unknown): void {
+    broadcastToUser(userId: string, event: string, data: unknown): void {
         const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+        const audience = this.audiences.get(userId);
 
-        for (const client of this.clients) {
+        if (!audience) {
+            return;
+        }
+
+        for (const client of audience) {
             try {
                 client.write(payload);
             } catch {
                 // Client disconnected unexpectedly — clean up
-                this.clients.delete(client);
+                this.removeClient(client);
             }
         }
+    }
+
+    hasClients(userId: string): boolean {
+        return (this.audiences.get(userId)?.size ?? 0) > 0;
     }
 
     /**
@@ -106,6 +134,8 @@ export class SSEBroadcaster {
             }
         }
         this.clients.clear();
+        this.audiences.clear();
+        this.clientAudience.clear();
     }
 
     // ─── Heartbeat ─────────────────────────────────────────
@@ -118,7 +148,7 @@ export class SSEBroadcaster {
                 try {
                     client.write(': heartbeat\n\n');
                 } catch {
-                    this.clients.delete(client);
+                    this.removeClient(client);
                 }
             }
         }, this.heartbeatMs);

@@ -22,8 +22,17 @@ export class TaskInsightsSSEController extends HttpController {
     }
 
     registerRoutes(routes: RouteRegister): void {
+        routes.get('/', this.list);
         routes.get('/stream', this.stream);
     }
+
+    private readonly list = async (request: FastifyRequest, reply: FastifyReply) => {
+        const limit = this.parseLimit(request.query);
+        const userId = request.auth.userId!;
+        return reply.send({
+            insights: this.insightsStore.getRecentInsights(userId, limit),
+        });
+    };
 
     private readonly stream = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
         // Prevent Fastify from managing the response lifecycle
@@ -31,16 +40,17 @@ export class TaskInsightsSSEController extends HttpController {
 
         const res = reply.raw;
         const origin = request.headers.origin;
+        const userId = request.auth.userId!;
 
         // reply.hijack() bypasses Fastify's plugin pipeline (including CORS),
         // so we must set CORS headers manually on the raw response.
-        this.broadcaster.addClient(res, origin);
+        this.broadcaster.addClient(res, userId, origin);
 
         // Send current unread insights as initial payload, then mark as read
-        const snapshot = this.insightsStore.getSnapshot();
+        const snapshot = this.insightsStore.getSnapshot(userId);
         if (snapshot.unread.length > 0) {
             res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);
-            this.insightsStore.markAllRead();
+            this.insightsStore.markAllRead(userId);
         }
 
         // Cleanup on disconnect
@@ -48,4 +58,21 @@ export class TaskInsightsSSEController extends HttpController {
             this.broadcaster.removeClient(res);
         });
     };
+
+    private parseLimit(query: FastifyRequest['query']): number {
+        const rawLimit = typeof query === 'object' && query !== null && 'limit' in query
+            ? (query as { limit?: unknown }).limit
+            : undefined;
+
+        if (typeof rawLimit !== 'string') {
+            return 5;
+        }
+
+        const parsed = Number.parseInt(rawLimit, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+            return 5;
+        }
+
+        return Math.min(parsed, 20);
+    }
 }

@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vites
 import { TestApp } from './TestApp';
 import { TestDatabase } from '../integration/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
+import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
+import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -13,6 +15,18 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await testDb.truncate();
+
+    const insightsController = testApp.core
+        .getControllers()
+        .find((controller) => controller.prefix === '/api/v1/tasks/insights') as
+        | {
+            insightsStore?: {
+                reset: () => void;
+            };
+        }
+        | undefined;
+
+    insightsController?.insightsStore?.reset();
 });
 
 afterAll(async () => {
@@ -82,6 +96,137 @@ describe('Tasks API — E2E', () => {
 
             expect(body.tasks).toHaveLength(1);
             expect(body.tasks[0].status).toBe('done');
+        });
+    });
+
+    describe('GET /api/v1/tasks/insights', () => {
+        it('returns recent task insights with action metadata for home surfaces', async () => {
+            const { body: task } = await createTask({ title: 'Revisar presupuesto semanal' });
+
+            const completeRes = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/complete`,
+            });
+            expect(completeRes.statusCode).toBe(200);
+
+            await testApp.core.eventBus.emit(
+                new SpendingSpike({
+                    userId,
+                    totalExpenses: '350000',
+                    previousAverage: '200000',
+                    percentageIncrease: 75,
+                    currency: 'ARS',
+                    periodFrom: '2026-03-23',
+                    periodTo: '2026-03-29',
+                }),
+            );
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+            });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.insights).toHaveLength(2);
+            expect(body.insights[0]).toMatchObject({
+                title: 'Gasto elevado esta semana',
+                type: 'warning',
+                read: false,
+                action: {
+                    href: '/wallet/transactions?from=2026-03-23&to=2026-03-29',
+                    label: 'Revisar movimientos',
+                    domain: 'wallet',
+                },
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    percentageIncrease: 75,
+                },
+            });
+            expect(body.insights[1]).toMatchObject({
+                title: 'Tarea completada',
+                type: 'achievement',
+                action: {
+                    href: '/tasks/history',
+                    label: 'Ver historial',
+                    domain: 'tasks',
+                },
+            });
+            expect(typeof body.insights[0].createdAt).toBe('string');
+            expect(body.insights[0].createdAt >= body.insights[1].createdAt).toBe(true);
+        });
+
+        it('resolves explicit metadata actions even when actionDomain is omitted', async () => {
+            const insightsController = testApp.core
+                .getControllers()
+                .find((controller) => controller.prefix === '/api/v1/tasks/insights') as
+                | {
+                    insightsStore?: {
+                        addInsight: (input: {
+                            userId: string;
+                            type: 'achievement' | 'warning' | 'suggestion';
+                            title: string;
+                            message: string;
+                            metadata?: Record<string, unknown>;
+                        }) => unknown;
+                    };
+                }
+                | undefined;
+
+            expect(insightsController?.insightsStore).toBeDefined();
+
+            insightsController!.insightsStore!.addInsight({
+                userId,
+                type: 'warning',
+                title: 'Accion explicita',
+                message: 'Mensaje',
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    actionHref: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    actionLabel: 'Revisar movimientos',
+                },
+            });
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+            });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.json().insights[0]).toMatchObject({
+                title: 'Accion explicita',
+                action: {
+                    href: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    label: 'Revisar movimientos',
+                    domain: 'wallet',
+                },
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    actionHref: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    actionLabel: 'Revisar movimientos',
+                },
+            });
+        });
+
+        it('does not expose another users insights', async () => {
+            const { body: task } = await createTask({ title: 'Insight privado' });
+
+            const completeRes = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/complete`,
+            });
+            expect(completeRes.statusCode).toBe(200);
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+                headers: {
+                    [TEST_USER_ID_HEADER]: SECONDARY_TEST_USER.id,
+                },
+            });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.json()).toEqual({ insights: [] });
         });
     });
 

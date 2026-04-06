@@ -1,17 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { walletApi } from "@/lib/api/wallet";
 import { tasksApi } from "@/lib/api/tasks";
 import { getTodayISO } from "@/lib/format";
-import { domains } from "@/lib/navigation";
 import { homeTaskQueryKeys } from "@/features/tasks/presentation/tasks-query-keys";
+import { walletQueryKeys } from "@/features/wallet/presentation/wallet-query-keys";
 import { TaskStatsRow } from "@/components/home/task-stats-row";
 import { TodayTasksCard } from "@/components/home/today-tasks-card";
 import { DayReviewCard } from "@/components/home/day-review-card";
 import { WeeklyTrendCard } from "@/components/home/weekly-trend-card";
-import { DisabledDomainsCard } from "@/components/home/disabled-domains-card";
-
-const disabledDomains = domains.filter((d) => d.disabled);
+import { WalletSnapshotCard } from "@/components/home/wallet-snapshot-card";
+import { ProductFocusCard } from "@/components/home/product-focus-card";
+import { CrossDomainSignalsCard } from "@/components/home/cross-domain-signals-card";
 
 export default function HomePage() {
   const today = getTodayISO();
@@ -36,11 +37,31 @@ export default function HomePage() {
     queryFn: () => tasksApi.getTrend(7),
   });
 
+  const { data: recentInsights } = useQuery({
+    queryKey: ["home", "tasks", "insights"],
+    queryFn: () => tasksApi.getRecentInsights(5),
+  });
+
+  const { data: walletStats, isLoading: isLoadingWalletStats } = useQuery({
+    queryKey: walletQueryKeys.statsSummary,
+    queryFn: () => walletApi.getStatsSummary(),
+  });
+
+  const {
+    data: walletRecentTransactions,
+    isLoading: isLoadingWalletRecentTransactions,
+  } = useQuery({
+    queryKey: walletQueryKeys.recentTransactions,
+    queryFn: () => walletApi.getTransactions({ limit: "10" }),
+  });
+  const isLoadingWallet = isLoadingWalletStats || isLoadingWalletRecentTransactions;
+
   const tasksCompleted = taskStats?.completed ?? 0;
   const tasksTotal = taskStats?.total ?? 0;
   const tasksPending = taskStats?.pending ?? 0;
   const tasksPct = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
   const activeTasks = todayTasks?.tasks ?? [];
+  const recentWalletTransactions = walletRecentTransactions?.transactions ?? [];
   const averageCompletion = trend?.length
     ? Math.round(trend.reduce((acc, day) => acc + day.completionRate, 0) / trend.length)
     : 0;
@@ -86,8 +107,14 @@ export default function HomePage() {
 
         {/* Right sidebar */}
         <div className="space-y-6">
+          <WalletSnapshotCard
+            stats={walletStats}
+            recentTransactions={recentWalletTransactions}
+            isLoading={isLoadingWallet}
+          />
+          <CrossDomainSignalsCard insights={recentInsights ?? []} />
           <WeeklyTrendCard trend={trend} />
-          <DisabledDomainsCard domains={disabledDomains} />
+          <ProductFocusCard />
         </div>
       </div>
     </div>
