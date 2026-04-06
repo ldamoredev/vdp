@@ -61,6 +61,11 @@ export class TaskInsightsStore {
     private readonly listeners = new Set<InsightListener>();
     private readonly defaultScopeKey = '__global__';
 
+    reset(): void {
+        this.insights = [];
+        this.streaks.clear();
+    }
+
     // ─── Insights ──────────────────────────────────────────
 
     addInsight(input: NewInsight): Insight {

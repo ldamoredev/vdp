@@ -15,6 +15,18 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await testDb.truncate();
+
+    const insightsController = testApp.core
+        .getControllers()
+        .find((controller) => controller.prefix === '/api/v1/tasks/insights') as
+        | {
+            insightsStore?: {
+                reset: () => void;
+            };
+        }
+        | undefined;
+
+    insightsController?.insightsStore?.reset();
 });
 
 afterAll(async () => {

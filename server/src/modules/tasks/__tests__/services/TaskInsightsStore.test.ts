@@ -169,4 +169,25 @@ describe('TaskInsightsStore', () => {
         expect(store.getAllInsights('user-a', 100)).toHaveLength(50);
         expect(store.getAllInsights('user-a', 100).map((insight) => insight.title)).not.toContain('User A insight 1');
     });
+
+    it('reset clears insights and streaks', () => {
+        const store = new TaskInsightsStore();
+
+        store.addInsight({
+            userId: 'user-a',
+            type: 'achievement',
+            title: 'Insight A1',
+            message: 'Mensaje A1',
+        });
+        store.recordPerfectDay('user-a', '2026-03-22');
+
+        store.reset();
+
+        expect(store.getAllInsights('user-a', 10)).toEqual([]);
+        expect(store.getStreak('user-a')).toEqual({
+            current: 0,
+            best: 0,
+            lastCompletedDate: null,
+        });
+    });
 });

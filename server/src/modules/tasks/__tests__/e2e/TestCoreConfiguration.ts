@@ -20,6 +20,7 @@ import { Logger } from '../../../common/base/observability/logging/Logger';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
+import { TEST_DATABASE_CONNECTION_STRING } from '../integration/test-database';
 
 export class TestCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -33,7 +34,7 @@ export class TestCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new NoOpLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(process.env.TEST_DATABASE_URL));
+        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(TEST_DATABASE_CONNECTION_STRING));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();
