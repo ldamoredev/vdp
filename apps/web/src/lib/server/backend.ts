@@ -40,6 +40,24 @@ export function getSessionCookieOptions() {
   };
 }
 
+export function clearSessionCookie(
+  cookieStore: Pick<
+    {
+      set: (
+        name: string,
+        value: string,
+        options: ReturnType<typeof getSessionCookieOptions>,
+      ) => void;
+    },
+    "set"
+  >,
+) {
+  cookieStore.set(SESSION_COOKIE_NAME, "", {
+    ...getSessionCookieOptions(),
+    maxAge: 0,
+  });
+}
+
 export function createForwardHeaders(
   request: NextRequest,
   sessionToken?: string | null,

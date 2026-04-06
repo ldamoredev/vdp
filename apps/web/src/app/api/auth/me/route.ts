@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  SESSION_COOKIE_NAME,
   buildBackendUrl,
+  clearSessionCookie,
   createBackendHeaders,
-  getSessionCookieOptions,
+  SESSION_COOKIE_NAME,
 } from "@/lib/server/backend";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +31,7 @@ export async function GET(request: NextRequest) {
   const payload = await response.json().catch(() => ({ message: "Unable to load session" }));
 
   if (!response.ok) {
-    cookieStore.set(SESSION_COOKIE_NAME, "", {
-      ...getSessionCookieOptions(),
-      maxAge: 0,
-    });
+    clearSessionCookie(cookieStore);
     return NextResponse.json(payload, { status: response.status });
   }
 
