@@ -45,6 +45,10 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 previousAverage: payload.previousAverage,
                 percentageIncrease: payload.percentageIncrease,
                 currency: payload.currency,
+                periodFrom: payload.periodFrom,
+                periodTo: payload.periodTo,
+                actionHref: `/wallet/transactions?from=${payload.periodFrom}&to=${payload.periodTo}`,
+                actionLabel: 'Revisar movimientos',
             },
         });
 

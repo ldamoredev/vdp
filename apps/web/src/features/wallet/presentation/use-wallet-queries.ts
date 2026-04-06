@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { walletApi } from "@/lib/api/wallet";
 import { walletQueryKeys } from "./wallet-query-keys";
 import {
+  buildInitialTransactionFilters,
   buildInvestmentSummary,
   buildTransactionPagination,
   latestDollarRates,
@@ -16,12 +17,14 @@ function scopeMatches(scope: WalletScope, allowed: WalletScope[]) {
   return allowed.includes(scope);
 }
 
-export function useWalletQueries(scope: WalletScope) {
+export function useWalletQueries(
+  scope: WalletScope,
+  initialTransactionFilters?: WalletTransactionFilters,
+) {
   const [transactionFilters, setTransactionFilters] =
-    useState<WalletTransactionFilters>({
-      limit: "20",
-      offset: "0",
-    });
+    useState<WalletTransactionFilters>(
+      () => initialTransactionFilters ?? buildInitialTransactionFilters(),
+    );
 
   const accountsQuery = useQuery({
     queryKey: walletQueryKeys.accounts,

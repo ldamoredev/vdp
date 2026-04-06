@@ -122,8 +122,8 @@ describe('Tasks API — E2E', () => {
                 type: 'warning',
                 read: false,
                 action: {
-                    href: '/wallet',
-                    label: 'Abrir Wallet',
+                    href: '/wallet/transactions?from=2026-03-23&to=2026-03-29',
+                    label: 'Revisar movimientos',
                     domain: 'wallet',
                 },
                 metadata: {
@@ -170,8 +170,8 @@ describe('Tasks API — E2E', () => {
                 message: 'Mensaje',
                 metadata: {
                     source: 'wallet.spending.spike',
-                    actionHref: '/wallet?view=spending',
-                    actionLabel: 'Abrir detalle',
+                    actionHref: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    actionLabel: 'Revisar movimientos',
                 },
             });
 
@@ -184,14 +184,14 @@ describe('Tasks API — E2E', () => {
             expect(res.json().insights[0]).toMatchObject({
                 title: 'Accion explicita',
                 action: {
-                    href: '/wallet?view=spending',
-                    label: 'Abrir detalle',
+                    href: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    label: 'Revisar movimientos',
                     domain: 'wallet',
                 },
                 metadata: {
                     source: 'wallet.spending.spike',
-                    actionHref: '/wallet?view=spending',
-                    actionLabel: 'Abrir detalle',
+                    actionHref: '/wallet/transactions?from=2026-03-30&to=2026-04-05',
+                    actionLabel: 'Revisar movimientos',
                 },
             });
         });

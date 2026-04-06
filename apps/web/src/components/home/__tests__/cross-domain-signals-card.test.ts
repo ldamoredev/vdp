@@ -89,6 +89,33 @@ describe("CrossDomainSignalsCard", () => {
     expect(markup).toContain("Wallet");
   });
 
+  it("renders the insight period window when metadata includes it", () => {
+    const insights: TaskInsight[] = [
+      {
+        id: "insight-period-window",
+        type: "warning",
+        title: "Gasto elevado esta semana",
+        message: "Tu gasto subio 150% respecto al promedio.",
+        createdAt: "2026-04-05T08:00:00.000Z",
+        read: false,
+        metadata: {
+          source: "wallet.spending.spike",
+          actionHref: "/wallet/transactions?from=2026-03-30&to=2026-04-05",
+          actionLabel: "Revisar movimientos",
+          periodFrom: "2026-03-30",
+          periodTo: "2026-04-05",
+        },
+      },
+    ];
+
+    const markup = renderToStaticMarkup(
+      createElement(CrossDomainSignalsCard, { insights }),
+    );
+
+    expect(markup).toContain("Ventana: 2026-03-30 → 2026-04-05");
+    expect(markup).toContain("Revisar movimientos");
+  });
+
   it("shows an empty state when there are no recent insights", () => {
     const markup = renderToStaticMarkup(
       createElement(CrossDomainSignalsCard, { insights: [] }),

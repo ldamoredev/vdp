@@ -1,11 +1,25 @@
-"use client";
-
 import { TransactionsScreen } from "@/features/wallet/presentation/components/transactions-screen";
 import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
+import { buildInitialTransactionFilters } from "@/features/wallet/presentation/wallet-selectors";
 
-export default function TransactionsPage() {
+type TransactionsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function TransactionsPage({
+  searchParams,
+}: TransactionsPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const initialTransactionFilters = buildInitialTransactionFilters({
+    from: resolvedSearchParams?.from,
+    to: resolvedSearchParams?.to,
+  });
+
   return (
-    <WalletProvider scope="transactions">
+    <WalletProvider
+      scope="transactions"
+      initialTransactionFilters={initialTransactionFilters}
+    >
       <TransactionsScreen />
     </WalletProvider>
   );

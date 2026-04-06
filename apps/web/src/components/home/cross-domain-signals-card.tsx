@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { Radar, ArrowUpRight } from "lucide-react";
 import { CollectionCard } from "@/components/primitives/collection-card";
@@ -32,7 +33,7 @@ function getDomainLabel(domain: string | undefined) {
 
 function readMetadataString(
   metadata: TaskInsightMetadata | undefined,
-  key: keyof TaskInsightMetadata,
+  key: string,
 ) {
   const value = metadata?.[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
@@ -118,6 +119,8 @@ export function CrossDomainSignalsCard({
       {insights.length > 0 ? (
         insights.map((insight) => {
           const action = resolveInsightAction(insight);
+          const periodFrom = readMetadataString(insight.metadata, "periodFrom");
+          const periodTo = readMetadataString(insight.metadata, "periodTo");
 
           return (
             <article
@@ -148,6 +151,12 @@ export function CrossDomainSignalsCard({
               <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">
                 {insight.message}
               </p>
+
+              {periodFrom && periodTo ? (
+                <p className="text-[11px] text-[var(--muted)]">
+                  Ventana: {periodFrom} → {periodTo}
+                </p>
+              ) : null}
 
               {action ? (
                 <div className="flex items-center justify-between gap-3">
