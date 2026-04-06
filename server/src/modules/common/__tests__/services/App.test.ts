@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { App } from '../../../../App';
 import { AgentRegistry } from '../../base/agents/AgentRegistry';
-import { AuditLogRepository } from '../../../auth/domain/AuditLogRepository';
+import { AuditLogRecord, AuditLogRepository } from '../../../auth/domain/AuditLogRepository';
 import { CreateSessionData, SessionRecord, SessionRepository } from '../../../auth/domain/SessionRepository';
 import { CreateUserData, UserRecord, UserRepository } from '../../../auth/domain/UserRepository';
 import { EventBus } from '../../base/event-bus/EventBus';
@@ -74,16 +74,26 @@ class FakeUserRepository extends UserRepository {
         throw new Error('Not implemented');
     }
 
-    async updateLastLoginAt(): Promise<void> {}
+    async updateLastLoginAt(): Promise<void> {
+    }
 
     async updateProfile(): Promise<UserRecord | null> {
         return null;
     }
 
-    async updatePasswordHash(): Promise<void> {}
+    async updatePasswordHash(): Promise<void> {
+    }
 }
 
 class FakeSessionRepository extends SessionRepository {
+    listActiveSessionsForUser(userId: string): Promise<SessionRecord[]> {
+        throw new Error('Method not implemented.');
+    }
+
+    revokeOtherSessionsForUser(userId: string, currentSessionId: string, revokedAt: Date): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
     async createSession(_data: CreateSessionData): Promise<SessionRecord> {
         throw new Error('Not implemented');
     }
@@ -92,14 +102,20 @@ class FakeSessionRepository extends SessionRepository {
         return null;
     }
 
-    async touchSession(): Promise<void> {}
+    async touchSession(): Promise<void> {
+    }
 
-    async revokeSession(): Promise<void> {}
+    async revokeSession(): Promise<void> {
+    }
 
-    async revokeSessionsForUser(): Promise<void> {}
+    async revokeSessionsForUser(): Promise<void> {
+    }
 }
 
 class FakeAuditLogRepository extends AuditLogRepository {
+    listRecentAuthLogsForActorUser(actorUserId: string, limit: number): Promise<AuditLogRecord[]> {
+        throw new Error('Method not implemented.');
+    }
     async createLog(): Promise<void> {}
 }
 
