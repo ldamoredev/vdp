@@ -10,6 +10,10 @@ function formatModuleList(labels: readonly string[]) {
   return `${labels.slice(0, -1).join(", ")} y ${labels[labels.length - 1]}`;
 }
 
+function formatModuleCount(count: number) {
+  return `${count} dominio${count === 1 ? "" : "s"}`;
+}
+
 export function ProductFocusCard() {
   const activeDomains = domains.filter((domain) => !domain.disabled);
   const activeDomainLabels = activeDomains.map((domain) => domain.label);
@@ -24,15 +28,16 @@ export function ProductFocusCard() {
             Foco del producto
           </h3>
         </div>
-        <span className="text-xs text-[var(--muted)]">
-          {activeDomains.length} dominios
-        </span>
+        <span className="text-xs text-[var(--muted)]">{formatModuleCount(activeDomains.length)}</span>
       </div>
 
       <div className="space-y-4 p-4">
         <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">
-          {activeDomainSentence} son los modulos activos. Los demas dominios
-          siguen en pausa mientras consolidamos el flujo diario.
+          {activeDomains.length === 1
+            ? `${activeDomainSentence} es el modulo activo.`
+            : `${activeDomainSentence} son los modulos activos.`}{" "}
+          Los demas dominios siguen en pausa mientras consolidamos el flujo
+          diario.
         </p>
 
         <div className="grid gap-2">
