@@ -36,15 +36,19 @@ export default function HomePage() {
     queryFn: () => tasksApi.getTrend(7),
   });
 
-  const { data: walletStats } = useQuery({
+  const { data: walletStats, isLoading: isLoadingWalletStats } = useQuery({
     queryKey: walletQueryKeys.statsSummary,
     queryFn: () => walletApi.getStatsSummary(),
   });
 
-  const { data: walletRecentTransactions } = useQuery({
+  const {
+    data: walletRecentTransactions,
+    isLoading: isLoadingWalletRecentTransactions,
+  } = useQuery({
     queryKey: walletQueryKeys.recentTransactions,
     queryFn: () => walletApi.getTransactions({ limit: "10" }),
   });
+  const isLoadingWallet = isLoadingWalletStats || isLoadingWalletRecentTransactions;
 
   const tasksCompleted = taskStats?.completed ?? 0;
   const tasksTotal = taskStats?.total ?? 0;
@@ -100,6 +104,7 @@ export default function HomePage() {
           <WalletSnapshotCard
             stats={walletStats}
             recentTransactions={recentWalletTransactions}
+            isLoading={isLoadingWallet}
           />
           <WeeklyTrendCard trend={trend} />
           <ProductFocusCard />

@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { WalletSnapshotCard } from "../wallet-snapshot-card";
 
 vi.mock("next/link", () => ({
@@ -13,8 +13,29 @@ vi.mock("next/link", () => ({
   }) => createElement("a", { href }, children),
 }));
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("WalletSnapshotCard", () => {
-  it("shows balance and expense totals with a quick link to create a transaction", () => {
+  it("shows a loading state while wallet data is still resolving", () => {
+    const markup = renderToStaticMarkup(
+      createElement(WalletSnapshotCard, {
+        isLoading: true,
+        stats: undefined,
+        recentTransactions: [],
+      }),
+    );
+
+    expect(markup).toContain('aria-busy="true"');
+    expect(markup).not.toContain("0 movimientos");
+    expect(markup).not.toContain("Todavia no hay movimientos recientes");
+  });
+
+  it("derives the activity badge from the newest transaction date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-05T12:00:00.000Z"));
+
     const markup = renderToStaticMarkup(
       createElement(WalletSnapshotCard, {
         stats: {
@@ -32,9 +53,9 @@ describe("WalletSnapshotCard", () => {
             amount: "1599.99",
             currency: "ARS",
             description: "Coffee run",
-            date: "2026-04-05",
+            date: "2026-04-04",
             tags: [],
-            createdAt: "2026-04-05T09:00:00.000Z",
+            createdAt: "2026-04-04T09:00:00.000Z",
           },
           {
             id: "txn-2",
@@ -44,9 +65,9 @@ describe("WalletSnapshotCard", () => {
             amount: "2200",
             currency: "ARS",
             description: "Invoice payment",
-            date: "2026-04-04",
+            date: "2026-04-03",
             tags: [],
-            createdAt: "2026-04-04T09:00:00.000Z",
+            createdAt: "2026-04-03T09:00:00.000Z",
           },
         ],
       }),
@@ -59,5 +80,7 @@ describe("WalletSnapshotCard", () => {
     expect(markup).toContain("Nueva transaccion");
     expect(markup).toContain("/wallet/transactions/new");
     expect(markup).toContain("Coffee run");
+    expect(markup).toContain("Ayer");
+    expect(markup).not.toContain("Hoy");
   });
 });
