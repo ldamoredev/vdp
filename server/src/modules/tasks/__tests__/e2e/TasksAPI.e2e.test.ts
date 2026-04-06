@@ -144,6 +144,58 @@ describe('Tasks API — E2E', () => {
             expect(body.insights[0].createdAt >= body.insights[1].createdAt).toBe(true);
         });
 
+        it('resolves explicit metadata actions even when actionDomain is omitted', async () => {
+            const insightsController = testApp.core
+                .getControllers()
+                .find((controller) => controller.prefix === '/api/v1/tasks/insights') as
+                | {
+                    insightsStore?: {
+                        addInsight: (input: {
+                            userId: string;
+                            type: 'achievement' | 'warning' | 'suggestion';
+                            title: string;
+                            message: string;
+                            metadata?: Record<string, unknown>;
+                        }) => unknown;
+                    };
+                }
+                | undefined;
+
+            expect(insightsController?.insightsStore).toBeDefined();
+
+            insightsController!.insightsStore!.addInsight({
+                userId,
+                type: 'warning',
+                title: 'Accion explicita',
+                message: 'Mensaje',
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    actionHref: '/wallet?view=spending',
+                    actionLabel: 'Abrir detalle',
+                },
+            });
+
+            const res = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights',
+            });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.json().insights[0]).toMatchObject({
+                title: 'Accion explicita',
+                action: {
+                    href: '/wallet?view=spending',
+                    label: 'Abrir detalle',
+                    domain: 'wallet',
+                },
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    actionHref: '/wallet?view=spending',
+                    actionLabel: 'Abrir detalle',
+                },
+            });
+        });
+
         it('does not expose another users insights', async () => {
             const { body: task } = await createTask({ title: 'Insight privado' });
 

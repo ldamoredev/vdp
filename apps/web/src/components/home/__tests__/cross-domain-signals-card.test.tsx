@@ -62,6 +62,33 @@ describe("CrossDomainSignalsCard", () => {
     expect(markup).toContain("Ir a Tasks");
   });
 
+  it("renders plan-shaped metadata action links without a separate action object", () => {
+    const insights: TaskInsight[] = [
+      {
+        id: "insight-plan-shaped",
+        type: "warning",
+        title: "Revisar desvio",
+        message: "Hay una accion sugerida en metadata.",
+        createdAt: "2026-04-05T08:00:00.000Z",
+        read: false,
+        metadata: {
+          source: "wallet.spending.spike",
+          actionHref: "/wallet?view=spending",
+          actionLabel: "Abrir detalle",
+        },
+      },
+    ];
+
+    const markup = renderToStaticMarkup(
+      createElement(CrossDomainSignalsCard, { insights }),
+    );
+
+    expect(markup).toContain("Revisar desvio");
+    expect(markup).toContain("Abrir detalle");
+    expect(markup).toContain("/wallet?view=spending");
+    expect(markup).toContain("Wallet");
+  });
+
   it("shows an empty state when there are no recent insights", () => {
     const markup = renderToStaticMarkup(
       createElement(CrossDomainSignalsCard, { insights: [] }),

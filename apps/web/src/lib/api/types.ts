@@ -36,6 +36,14 @@ export interface TaskInsightAction {
   domain: string;
 }
 
+export interface TaskInsightMetadata extends Record<string, unknown> {
+  source?: string;
+  domain?: string;
+  actionHref?: string;
+  actionLabel?: string;
+  actionDomain?: string;
+}
+
 export interface TaskInsight {
   id: string;
   type: "achievement" | "warning" | "suggestion";
@@ -43,7 +51,7 @@ export interface TaskInsight {
   message: string;
   createdAt: string;
   read: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: TaskInsightMetadata;
   action?: TaskInsightAction;
 }
 

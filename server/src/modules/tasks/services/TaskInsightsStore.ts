@@ -238,13 +238,44 @@ export class TaskInsightsStore {
     private resolveExplicitAction(metadata?: Record<string, unknown>): TaskInsightAction | undefined {
         const href = this.readMetadataString(metadata, 'actionHref');
         const label = this.readMetadataString(metadata, 'actionLabel');
-        const domain = this.readMetadataString(metadata, 'actionDomain');
 
-        if (!href || !label || !domain) {
+        if (!href || !label) {
             return undefined;
         }
 
-        return { href, label, domain };
+        return {
+            href,
+            label,
+            domain: this.resolveExplicitActionDomain(metadata, href),
+        };
+    }
+
+    private resolveExplicitActionDomain(
+        metadata: Record<string, unknown> | undefined,
+        href: string,
+    ): string {
+        return (
+            this.readMetadataString(metadata, 'actionDomain') ??
+            this.readMetadataString(metadata, 'domain') ??
+            this.inferDomainFromHref(href) ??
+            this.inferDomainFromSource(this.readMetadataString(metadata, 'source')) ??
+            'tasks'
+        );
+    }
+
+    private inferDomainFromHref(href: string): string | undefined {
+        try {
+            const url = href.startsWith('http://') || href.startsWith('https://')
+                ? new URL(href)
+                : new URL(href, 'https://vdp.local');
+            return url.pathname.split('/').filter(Boolean)[0];
+        } catch {
+            return undefined;
+        }
+    }
+
+    private inferDomainFromSource(source: string | undefined): string | undefined {
+        return source?.split('.')[0] || undefined;
     }
 
     private readMetadataString(

@@ -109,4 +109,36 @@ describe('TaskInsightsStore', () => {
             lastCompletedDate: '2026-03-30',
         });
     });
+
+    it('resolves explicit metadata actions without requiring actionDomain', () => {
+        const store = new TaskInsightsStore();
+
+        store.addInsight({
+            userId: 'user-a',
+            type: 'warning',
+            title: 'Insight con accion',
+            message: 'Mensaje',
+            metadata: {
+                source: 'wallet.spending.spike',
+                actionHref: '/wallet?view=spending',
+                actionLabel: 'Abrir detalle',
+            },
+        });
+
+        expect(store.getRecentInsights('user-a', 1)).toEqual([
+            expect.objectContaining({
+                title: 'Insight con accion',
+                metadata: {
+                    source: 'wallet.spending.spike',
+                    actionHref: '/wallet?view=spending',
+                    actionLabel: 'Abrir detalle',
+                },
+                action: {
+                    href: '/wallet?view=spending',
+                    label: 'Abrir detalle',
+                    domain: 'wallet',
+                },
+            }),
+        ]);
+    });
 });
