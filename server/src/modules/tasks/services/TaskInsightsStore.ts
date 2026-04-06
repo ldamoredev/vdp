@@ -76,15 +76,20 @@ export class TaskInsightsStore {
         };
 
         this.insights.push(insight);
-        this.trimInsights();
+        this.trimInsights(input.userId);
         this.notifyListeners(insight);
 
         return this.toInsight(insight);
     }
 
-    private trimInsights(): void {
-        if (this.insights.length > this.maxInsights) {
-            this.insights.shift();
+    private trimInsights(userId: string): void {
+        while (this.countInsightsForUser(userId) > this.maxInsights) {
+            const oldestInsightIndex = this.insights.findIndex((insight) => insight.userId === userId);
+            if (oldestInsightIndex === -1) {
+                return;
+            }
+
+            this.insights.splice(oldestInsightIndex, 1);
         }
     }
 
@@ -203,6 +208,12 @@ export class TaskInsightsStore {
             streak: this.getStreak(userId),
             totalInsights: this.filterInsights(userId).length,
         };
+    }
+
+    private countInsightsForUser(userId: string): number {
+        return this.insights.reduce((count, insight) => (
+            insight.userId === userId ? count + 1 : count
+        ), 0);
     }
 
     private resolveAction(insight: StoredInsight): TaskInsightAction | undefined {

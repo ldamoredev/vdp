@@ -25,7 +25,7 @@ export class GetPlanningContext {
         const today = await this.getDayStats.executeToday(userId);
         const recentTrend = await this.getDayStats.executeTrend(userId, 7);
         const carryOver = await this.getCarryOverRate.execute(userId, 7);
-        const insights = this.insightsStore.getSnapshot();
+        const insights = this.insightsStore.getSnapshot(userId);
 
         const pendingTasks = await this.repository.getTasksByDateAndStatus(userId, todayISO(), 'pending');
         const stuckTasks = pendingTasks

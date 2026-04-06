@@ -14,7 +14,7 @@ export class TasksTools {
             ...createTaskTransitionTools(services, authContextStorage),
             ...createTaskReviewTools(services, authContextStorage),
             ...createTaskIntelligenceTools(services, authContextStorage),
-            ...createTaskInsightTools(insightsStore),
+            ...createTaskInsightTools(authContextStorage, insightsStore),
         ];
     }
 }

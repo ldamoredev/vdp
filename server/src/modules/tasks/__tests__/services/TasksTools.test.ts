@@ -40,4 +40,86 @@ describe('TasksTools', () => {
             'mark_insights_read',
         ]);
     });
+
+    it('scopes get_insights to the authenticated user', async () => {
+        const insightsStore = new TaskInsightsStore();
+        insightsStore.addInsight({
+            userId: 'user-a',
+            type: 'achievement',
+            title: 'Insight A1',
+            message: 'Mensaje A1',
+        });
+        insightsStore.addInsight({
+            userId: 'user-b',
+            type: 'warning',
+            title: 'Insight B1',
+            message: 'Mensaje B1',
+        });
+
+        const getInsightsTool = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, insightsStore)
+            .find((tool) => tool.name === 'get_insights');
+
+        authContextStorage.setAuthContext({
+            isAuthenticated: true,
+            userId: 'user-a',
+            sessionId: 'session-a',
+            role: 'user',
+            email: 'user-a@example.com',
+            displayName: 'User A',
+        });
+
+        const result = JSON.parse(await getInsightsTool!.execute({}));
+
+        expect(result).toEqual({
+            unread: [
+                expect.objectContaining({
+                    title: 'Insight A1',
+                }),
+            ],
+            streak: {
+                current: 0,
+                best: 0,
+                lastCompletedDate: null,
+            },
+            totalInsights: 1,
+        });
+    });
+
+    it('scopes mark_insights_read to the authenticated user', async () => {
+        const insightsStore = new TaskInsightsStore();
+        insightsStore.addInsight({
+            userId: 'user-a',
+            type: 'achievement',
+            title: 'Insight A1',
+            message: 'Mensaje A1',
+        });
+        insightsStore.addInsight({
+            userId: 'user-b',
+            type: 'warning',
+            title: 'Insight B1',
+            message: 'Mensaje B1',
+        });
+
+        const markInsightsReadTool = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, insightsStore)
+            .find((tool) => tool.name === 'mark_insights_read');
+
+        authContextStorage.setAuthContext({
+            isAuthenticated: true,
+            userId: 'user-a',
+            sessionId: 'session-a',
+            role: 'user',
+            email: 'user-a@example.com',
+            displayName: 'User A',
+        });
+
+        expect(JSON.parse(await markInsightsReadTool!.execute({}))).toEqual({
+            message: 'All insights marked as read',
+        });
+        expect(insightsStore.getUnreadInsights('user-a')).toEqual([]);
+        expect(insightsStore.getUnreadInsights('user-b')).toEqual([
+            expect.objectContaining({
+                title: 'Insight B1',
+            }),
+        ]);
+    });
 });

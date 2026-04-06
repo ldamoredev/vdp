@@ -141,4 +141,32 @@ describe('TaskInsightsStore', () => {
             }),
         ]);
     });
+
+    it('retains recent insights independently per user under retention pressure', () => {
+        const store = new TaskInsightsStore();
+
+        store.addInsight({
+            userId: 'user-b',
+            type: 'achievement',
+            title: 'User B insight',
+            message: 'Mensaje B',
+        });
+
+        for (let index = 1; index <= 51; index += 1) {
+            store.addInsight({
+                userId: 'user-a',
+                type: 'warning',
+                title: `User A insight ${index}`,
+                message: `Mensaje A${index}`,
+            });
+        }
+
+        expect(store.getAllInsights('user-b', 10)).toEqual([
+            expect.objectContaining({
+                title: 'User B insight',
+            }),
+        ]);
+        expect(store.getAllInsights('user-a', 100)).toHaveLength(50);
+        expect(store.getAllInsights('user-a', 100).map((insight) => insight.title)).not.toContain('User A insight 1');
+    });
 });
