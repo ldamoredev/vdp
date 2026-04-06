@@ -40,13 +40,13 @@ export class TaskInsightsSSEController extends HttpController {
 
         const res = reply.raw;
         const origin = request.headers.origin;
+        const userId = request.auth.userId!;
 
         // reply.hijack() bypasses Fastify's plugin pipeline (including CORS),
         // so we must set CORS headers manually on the raw response.
-        this.broadcaster.addClient(res, origin);
+        this.broadcaster.addClient(res, userId, origin);
 
         // Send current unread insights as initial payload, then mark as read
-        const userId = request.auth.userId!;
         const snapshot = this.insightsStore.getSnapshot(userId);
         if (snapshot.unread.length > 0) {
             res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);

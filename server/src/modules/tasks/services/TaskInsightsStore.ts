@@ -40,7 +40,7 @@ export interface RecentInsight extends Insight {
     action?: TaskInsightAction;
 }
 
-export type InsightListener = (insight: Insight) => void;
+export type InsightListener = (insight: Insight, userId: string) => void;
 type StoredInsight = Insight & {
     userId: string;
 };
@@ -92,7 +92,7 @@ export class TaskInsightsStore {
         const payload = this.toInsight(insight);
         for (const listener of this.listeners) {
             try {
-                listener(payload);
+                listener(payload, insight.userId);
             } catch (err) {
                 this.logger.error('task insight listener error', {
                     error: err instanceof Error ? err.message : String(err),
@@ -139,6 +139,16 @@ export class TaskInsightsStore {
 
     markAllRead(userId?: string): void {
         for (const insight of this.filterInsights(userId)) {
+            insight.read = true;
+        }
+    }
+
+    markInsightRead(userId: string, insightId: string): void {
+        const insight = this.insights.find((candidate) =>
+            candidate.userId === userId && candidate.id === insightId,
+        );
+
+        if (insight) {
             insight.read = true;
         }
     }

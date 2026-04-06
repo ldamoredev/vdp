@@ -192,13 +192,14 @@ export class TaskModuleRuntime {
     }
 
     private subscribeInsightsToSSE(): void {
-        this.deps.insightsStore.onInsight((insight) => {
-            // If at least one client is connected, the insight will be delivered
-            // live — mark it as read so it won't re-appear in the snapshot on reconnect.
-            if (this.deps.sseBroadcaster.clientCount > 0) {
+        this.deps.insightsStore.onInsight((insight, userId) => {
+            // If the target user has at least one connected client, the insight will be
+            // delivered live — mark it as read so it won't re-appear in the snapshot.
+            if (this.deps.sseBroadcaster.hasClients(userId)) {
+                this.deps.insightsStore.markInsightRead(userId, insight.id);
                 insight.read = true;
             }
-            this.deps.sseBroadcaster.broadcast('insight', insight);
+            this.deps.sseBroadcaster.broadcastToUser(userId, 'insight', insight);
         });
     }
 
