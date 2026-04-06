@@ -15,4 +15,5 @@ dist/
 .junie/
 .kiro/
 .zed
+.worktrees/
 skills-lock.json
