@@ -1,6 +1,5 @@
-import React from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { WalletSnapshotCard } from "../wallet-snapshot-card";
 
@@ -11,20 +10,20 @@ vi.mock("next/link", () => ({
   }: {
     href: string;
     children: ReactNode;
-  }) => <a href={href}>{children}</a>,
+  }) => createElement("a", { href }, children),
 }));
 
 describe("WalletSnapshotCard", () => {
   it("shows balance and expense totals with a quick link to create a transaction", () => {
     const markup = renderToStaticMarkup(
-      <WalletSnapshotCard
-        stats={{
+      createElement(WalletSnapshotCard, {
+        stats: {
           totalIncome: "12500.5",
           totalExpenses: "8400.25",
           netBalance: "4100.25",
           transactionCount: 12,
-        }}
-        recentTransactions={[
+        },
+        recentTransactions: [
           {
             id: "txn-1",
             accountId: "acc-1",
@@ -49,8 +48,8 @@ describe("WalletSnapshotCard", () => {
             tags: [],
             createdAt: "2026-04-04T09:00:00.000Z",
           },
-        ]}
-      />,
+        ],
+      }),
     );
 
     expect(markup).toContain("Resumen Wallet");
