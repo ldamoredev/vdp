@@ -2,12 +2,14 @@
 
 import { ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { AccountCard } from "./account-card";
 import { RecentTransactions } from "./recent-transactions";
 import { SkeletonCard } from "./skeleton";
 import { StatsSummary } from "./stats-summary";
 import { useWalletData } from "../use-wallet-context";
 import { ModulePage } from "@/components/primitives/module-page";
+import { QuickAddExpenseSheet } from "../quick-add/quick-add-expense-sheet";
 
 export function DashboardScreen() {
   const {
@@ -18,6 +20,7 @@ export function DashboardScreen() {
     isLoadingRecentTransactions,
     isLoadingStatsSummary,
   } = useWalletData();
+  const [isQuickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <ModulePage width="5xl" spacing="8">
@@ -30,8 +33,15 @@ export function DashboardScreen() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/wallet/transactions/new" className="btn-primary">
+          <button
+            type="button"
+            onClick={() => setQuickAddOpen(true)}
+            className="btn-primary"
+          >
             <Plus size={16} />
+            Gasto rápido
+          </button>
+          <Link href="/wallet/transactions/new" className="btn-secondary">
             Nueva transaccion
           </Link>
           <Link href="/wallet/stats" className="btn-secondary">
@@ -69,6 +79,22 @@ export function DashboardScreen() {
         transactions={recentTransactions}
         isLoading={isLoadingRecentTransactions}
       />
+
+      <button
+        type="button"
+        onClick={() => setQuickAddOpen(true)}
+        aria-label="Cargar gasto rápido"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-blue-500/30 transition-transform hover:scale-105 sm:hidden"
+      >
+        <Plus size={24} />
+      </button>
+
+      {isQuickAddOpen && (
+        <QuickAddExpenseSheet
+          open={isQuickAddOpen}
+          onClose={() => setQuickAddOpen(false)}
+        />
+      )}
     </ModulePage>
   );
 }
