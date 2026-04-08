@@ -57,15 +57,10 @@ export function useQuickAddExpense(): UseQuickAddExpenseResult {
     () => categories.filter((category) => category.type === "expense"),
     [categories],
   );
-  const recentTransactions: Transaction[] = useMemo(() => {
-    const data = recentQuery.data;
-    if (!data) return [];
-    if (Array.isArray(data)) return data as Transaction[];
-    if (Array.isArray((data as { transactions?: Transaction[] }).transactions)) {
-      return (data as { transactions: Transaction[] }).transactions;
-    }
-    return [];
-  }, [recentQuery.data]);
+  const recentTransactions: Transaction[] = useMemo(
+    () => recentQuery.data?.transactions ?? [],
+    [recentQuery.data],
+  );
 
   const isReady =
     !accountsQuery.isLoading &&
@@ -95,6 +90,10 @@ export function useQuickAddExpense(): UseQuickAddExpenseResult {
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Once queries finish loading, fill any field the user has not touched yet.
+  // We use `accountId === ""` as the proxy for "untouched" and bind currency to
+  // it: while no account is selected, currency follows the default; once the
+  // user picks an account, currency tracks that account (see setAccountId below).
   useEffect(() => {
     if (!isReady) return;
     setForm((current) => ({
