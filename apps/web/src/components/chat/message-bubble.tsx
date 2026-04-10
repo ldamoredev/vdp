@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Loader2, Wrench } from "lucide-react";
 import { getToolDisplayName } from "@/lib/chat/tool-actions";
 import type { Message } from "./types";
@@ -107,6 +108,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 ))}
               </div>
             )}
+            {message.action?.ctaLabel && message.action?.ctaHref ? (
+              <div className="mt-3">
+                <Link
+                  href={message.action.ctaHref}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--background-secondary)]"
+                >
+                  {message.action.ctaLabel}
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

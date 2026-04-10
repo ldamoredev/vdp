@@ -1,14 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { walletApi } from "@/lib/api/wallet";
 import { tasksApi } from "@/lib/api/tasks";
 import { getTodayISO } from "@/lib/format";
 import { homeTaskQueryKeys } from "@/features/tasks/presentation/tasks-query-keys";
+import {
+  buildDailyReviewProgress,
+  buildMorningReviewSummary,
+  buildWalletReviewSignals,
+} from "@/features/review/presentation/daily-review-selectors";
+import {
+  createEmptyDailyReviewState,
+  loadDailyReviewState,
+} from "@/features/review/presentation/daily-review-storage";
 import { walletQueryKeys } from "@/features/wallet/presentation/wallet-query-keys";
 import { TaskStatsRow } from "@/components/home/task-stats-row";
 import { TodayTasksCard } from "@/components/home/today-tasks-card";
-import { DayReviewCard } from "@/components/home/day-review-card";
+import { DailyRitualCard } from "@/components/home/daily-ritual-card";
 import { WeeklyTrendCard } from "@/components/home/weekly-trend-card";
 import { WalletSnapshotCard } from "@/components/home/wallet-snapshot-card";
 import { ProductFocusCard } from "@/components/home/product-focus-card";
@@ -16,6 +26,9 @@ import { CrossDomainSignalsCard } from "@/components/home/cross-domain-signals-c
 
 export default function HomePage() {
   const today = getTodayISO();
+  const [reviewState, setReviewState] = useState(() =>
+    createEmptyDailyReviewState(today),
+  );
 
   const { data: taskStats } = useQuery({
     queryKey: homeTaskQueryKeys.taskStats,
@@ -42,6 +55,26 @@ export default function HomePage() {
     queryFn: () => tasksApi.getRecentInsights(5),
   });
 
+  const { data: reviewWalletTransactions } = useQuery({
+    queryKey: ["home", "review", "wallet", "transactions", today],
+    queryFn: () =>
+      walletApi.getTransactions({
+        limit: "50",
+        offset: "0",
+        from: today,
+        to: today,
+      }),
+  });
+
+  const { data: reviewWalletByCategory } = useQuery({
+    queryKey: ["home", "review", "wallet", "by-category", today],
+    queryFn: () =>
+      walletApi.getStatsByCategory({
+        from: today,
+        to: today,
+      }),
+  });
+
   const { data: walletStats, isLoading: isLoadingWalletStats } = useQuery({
     queryKey: walletQueryKeys.statsSummary,
     queryFn: () => walletApi.getStatsSummary(),
@@ -65,7 +98,40 @@ export default function HomePage() {
   const averageCompletion = trend?.length
     ? Math.round(trend.reduce((acc, day) => acc + day.completionRate, 0) / trend.length)
     : 0;
-  const carriedToday = activeTasks.filter((task) => task.carryOverCount > 0).length;
+  const todayWalletSignals = buildWalletReviewSignals({
+    transactions: reviewWalletTransactions?.transactions ?? [],
+    byCategory: reviewWalletByCategory ?? [],
+    acknowledgedSignalIds: reviewState.acknowledgedSignalIds,
+  });
+  const unresolvedInsights = (recentInsights ?? []).filter(
+    (insight) =>
+      !insight.read &&
+      !reviewState.acknowledgedSignalIds.includes(`insight:${insight.id}`),
+  );
+  const ritualProgress = buildDailyReviewProgress({
+    pendingTasks: review?.pending ?? tasksPending,
+    unresolvedWalletSignals: todayWalletSignals.visibleSignals.length,
+    unresolvedInsights: unresolvedInsights.length,
+    note: reviewState.note,
+  });
+  const ritualSummary = buildMorningReviewSummary({
+    watchedCategoryNames: [],
+    note: reviewState.note,
+  });
+  const ritualStatusLabel = reviewState.completedAt
+    ? "Ritual cerrado"
+    : reviewState.openedAt
+      ? ritualProgress.label
+      : "Listo para empezar";
+  const ritualCtaLabel = reviewState.completedAt
+    ? "Ver cierre de hoy"
+    : reviewState.openedAt
+      ? "Retomar ritual"
+      : "Iniciar ritual";
+
+  useEffect(() => {
+    setReviewState(loadDailyReviewState(today));
+  }, [today]);
 
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
@@ -98,10 +164,14 @@ export default function HomePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <TodayTasksCard tasks={activeTasks} />
-          <DayReviewCard
-            total={review?.total ?? 0}
-            completed={review?.completed ?? 0}
-            carriedToday={carriedToday}
+          <DailyRitualCard
+            statusLabel={ritualStatusLabel}
+            href="/review"
+            ctaLabel={ritualCtaLabel}
+            taskCount={review?.pending ?? tasksPending}
+            walletCount={todayWalletSignals.visibleSignals.length}
+            insightCount={unresolvedInsights.length}
+            noteSummary={ritualSummary || undefined}
           />
         </div>
 

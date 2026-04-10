@@ -93,4 +93,17 @@ describe("parseToolAction", () => {
       tone: "success",
     });
   });
+
+  it("offers a direct ritual CTA for the day review tool", () => {
+    const action = parseToolAction(
+      "get_end_of_day_review",
+      JSON.stringify({ completed: 3, pending: 2, completionRate: 60 }),
+    );
+
+    expect(action).toMatchObject({
+      title: "Review del dia",
+      ctaLabel: "Abrir ritual diario",
+      ctaHref: "/review",
+    });
+  });
 });

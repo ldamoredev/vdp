@@ -5,6 +5,8 @@ export interface ToolActionView {
   detail?: string;
   items?: string[];
   tone: ToolTone;
+  ctaLabel?: string;
+  ctaHref?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -283,6 +285,8 @@ export function parseToolAction(tool: string, result?: string | null): ToolActio
       detail: `${completed} completadas, ${pending} pendientes${typeof rate === "number" ? `, ${rate}% de cumplimiento` : ""}`,
       items: takeTaskTitles(parsed.tasks),
       tone: "info",
+      ctaLabel: "Abrir ritual diario",
+      ctaHref: "/review",
     };
   }
 
