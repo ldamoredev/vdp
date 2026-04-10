@@ -8,9 +8,11 @@ import { SkeletonRow } from "./skeleton";
 export function RecentTransactions({
   transactions,
   isLoading,
+  onTransactionClick,
 }: {
   transactions: Transaction[];
   isLoading: boolean;
+  onTransactionClick?: (transaction: Transaction) => void;
 }) {
   return (
     <CollectionCard
@@ -54,55 +56,110 @@ export function RecentTransactions({
           </div>
         ) : (
           transactions.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="flex items-center justify-between p-4 transition-all hover:bg-[var(--hover-overlay)] hover:translate-x-0.5"
-            >
-              <div className="flex items-center gap-3">
+            onTransactionClick && transaction.type !== "transfer" ? (
+              <button
+                key={transaction.id}
+                type="button"
+                onClick={() => onTransactionClick(transaction)}
+                aria-label={`Editar transaccion ${transaction.description || transaction.type}`}
+                className="flex w-full items-center justify-between p-4 text-left transition-all hover:bg-[var(--hover-overlay)] hover:translate-x-0.5"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                      transaction.type === "income"
+                        ? "bg-[var(--accent-green-glow)]"
+                        : "bg-[var(--accent-red-glow)]"
+                    }`}
+                  >
+                    {transaction.type === "income" ? (
+                      <ArrowDownLeft
+                        size={16}
+                        className="text-[var(--accent-green)]"
+                      />
+                    ) : (
+                      <ArrowUpRight
+                        size={16}
+                        className="text-[var(--accent-red)]"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium">
+                      {transaction.description || transaction.type}
+                    </div>
+                    <div className="text-xs text-[var(--muted)]">
+                      {formatDate(transaction.date)}
+                    </div>
+                  </div>
+                </div>
+
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                  className={`text-sm font-semibold tabular-nums ${
                     transaction.type === "income"
-                      ? "bg-[var(--accent-green-glow)]"
-                      : "bg-[var(--accent-red-glow)]"
+                      ? "text-[var(--accent-green)]"
+                      : "text-[var(--accent-red)]"
                   }`}
                 >
-                  {transaction.type === "income" ? (
-                    <ArrowDownLeft
-                      size={16}
-                      className="text-[var(--accent-green)]"
-                    />
-                  ) : (
-                    <ArrowUpRight
-                      size={16}
-                      className="text-[var(--accent-red)]"
-                    />
+                  {transaction.type === "income" ? "+" : "-"}
+                  {formatMoney(
+                    transaction.amount,
+                    transaction.currency as "ARS" | "USD",
                   )}
                 </div>
-
-                <div>
-                  <div className="text-sm font-medium">
-                    {transaction.description || transaction.type}
+              </button>
+            ) : (
+              <div
+                key={transaction.id}
+                className="flex items-center justify-between p-4 transition-all hover:bg-[var(--hover-overlay)] hover:translate-x-0.5"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                      transaction.type === "income"
+                        ? "bg-[var(--accent-green-glow)]"
+                        : "bg-[var(--accent-red-glow)]"
+                    }`}
+                  >
+                    {transaction.type === "income" ? (
+                      <ArrowDownLeft
+                        size={16}
+                        className="text-[var(--accent-green)]"
+                      />
+                    ) : (
+                      <ArrowUpRight
+                        size={16}
+                        className="text-[var(--accent-red)]"
+                      />
+                    )}
                   </div>
-                  <div className="text-xs text-[var(--muted)]">
-                    {formatDate(transaction.date)}
+
+                  <div>
+                    <div className="text-sm font-medium">
+                      {transaction.description || transaction.type}
+                    </div>
+                    <div className="text-xs text-[var(--muted)]">
+                      {formatDate(transaction.date)}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div
-                className={`text-sm font-semibold tabular-nums ${
-                  transaction.type === "income"
-                    ? "text-[var(--accent-green)]"
-                    : "text-[var(--accent-red)]"
-                }`}
-              >
-                {transaction.type === "income" ? "+" : "-"}
-                {formatMoney(
-                  transaction.amount,
-                  transaction.currency as "ARS" | "USD",
-                )}
+                <div
+                  className={`text-sm font-semibold tabular-nums ${
+                    transaction.type === "income"
+                      ? "text-[var(--accent-green)]"
+                      : "text-[var(--accent-red)]"
+                  }`}
+                >
+                  {transaction.type === "income" ? "+" : "-"}
+                  {formatMoney(
+                    transaction.amount,
+                    transaction.currency as "ARS" | "USD",
+                  )}
+                </div>
               </div>
-            </div>
+            )
           ))
         )}
     </CollectionCard>

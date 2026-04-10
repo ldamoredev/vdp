@@ -29,13 +29,18 @@ export function useWalletQueries(
   const accountsQuery = useQuery({
     queryKey: walletQueryKeys.accounts,
     queryFn: walletApi.getAccounts,
-    enabled: scopeMatches(scope, ["dashboard", "investments", "accounts"]),
+    enabled: scopeMatches(scope, [
+      "dashboard",
+      "investments",
+      "accounts",
+      "transactions",
+    ]),
   });
 
   const categoriesQuery = useQuery({
     queryKey: walletQueryKeys.categories,
     queryFn: () => walletApi.getCategories(),
-    enabled: scope === "categories",
+    enabled: scopeMatches(scope, ["categories", "dashboard", "transactions"]),
   });
 
   const recentTransactionsQuery = useQuery({

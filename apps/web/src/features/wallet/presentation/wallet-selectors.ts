@@ -40,11 +40,14 @@ export type WalletTransactionFilters = {
   type?: TransactionType;
   from?: string;
   to?: string;
+  categoryId?: string;
 };
 
 type WalletTransactionFilterSeed = {
   from?: string | string[];
   to?: string | string[];
+  type?: string | string[];
+  categoryId?: string | string[];
 };
 
 export type SavingsFormState = {
@@ -165,11 +168,18 @@ function takeFirstQueryValue(value?: string | string[]) {
 export function buildInitialTransactionFilters(
   seed?: WalletTransactionFilterSeed,
 ): WalletTransactionFilters {
+  const type = takeFirstQueryValue(seed?.type);
+
   return {
     limit: "20",
     offset: "0",
     from: takeFirstQueryValue(seed?.from) || undefined,
     to: takeFirstQueryValue(seed?.to) || undefined,
+    type:
+      type === "income" || type === "expense" || type === "transfer"
+        ? type
+        : undefined,
+    categoryId: takeFirstQueryValue(seed?.categoryId) || undefined,
   };
 }
 

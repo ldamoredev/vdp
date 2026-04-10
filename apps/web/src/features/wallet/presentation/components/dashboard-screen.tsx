@@ -3,6 +3,8 @@
 import { ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import type { Transaction } from "@/lib/api/types";
+import { formatMoney } from "@/lib/format";
 import { AccountCard } from "./account-card";
 import { RecentTransactions } from "./recent-transactions";
 import { SkeletonCard } from "./skeleton";
@@ -10,6 +12,8 @@ import { StatsSummary } from "./stats-summary";
 import { useWalletData } from "../use-wallet-context";
 import { ModulePage } from "@/components/primitives/module-page";
 import { QuickAddExpenseSheet } from "../quick-add/quick-add-expense-sheet";
+import { EditTransactionSheet } from "../edit-transaction/edit-transaction-sheet";
+import { SanityStrip } from "../sanity-strip/sanity-strip";
 
 export function DashboardScreen() {
   const {
@@ -21,6 +25,9 @@ export function DashboardScreen() {
     isLoadingStatsSummary,
   } = useWalletData();
   const [isQuickAddOpen, setQuickAddOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(
+    null,
+  );
 
   return (
     <ModulePage width="5xl" spacing="8">
@@ -72,12 +79,24 @@ export function DashboardScreen() {
           <SkeletonCard />
         </div>
       ) : (
-        <StatsSummary stats={statsSummary} />
+        <>
+          <StatsSummary stats={statsSummary} />
+          <SanityStrip
+            transactionCount={statsSummary?.transactionCount ?? 0}
+            totalAmount={
+              statsSummary
+                ? formatMoney(Number(statsSummary.totalExpenses), "ARS")
+                : formatMoney(0, "ARS")
+            }
+            label="en gastos"
+          />
+        </>
       )}
 
       <RecentTransactions
         transactions={recentTransactions}
         isLoading={isLoadingRecentTransactions}
+        onTransactionClick={setEditingTransaction}
       />
 
       <button
@@ -95,6 +114,14 @@ export function DashboardScreen() {
           onClose={() => setQuickAddOpen(false)}
         />
       )}
+
+      {editingTransaction ? (
+        <EditTransactionSheet
+          transaction={editingTransaction}
+          open
+          onClose={() => setEditingTransaction(null)}
+        />
+      ) : null}
     </ModulePage>
   );
 }

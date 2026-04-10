@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import {
   ArrowRightLeft,
   BarChart3,
+  ChevronRight,
 } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
@@ -19,6 +21,7 @@ import {
 } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletData } from "../use-wallet-context";
+import { SanityStrip } from "../sanity-strip/sanity-strip";
 
 const COLORS = [
   "#3B82F6",
@@ -44,6 +47,8 @@ export function StatsScreen() {
     isLoadingMonthlyTrend,
     isLoadingExchangeRates,
   } = useWalletData();
+  const categoryCount = byCategory.reduce((sum, item) => sum + item.count, 0);
+  const categoryTotal = byCategory.reduce((sum, item) => sum + item.total, 0);
 
   return (
     <ModulePage width="5xl" spacing="6">
@@ -159,11 +164,17 @@ export function StatsScreen() {
       </div>
 
       <div className="glass-card-static p-5">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-purple)]/15">
-            <div className="h-3 w-3 rounded-full bg-[var(--accent-purple)]" />
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-purple)]/15">
+              <div className="h-3 w-3 rounded-full bg-[var(--accent-purple)]" />
+            </div>
+            <h3 className="font-medium">Gastos por categoria</h3>
           </div>
-          <h3 className="font-medium">Gastos por categoria</h3>
+          <SanityStrip
+            transactionCount={categoryCount}
+            totalAmount={formatMoney(categoryTotal, "ARS")}
+          />
         </div>
 
         {isLoadingByCategory ? (
@@ -211,9 +222,11 @@ export function StatsScreen() {
 
             <div className="space-y-3">
               {byCategory.map((item, index) => (
-                <div
+                item.categoryId ? (
+                <Link
                   key={item.categoryId ?? `legend-${index}`}
-                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 transition-all hover:shadow-sm"
+                  href={`/wallet/transactions?type=expense&categoryId=${item.categoryId}`}
+                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 transition-all hover:shadow-sm hover:ring-1 hover:ring-[var(--glass-border)]"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -231,10 +244,39 @@ export function StatsScreen() {
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums">
-                    {formatMoney(item.total, "ARS")}
-                  </p>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold tabular-nums">
+                      {formatMoney(item.total, "ARS")}
+                    </p>
+                    <ChevronRight size={14} className="text-[var(--muted)]" />
+                  </div>
+                </Link>
+                ) : (
+                  <div
+                    key={item.categoryId ?? `legend-${index}`}
+                    className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{
+                          background: COLORS[index % COLORS.length],
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {item.categoryName}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          {item.count} movimientos
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-semibold tabular-nums">
+                      {formatMoney(item.total, "ARS")}
+                    </p>
+                  </div>
+                )
               ))}
             </div>
           </div>

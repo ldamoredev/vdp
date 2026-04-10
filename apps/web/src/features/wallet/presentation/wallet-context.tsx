@@ -113,6 +113,7 @@ export interface WalletActionsValue {
   readonly submitCategory: () => Promise<void>;
 
   readonly setTransactionType: (value: TransactionType | "") => void;
+  readonly setTransactionCategoryId: (value: string) => void;
   readonly setTransactionFrom: (value: string) => void;
   readonly setTransactionTo: (value: string) => void;
   readonly previousTransactionsPage: () => void;
@@ -288,6 +289,12 @@ export function WalletProvider({
       queries.setTransactionFilters((current) => ({
         ...current,
         type: value || undefined,
+        offset: "0",
+      })),
+    setTransactionCategoryId: (value) =>
+      queries.setTransactionFilters((current) => ({
+        ...current,
+        categoryId: value || undefined,
         offset: "0",
       })),
     setTransactionFrom: (value) =>

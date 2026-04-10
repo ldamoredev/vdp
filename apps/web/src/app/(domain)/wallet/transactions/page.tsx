@@ -13,6 +13,8 @@ export default async function TransactionsPage({
   const initialTransactionFilters = buildInitialTransactionFilters({
     from: resolvedSearchParams?.from,
     to: resolvedSearchParams?.to,
+    type: resolvedSearchParams?.type,
+    categoryId: resolvedSearchParams?.categoryId,
   });
 
   return (

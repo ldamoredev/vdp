@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
@@ -12,11 +13,14 @@ import {
   Filter,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
-import type { TransactionType } from "@/lib/api/types";
+import type { Transaction, TransactionType } from "@/lib/api/types";
 import { getTransactionPresentation } from "../wallet-selectors";
+import { EditTransactionSheet } from "../edit-transaction/edit-transaction-sheet";
+import { SanityStrip } from "../sanity-strip/sanity-strip";
 
 function getTypeIcon(type: TransactionType) {
   switch (type) {
@@ -46,6 +50,7 @@ export function TransactionsScreen() {
     transactions,
     totalTransactions,
     transactionFilters,
+    categories,
     currentTransactionsPage,
     totalTransactionsPages,
     canGoPreviousTransactionsPage,
@@ -54,12 +59,43 @@ export function TransactionsScreen() {
   } = useWalletData();
   const {
     setTransactionType,
+    setTransactionCategoryId,
     setTransactionFrom,
     setTransactionTo,
     previousTransactionsPage,
     nextTransactionsPage,
     deleteTransaction,
   } = useWalletActions();
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(
+    null,
+  );
+
+  const activeCategory = categories.find(
+    (category) => category.id === transactionFilters.categoryId,
+  );
+  const visibleTotal = transactions.reduce(
+    (sum, transaction) => sum + Number(transaction.amount),
+    0,
+  );
+  const visibleCurrencies = [...new Set(transactions.map((transaction) => transaction.currency))];
+  const visibleTotalAmount =
+    visibleCurrencies.length === 1
+      ? formatMoney(visibleTotal, visibleCurrencies[0] as "ARS" | "USD")
+      : "Varias monedas";
+
+  let dateRange: { from: string; to: string } | undefined;
+  if (transactionFilters.from && transactionFilters.to) {
+    dateRange = {
+      from: transactionFilters.from,
+      to: transactionFilters.to,
+    };
+  } else if (transactions.length > 0) {
+    const dates = transactions.map((transaction) => transaction.date).sort();
+    dateRange = {
+      from: dates[0],
+      to: dates[dates.length - 1],
+    };
+  }
 
   return (
     <ModulePage width="5xl" spacing="6">
@@ -114,7 +150,27 @@ export function TransactionsScreen() {
           value={transactionFilters.to || ""}
           onChange={(event) => setTransactionTo(event.target.value)}
         />
+
+        {transactionFilters.categoryId ? (
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2 text-sm">
+            <span>Filtro: {activeCategory?.name || "Categoría"}</span>
+            <button
+              type="button"
+              onClick={() => setTransactionCategoryId("")}
+              className="text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+              aria-label="Quitar filtro de categoria"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : null}
       </div>
+
+      <SanityStrip
+        transactionCount={transactions.length}
+        totalAmount={visibleTotalAmount}
+        dateRange={dateRange}
+      />
 
       <div className="glass-card-static overflow-hidden">
         {isLoadingTransactions ? (
@@ -151,8 +207,21 @@ export function TransactionsScreen() {
             <tbody>
               {transactions.map((transaction) => {
                 const presentation = getTransactionPresentation(transaction.type);
+                const isEditable = transaction.type !== "transfer";
                 return (
-                  <tr key={transaction.id}>
+                  <tr
+                    key={transaction.id}
+                    onClick={
+                      isEditable
+                        ? () => setEditingTransaction(transaction)
+                        : undefined
+                    }
+                    className={
+                      isEditable
+                        ? "cursor-pointer transition-colors hover:bg-[var(--hover-overlay)]"
+                        : undefined
+                    }
+                  >
                     <td className="text-[var(--foreground-muted)]">
                       {formatDate(transaction.date)}
                     </td>
@@ -194,7 +263,10 @@ export function TransactionsScreen() {
                     </td>
                     <td>
                       <button
-                        onClick={() => deleteTransaction(transaction.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteTransaction(transaction.id);
+                        }}
                         className="rounded-lg p-2 text-[var(--muted)] transition-all hover:bg-[var(--accent-red-glow)] hover:text-[var(--accent-red)]"
                       >
                         <Trash2 size={14} />
@@ -234,6 +306,14 @@ export function TransactionsScreen() {
           </div>
         </div>
       )}
+
+      {editingTransaction ? (
+        <EditTransactionSheet
+          transaction={editingTransaction}
+          open
+          onClose={() => setEditingTransaction(null)}
+        />
+      ) : null}
     </ModulePage>
   );
 }

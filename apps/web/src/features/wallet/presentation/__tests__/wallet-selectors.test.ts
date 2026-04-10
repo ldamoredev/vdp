@@ -101,6 +101,8 @@ describe("wallet-selectors", () => {
     const result = buildInitialTransactionFilters({
       from: "2026-03-30",
       to: "2026-04-05",
+      type: "expense",
+      categoryId: "123e4567-e89b-12d3-a456-426614174000",
     });
 
     expect(result).toEqual({
@@ -108,6 +110,23 @@ describe("wallet-selectors", () => {
       offset: "0",
       from: "2026-03-30",
       to: "2026-04-05",
+      type: "expense",
+      categoryId: "123e4567-e89b-12d3-a456-426614174000",
     });
+  });
+
+  it("omits category filters when they are absent", () => {
+    const result = buildInitialTransactionFilters({
+      from: "2026-03-30",
+    });
+
+    expect(result).toEqual({
+      limit: "20",
+      offset: "0",
+      from: "2026-03-30",
+      to: undefined,
+    });
+    expect(result.type).toBeUndefined();
+    expect(result.categoryId).toBeUndefined();
   });
 });
