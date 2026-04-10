@@ -3,6 +3,7 @@ import {
   buildInitialTransactionFilters,
   buildInvestmentSummary,
   buildTransactionPagination,
+  buildVisibleTransactionTotal,
   calculateSavingsProgress,
   latestDollarRates,
 } from "../wallet-selectors";
@@ -128,5 +129,110 @@ describe("wallet-selectors", () => {
     });
     expect(result.type).toBeUndefined();
     expect(result.categoryId).toBeUndefined();
+  });
+
+  it("builds a signed visible transaction total for a single currency list", () => {
+    const result = buildVisibleTransactionTotal([
+      {
+        id: "txn-1",
+        accountId: "acc-1",
+        categoryId: null,
+        type: "income",
+        amount: "100",
+        currency: "ARS",
+        description: null,
+        date: "2026-04-01",
+        tags: [],
+        createdAt: "2026-04-01T12:00:00Z",
+      },
+      {
+        id: "txn-2",
+        accountId: "acc-1",
+        categoryId: null,
+        type: "expense",
+        amount: "40",
+        currency: "ARS",
+        description: null,
+        date: "2026-04-02",
+        tags: [],
+        createdAt: "2026-04-02T12:00:00Z",
+      },
+    ]);
+
+    expect(result).toEqual({
+      amount: 60,
+      currency: "ARS",
+      mixedCurrencies: false,
+    });
+  });
+
+  it("treats transfers as neutral in the visible transaction total", () => {
+    const result = buildVisibleTransactionTotal([
+      {
+        id: "txn-1",
+        accountId: "acc-1",
+        categoryId: null,
+        type: "transfer",
+        amount: "100",
+        currency: "ARS",
+        description: null,
+        date: "2026-04-01",
+        tags: [],
+        createdAt: "2026-04-01T12:00:00Z",
+      },
+      {
+        id: "txn-2",
+        accountId: "acc-1",
+        categoryId: null,
+        type: "expense",
+        amount: "25",
+        currency: "ARS",
+        description: null,
+        date: "2026-04-02",
+        tags: [],
+        createdAt: "2026-04-02T12:00:00Z",
+      },
+    ]);
+
+    expect(result).toEqual({
+      amount: -25,
+      currency: "ARS",
+      mixedCurrencies: false,
+    });
+  });
+
+  it("marks mixed-currency lists so the UI can avoid a fake total", () => {
+    const result = buildVisibleTransactionTotal([
+      {
+        id: "txn-1",
+        accountId: "acc-1",
+        categoryId: null,
+        type: "income",
+        amount: "100",
+        currency: "ARS",
+        description: null,
+        date: "2026-04-01",
+        tags: [],
+        createdAt: "2026-04-01T12:00:00Z",
+      },
+      {
+        id: "txn-2",
+        accountId: "acc-2",
+        categoryId: null,
+        type: "expense",
+        amount: "10",
+        currency: "USD",
+        description: null,
+        date: "2026-04-02",
+        tags: [],
+        createdAt: "2026-04-02T12:00:00Z",
+      },
+    ]);
+
+    expect(result).toEqual({
+      amount: 90,
+      currency: null,
+      mixedCurrencies: true,
+    });
   });
 });

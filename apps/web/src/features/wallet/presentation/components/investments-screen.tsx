@@ -7,6 +7,11 @@ import { StateCard } from "@/components/primitives/state-card";
 import { formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
 import { investmentTypeLabels } from "../wallet-selectors";
+import {
+  buildWalletEmptyState,
+  buildWalletScreenIntro,
+} from "../wallet-polish-selectors";
+import { WalletEmptyState } from "./wallet-empty-state";
 
 export function InvestmentsScreen() {
   const {
@@ -52,12 +57,12 @@ export function InvestmentsScreen() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Inversiones</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Portafolio actual, rendimiento y actualizacion manual
+            {buildWalletScreenIntro("investments")}
           </p>
         </div>
         <button onClick={toggleInvestmentForm} className="btn-primary">
           <Plus size={16} />
-          Nueva
+          Nueva inversion
         </button>
       </div>
 
@@ -257,17 +262,9 @@ export function InvestmentsScreen() {
           description="Cargando inversiones..."
         />
       ) : investments.length === 0 ? (
-        <StateCard
-          size="lg"
-          className="glass-card-static border-none"
-          icon={
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
-              <Briefcase size={24} className="text-[var(--muted)]" />
-            </div>
-          }
-          title="No hay inversiones aun"
-          description="Registra posiciones para seguir su rendimiento"
-        />
+        <div className="glass-card-static border-none">
+          <WalletEmptyState {...buildWalletEmptyState("investments")} />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 stagger-children">
           {investments.map((investment) => {

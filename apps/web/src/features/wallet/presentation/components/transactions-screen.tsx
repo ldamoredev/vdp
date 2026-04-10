@@ -18,9 +18,17 @@ import {
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
 import type { Transaction, TransactionType } from "@/lib/api/types";
-import { getTransactionPresentation } from "../wallet-selectors";
+import {
+  buildVisibleTransactionTotal,
+  getTransactionPresentation,
+} from "../wallet-selectors";
 import { EditTransactionSheet } from "../edit-transaction/edit-transaction-sheet";
 import { SanityStrip } from "../sanity-strip/sanity-strip";
+import { WalletEmptyState } from "./wallet-empty-state";
+import {
+  buildWalletEmptyState,
+  buildWalletScreenIntro,
+} from "../wallet-polish-selectors";
 
 function getTypeIcon(type: TransactionType) {
   switch (type) {
@@ -73,14 +81,10 @@ export function TransactionsScreen() {
   const activeCategory = categories.find(
     (category) => category.id === transactionFilters.categoryId,
   );
-  const visibleTotal = transactions.reduce(
-    (sum, transaction) => sum + Number(transaction.amount),
-    0,
-  );
-  const visibleCurrencies = [...new Set(transactions.map((transaction) => transaction.currency))];
+  const visibleSummary = buildVisibleTransactionTotal(transactions);
   const visibleTotalAmount =
-    visibleCurrencies.length === 1
-      ? formatMoney(visibleTotal, visibleCurrencies[0] as "ARS" | "USD")
+    !visibleSummary.mixedCurrencies && visibleSummary.currency
+      ? formatMoney(visibleSummary.amount, visibleSummary.currency)
       : "Varias monedas";
 
   let dateRange: { from: string; to: string } | undefined;
@@ -105,7 +109,7 @@ export function TransactionsScreen() {
             Transacciones
           </h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            {totalTransactions} transacciones en total
+            {buildWalletScreenIntro("transactions")}
           </p>
         </div>
         <Link href="/wallet/transactions/new" className="btn-primary">
@@ -183,16 +187,7 @@ export function TransactionsScreen() {
             }
           />
         ) : transactions.length === 0 ? (
-          <StateCard
-            size="lg"
-            className="border-none"
-            icon={
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
-                <ArrowLeftRight size={20} className="text-[var(--muted)]" />
-              </div>
-            }
-            title="No hay transacciones"
-          />
+          <WalletEmptyState {...buildWalletEmptyState("transactions")} />
         ) : (
           <table className="glass-table">
             <thead>

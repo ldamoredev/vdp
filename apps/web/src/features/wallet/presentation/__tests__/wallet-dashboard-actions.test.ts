@@ -38,7 +38,7 @@ describe("wallet dashboard actions", () => {
     );
 
     expect(markup).toContain("/wallet/transactions/new");
-    expect(markup).toContain("Crear primera transaccion");
+    expect(markup).toContain("Registrar movimiento");
   });
 
   it("renders direct dashboard entry points for the daily loop", () => {
@@ -71,9 +71,12 @@ describe("wallet dashboard actions", () => {
 
     const markup = renderToStaticMarkup(createElement(DashboardScreen));
 
+    expect(markup).toContain("Resumen operativo");
     expect(markup).toContain("/wallet/transactions/new");
     expect(markup).toContain("Nueva transaccion");
     expect(markup).toContain("/wallet/stats");
     expect(markup).toContain("Ver estadisticas");
+    expect(markup).toContain("Transacciones recientes");
+    expect(markup).toContain("Ver todas");
   });
 });

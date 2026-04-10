@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { useWalletTransactionFormActions, useWalletTransactionFormData } from "../use-wallet-transaction-form-context";
+import { buildWalletScreenIntro } from "../wallet-polish-selectors";
 
 const typeOptions = [
   { value: "expense", label: "Gasto", color: "red" },
@@ -36,6 +37,9 @@ export function TransactionFormScreen() {
         <h2 className="mb-6 text-xl font-semibold tracking-tight">
           Nueva transaccion
         </h2>
+        <p className="-mt-3 mb-6 text-sm text-[var(--muted)]">
+          {buildWalletScreenIntro("transactions")}
+        </p>
 
         <form
           onSubmit={(event) => {

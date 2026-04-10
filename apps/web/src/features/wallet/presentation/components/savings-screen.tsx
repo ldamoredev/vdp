@@ -6,6 +6,11 @@ import { StateCard } from "@/components/primitives/state-card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
 import { calculateSavingsProgress } from "../wallet-selectors";
+import {
+  buildWalletEmptyState,
+  buildWalletScreenIntro,
+} from "../wallet-polish-selectors";
+import { WalletEmptyState } from "./wallet-empty-state";
 
 export function SavingsScreen() {
   const {
@@ -34,12 +39,12 @@ export function SavingsScreen() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Ahorros</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Metas de ahorro, progreso y aportes
+            {buildWalletScreenIntro("savings")}
           </p>
         </div>
         <button onClick={toggleSavingsForm} className="btn-primary">
           <Plus size={16} />
-          Nueva meta
+          Nuevo objetivo
         </button>
       </div>
 
@@ -123,17 +128,9 @@ export function SavingsScreen() {
           description="Cargando metas..."
         />
       ) : savingsGoals.length === 0 ? (
-        <StateCard
-          size="lg"
-          className="glass-card-static border-none"
-          icon={
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
-              <Target size={24} className="text-[var(--muted)]" />
-            </div>
-          }
-          title="No hay metas de ahorro aun"
-          description="Crea una meta para empezar a seguir progreso real"
-        />
+        <div className="glass-card-static border-none">
+          <WalletEmptyState {...buildWalletEmptyState("savings")} />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 stagger-children">
           {savingsGoals.map((goal) => {

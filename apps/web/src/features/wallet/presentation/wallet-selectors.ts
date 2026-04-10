@@ -161,6 +161,24 @@ export function buildTransactionPagination(
   };
 }
 
+export function buildVisibleTransactionTotal(transactions: Transaction[]) {
+  const currencies = [...new Set(transactions.map((transaction) => transaction.currency))];
+
+  const amount = transactions.reduce((sum, transaction) => {
+    const numericAmount = Number(transaction.amount);
+
+    if (transaction.type === "income") return sum + numericAmount;
+    if (transaction.type === "expense") return sum - numericAmount;
+    return sum;
+  }, 0);
+
+  return {
+    amount,
+    currency: currencies.length === 1 ? currencies[0] : null,
+    mixedCurrencies: currencies.length > 1,
+  };
+}
+
 function takeFirstQueryValue(value?: string | string[]) {
   return typeof value === "string" ? value : value?.[0];
 }

@@ -5,6 +5,11 @@ import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
 import { groupCategoriesByType } from "../wallet-selectors";
+import {
+  buildWalletEmptyState,
+  buildWalletScreenIntro,
+} from "../wallet-polish-selectors";
+import { WalletEmptyState } from "./wallet-empty-state";
 
 function CategorySection({
   title,
@@ -66,7 +71,7 @@ export function CategoriesScreen() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Categorias</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Define mejor tus ingresos y gastos para que el analisis sea util
+            {buildWalletScreenIntro("categories")}
           </p>
         </div>
         <button onClick={toggleCategoryForm} className="btn-primary">
@@ -138,17 +143,9 @@ export function CategoriesScreen() {
           description="Cargando categorias..."
         />
       ) : categories.length === 0 ? (
-        <StateCard
-          size="lg"
-          className="glass-card-static border-none"
-          icon={
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
-              <Tags size={24} className="text-[var(--muted)]" />
-            </div>
-          }
-          title="No hay categorias personalizadas"
-          description="Crea categorias para darle mas precision a los movimientos y a las estadisticas"
-        />
+        <div className="glass-card-static border-none">
+          <WalletEmptyState {...buildWalletEmptyState("categories")} />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 stagger-children">
           <CategorySection

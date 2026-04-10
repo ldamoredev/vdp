@@ -22,6 +22,7 @@ import {
 import { formatDate, formatMoney } from "@/lib/format";
 import { useWalletData } from "../use-wallet-context";
 import { SanityStrip } from "../sanity-strip/sanity-strip";
+import { buildWalletScreenIntro } from "../wallet-polish-selectors";
 
 const COLORS = [
   "#3B82F6",
@@ -55,7 +56,7 @@ export function StatsScreen() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Estadisticas</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Tendencias, categorias y referencias cambiarias
+          {buildWalletScreenIntro("stats")}
         </p>
       </div>
 
@@ -226,7 +227,7 @@ export function StatsScreen() {
                 <Link
                   key={item.categoryId ?? `legend-${index}`}
                   href={`/wallet/transactions?type=expense&categoryId=${item.categoryId}`}
-                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3 transition-all hover:shadow-sm hover:ring-1 hover:ring-[var(--glass-border)]"
+                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-4 transition-all hover:shadow-sm hover:ring-1 hover:ring-[var(--glass-border)]"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -254,7 +255,7 @@ export function StatsScreen() {
                 ) : (
                   <div
                     key={item.categoryId ?? `legend-${index}`}
-                    className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-4"
                   >
                     <div className="flex items-center gap-3">
                       <div

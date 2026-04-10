@@ -90,10 +90,12 @@ export const domains: DomainConfig[] = [
     icon: Wallet,
     iconLetter: "W",
     agentEndpoint: "/wallet/agent/chat",
-    chatPlaceholder: "Consulta tus finanzas...",
-    chatWelcome: "Hola! Soy tu asistente financiero",
-    chatDescription: "Podes pedirme que registre gastos, consulte tu balance o liste movimientos recientes",
-    aiDescription: "Usa el chat para registrar movimientos y revisar tu estado financiero",
+    chatPlaceholder: "Registra un gasto o revisa un numero...",
+    chatWelcome: "Hola! Soy tu asistente de Wallet",
+    chatDescription:
+      "Podes registrar movimientos, revisar categorias y verificar totales sin salir del flujo.",
+    aiDescription:
+      "Usa el chat para registrar, revisar y corregir tus movimientos con contexto.",
     navItems: [
       { href: "/wallet", label: "Dashboard", icon: LayoutDashboard },
       { href: "/wallet/accounts", label: "Cuentas", icon: Landmark },

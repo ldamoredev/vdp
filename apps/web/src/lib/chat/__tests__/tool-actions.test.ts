@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { getToolDisplayName, parseToolAction } from "../tool-actions";
+import { domains } from "@/lib/navigation";
 
 describe("getToolDisplayName", () => {
+  it("keeps wallet shell copy aligned with the product tone", () => {
+    const walletDomain = domains.find((domain) => domain.key === "wallet");
+
+    expect(walletDomain).toMatchObject({
+      chatPlaceholder: "Registra un gasto o revisa un numero...",
+      chatWelcome: "Hola! Soy tu asistente de Wallet",
+    });
+  });
+
   it("returns friendly product labels for wallet tools", () => {
     expect(getToolDisplayName("get_accounts")).toBe("Ver cuentas");
     expect(getToolDisplayName("create_account")).toBe("Crear cuenta");

@@ -7,6 +7,11 @@ import { StateCard } from "@/components/primitives/state-card";
 import { formatMoney } from "@/lib/format";
 import { useWalletActions, useWalletData } from "../use-wallet-context";
 import { accountTypeLabels } from "../wallet-selectors";
+import {
+  buildWalletEmptyState,
+  buildWalletScreenIntro,
+} from "../wallet-polish-selectors";
+import { WalletEmptyState } from "./wallet-empty-state";
 
 export function AccountsScreen() {
   const {
@@ -34,7 +39,7 @@ export function AccountsScreen() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Cuentas</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Ordena tus saldos por origen y manten tus cuentas bien nombradas
+            {buildWalletScreenIntro("accounts")}
           </p>
         </div>
         <button onClick={toggleAccountForm} className="btn-primary">
@@ -121,17 +126,9 @@ export function AccountsScreen() {
           description="Cargando cuentas..."
         />
       ) : accounts.length === 0 ? (
-        <StateCard
-          size="lg"
-          className="glass-card-static border-none"
-          icon={
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hover-overlay)]">
-              <Landmark size={24} className="text-[var(--muted)]" />
-            </div>
-          }
-          title="Todavia no hay cuentas"
-          description="Crea al menos una para registrar movimientos y ordenar mejor tu dinero"
-        />
+        <div className="glass-card-static border-none">
+          <WalletEmptyState {...buildWalletEmptyState("accounts")} />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 stagger-children">
           {accounts.map((account) => {
