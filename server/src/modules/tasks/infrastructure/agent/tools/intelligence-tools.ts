@@ -3,6 +3,7 @@ import { FindSimilarTasks } from '../../../services/FindSimilarTasks';
 import { GetPlanningContext } from '../../../services/GetPlanningContext';
 import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
+import { GetWalletSnapshot } from '../../../../wallet/services/GetWalletSnapshot';
 import { jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
@@ -47,6 +48,19 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
             execute: async () => {
                 const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetPlanningContext).execute(userId);
+            },
+        }),
+        jsonTool({
+            name: 'get_wallet_context',
+            description:
+                'Get a compact wallet snapshot for today: income, expenses, top categories, and anomalies. ' +
+                'Use this when the user mentions money or when cross-domain context could help.',
+            inputSchema: { type: 'object', properties: {} },
+            execute: async () => {
+                const userId = authContextStorage.getAuthContext().userId!;
+                return {
+                    walletContext: await services.get(GetWalletSnapshot).execute(userId),
+                };
             },
         }),
         jsonTool({

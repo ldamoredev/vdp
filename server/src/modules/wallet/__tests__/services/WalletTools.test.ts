@@ -5,7 +5,7 @@ import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContex
 import { WalletTools } from '../../infrastructure/agent/tools';
 
 describe('WalletTools', () => {
-    it('composes the wallet tool registry with accounts, transactions, stats, savings, investments, and exchange rates', () => {
+    it('composes the wallet tool registry with accounts, transactions, stats, intelligence, savings, investments, and exchange rates', () => {
         const tools = WalletTools.createWalletTools(new ServiceProvider(), new AuthContextStorage());
 
         expect(tools.map((tool) => tool.name)).toEqual([
@@ -15,6 +15,9 @@ describe('WalletTools', () => {
             'log_transaction',
             'get_balance',
             'spending_summary',
+            'get_spending_anomalies',
+            'get_tasks_context',
+            'get_category_trends',
             'list_savings_goals',
             'create_savings_goal',
             'update_savings_goal',

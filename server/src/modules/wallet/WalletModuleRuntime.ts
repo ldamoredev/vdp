@@ -31,16 +31,25 @@ import { UpdateInvestment } from './services/UpdateInvestment';
 import { GetExchangeRates } from './services/GetExchangeRates';
 import { CreateExchangeRate } from './services/CreateExchangeRate';
 import { DetectSpendingSpike } from './services/DetectSpendingSpike';
+import { GetWalletSnapshot } from './services/GetWalletSnapshot';
+import { GetSpendingAnomalies } from './services/GetSpendingAnomalies';
+import { GetCategoryTrends } from './services/GetCategoryTrends';
 import { WalletEventHandlers } from './services/WalletEventHandlers';
+import { WalletInsightsStore } from './services/WalletInsightsStore';
+
+export interface WalletModuleRuntimeDeps extends ModuleContext {
+    insightsStore: WalletInsightsStore;
+}
 
 export class WalletModuleRuntime {
-    constructor(private deps: ModuleContext) {}
+    constructor(private deps: WalletModuleRuntimeDeps) {}
 
     registerServices(): void {
         this.registerAccountServices();
         this.registerTransactionServices();
         this.registerCategoryServices();
         this.registerStatsServices();
+        this.registerIntelligenceServices();
         this.registerSavingsServices();
         this.registerInvestmentServices();
         this.registerExchangeRateServices();
@@ -48,8 +57,14 @@ export class WalletModuleRuntime {
 
     registerEventHandlers(): void {
         const spikeDetector = new DetectSpendingSpike(this.transactionRepository(), this.deps.eventBus, this.deps.logger);
-        const handlers = new WalletEventHandlers(this.deps.eventBus, spikeDetector, this.deps.logger,);
+        const handlers = new WalletEventHandlers(
+            this.deps.eventBus,
+            spikeDetector,
+            this.deps.insightsStore,
+            this.deps.logger,
+        );
         handlers.subscribe();
+        this.subscribeInsightsToSSE();
     }
 
     registerAgent(): void {
@@ -72,6 +87,17 @@ export class WalletModuleRuntime {
             new WalletController(this.deps.services),
             new WalletAgentController(this.deps.agentRegistry, this.agentRepository()),
         ];
+    }
+
+    private subscribeInsightsToSSE(): void {
+        this.deps.insightsStore.onInsight((insight, userId) => {
+            if (this.deps.sseBroadcaster.hasClients(userId)) {
+                this.deps.insightsStore.markInsightRead(userId, insight.id);
+                insight.read = true;
+            }
+
+            this.deps.sseBroadcaster.broadcastToUser(userId, 'wallet-insight', insight);
+        });
     }
 
     private registerAccountServices(): void {
@@ -136,6 +162,21 @@ export class WalletModuleRuntime {
         this.deps.services.register(
             GetSpendingStats,
             () => new GetSpendingStats(this.transactionRepository(), this.categoryRepository()),
+        );
+    }
+
+    private registerIntelligenceServices(): void {
+        this.deps.services.register(
+            GetWalletSnapshot,
+            () => new GetWalletSnapshot(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.services.register(
+            GetSpendingAnomalies,
+            () => new GetSpendingAnomalies(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.services.register(
+            GetCategoryTrends,
+            () => new GetCategoryTrends(this.transactionRepository(), this.categoryRepository()),
         );
     }
 

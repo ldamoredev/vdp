@@ -27,6 +27,7 @@ import { GetEndOfDayReview } from './services/GetEndOfDayReview';
 import { RecommendationEngine } from './services/RecommendationEngine';
 import { GetTask } from './services/GetTask';
 import { GetTasks } from './services/GetTasks';
+import { GetTasksSnapshot } from './services/GetTasksSnapshot';
 import { GetWeeklySummary } from './services/GetWeeklySummary';
 import { GetPlanningContext } from './services/GetPlanningContext';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
@@ -107,6 +108,7 @@ export class TaskModuleRuntime {
     private registerTaskReadServices(): void {
         this.deps.services.register(GetTasks, () => new GetTasks(this.taskRepository()));
         this.deps.services.register(GetTask, () => new GetTask(this.taskRepository(), this.taskNoteRepository()));
+        this.deps.services.register(GetTasksSnapshot, () => new GetTasksSnapshot(this.taskRepository()));
         this.deps.services.register(RecommendationEngine, () => new RecommendationEngine());
         this.deps.services.register(GetEndOfDayReview, () =>
             new GetEndOfDayReview(this.taskRepository(), this.deps.services.get(RecommendationEngine)),

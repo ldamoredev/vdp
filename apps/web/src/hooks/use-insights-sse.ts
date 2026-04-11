@@ -41,6 +41,15 @@ export function useInsightsSSE() {
         }
       });
 
+      es.addEventListener("wallet-insight", (e) => {
+        try {
+          const insight = JSON.parse(e.data) as Notification;
+          notificationStore.add(insight);
+        } catch {
+          // Ignore malformed data
+        }
+      });
+
       // Initial snapshot (unread insights on connect)
       es.addEventListener("snapshot", (e) => {
         try {
