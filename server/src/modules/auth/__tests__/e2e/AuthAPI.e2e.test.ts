@@ -177,7 +177,26 @@ describe('Auth API — E2E', () => {
         });
     });
 
-    it('closes registration after the first user exists', async () => {
+    it('rejects duplicate email registration', async () => {
+        const first = await registerUser({
+            email: 'duplicate@vdp.local',
+            displayName: 'Original User',
+        });
+        expect(first.status).toBe(200);
+
+        const second = await registerUser({
+            email: 'duplicate@vdp.local',
+            displayName: 'Duplicate User',
+        });
+
+        expect(second.status).toBe(409);
+        expect(second.body).toMatchObject({
+            error: 'CONFLICT',
+            message: 'Email already registered',
+        });
+    });
+
+    it('allows registration when users already exist', async () => {
         const first = await registerUser();
         expect(first.status).toBe(200);
 
@@ -186,11 +205,15 @@ describe('Auth API — E2E', () => {
             displayName: 'Second User',
         });
 
-        expect(second.status).toBe(403);
+        expect(second.status).toBe(200);
         expect(second.body).toMatchObject({
-            error: 'FORBIDDEN',
-            message: 'Registration is closed',
+            user: {
+                email: 'second@vdp.local',
+                displayName: 'Second User',
+                role: 'user',
+            },
         });
+        expect(second.body.sessionToken).toBeTypeOf('string');
     });
 
     it('updates the current user profile', async () => {

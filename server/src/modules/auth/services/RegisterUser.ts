@@ -1,6 +1,6 @@
 import { UserRepository, UserRecord } from '../domain/UserRepository';
 import { AuditLogRepository } from '../domain/AuditLogRepository';
-import { ConflictHttpError, ForbiddenHttpError } from '../../common/http/errors';
+import { ConflictHttpError } from '../../common/http/errors';
 import { PasswordService } from './PasswordService';
 import { SessionService } from './SessionService';
 import { AuthenticatedUser } from './AuthenticatedUser';
@@ -18,11 +18,6 @@ export class RegisterUser {
         displayName: string;
         password: string;
     }): Promise<{ sessionToken: string; user: AuthenticatedUser }> {
-        const userCount = await this.users.countUsers();
-        if (userCount > 0) {
-            throw new ForbiddenHttpError('Registration is closed');
-        }
-
         const existing = await this.users.findByEmail(input.email.toLowerCase());
         if (existing) {
             throw new ConflictHttpError('Email already registered');

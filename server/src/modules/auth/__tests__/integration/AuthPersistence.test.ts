@@ -14,7 +14,7 @@ import { ChangePassword } from '../../services/ChangePassword';
 import { GetSecurityOverview } from '../../services/GetSecurityOverview';
 import { LogoutOtherSessions } from '../../services/LogoutOtherSessions';
 import { auditLogs, sessions } from '../../infrastructure/schema';
-import { ForbiddenHttpError } from '../../../common/http/errors';
+import { ConflictHttpError } from '../../../common/http/errors';
 import { testDb } from '../../../tasks/__tests__/integration/test-database';
 
 const userRepo = new DrizzleUserRepository(testDb as never);
@@ -188,7 +188,7 @@ describe('Auth persistence integration', () => {
     });
 
     describe('RegisterUser / LoginUser / LogoutUser', () => {
-        it('allows only the first registration and writes an audit log', async () => {
+        it('allows registration after users already exist and writes an audit log', async () => {
             const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService);
 
             const first = await registerUser.execute({
@@ -210,13 +210,39 @@ describe('Auth persistence integration', () => {
             expect(registrationLog.actorSessionId).toBeTruthy();
             expect(registrationLog.resourceId).toBe(first.user.id);
 
+            const second = await registerUser.execute({
+                email: 'second@vdp.local',
+                displayName: 'Second User',
+                password: 'super-secret-password',
+            });
+
+            expect(second.user.email).toBe('second@vdp.local');
+            expect(second.sessionToken).toBeTypeOf('string');
+
+            const registrationLogs = await testDb.query
+                .select()
+                .from(auditLogs)
+                .where(eq(auditLogs.action, 'auth.user_registered'));
+
+            expect(registrationLogs).toHaveLength(2);
+        });
+
+        it('rejects duplicate email registration', async () => {
+            const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService);
+
+            await registerUser.execute({
+                email: 'duplicate@vdp.local',
+                displayName: 'Original User',
+                password: 'super-secret-password',
+            });
+
             await expect(
                 registerUser.execute({
-                    email: 'second@vdp.local',
-                    displayName: 'Second User',
+                    email: 'duplicate@vdp.local',
+                    displayName: 'Duplicate User',
                     password: 'super-secret-password',
                 }),
-            ).rejects.toBeInstanceOf(ForbiddenHttpError);
+            ).rejects.toBeInstanceOf(ConflictHttpError);
         });
 
         it('logs login and logout against persisted audit records', async () => {
