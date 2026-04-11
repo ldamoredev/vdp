@@ -17,3 +17,4 @@ dist/
 .zed
 .worktrees/
 skills-lock.json
+.superpowers
