@@ -1,11 +1,31 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { ThemeProvider } from "@/lib/theme";
 
+const APP_THEME_COLOR = "#020617";
+
 export const metadata: Metadata = {
   title: "VDP — Life Operating System",
   description: "Tu vida, organizada en modulos inteligentes con IA",
+  applicationName: "VDP",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "VDP",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: "/apple-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: APP_THEME_COLOR,
 };
 
 // Inline script to prevent flash of wrong theme on load

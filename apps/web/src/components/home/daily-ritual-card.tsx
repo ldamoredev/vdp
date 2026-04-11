@@ -22,7 +22,7 @@ export function DailyRitualCard({
 }: DailyRitualCardProps) {
   return (
     <div className="glass-card-static overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
+      <div className="flex flex-col gap-3 border-b border-[var(--glass-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Sparkles size={16} style={{ color: "var(--violet-soft-text)" }} />
           <h3 className="text-sm font-medium text-[var(--foreground)]">
@@ -67,7 +67,7 @@ export function DailyRitualCard({
 
         <Link
           href={href}
-          className="inline-flex items-center gap-2 text-sm font-medium transition-colors"
+          className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-3 text-sm font-medium transition-colors sm:w-auto sm:justify-start"
           style={{ color: "var(--violet-soft-text)" }}
         >
           {ctaLabel}

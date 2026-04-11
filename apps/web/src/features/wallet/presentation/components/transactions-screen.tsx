@@ -103,7 +103,7 @@ export function TransactionsScreen() {
 
   return (
     <ModulePage width="5xl" spacing="6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
             Transacciones
@@ -112,7 +112,10 @@ export function TransactionsScreen() {
             {buildWalletScreenIntro("transactions")}
           </p>
         </div>
-        <Link href="/wallet/transactions/new" className="btn-primary">
+        <Link
+          href="/wallet/transactions/new"
+          className="btn-primary w-full sm:w-auto justify-center"
+        >
           <Plus size={16} />
           Nueva
         </Link>

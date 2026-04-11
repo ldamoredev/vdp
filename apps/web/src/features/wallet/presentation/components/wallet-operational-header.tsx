@@ -38,7 +38,11 @@ export function WalletOperationalHeader({
             </p>
           </div>
 
-          {action ? <div className="flex flex-wrap gap-2">{action}</div> : null}
+          {action ? (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+              {action}
+            </div>
+          ) : null}
         </div>
       </div>
 

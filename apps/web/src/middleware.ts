@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/server/backend";
 
-const PUBLIC_PATHS = ["/login", "/_next", "/favicon.ico"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/_next",
+  "/favicon.ico",
+  "/manifest.webmanifest",
+  "/apple-icon.png",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
-function isPublicPath(pathname: string): boolean {
+export function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 }

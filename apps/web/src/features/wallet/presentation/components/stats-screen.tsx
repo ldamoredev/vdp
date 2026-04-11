@@ -53,9 +53,9 @@ export function StatsScreen() {
 
   return (
     <ModulePage width="5xl" spacing="6">
-      <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="text-2xl font-semibold tracking-tight">Estadisticas</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+        <p className="max-w-2xl text-sm text-[var(--muted)] sm:text-right">
           {buildWalletScreenIntro("stats")}
         </p>
       </div>

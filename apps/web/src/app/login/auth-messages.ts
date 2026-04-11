@@ -46,3 +46,31 @@ export function getLoginNotice(message?: string | null): string {
   return "";
 }
 
+const BLOCKED_REDIRECT_PREFIXES = ["/api", "/_next"];
+const ASSET_PATH_PATTERN = /\/[^/?#]+\.[a-z0-9]+(?:$|[?#])/i;
+
+export function resolvePostLoginPath(
+  nextPath?: string | string[] | null,
+): string {
+  if (
+    typeof nextPath !== "string" ||
+    !nextPath.startsWith("/") ||
+    nextPath.startsWith("//") ||
+    nextPath.includes("://")
+  ) {
+    return "/home";
+  }
+
+  const parsed = new URL(nextPath, "http://localhost");
+
+  if (
+    BLOCKED_REDIRECT_PREFIXES.some((prefix) =>
+      parsed.pathname.startsWith(prefix),
+    ) ||
+    ASSET_PATH_PATTERN.test(`${parsed.pathname}${parsed.search}`)
+  ) {
+    return "/home";
+  }
+
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+}

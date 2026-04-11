@@ -54,7 +54,7 @@ export function Header() {
   }
 
   return (
-    <header className="relative z-[70] isolate h-14 border-b border-[var(--glass-border)] bg-[var(--glass)] backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
+    <header className="app-shell-header relative z-[70] isolate flex h-14 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--glass)] px-4 backdrop-blur-xl md:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={shellStore.toggle}
@@ -68,7 +68,7 @@ export function Header() {
           <div ref={menuRef} className="relative z-[80]">
             <button
               onClick={() => setMenuOpen((open) => !open)}
-              className="flex items-center gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5 transition-all hover:bg-[var(--hover-overlay-strong)]"
+              className="header-shell-control header-user-chip flex items-center gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5 transition-all hover:bg-[var(--hover-overlay-strong)]"
             >
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-xs font-bold">
                 {currentUser.displayName?.[0]?.toUpperCase() ?? "U"}
@@ -124,10 +124,12 @@ export function Header() {
             )}
           </div>
         )}
-        <ThemeToggle />
+        <div className="header-shell-toggle">
+          <ThemeToggle />
+        </div>
         <button
           onClick={chatStore.toggle}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] bg-[var(--hover-overlay)] hover:bg-[var(--hover-overlay-strong)] border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-all cursor-pointer group"
+          className="header-shell-control flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-1.5 text-sm font-medium text-[var(--foreground-muted)] transition-all cursor-pointer group hover:border-[var(--glass-border-hover)] hover:bg-[var(--hover-overlay-strong)] hover:text-[var(--foreground)]"
         >
           <div className="relative">
             <MessageCircle size={15} strokeWidth={1.8} />

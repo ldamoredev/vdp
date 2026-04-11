@@ -23,12 +23,22 @@ import { WeeklyTrendCard } from "@/components/home/weekly-trend-card";
 import { WalletSnapshotCard } from "@/components/home/wallet-snapshot-card";
 import { ProductFocusCard } from "@/components/home/product-focus-card";
 import { CrossDomainSignalsCard } from "@/components/home/cross-domain-signals-card";
+import { OnboardingModal } from "@/components/home/onboarding-modal";
+import {
+  ONBOARDING_STEPS,
+  completeOnboarding,
+  hasCompletedOnboarding,
+  setOnboardingChromeState,
+  shouldOpenOnboarding,
+} from "@/features/home/presentation/onboarding-storage";
 
 export default function HomePage() {
   const today = getTodayISO();
   const [reviewState, setReviewState] = useState(() =>
     createEmptyDailyReviewState(today),
   );
+  const [isOnboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const { data: taskStats } = useQuery({
     queryKey: homeTaskQueryKeys.taskStats,
@@ -133,10 +143,64 @@ export default function HomePage() {
     setReviewState(loadDailyReviewState(today));
   }, [today]);
 
+  useEffect(() => {
+    function syncOnboardingState() {
+      const shouldOpen = shouldOpenOnboarding(window.localStorage);
+      setOnboardingOpen((currentOpen) => {
+        if (shouldOpen && !currentOpen) {
+          setOnboardingStep(0);
+        }
+
+        return shouldOpen;
+      });
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        syncOnboardingState();
+      }
+    }
+
+    syncOnboardingState();
+
+    const intervalId = window.setInterval(syncOnboardingState, 250);
+    window.addEventListener("focus", syncOnboardingState);
+    window.addEventListener("storage", syncOnboardingState);
+    window.addEventListener("pageshow", syncOnboardingState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", syncOnboardingState);
+      window.removeEventListener("storage", syncOnboardingState);
+      window.removeEventListener("pageshow", syncOnboardingState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    setOnboardingChromeState(document.documentElement, isOnboardingOpen);
+
+    return () => {
+      setOnboardingChromeState(document.documentElement, false);
+    };
+  }, [isOnboardingOpen]);
+
+  function handleOnboardingNext() {
+    if (onboardingStep >= ONBOARDING_STEPS.length - 1) {
+      completeOnboarding(window.localStorage);
+      setOnboardingOpen(false);
+      return;
+    }
+
+    setOnboardingStep((currentStep) => currentStep + 1);
+  }
+
   return (
-    <div className="max-w-6xl space-y-8 animate-fade-in">
+    <>
+      <div className="max-w-6xl space-y-8 animate-fade-in">
       {/* Page header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             Centro de comando
@@ -187,6 +251,13 @@ export default function HomePage() {
           <ProductFocusCard />
         </div>
       </div>
-    </div>
+      </div>
+
+      <OnboardingModal
+        open={isOnboardingOpen}
+        stepIndex={onboardingStep}
+        onNext={handleOnboardingNext}
+      />
+    </>
   );
 }

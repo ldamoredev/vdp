@@ -35,5 +35,7 @@ describe("DailyRitualCard", () => {
 
     expect(markup).toContain("Retomar ritual");
     expect(markup).toContain("/review");
+    expect(markup).toContain("sm:flex-row");
+    expect(markup).toContain("w-full sm:w-auto justify-between");
   });
 });

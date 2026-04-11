@@ -78,5 +78,7 @@ describe("wallet dashboard actions", () => {
     expect(markup).toContain("Ver estadisticas");
     expect(markup).toContain("Transacciones recientes");
     expect(markup).toContain("Ver todas");
+    expect(markup).toContain("w-full sm:w-auto justify-center");
+    expect(markup).toContain("bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)]");
   });
 });

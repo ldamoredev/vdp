@@ -40,15 +40,21 @@ export function DashboardScreen() {
             <button
               type="button"
               onClick={() => setQuickAddOpen(true)}
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto justify-center"
             >
               <Plus size={16} />
               Gasto rápido
             </button>
-            <Link href="/wallet/transactions/new" className="btn-secondary">
+            <Link
+              href="/wallet/transactions/new"
+              className="btn-secondary w-full sm:w-auto justify-center"
+            >
               Nueva transaccion
             </Link>
-            <Link href="/wallet/stats" className="btn-secondary">
+            <Link
+              href="/wallet/stats"
+              className="btn-secondary w-full sm:w-auto justify-center"
+            >
               Ver estadisticas
               <ArrowRight size={14} />
             </Link>
@@ -128,7 +134,7 @@ export function DashboardScreen() {
         type="button"
         onClick={() => setQuickAddOpen(true)}
         aria-label="Cargar gasto rápido"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-blue-500/30 transition-transform hover:scale-105 sm:hidden"
+        className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-blue-500/30 transition-transform hover:scale-105 sm:hidden"
       >
         <Plus size={24} />
       </button>

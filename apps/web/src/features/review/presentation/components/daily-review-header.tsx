@@ -14,7 +14,7 @@ export function DailyReviewHeader({
   return (
     <section className="glass-card-static overflow-hidden">
       <div className="border-b border-[var(--divider)] p-5 md:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-[var(--muted)]">
               <Sparkles size={11} />
@@ -28,7 +28,7 @@ export function DailyReviewHeader({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
             <div className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-2 text-sm text-[var(--foreground)]">
               <Clock3 size={14} className="text-[var(--accent)]" />
               {dateLabel}

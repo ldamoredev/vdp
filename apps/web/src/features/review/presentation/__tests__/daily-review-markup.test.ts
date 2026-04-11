@@ -33,6 +33,7 @@ describe("DailyReviewScreen", () => {
     expect(markup).toContain("Verificar wallet");
     expect(markup).toContain("Resolver alertas");
     expect(markup).toContain("Decidir mañana");
+    expect(markup).toContain("sm:flex-row sm:items-start sm:justify-between");
   });
 });
 

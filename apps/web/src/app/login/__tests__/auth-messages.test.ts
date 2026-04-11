@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getFriendlyAuthError, getLoginNotice } from "../auth-messages";
+import {
+  getFriendlyAuthError,
+  getLoginNotice,
+  resolvePostLoginPath,
+} from "../auth-messages";
 
 describe("getFriendlyAuthError", () => {
   it("maps conflict errors to the registered-email copy", () => {
@@ -46,3 +50,24 @@ describe("getLoginNotice", () => {
   });
 });
 
+describe("resolvePostLoginPath", () => {
+  it("keeps valid in-app destinations", () => {
+    expect(resolvePostLoginPath("/home")).toBe("/home");
+    expect(resolvePostLoginPath("/review?date=2026-04-11")).toBe(
+      "/review?date=2026-04-11",
+    );
+  });
+
+  it("falls back to home for manifest, icons, and internal assets", () => {
+    expect(resolvePostLoginPath("/manifest.webmanifest")).toBe("/home");
+    expect(resolvePostLoginPath("/apple-icon.png")).toBe("/home");
+    expect(resolvePostLoginPath("/_next/static/chunk.js")).toBe("/home");
+  });
+
+  it("falls back to home for unsafe or unsupported destinations", () => {
+    expect(resolvePostLoginPath("https://evil.test")).toBe("/home");
+    expect(resolvePostLoginPath("//evil.test")).toBe("/home");
+    expect(resolvePostLoginPath("/api/auth/me")).toBe("/home");
+    expect(resolvePostLoginPath(undefined)).toBe("/home");
+  });
+});
