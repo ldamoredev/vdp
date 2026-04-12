@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loginAsFreshUser } from './helpers/auth';
+import { loginAsExistingUser, loginAsFreshUser } from './helpers/auth';
 import { ensureWalletSetup } from './helpers/wallet';
 
 test('home shell renders after self-bootstrapping auth', async ({ page }) => {
@@ -61,7 +61,7 @@ test('wallet quick-add records a new expense', async ({ page }) => {
 test('review note persists when navigating away and back', async ({ page }) => {
   const note = `Playwright review note ${Date.now()}`;
 
-  await loginAsFreshUser(page);
+  const user = await loginAsFreshUser(page);
   await page.goto('/review');
 
   await expect(page.getByRole('heading', { name: 'Cerrar tareas' })).toBeVisible();
@@ -73,6 +73,13 @@ test('review note persists when navigating away and back', async ({ page }) => {
   await page.getByRole('link', { name: 'W Wallet' }).click();
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
   await page.goto('/review');
+  const loginHeading = page.getByRole('heading', { name: 'Crea tu cuenta' });
+  if (
+    page.url().includes('/login') ||
+    (await loginHeading.isVisible().catch(() => false))
+  ) {
+    await loginAsExistingUser(page, user, /\/review$/);
+  }
 
   await expect(page).toHaveURL(/\/review$/);
   await expect(

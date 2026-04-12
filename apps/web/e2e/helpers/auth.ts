@@ -1,5 +1,10 @@
 import { expect, type Page } from '@playwright/test';
 
+type BrowserUserCredentials = {
+  email: string;
+  password: string;
+};
+
 export async function loginAsFreshUser(page: Page) {
   const seed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `playwright.${seed}@example.com`;
@@ -39,4 +44,36 @@ export async function loginAsFreshUser(page: Page) {
     .toBe(200);
 
   return { email, displayName, password };
+}
+
+export async function loginAsExistingUser(
+  page: Page,
+  credentials: BrowserUserCredentials,
+  expectedPath: RegExp = /\/home$/,
+) {
+  await expect(page.getByLabel('Email')).toBeVisible();
+  await page.getByRole('button', { name: 'Iniciar sesion' }).click();
+  await page.getByLabel('Email').fill(credentials.email);
+  await page.getByLabel('Contrasena').fill(credentials.password);
+
+  const loginResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/login') &&
+      response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Bienvenido de nuevo' }).click();
+  const loginResponse = await loginResponsePromise;
+  if (!loginResponse.ok()) {
+    throw new Error(
+      `Login failed with ${loginResponse.status()}: ${await loginResponse.text()}`,
+    );
+  }
+
+  await expect(page).toHaveURL(expectedPath);
+  await expect
+    .poll(async () => {
+      const response = await page.request.get('/api/auth/me');
+      return response.status();
+    })
+    .toBe(200);
 }
