@@ -13,7 +13,7 @@ concurrency:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       TZ: America/Argentina/Buenos_Aires
 
@@ -45,3 +45,26 @@ jobs:
 
       - name: Run server unit tests
         run: pnpm --filter @vdp/server test:unit
+
+      - name: Start test database
+        run: pnpm --filter @vdp/server db:test:up
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @vdp/web exec playwright install --with-deps chromium
+
+      - name: Run end-to-end suite
+        run: pnpm test:e2e
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            apps/web/test-results
+            apps/web/playwright-report
+          if-no-files-found: ignore
+
+      - name: Stop test database
+        if: always()
+        run: pnpm --filter @vdp/server db:test:down

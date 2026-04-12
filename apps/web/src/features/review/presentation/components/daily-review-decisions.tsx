@@ -55,10 +55,14 @@ export function DailyReviewDecisions({
         </div>
 
         <div>
-          <label className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
+          <label
+            htmlFor="daily-review-note"
+            className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]"
+          >
             Nota de arranque
           </label>
           <textarea
+            id="daily-review-note"
             value={note}
             onChange={(event) => onNoteChange?.(event.target.value)}
             placeholder="Ej: revisar supermercado antes de gastar de nuevo"

@@ -18,3 +18,5 @@ dist/
 .worktrees/
 skills-lock.json
 .superpowers
+apps/web/test-results/
+apps/web/playwright-report/

@@ -122,14 +122,19 @@ export function TaskRow({
     >
       {/* Desktop */}
       <div className="hidden md:flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => task.status !== "done" && onComplete(task.id)}
-          disabled={task.status === "done" || busy}
-          className={`task-checkbox shrink-0 ${task.status === "done" ? "checked" : ""}`}
-        >
-          {task.status === "done" && <Check size={14} className="text-white" />}
-        </button>
+          <button
+            type="button"
+            onClick={() => task.status !== "done" && onComplete(task.id)}
+            disabled={task.status === "done" || busy}
+            className={`task-checkbox shrink-0 ${task.status === "done" ? "checked" : ""}`}
+            aria-label={
+              task.status === "done"
+                ? `"${task.title}" ya esta hecha`
+                : `Marcar "${task.title}" como hecha`
+            }
+          >
+            {task.status === "done" && <Check size={14} className="text-white" />}
+          </button>
 
         <span
           className={`min-w-0 flex-1 truncate text-sm font-medium ${
@@ -165,14 +170,19 @@ export function TaskRow({
       {/* Mobile */}
       <div className="flex flex-col gap-3 md:hidden">
         <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={() => task.status !== "done" && onComplete(task.id)}
-            disabled={task.status === "done" || busy}
-            className={`task-checkbox mt-0.5 shrink-0 ${task.status === "done" ? "checked" : ""}`}
-          >
-            {task.status === "done" && <Check size={14} className="text-white" />}
-          </button>
+            <button
+              type="button"
+              onClick={() => task.status !== "done" && onComplete(task.id)}
+              disabled={task.status === "done" || busy}
+              className={`task-checkbox mt-0.5 shrink-0 ${task.status === "done" ? "checked" : ""}`}
+              aria-label={
+                task.status === "done"
+                  ? `"${task.title}" ya esta hecha`
+                  : `Marcar "${task.title}" como hecha`
+              }
+            >
+              {task.status === "done" && <Check size={14} className="text-white" />}
+            </button>
 
           <div className="min-w-0 flex-1">
             <span
