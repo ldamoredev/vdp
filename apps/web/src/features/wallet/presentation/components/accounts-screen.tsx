@@ -215,7 +215,7 @@ export function AccountsScreen() {
                     <p className="text-xs uppercase tracking-wider text-[var(--foreground-muted)]">
                       Balance actual
                     </p>
-                    <p className="mt-1.5 text-lg font-bold tracking-tight">
+                    <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">
                       {formatMoney(balance, account.currency as "ARS" | "USD")}
                     </p>
                   </div>
@@ -223,7 +223,7 @@ export function AccountsScreen() {
                     <p className="text-xs uppercase tracking-wider text-[var(--foreground-muted)]">
                       Saldo inicial
                     </p>
-                    <p className="mt-1.5 text-lg font-bold tracking-tight">
+                    <p className="mt-1.5 truncate text-lg font-bold tracking-tight tabular-nums">
                       {formatMoney(
                         Number(account.initialBalance),
                         account.currency as "ARS" | "USD",

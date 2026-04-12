@@ -97,34 +97,36 @@ export function WalletSnapshotCard({
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="space-y-3">
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between">
               <span className="text-xs text-[var(--muted)]">Balance neto</span>
               <ArrowUpRight size={13} className="text-[var(--accent-green)]" />
             </div>
-            <div className="text-lg font-bold tracking-tight text-[var(--foreground)]">
+            <div className="truncate text-lg font-bold tracking-tight tabular-nums text-[var(--foreground)]">
               {formatMoney(netBalance, "ARS")}
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-[var(--muted)]">Ingresos</span>
-              <ArrowDownLeft size={13} className="text-[var(--accent-green)]" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs text-[var(--muted)]">Ingresos</span>
+                <ArrowDownLeft size={13} className="text-[var(--accent-green)]" />
+              </div>
+              <div className="truncate text-sm font-bold tracking-tight tabular-nums text-[var(--accent-green)]">
+                +{formatMoney(income, "ARS")}
+              </div>
             </div>
-            <div className="text-lg font-bold tracking-tight text-[var(--accent-green)]">
-              +{formatMoney(income, "ARS")}
-            </div>
-          </div>
 
-          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-[var(--muted)]">Gastos</span>
-              <ArrowUpRight size={13} className="text-[var(--accent-red)]" />
-            </div>
-            <div className="text-lg font-bold tracking-tight text-[var(--accent-red)]">
-              -{formatMoney(expenses, "ARS")}
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs text-[var(--muted)]">Gastos</span>
+                <ArrowUpRight size={13} className="text-[var(--accent-red)]" />
+              </div>
+              <div className="truncate text-sm font-bold tracking-tight tabular-nums text-[var(--accent-red)]">
+                -{formatMoney(expenses, "ARS")}
+              </div>
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ export default function DomainLayout({ children }: { children: React.ReactNode; 
 
                 <div className="flex flex-col flex-1 overflow-hidden">
                     <Header/>
-                    <main className="relative z-0 flex-1 overflow-auto p-4 pb-20 md:p-8 md:pb-8">{children}</main>
+                    <main className="relative flex-1 overflow-auto p-4 pb-20 md:p-8 md:pb-8">{children}</main>
                 </div>
 
                 <ChatPanel/>

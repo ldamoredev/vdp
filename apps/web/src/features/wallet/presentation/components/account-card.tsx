@@ -16,7 +16,7 @@ export function AccountCard({ account }: { account: Account }) {
         </div>
         <span className="badge badge-muted">{account.currency}</span>
       </div>
-      <div className="text-2xl font-bold tracking-tight">
+      <div className="truncate text-2xl font-bold tracking-tight tabular-nums">
         {formatMoney(balance, account.currency as "ARS" | "USD")}
       </div>
     </div>

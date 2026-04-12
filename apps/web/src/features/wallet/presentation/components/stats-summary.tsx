@@ -22,7 +22,7 @@ export function StatsSummary({
             <TrendingUp size={15} className="text-[var(--accent-green)]" />
           </div>
         </div>
-        <div className="text-xl font-bold tracking-tight text-[var(--accent-green)]">
+        <div className="truncate text-xl font-bold tracking-tight tabular-nums text-[var(--accent-green)]">
           +{formatMoney(income, "ARS")}
         </div>
       </div>
@@ -39,7 +39,7 @@ export function StatsSummary({
             />
           </div>
         </div>
-        <div className="text-xl font-bold tracking-tight text-[var(--accent-red)]">
+        <div className="truncate text-xl font-bold tracking-tight tabular-nums text-[var(--accent-red)]">
           -{formatMoney(expenses, "ARS")}
         </div>
       </div>
@@ -51,7 +51,7 @@ export function StatsSummary({
             <Minus size={15} className="text-[var(--foreground-muted)]" />
           </div>
         </div>
-        <div className="text-xl font-bold tracking-tight">{formatMoney(net, "ARS")}</div>
+        <div className="truncate text-xl font-bold tracking-tight tabular-nums">{formatMoney(net, "ARS")}</div>
       </div>
     </div>
   );
