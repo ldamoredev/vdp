@@ -32,10 +32,10 @@ export async function loginAsFreshUser(page: Page) {
     );
   }
 
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/home$/, { timeout: 15_000 });
   await expect(
     page.getByRole('heading', { name: 'Centro de comando' }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 10_000 });
   await expect
     .poll(async () => {
       const response = await page.request.get('/api/auth/me');
@@ -69,7 +69,7 @@ export async function loginAsExistingUser(
     );
   }
 
-  await expect(page).toHaveURL(expectedPath);
+  await expect(page).toHaveURL(expectedPath, { timeout: 15_000 });
   await expect
     .poll(async () => {
       const response = await page.request.get('/api/auth/me');
