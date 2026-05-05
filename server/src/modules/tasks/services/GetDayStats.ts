@@ -1,3 +1,4 @@
+import { Task } from '../domain/Task';
 import { TaskRepository } from '../domain/TaskRepository';
 import { todayISO, localDateISO } from '../../common/base/time/dates';
 
@@ -15,9 +16,15 @@ export class GetDayStats {
     constructor(private repository: TaskRepository) {}
 
     async execute(userId: string, date: string): Promise<DayStats> {
-        const dayTasks = await this.repository.getTasksByDate(userId, date);
+        const scheduledTasks = await this.repository.getTasksByDate(userId, date);
+        const completedToday = await this.repository.getTasksCompletedOnDate(userId, date);
+        const completedTasks = mergeUniqueTasks(
+            scheduledTasks.filter((task) => task.status === 'done'),
+            completedToday,
+        );
+        const dayTasks = mergeUniqueTasks(scheduledTasks, completedToday);
 
-        const completed = dayTasks.filter((t) => t.status === "done").length;
+        const completed = completedTasks.length;
         const carriedOver = dayTasks.filter((t) => t.carryOverCount > 0).length;
         const total = dayTasks.length;
 
@@ -79,4 +86,16 @@ export class GetDayStats {
 
         return results;
     }
+}
+
+function mergeUniqueTasks(...collections: Task[][]): Task[] {
+    const merged = new Map<string, Task>();
+
+    for (const tasks of collections) {
+        for (const task of tasks) {
+            merged.set(task.id, task);
+        }
+    }
+
+    return Array.from(merged.values());
 }

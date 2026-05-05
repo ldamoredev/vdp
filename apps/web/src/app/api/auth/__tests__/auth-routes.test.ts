@@ -12,6 +12,9 @@ vi.mock("next/headers", () => ({
 
 import { POST as loginPOST } from "../login/route";
 import { POST as logoutPOST } from "../logout/route";
+import { POST as registerPOST } from "../register/route";
+import { POST as changePasswordPOST } from "../change-password/route";
+import { GET as securityGET } from "../security/route";
 import { GET as meGET } from "../me/route";
 
 function createRequest({
@@ -86,6 +89,47 @@ describe("auth route handlers", () => {
     });
   });
 
+  it("register stores the managed session cookie with shared options", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        user: {
+          id: "user-1",
+          email: "owner@vdp.local",
+          displayName: "Owner",
+          role: "user",
+        },
+        sessionToken: "session-token-1",
+      }),
+    } as Response);
+
+    const response = await registerPOST(
+      createRequest({
+        body: JSON.stringify({
+          email: "owner@vdp.local",
+          displayName: "Owner",
+          password: "super-secret-password",
+        }),
+      }),
+    );
+
+    expect(cookieStore.set).toHaveBeenCalledWith(
+      SESSION_COOKIE_NAME,
+      "session-token-1",
+      getSessionCookieOptions(),
+    );
+    expect(await response.json()).toEqual({
+      user: {
+        id: "user-1",
+        email: "owner@vdp.local",
+        displayName: "Owner",
+        role: "user",
+      },
+    });
+  });
+
   it("/me clears the cookie when the backend rejects the session", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValue({
@@ -124,5 +168,61 @@ describe("auth route handlers", () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it("change-password clears the managed session cookie after backend success", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    } as Response);
+
+    const response = await changePasswordPOST(
+      createRequest({
+        body: JSON.stringify({
+          currentPassword: "old-password",
+          newPassword: "new-password",
+        }),
+        sessionToken: "session-token-1",
+      }),
+    );
+
+    expect(cookieStore.set).toHaveBeenCalledWith(
+      SESSION_COOKIE_NAME,
+      "",
+      expect.objectContaining({
+        ...getSessionCookieOptions(),
+        maxAge: 0,
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it("protected auth routes return 401 before contacting the backend without a session", async () => {
+    const fetchMock = vi.mocked(fetch);
+
+    const changePasswordResponse = await changePasswordPOST(
+      createRequest({
+        body: JSON.stringify({
+          currentPassword: "old-password",
+          newPassword: "new-password",
+        }),
+      }),
+    );
+    const securityResponse = await securityGET(createRequest());
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(changePasswordResponse.status).toBe(401);
+    expect(await changePasswordResponse.json()).toEqual({
+      error: "UNAUTHORIZED",
+      message: "Missing session",
+    });
+    expect(securityResponse.status).toBe(401);
+    expect(await securityResponse.json()).toEqual({
+      error: "UNAUTHORIZED",
+      message: "Missing session",
+    });
   });
 });

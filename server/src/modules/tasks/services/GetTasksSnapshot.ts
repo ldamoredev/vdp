@@ -1,4 +1,5 @@
 import { todayISO } from '../../common/base/time/dates';
+import { Task } from '../domain/Task';
 import { TaskRepository } from '../domain/TaskRepository';
 
 export type StuckTaskInfo = {
@@ -18,9 +19,15 @@ export class GetTasksSnapshot {
     constructor(private readonly tasks: TaskRepository) {}
 
     async execute(userId: string): Promise<TasksSnapshot> {
-        const todayTasks = await this.tasks.getTasksByDate(userId, todayISO());
+        const today = todayISO();
+        const scheduledTasks = await this.tasks.getTasksByDate(userId, today);
+        const completedToday = await this.tasks.getTasksCompletedOnDate(userId, today);
+        const todayTasks = mergeUniqueTasks(scheduledTasks, completedToday);
         const pendingTasks = todayTasks.filter((task) => task.status === 'pending');
-        const completedTasks = todayTasks.filter((task) => task.status === 'done');
+        const completedTasks = mergeUniqueTasks(
+            scheduledTasks.filter((task) => task.status === 'done'),
+            completedToday,
+        );
         const totalCount = todayTasks.length;
 
         return {
@@ -33,7 +40,19 @@ export class GetTasksSnapshot {
                 .map((task) => ({
                     title: task.title,
                     carryOverCount: task.carryOverCount,
-                })),
+            })),
         };
     }
+}
+
+function mergeUniqueTasks(...collections: Task[][]): Task[] {
+    const merged = new Map<string, Task>();
+
+    for (const tasks of collections) {
+        for (const task of tasks) {
+            merged.set(task.id, task);
+        }
+    }
+
+    return Array.from(merged.values());
 }

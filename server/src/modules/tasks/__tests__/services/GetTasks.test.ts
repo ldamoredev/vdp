@@ -49,6 +49,31 @@ describe('GetTasks', () => {
         expect(result.tasks).toHaveLength(1);
     });
 
+    it('filters completed tasks by completedDate instead of scheduledDate', async () => {
+        repo.seed([
+            createTask({
+                id: 'done-today',
+                status: 'done',
+                scheduledDate: '2026-03-17',
+                completedAt: new Date('2026-03-18T09:30:00.000Z'),
+            }),
+            createTask({
+                id: 'done-other-day',
+                status: 'done',
+                scheduledDate: '2026-03-18',
+                completedAt: new Date('2026-03-19T09:30:00.000Z'),
+            }),
+        ]);
+
+        const result = await service.execute(userId, {
+            status: 'done',
+            completedDate: '2026-03-18',
+        });
+
+        expect(result.tasks).toHaveLength(1);
+        expect(result.tasks[0].id).toBe('done-today');
+    });
+
     it('applies limit and offset', async () => {
         repo.seed(Array.from({ length: 5 }, () => createTask()));
 

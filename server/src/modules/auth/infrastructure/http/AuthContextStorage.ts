@@ -26,4 +26,13 @@ export class AuthContextStorage {
     getAuthContext(): AuthContext {
         return this.storage.getStore() ?? this.unauthenticatedAuth();
     }
+
+    /**
+     * Run a callback within an explicit auth context scope.
+     * Unlike enterWith(), run() creates a proper async context boundary
+     * that survives across all async operations (HTTP calls, timers, etc.).
+     */
+    runWithContext<T>(context: AuthContext, fn: () => T): T {
+        return this.storage.run(context, fn);
+    }
 }

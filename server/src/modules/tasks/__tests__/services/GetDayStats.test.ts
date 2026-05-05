@@ -40,6 +40,29 @@ describe('GetDayStats', () => {
         expect(stats.completionRate).toBe(50);
     });
 
+    it('counts tasks completed on the day even when they were scheduled earlier', async () => {
+        repo.seed([
+            createTask({
+                id: 'completed-today',
+                scheduledDate: '2026-03-17',
+                status: 'done',
+                completedAt: new Date('2026-03-18T14:00:00.000Z'),
+            }),
+            createTask({
+                id: 'pending-today',
+                scheduledDate: DATE,
+                status: 'pending',
+            }),
+        ]);
+
+        const stats = await service.execute(userId, DATE);
+
+        expect(stats.total).toBe(2);
+        expect(stats.completed).toBe(1);
+        expect(stats.pending).toBe(1);
+        expect(stats.completionRate).toBe(50);
+    });
+
     it('executeToday uses current date', async () => {
         const today = todayISO();
         repo.seed([createTask({ scheduledDate: today, status: 'done' })]);

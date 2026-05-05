@@ -24,9 +24,14 @@ export class GetEndOfDayReview {
 
     async execute(userId: string, date?: string): Promise<DayReview> {
         const reviewDate = date || todayISO();
-        const dayTasks = await this.repository.getTasksByDate(userId, reviewDate);
+        const scheduledTasks = await this.repository.getTasksByDate(userId, reviewDate);
+        const completedToday = await this.repository.getTasksCompletedOnDate(userId, reviewDate);
+        const dayTasks = mergeUniqueTasks(scheduledTasks, completedToday);
 
-        const completed = dayTasks.filter((t) => t.status === "done");
+        const completed = mergeUniqueTasks(
+            scheduledTasks.filter((task) => task.status === 'done'),
+            completedToday,
+        );
         const pending = dayTasks.filter((t) => t.status === "pending");
         const carriedOver = dayTasks.filter((t) => t.carryOverCount > 0);
         const discarded = dayTasks.filter((t) => t.status === "discarded");
@@ -54,4 +59,16 @@ export class GetEndOfDayReview {
             recommendations,
         };
     }
+}
+
+function mergeUniqueTasks(...collections: Task[][]): Task[] {
+    const merged = new Map<string, Task>();
+
+    for (const tasks of collections) {
+        for (const task of tasks) {
+            merged.set(task.id, task);
+        }
+    }
+
+    return Array.from(merged.values());
 }

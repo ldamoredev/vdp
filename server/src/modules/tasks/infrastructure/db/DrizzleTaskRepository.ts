@@ -1,5 +1,5 @@
 import { Task } from '../../domain/Task';
-import { todayISO } from '../../../common/base/time/dates';
+import { parseLocalDateISO, todayISO } from '../../../common/base/time/dates';
 import {
     TaskRepository,
     PagedTasks,
@@ -14,7 +14,7 @@ import {
 import { TaskStatus } from '../../domain/Task';
 import { Database } from '../../../common/base/db/Database';
 import { tasks } from './schema';
-import { and, asc, desc, eq, gte, inArray, lte, sql, SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, lte, sql, SQL } from 'drizzle-orm';
 
 export class DrizzleTaskRepository extends TaskRepository {
     constructor(private db: Database) {
@@ -44,6 +44,13 @@ export class DrizzleTaskRepository extends TaskRepository {
         conditions.push(eq(tasks.ownerUserId, userId));
         if (filters.scheduledDate)
             conditions.push(eq(tasks.scheduledDate, filters.scheduledDate));
+        if (filters.completedDate) {
+            const start = parseLocalDateISO(filters.completedDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 1);
+            conditions.push(gte(tasks.completedAt, start));
+            conditions.push(lt(tasks.completedAt, end));
+        }
         if (filters.status)
             conditions.push(eq(tasks.status, filters.status));
         if (filters.domain)
@@ -151,6 +158,24 @@ export class DrizzleTaskRepository extends TaskRepository {
             .orderBy(desc(tasks.priority), asc(tasks.createdAt));
 
         return rows.map(s => Task.fromSnapshot(s));
+    }
+
+    async getTasksCompletedOnDate(userId: string, date: string): Promise<Task[]> {
+        const start = parseLocalDateISO(date);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        const rows = await this.db.query
+            .select()
+            .from(tasks)
+            .where(and(
+                eq(tasks.ownerUserId, userId),
+                gte(tasks.completedAt, start),
+                lt(tasks.completedAt, end),
+            ))
+            .orderBy(desc(tasks.completedAt), desc(tasks.updatedAt));
+
+        return rows.map((snapshot) => Task.fromSnapshot(snapshot));
     }
 
     async countByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<number> {

@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { z, ZodType } from 'zod';
 import type { BaseAgent } from '../base/agents/BaseAgent';
 import { getAgentErrorCode, type AgentErrorCode } from '../base/agents/AgentError';
+import { AuthContextStorage } from '../../auth/infrastructure/http/AuthContextStorage';
 import { ServiceUnavailableHttpError } from './errors';
 import { parseBody } from './validation';
 
@@ -15,6 +16,7 @@ type AgentChatBody = z.infer<typeof agentChatBodySchema>;
 type AgentChatHandlerOptions<TBody extends AgentChatBody> = {
     schema?: ZodType<TBody>;
     resolveAgent: (request: FastifyRequest, body: TBody) => BaseAgent | undefined;
+    authContextStorage: AuthContextStorage;
     summarizeToolResult?: (result: string) => string;
 };
 
@@ -58,36 +60,40 @@ export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBo
         };
 
         try {
-            await agent.chat({
-                userId: request.auth.userId!,
-                message: body.message,
-                conversationId: body.conversationId,
-                callbacks: {
-                    onText: (text) => send('text', { text }),
-                    onToolUse: (tool, input) => send('tool_use', { tool, input }),
-                    onToolResult: (tool, result) => {
-                        send('tool_result', {
-                            tool,
-                            summary: summarizeToolResult(result),
-                            result,
-                        });
+            // Wrap in runWithContext to ensure AsyncLocalStorage auth context
+            // survives across async boundaries (LLM HTTP calls, tool execution).
+            await options.authContextStorage.runWithContext(request.auth, () =>
+                agent.chat({
+                    userId: request.auth.userId!,
+                    message: body.message,
+                    conversationId: body.conversationId,
+                    callbacks: {
+                        onText: (text) => send('text', { text }),
+                        onToolUse: (tool, input) => send('tool_use', { tool, input }),
+                        onToolResult: (tool, result) => {
+                            send('tool_result', {
+                                tool,
+                                summary: summarizeToolResult(result),
+                                result,
+                            });
+                        },
+                        onDone: (conversationId, traceId) => {
+                            const langfuseHost = process.env.LANGFUSE_HOST || 'http://localhost:3001';
+                            send('done', {
+                                conversationId,
+                                ...(process.env.NODE_ENV === 'development' && traceId
+                                    ? { traceUrl: `${langfuseHost}/trace/${traceId}` }
+                                    : {}),
+                            });
+                            close();
+                        },
+                        onError: (error) => {
+                            send('error', { error, code: 'unknown' as AgentErrorCode });
+                            close();
+                        },
                     },
-                    onDone: (conversationId, traceId) => {
-                        const langfuseHost = process.env.LANGFUSE_HOST || 'http://localhost:3001';
-                        send('done', {
-                            conversationId,
-                            ...(process.env.NODE_ENV === 'development' && traceId
-                                ? { traceUrl: `${langfuseHost}/trace/${traceId}` }
-                                : {}),
-                        });
-                        close();
-                    },
-                    onError: (error) => {
-                        send('error', { error, code: 'unknown' as AgentErrorCode });
-                        close();
-                    },
-                },
-            });
+                }),
+            );
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Agent error';
             send('error', { error: message, code: getAgentErrorCode(error) });

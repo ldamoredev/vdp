@@ -12,6 +12,7 @@ export class GetTasks {
 
 type Request = {
     scheduledDate?: string;
+    completedDate?: string;
     status?: TaskStatus;
     domain?: string;
     priority?: number;

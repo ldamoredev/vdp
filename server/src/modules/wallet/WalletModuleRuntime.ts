@@ -85,7 +85,7 @@ export class WalletModuleRuntime {
     createControllers() {
         return [
             new WalletController(this.deps.services),
-            new WalletAgentController(this.deps.agentRegistry, this.agentRepository()),
+            new WalletAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
         ];
     }
 

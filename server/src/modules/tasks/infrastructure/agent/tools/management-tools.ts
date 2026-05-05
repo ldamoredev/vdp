@@ -55,13 +55,18 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
         jsonTool({
             name: 'list_tasks',
             description:
-                "List tasks filtered by date, status, domain, or priority. Defaults to today's pending tasks.",
+                "List tasks filtered by scheduled date, completion date, status, domain, or priority. " +
+                "Defaults to today's pending tasks, and if status='done' with no date it defaults to tasks completed today.",
             inputSchema: {
                 type: 'object',
                 properties: {
                     scheduledDate: {
                         type: 'string',
                         description: 'Date filter (YYYY-MM-DD). Default: today.',
+                    },
+                    completedDate: {
+                        type: 'string',
+                        description: 'Completion date filter (YYYY-MM-DD). Use this for questions like "que hice hoy".',
                     },
                     status: {
                         type: 'string',
@@ -77,8 +82,13 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
             },
             execute: async (input) => {
                 const userId = authContextStorage.getAuthContext().userId!;
+                const completedDate =
+                    input.completedDate || (input.status === 'done' && !input.scheduledDate ? todayISO() : undefined);
+                const scheduledDate = input.scheduledDate || (!completedDate ? todayISO() : undefined);
+
                 return services.get(GetTasks).execute(userId, {
-                    scheduledDate: input.scheduledDate || todayISO(),
+                    scheduledDate,
+                    completedDate,
                     status: input.status,
                     domain: input.domain,
                     priority: input.priority,

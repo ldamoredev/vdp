@@ -77,4 +77,35 @@ describe('GetTasksSnapshot', () => {
             { title: 'Stuck task', carryOverCount: 4 },
         ]);
     });
+
+    it('counts tasks completed today even when they were scheduled earlier', async () => {
+        const { service, tasks } = createService();
+        const today = todayISO();
+
+        tasks.seed([
+            createTask({
+                id: 'task-completed-today',
+                title: 'Completed today',
+                status: 'done',
+                scheduledDate: '2026-01-01',
+                completedAt: new Date(`${today}T09:15:00.000Z`),
+            }),
+            createTask({
+                id: 'task-pending-today',
+                title: 'Pending today',
+                status: 'pending',
+                scheduledDate: today,
+            }),
+        ]);
+
+        const result = await service.execute('user-1');
+
+        expect(result).toEqual<TasksSnapshot>({
+            pendingCount: 1,
+            completedCount: 1,
+            totalCount: 2,
+            completionRate: 50,
+            stuckTasks: [],
+        });
+    });
 });

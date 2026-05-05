@@ -12,6 +12,7 @@ export abstract class TaskRepository {
 
     abstract getTasksByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<Task[]>;
     abstract getTasksByDate(userId: string, date: string): Promise<Task[]>;
+    abstract getTasksCompletedOnDate(userId: string, date: string): Promise<Task[]>;
     abstract countByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<number>;
     abstract countByDate(userId: string, date: string): Promise<DateCounts>;
     abstract getTrendByDateRange(userId: string, fromDate: string, toDate: string): Promise<DateTrendRow[]>;
@@ -22,6 +23,7 @@ export abstract class TaskRepository {
 
 export type TaskFilters = {
     scheduledDate?: string;
+    completedDate?: string;
     status?: TaskStatus;
     domain?: string;
     priority?: number;

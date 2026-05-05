@@ -12,6 +12,7 @@ dist/
 
 # Agent tooling (local)
 .agents/
+.codex/
 .junie/
 .kiro/
 .zed

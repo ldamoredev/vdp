@@ -1,5 +1,5 @@
 import { Task, type TaskSnapshot, type TaskStatus } from '../../domain/Task';
-import { todayISO } from '../../../common/base/time/dates';
+import { localDateISO, todayISO } from '../../../common/base/time/dates';
 import {
     TaskRepository,
     type TaskFilters,
@@ -50,6 +50,11 @@ export class FakeTaskRepository extends TaskRepository {
         let tasks = Array.from(this.store.values()).map(Task.fromSnapshot);
 
         if (filters.scheduledDate) tasks = tasks.filter(t => t.scheduledDate === filters.scheduledDate);
+        if (filters.completedDate) {
+            tasks = tasks.filter((task) =>
+                task.completedAt !== null && localDateISO(task.completedAt) === filters.completedDate,
+            );
+        }
         if (filters.status) tasks = tasks.filter(t => t.status === filters.status);
         if (filters.domain) tasks = tasks.filter(t => t.domain === filters.domain);
         if (filters.priority !== undefined) tasks = tasks.filter(t => t.priority === filters.priority);
@@ -125,6 +130,12 @@ export class FakeTaskRepository extends TaskRepository {
     async getTasksByDate(_userId: string, date: string): Promise<Task[]> {
         return Array.from(this.store.values())
             .filter(s => s.scheduledDate === date)
+            .map(Task.fromSnapshot);
+    }
+
+    async getTasksCompletedOnDate(_userId: string, date: string): Promise<Task[]> {
+        return Array.from(this.store.values())
+            .filter((snapshot) => snapshot.completedAt !== null && localDateISO(snapshot.completedAt) === date)
             .map(Task.fromSnapshot);
     }
 

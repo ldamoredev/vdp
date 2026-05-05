@@ -7,6 +7,7 @@ import { HttpController, RouteRegister } from '../../../common/http/HttpControll
 import { agentChatBodySchema, createAgentChatHandler } from '../../../common/http/agent-chat';
 import { assertFound } from '../../../common/http/errors';
 import { RouteContextHandler } from '../../../common/http/routes';
+import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 
 type IdParams = { id: string };
 
@@ -16,6 +17,7 @@ export class WalletAgentController extends HttpController {
     constructor(
         private agentRegistry: AgentRegistry,
         private agentRepository: AgentRepository,
+        private authContextStorage: AuthContextStorage,
     ) {
         super();
     }
@@ -27,6 +29,7 @@ export class WalletAgentController extends HttpController {
             .post('/chat', createAgentChatHandler({
                 schema: agentChatBodySchema,
                 resolveAgent: () => this.agentRegistry.get('wallet'),
+                authContextStorage: this.authContextStorage,
             }));
     }
 

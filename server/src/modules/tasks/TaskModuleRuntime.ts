@@ -74,7 +74,7 @@ export class TaskModuleRuntime {
     createControllers() {
         return [
             new TasksController(this.deps.services),
-            new TasksAgentController(this.deps.agentRegistry, this.agentRepository()),
+            new TasksAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
             new TaskInsightsSSEController(this.deps.sseBroadcaster, this.deps.insightsStore),
         ];
     }

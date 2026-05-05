@@ -69,4 +69,32 @@ describe('GetEndOfDayReview', () => {
         expect(review.date).toBe(today);
         expect(review.total).toBe(1);
     });
+
+    it('includes tasks completed today even when they were scheduled on another date', async () => {
+        repo.seed([
+            createTask({
+                id: 'completed-today',
+                title: 'Follow up with bank',
+                scheduledDate: '2026-03-17',
+                status: 'done',
+                completedAt: new Date('2026-03-18T11:00:00.000Z'),
+            }),
+            createTask({
+                id: 'pending-today',
+                title: 'Prepare invoice',
+                scheduledDate: DATE,
+                status: 'pending',
+            }),
+        ]);
+
+        const review = await service.execute(userId, DATE);
+
+        expect(review.total).toBe(2);
+        expect(review.completed).toBe(1);
+        expect(review.pending).toBe(1);
+        expect(review.allTasks.map((task) => task.id)).toEqual([
+            'pending-today',
+            'completed-today',
+        ]);
+    });
 });

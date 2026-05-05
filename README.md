@@ -290,11 +290,8 @@ Migrations managed by Drizzle Kit in `server/src/migrations/`.
 
 | File | Purpose |
 |------|---------|
-| `README.md` | This file — setup, commands, API reference |
-| `PLAN.md` | Roadmap and execution priorities |
-| `docs/CURRENT_STATE.md` | Code-verified repository status |
-| `docs/architecture/` | Current frontend/backend architecture reference |
-| `docs/superpowers/specs/` | Approved design specs |
-| `docs/superpowers/plans/` | Implementation plans |
+| `README.md` | This file — setup, commands, env, API reference |
+| `CLAUDE.md` | Architecture, module patterns, conventions |
+| `ROADMAP.md` | Forward-looking priorities and gating rules for new domains |
 | `server/.env.example` | Server environment template |
 | `apps/web/.env.example` | Web environment template |
