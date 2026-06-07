@@ -72,15 +72,13 @@ pnpm --filter @vdp/server test:e2e
 pnpm --filter @vdp/web test
 pnpm --filter @vdp/web test:e2e
 
-# Typecheck
-pnpm exec tsc --noEmit -p apps/web/tsconfig.json
-pnpm exec tsc --noEmit -p server/tsconfig.json
+# Quality
+pnpm typecheck
+pnpm lint
 pnpm --filter @vdp/shared build
 ```
 
 Run targeted checks before broad checks. Unit tests should use fake repositories and should not require Docker unless the code under test genuinely needs the database.
-
-There is no standard lint script in `package.json`, `server/package.json`, or `apps/web/package.json` yet. Do not claim lint coverage until a real lint command exists and has been run.
 
 ## Backend Architecture
 
@@ -250,7 +248,7 @@ A domain is only real when it matches the Tasks template:
 Before claiming completion, run the smallest meaningful verification:
 
 - Documentation-only change: no automated tests required; inspect the diff and search for stale references.
-- Frontend-only change: `pnpm exec tsc --noEmit -p apps/web/tsconfig.json` plus targeted frontend tests if behavior changed.
+- Frontend-only change: `pnpm typecheck:web` plus targeted frontend tests if behavior changed.
 - Server unit behavior: `pnpm --filter @vdp/server test:unit`.
 - Server DB behavior: start the test DB with `pnpm --filter @vdp/server db:test:up`, then run `pnpm --filter @vdp/server test:integration`.
 - Server E2E behavior: test DB required, then `pnpm --filter @vdp/server test:e2e`.

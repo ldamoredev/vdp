@@ -38,16 +38,15 @@ Do:
 Target verification:
 
 - `pnpm --filter @vdp/shared build`
-- `pnpm exec tsc --noEmit -p apps/web/tsconfig.json`
-- `pnpm exec tsc --noEmit -p server/tsconfig.json`
+- `pnpm typecheck`
+- `pnpm lint`
 - `pnpm --filter @vdp/web test`
 - `pnpm --filter @vdp/server test:unit`
 - `pnpm --filter @vdp/server db:test:up`
 - `pnpm --filter @vdp/server test:integration`
 - `pnpm --filter @vdp/server test:e2e`
-- lint command, once one exists
 
-Done when: the local quality baseline is either green or has a short, explicit failure list with owners/next fixes. Do not claim lint coverage until a real lint command exists and has run.
+Done when: the local quality baseline is either green or has a short, explicit failure list with owners/next fixes.
 
 ### 2. Fix Repository CI
 

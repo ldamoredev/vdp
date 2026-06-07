@@ -48,6 +48,12 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 | `pnpm db:generate` | Generate Drizzle migrations |
 | `pnpm db:migrate` | Run Drizzle migrations |
 | `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm typecheck` | Typecheck shared, web, and server packages |
+| `pnpm lint` | Run ESLint across the workspace |
+| `pnpm test` | Run web tests, server unit tests, and server integration tests |
+| `pnpm test:unit` | Run web tests and server unit tests |
+| `pnpm test:integration` | Run server integration tests |
+| `pnpm test:e2e` | Run server and web E2E tests |
 | `pnpm clean` | Remove all node_modules, dist, .next, .turbo |
 
 ### Server (`@vdp/server`)

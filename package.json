@@ -10,6 +10,11 @@
     "db:reset": "pnpm --filter @vdp/server db:reset",
     "db:fresh": "pnpm --filter @vdp/server db:fresh",
     "db:studio": "turbo db:studio",
+    "typecheck": "pnpm typecheck:shared && pnpm typecheck:web && pnpm typecheck:server",
+    "typecheck:shared": "pnpm --filter @vdp/shared exec tsc --noEmit -p tsconfig.json",
+    "typecheck:web": "pnpm --filter @vdp/web exec tsc --noEmit -p tsconfig.json",
+    "typecheck:server": "pnpm --filter @vdp/server exec tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
     "test": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit && pnpm --filter @vdp/server test:integration",
     "test:unit": "pnpm --filter @vdp/web test && pnpm --filter @vdp/server test:unit",
     "test:integration": "pnpm --filter @vdp/server test:integration",
@@ -24,6 +29,11 @@
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache apps/**/.next"
   },
   "devDependencies": {
-    "turbo": "^2.8.17"
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.1.0",
+    "turbo": "^2.8.17",
+    "typescript-eslint": "^8.60.1"
   }
 }
