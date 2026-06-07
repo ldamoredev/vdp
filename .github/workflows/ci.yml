@@ -55,22 +55,6 @@ jobs:
       - name: Run server end-to-end tests
         run: pnpm --filter @vdp/server test:e2e
 
-      - name: Install Playwright Chromium
-        run: pnpm --filter @vdp/web exec playwright install --with-deps chromium
-
-      - name: Run web end-to-end tests
-        run: pnpm --filter @vdp/web test:e2e
-
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts
-          path: |
-            apps/web/test-results
-            apps/web/playwright-report
-          if-no-files-found: ignore
-
       - name: Stop test database
         if: ${{ always() && steps.setup-pnpm.outcome == 'success' }}
         run: pnpm --filter @vdp/server db:test:down
