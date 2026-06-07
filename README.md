@@ -80,7 +80,7 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 ### Prerequisites
 
 - Node.js 22+
-- pnpm 10.6.5+ (`corepack enable && corepack prepare pnpm@10.6.5 --activate`)
+- pnpm 11.5.2 (`corepack enable && corepack prepare pnpm@11.5.2 --activate`)
 - Docker (for Postgres)
 
 ### Quick Start
@@ -280,9 +280,12 @@ pnpm infra:reset   # Destroys volumes + restarts
 
 ### Database Schema
 
-Two PostgreSQL schemas:
+Three active PostgreSQL schemas:
+- `core` — users, sessions, audit logs, agent_conversations, agent_messages tables
 - `tasks` — tasks, task_notes, task_embeddings tables
-- `core` — agent_conversations, agent_messages tables
+- `wallet` — accounts, categories, transactions, savings, investments, exchange rates tables
+
+`health` has a scaffold schema file, but it is not part of the active migration yet.
 
 Migrations managed by Drizzle Kit in `server/src/migrations/`.
 
@@ -291,7 +294,7 @@ Migrations managed by Drizzle Kit in `server/src/migrations/`.
 | File | Purpose |
 |------|---------|
 | `README.md` | This file — setup, commands, env, API reference |
-| `CLAUDE.md` | Architecture, module patterns, conventions |
+| `AGENTS.md` | Agent, architecture, safety, and verification source of truth |
 | `ROADMAP.md` | Forward-looking priorities and gating rules for new domains |
 | `server/.env.example` | Server environment template |
 | `apps/web/.env.example` | Web environment template |
