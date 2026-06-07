@@ -35,13 +35,12 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 Follow `ROADMAP.md` for priority. As of the current recovery plan, the next steps are:
 
-1. Clean stale roadmap items.
-2. Restore the local quality baseline for tests, TypeScript, and lint.
-3. Fix CI.
-4. Bring up the app for owner verification.
-5. Fully validate Tasks end to end before real daily use.
-6. Harden auth.
-7. Only then expand to the next real domain.
+1. Restore the local quality baseline for tests, TypeScript, and lint.
+2. Fix CI.
+3. Bring up the app for owner verification.
+4. Fully validate Tasks end to end before real daily use.
+5. Harden auth.
+6. Only then expand to the next real domain.
 
 Health is still the most coherent next domain candidate, but new domain work should wait until recovery, Tasks validation, and auth hardening gates are complete.
 

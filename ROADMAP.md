@@ -1,84 +1,143 @@
 # VDP Roadmap
 
-Forward-looking only. For setup and commands see [`README.md`](./README.md). For architecture and agent guidance see [`AGENTS.md`](./AGENTS.md).
+Forward-looking only. For setup and commands see [`README.md`](./README.md). For architecture, module rules, agent rules, safety, and verification guidance see [`AGENTS.md`](./AGENTS.md).
 
-## Active vs Inactive
+## Scope Snapshot
 
 | Domain | Backend | Frontend | Agent | Status |
 |--------|---------|----------|-------|--------|
-| Tasks | ✅ | ✅ | ✅ | Stable — reference module |
-| Wallet | ✅ | ✅ | ✅ | Active — newer than Tasks, lighter frontend coverage |
-| Health | Schema scaffold only | Disabled demo/API pages | — | Inactive — not a real domain yet |
+| Tasks | ✅ | ✅ | ✅ | Stable reference module; must be production-ready for personal daily use |
+| Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
+| Health | Schema scaffold only | Disabled demo/API pages | — | Inactive; not a real domain yet |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
 
-## Immediate Recovery Sequence
+## Order Of Work
 
-These items come before the existing harden/expand pendings. Do not start new product/domain work until this sequence is complete.
+1. Recovery: restore local confidence, CI, and manual app verification.
+2. Tasks production-readiness: validate the module end to end before real daily use.
+3. Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.
+4. Expansion: only after the previous gates pass, choose and build the next real domain.
 
-1. **Do a fine roadmap cleanup pass**
-   - Remove completed, stale, or duplicate items.
-   - Split roadmap items into clear recovery, hardening, and expansion phases.
-   - Convert vague goals into executable gates with verification commands or acceptance criteria.
-   - Keep only forward-looking work here; move setup, command reference, and architecture reference back to `README.md` / `AGENTS.md`.
+No new product/domain work should start until the recovery and Tasks gates are complete.
 
-2. **Restore the local quality baseline**
-   - Bring up whatever infrastructure is required to run the relevant test suites.
-   - Verify TypeScript for web and server.
-   - Verify ESLint/linting; add or repair missing scripts only if the repo cannot currently run lint in a standard way.
-   - Run targeted tests first, then broaden to the full suite once failures are understood.
+## Phase 0: Recovery
 
-3. **Fix repository CI**
-   - Ensure CI installs the correct pnpm/Node versions and uses the same commands as local development.
-   - Include typecheck, lint, server unit tests, web tests, and database-backed tests with an explicit test Postgres service when needed.
-   - Make CI failures reproducible locally and document the matching local command.
-   - Keep secrets out of logs and workflows.
+### 1. Restore The Local Quality Baseline
 
-4. **Bring up the full app for manual verification**
-   - Start the required local infrastructure, migrations, backend, and frontend.
-   - Provide the local URLs and exact manual smoke path for the owner to verify auth, backend health, frontend routing, Tasks, and Wallet.
-   - Ensure the owner can validate the app without needing hidden context from this thread.
+Goal: make the repo locally verifiable again after the long pause.
 
-5. **Fully validate the Tasks module for real personal use**
-   - Treat Tasks as the first production-like module: it must be 100% functional end to end before daily use starts.
-   - Cover backend CRUD, status transitions, notes, stats, review, history, insights/SSE, agent chat, auth isolation, and timezone-safe date behavior.
-   - Cover frontend flows for creating, editing, completing, carrying over, discarding, reviewing, and browsing task history.
-   - Run server unit/integration/e2e tests, web tests, typechecks, lint, and a manual browser smoke.
-   - Exit criteria: no known P0/P1 Tasks bugs, no cross-user data leaks, and a clear list of any accepted lower-priority gaps.
+Do:
 
-## Current Pendings After Recovery
+- Bring up whatever infrastructure is needed for database-backed tests.
+- Identify the exact local commands for shared build, web/server typecheck, unit tests, integration tests, e2e tests, and lint.
+- Add or repair lint scripts only if no standard lint command currently exists.
+- Run targeted checks before broad suites and document any remaining failures.
 
-Auth V1 (multi-user, sessions, profile/security center, audit logs) is done. The platform is multi-user-safe. Two natural next paths:
+Target verification:
 
-1. **Harden** — failed-login rate limiting, production session-flow validation, observability for auth events
-2. **Expand** — pick the third domain (Health is the most coherent candidate; backend partially scaffolded already)
+- `pnpm --filter @vdp/shared build`
+- `pnpm exec tsc --noEmit -p apps/web/tsconfig.json`
+- `pnpm exec tsc --noEmit -p server/tsconfig.json`
+- `pnpm --filter @vdp/web test`
+- `pnpm --filter @vdp/server test:unit`
+- `pnpm --filter @vdp/server db:test:up`
+- `pnpm --filter @vdp/server test:integration`
+- `pnpm --filter @vdp/server test:e2e`
+- lint command, once one exists
 
-The default sequencing is: recover and validate Tasks first, harden auth second, expand third. New domain work should not start until the auth flow has been validated under real production conditions.
+Done when: the local quality baseline is either green or has a short, explicit failure list with owners/next fixes. Do not claim lint coverage until a real lint command exists and has run.
 
-## Gating: Before Adding a New Domain
+### 2. Fix Repository CI
 
-A domain is only "real" when it matches the Tasks template:
+Goal: make CI match local verification and become trustworthy again.
 
-1. Module registered in `DefaultCoreConfiguration`
-2. Drizzle schema + migration applied
-3. Domain entity (`fromSnapshot` / `toSnapshot`)
-4. Repository interface + Drizzle impl + Fake repo
-5. Use-case services (one class per operation)
-6. HTTP controller using `authContextStorage` for `userId`
-7. Cross-user isolation tests
-8. Frontend feature module following the two-context pattern
-9. Shared zod schemas in `@vdp/shared` for cross-package types
-10. Pages registered in `apps/web/src/lib/navigation.ts`
+Do:
 
-Use `/new-server-module <domain>` and `/new-frontend-module <domain>` to scaffold against this template.
+- Align CI with Node 22 and the pnpm version pinned in `package.json`.
+- Use the same commands proven in the local quality baseline.
+- Include shared build, web/server typecheck, lint when available, web tests, server unit tests, and database-backed suites.
+- Ensure test Postgres is started explicitly for integration/e2e work.
+- Keep secrets out of logs and workflows.
+- Make each CI failure reproducible locally.
 
-## Cross-Domain Behavior
+Done when: CI is green on the main workflow and the README or workflow names make the matching local commands obvious.
 
-The first cross-domain signal is live: Wallet emits `wallet.spending.spike` → Tasks creates a high-priority review task and an insight. Implementation in `CrossDomainEventHandlers`.
+### 3. Bring Up The Full App For Owner Verification
 
-Future cross-domain signals should follow the same pattern: emit a domain event from the source module, subscribe in the target module via `eventBus`, run actions through services (never direct DB writes), and write tests for both the happy path and error resilience (event bus must never block).
+Goal: let the owner verify that frontend and backend actually work locally.
 
-## Production Constraint
+Do:
+
+- Start local infrastructure.
+- Run migrations or a documented local reset/migrate flow.
+- Start backend and frontend.
+- Provide local URLs and a concise manual smoke path.
+- Verify auth, backend health, frontend shell/routing, Tasks, and Wallet at minimum.
+
+Done when: the owner can open the app locally, register/login or use the agreed local auth flow, and perform a small Tasks and Wallet smoke without hidden context from this thread.
+
+## Phase 1: Tasks Production Readiness
+
+Goal: Tasks becomes safe enough for real personal task management.
+
+Backend coverage:
+
+- CRUD: create, list/filter, read, update, delete.
+- Status transitions: complete, carry over, carry over all, discard.
+- Notes and task detail behavior.
+- Stats/review/history behavior.
+- Insights/SSE behavior.
+- Agent chat and tool behavior.
+- Cross-user isolation on all user-owned task data.
+- Timezone-safe date handling.
+
+Frontend coverage:
+
+- Create task quickly.
+- Edit task.
+- Complete task.
+- Carry over and discard task.
+- Add/read notes and task detail.
+- Use today's dashboard.
+- Use history/review views.
+- Verify loading, empty, error, and busy states for normal daily use.
+
+Verification:
+
+- Server unit, integration, and e2e suites relevant to Tasks.
+- Web tests relevant to Tasks.
+- Web and server typechecks.
+- Lint once available.
+- Manual browser smoke across the core daily loop.
+
+Done when: there are no known P0/P1 Tasks bugs, no known cross-user data leaks, and any accepted lower-priority gaps are listed clearly.
+
+## Phase 2: Auth Hardening
+
+Auth V1 is complete: first-party users, email/password login, server-managed sessions, profile/security routes, and audit logs exist. The next work is hardening, not rebuilding.
+
+Do:
+
+- Validate the production session flow end to end through Vercel, Render, and Supabase.
+- Add or verify failed-login rate limiting.
+- Verify cookie/session behavior across login, logout, logout-others, expiration, and password change.
+- Review auth audit logs for useful production diagnostics.
+- Add observability for auth failures and suspicious patterns without leaking secrets.
+
+Done when: production-like auth smoke passes, session failure modes are understood, and no known P0/P1 auth bugs remain.
+
+## Phase 3: Expansion
+
+Do not start this phase until Recovery, Tasks readiness, and Auth hardening are complete.
+
+Most likely next candidate: Health, because it already has a scaffold schema and disabled/demo frontend pages.
+
+Before making any inactive domain real, satisfy the New Domain Gate in `AGENTS.md`. At minimum, the domain needs backend module registration, migration, entities, repositories, services, HTTP controllers using auth context, cross-user isolation tests, shared contracts, frontend feature module, navigation registration, and agent tooling only after the auth-context rules are satisfied.
+
+Done when: the new domain meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
+
+## Data Constraint
 
 Production data can be discarded until the Tasks production-readiness checkpoint is complete. Once Tasks starts being used for real personal work, stop assuming task data is disposable and reassess migration/backfill discipline.
