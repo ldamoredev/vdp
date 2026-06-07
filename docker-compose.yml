@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - vdp_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vdp -d vdp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7

@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     globals: true,
     root: "src",
+    // DB-backed suites share one test database and truncate it between tests.
+    fileParallelism: false,
     coverage: {
       provider: "v8",
       thresholds: {

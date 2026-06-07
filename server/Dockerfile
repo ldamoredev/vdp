@@ -1,5 +1,5 @@
-FROM node:22-slim AS base
-RUN corepack enable && corepack prepare pnpm@10.6.5 --activate
+FROM node:24-slim AS base
+RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
 WORKDIR /app
 
 # ─── Install dependencies ────────────────────────────────
@@ -17,7 +17,7 @@ COPY server server
 RUN pnpm --filter @vdp/shared build && pnpm --filter @vdp/server build
 
 # ─── Production image ────────────────────────────────────
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 WORKDIR /app
 
 RUN addgroup --gid 1001 appgroup && adduser --uid 1001 --ingroup appgroup --disabled-password appuser

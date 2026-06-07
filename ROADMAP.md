@@ -54,7 +54,7 @@ Goal: make CI match local verification and become trustworthy again.
 
 Do:
 
-- Align CI with Node 22 and the pnpm version pinned in `package.json`.
+- Align CI with Node 24 and the pnpm version pinned in `package.json`.
 - Use the same commands proven in the local quality baseline.
 - Include shared build, web/server typecheck, lint when available, web tests, server unit tests, and database-backed suites.
 - Ensure test Postgres is started explicitly for integration/e2e work.

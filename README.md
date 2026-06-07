@@ -85,9 +85,9 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24 (`nvm use` reads `.nvmrc`)
 - pnpm 11.5.2 (`corepack enable && corepack prepare pnpm@11.5.2 --activate`)
-- Docker (for Postgres)
+- Docker (for Postgres 16 + pgvector)
 
 ### Quick Start
 
@@ -256,8 +256,18 @@ pnpm --filter @vdp/server test:integration
 # E2E tests (requires test Postgres on port 5433)
 pnpm --filter @vdp/server test:e2e
 
-# All tests
-pnpm --filter @vdp/server test:run
+# Local CI baseline
+pnpm --filter @vdp/shared build
+pnpm typecheck
+pnpm lint
+pnpm --filter @vdp/web test
+pnpm --filter @vdp/server test:unit
+pnpm --filter @vdp/server db:test:up
+pnpm --filter @vdp/server test:integration
+pnpm --filter @vdp/server test:e2e
+pnpm --filter @vdp/web exec playwright install chromium
+pnpm --filter @vdp/web test:e2e
+pnpm --filter @vdp/server db:test:down
 ```
 
 ### Test Architecture

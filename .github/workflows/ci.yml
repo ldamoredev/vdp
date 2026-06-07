@@ -13,20 +13,21 @@ concurrency:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     env:
       TZ: America/Argentina/Buenos_Aires
+      CI: true
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10.6.5
+          version: 11.5.2
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -34,11 +35,11 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @vdp/shared build
 
-      - name: Type check server
-        run: pnpm --filter @vdp/server exec tsc --noEmit
+      - name: Type check workspace
+        run: pnpm typecheck
 
-      - name: Type check web
-        run: pnpm --filter @vdp/web exec tsc --noEmit
+      - name: Lint workspace
+        run: pnpm lint
 
       - name: Run web unit tests
         run: pnpm --filter @vdp/web test
@@ -46,14 +47,20 @@ jobs:
       - name: Run server unit tests
         run: pnpm --filter @vdp/server test:unit
 
-      - name: Start test database
+      - name: Start PostgreSQL 16 test database
         run: pnpm --filter @vdp/server db:test:up
+
+      - name: Run server integration tests
+        run: pnpm --filter @vdp/server test:integration
+
+      - name: Run server end-to-end tests
+        run: pnpm --filter @vdp/server test:e2e
 
       - name: Install Playwright Chromium
         run: pnpm --filter @vdp/web exec playwright install --with-deps chromium
 
-      - name: Run end-to-end suite
-        run: pnpm test:e2e
+      - name: Run web end-to-end tests
+        run: pnpm --filter @vdp/web test:e2e
 
       - name: Upload Playwright artifacts
         if: failure()

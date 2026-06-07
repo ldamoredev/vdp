@@ -14,7 +14,7 @@ server/            Fastify 5 backend
 packages/shared/   Zod schemas and shared TypeScript types
 ```
 
-The repo uses pnpm workspaces and Turborepo. The current package manager is pinned in `package.json` as `pnpm@11.5.2`; use Node.js 22.
+The repo uses pnpm workspaces and Turborepo. The current package manager is pinned in `package.json` as `pnpm@11.5.2`; use Node.js 24.
 
 ## Current Runtime Status
 
