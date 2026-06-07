@@ -21,9 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.5.2
+      - id: setup-pnpm
+        uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -73,5 +72,5 @@ jobs:
           if-no-files-found: ignore
 
       - name: Stop test database
-        if: always()
+        if: ${{ always() && steps.setup-pnpm.outcome == 'success' }}
         run: pnpm --filter @vdp/server db:test:down
