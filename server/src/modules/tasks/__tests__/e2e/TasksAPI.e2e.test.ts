@@ -4,6 +4,7 @@ import { TestDatabase } from '../integration/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
+import { todayISO } from '../../../common/base/time/dates';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -495,6 +496,175 @@ describe('Tasks API — E2E', () => {
             expect(res.statusCode).toBe(200);
             expect(res.json()).toHaveLength(1);
             expect(res.json()[0].content).toBe('Note 1');
+        });
+    });
+
+    describe('POST /api/v1/tasks/carry-over-all', () => {
+        it('carries over all pending tasks from a date', async () => {
+            const today = todayISO();
+            await createTask({ title: 'Pending 1', scheduledDate: today });
+            await createTask({ title: 'Pending 2', scheduledDate: today });
+            const { body: done } = await createTask({ title: 'Already done', scheduledDate: today });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${done.id}/complete` });
+
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/carry-over-all',
+                payload: { fromDate: today, toDate: '2026-04-02' },
+            });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.carriedOver).toBe(2);
+            expect(body.tasks).toHaveLength(2);
+            for (const task of body.tasks) {
+                expect(task.scheduledDate).toBe('2026-04-02');
+                expect(task.carryOverCount).toBe(1);
+            }
+        });
+
+        it('returns 400 for a malformed fromDate', async () => {
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/carry-over-all',
+                payload: { fromDate: 'not-a-date' },
+            });
+
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+        });
+    });
+
+    // ─── Stats & Review ────────────────────────────
+
+    describe('GET /api/v1/tasks/stats/today', () => {
+        it('returns completion stats for today', async () => {
+            await createTask({ title: 'A' });
+            const { body: b } = await createTask({ title: 'B' });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${b.id}/complete` });
+
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/today' });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.date).toBe(todayISO());
+            expect(body.total).toBe(2);
+            expect(body.completed).toBe(1);
+            expect(body.pending).toBe(1);
+            expect(body.completionRate).toBe(50);
+        });
+    });
+
+    describe('GET /api/v1/tasks/stats/trend', () => {
+        it('returns one entry per day in the requested window, most recent first', async () => {
+            await createTask({ title: 'Today task' });
+
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/trend?days=7' });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body).toHaveLength(7);
+            expect(body[0].date).toBe(todayISO());
+            expect(body[0].total).toBe(1);
+        });
+
+        it('returns 400 for days above the allowed window', async () => {
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/trend?days=500' });
+            expect(res.statusCode).toBe(400);
+        });
+    });
+
+    describe('GET /api/v1/tasks/stats/by-domain', () => {
+        it('groups completed tasks by domain', async () => {
+            const { body: w1 } = await createTask({ title: 'W1', domain: 'work' });
+            const { body: w2 } = await createTask({ title: 'W2', domain: 'work' });
+            for (const task of [w1, w2]) {
+                await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${task.id}/complete` });
+            }
+
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/by-domain' });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            const work = body.find((stat: { domain: string | null }) => stat.domain === 'work');
+            expect(work?.count).toBe(2);
+        });
+    });
+
+    describe('GET /api/v1/tasks/stats/carry-over', () => {
+        it('returns the carry-over rate over the window', async () => {
+            const today = todayISO();
+            await createTask({ title: 'Untouched', scheduledDate: today });
+            const { body: carried } = await createTask({ title: 'Carried', scheduledDate: today });
+            await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${carried.id}/carry-over`,
+                payload: { toDate: today },
+            });
+
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/carry-over?days=7' });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.total).toBe(2);
+            expect(body.carriedOver).toBe(1);
+            expect(body.rate).toBe(50);
+            expect(body.days).toBe(7);
+        });
+    });
+
+    describe('GET /api/v1/tasks/review', () => {
+        it('returns the end-of-day review for today', async () => {
+            await createTask({ title: 'Pending review task' });
+            const { body: done } = await createTask({ title: 'Done review task' });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${done.id}/complete` });
+
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/review' });
+
+            expect(res.statusCode).toBe(200);
+            const body = res.json();
+            expect(body.date).toBe(todayISO());
+            expect(body.total).toBe(2);
+            expect(body.completed).toBe(1);
+            expect(body.pending).toBe(1);
+            expect(body.pendingTasks).toHaveLength(1);
+            expect(body.pendingTasks[0].title).toBe('Pending review task');
+            expect(Array.isArray(body.recommendations)).toBe(true);
+        });
+
+        it('returns 400 for a malformed date query', async () => {
+            const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/review?date=2026-99-99' });
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+        });
+    });
+
+    // ─── Validation & lifecycle errors ─────────────
+
+    describe('Validation guards', () => {
+        it('rejects creating a task with a malformed scheduledDate', async () => {
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks',
+                payload: { title: 'Bad date', scheduledDate: '2026-13-40' },
+            });
+
+            expect(res.statusCode).toBe(400);
+            expect(res.json().error).toBe('VALIDATION_ERROR');
+        });
+
+        it('rejects carrying over a task that is not pending', async () => {
+            const { body: task } = await createTask({ title: 'Done then carry' });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${task.id}/complete` });
+
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/carry-over`,
+                payload: { toDate: '2026-04-02' },
+            });
+
+            expect(res.statusCode).toBe(422);
+            expect(res.json().error).toBe('DOMAIN_ERROR');
         });
     });
 

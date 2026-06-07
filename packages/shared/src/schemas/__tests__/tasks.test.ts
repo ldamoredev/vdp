@@ -414,4 +414,88 @@ describe("domainStatsFiltersSchema", () => {
     expect(result.to).toBe("2026-03-31");
     expect(result.from).toBeUndefined();
   });
+
+  it("rejects a malformed from date", () => {
+    expect(() => domainStatsFiltersSchema.parse({ from: "2026/03/01" })).toThrow();
+  });
+
+  it("rejects a malformed to date", () => {
+    expect(() => domainStatsFiltersSchema.parse({ to: "march" })).toThrow();
+  });
+});
+
+// ─── Date format safety ───────────────────────────────────
+
+describe("local date validation", () => {
+  const badDates = [
+    "tomorrow",
+    "2026-13-01", // month out of range
+    "2026-00-10", // month zero
+    "2026-02-31", // not a real calendar day
+    "2026-04-31", // April has 30 days
+    "2026-1-5", // missing zero padding
+    "2026/03/01", // wrong separator
+    "2026-03-01T00:00:00Z", // timestamp, not a plain date
+    "",
+  ];
+
+  describe("createTaskSchema.scheduledDate", () => {
+    it.each(badDates)("rejects %p", (date) => {
+      expect(() => createTaskSchema.parse({ title: "Task", scheduledDate: date })).toThrow();
+    });
+
+    it("accepts a valid YYYY-MM-DD date", () => {
+      const result = createTaskSchema.parse({ title: "Task", scheduledDate: "2026-02-28" });
+      expect(result.scheduledDate).toBe("2026-02-28");
+    });
+
+    it("accepts a real leap day", () => {
+      const result = createTaskSchema.parse({ title: "Task", scheduledDate: "2028-02-29" });
+      expect(result.scheduledDate).toBe("2028-02-29");
+    });
+
+    it("rejects a non-leap-year Feb 29", () => {
+      expect(() => createTaskSchema.parse({ title: "Task", scheduledDate: "2026-02-29" })).toThrow();
+    });
+  });
+
+  describe("updateTaskSchema.scheduledDate", () => {
+    it("rejects a malformed date", () => {
+      expect(() => updateTaskSchema.parse({ scheduledDate: "2026-13-01" })).toThrow();
+    });
+  });
+
+  describe("taskFiltersSchema.scheduledDate", () => {
+    it("rejects a malformed date", () => {
+      expect(() => taskFiltersSchema.parse({ scheduledDate: "not-a-date" })).toThrow();
+    });
+  });
+
+  describe("carryOverSchema.toDate", () => {
+    it("rejects a malformed date", () => {
+      expect(() => carryOverSchema.parse({ toDate: "2026-02-31" })).toThrow();
+    });
+  });
+
+  describe("carryOverAllSchema", () => {
+    it("rejects a malformed fromDate", () => {
+      expect(() => carryOverAllSchema.parse({ fromDate: "yesterday" })).toThrow();
+    });
+
+    it("rejects an empty fromDate", () => {
+      expect(() => carryOverAllSchema.parse({ fromDate: "" })).toThrow();
+    });
+
+    it("rejects a malformed toDate", () => {
+      expect(() =>
+        carryOverAllSchema.parse({ fromDate: "2026-04-01", toDate: "2026-04-99" }),
+      ).toThrow();
+    });
+  });
+
+  describe("reviewFiltersSchema.date", () => {
+    it("rejects a malformed date", () => {
+      expect(() => reviewFiltersSchema.parse({ date: "2026-99-99" })).toThrow();
+    });
+  });
 });

@@ -1,8 +1,9 @@
 import { z } from "zod";
 import {
-  dateRangeSchema,
   idParamsSchema,
-  optionalDateStringSchema,
+  localDateStringSchema,
+  localDateRangeSchema,
+  optionalLocalDateStringSchema,
   daysWindowSchema,
 } from "./common";
 
@@ -16,7 +17,7 @@ export const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().nullable().optional(),
   priority: taskPriorityEnum.default(2),
-  scheduledDate: optionalDateStringSchema, // YYYY-MM-DD, defaults to today
+  scheduledDate: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
   domain: taskDomainEnum.nullable().optional(),
 });
 
@@ -24,12 +25,12 @@ export const updateTaskSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().nullable().optional(),
   priority: taskPriorityEnum.optional(),
-  scheduledDate: optionalDateStringSchema,
+  scheduledDate: optionalLocalDateStringSchema,
   domain: taskDomainEnum.nullable().optional(),
 }).strict();
 
 export const taskFiltersSchema = z.object({
-  scheduledDate: optionalDateStringSchema,
+  scheduledDate: optionalLocalDateStringSchema,
   status: taskStatusEnum.optional(),
   domain: taskDomainEnum.optional(),
   priority: taskPriorityEnum.optional(),
@@ -49,19 +50,19 @@ export const createTaskNoteSchema = z.object({
 
 // ─── Carry Over ─────────────────────────────────────────
 export const carryOverSchema = z.object({
-  toDate: optionalDateStringSchema, // YYYY-MM-DD, defaults to tomorrow
+  toDate: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to tomorrow
 });
 
 export const carryOverAllSchema = z.object({
-  fromDate: z.string(), // YYYY-MM-DD
-  toDate: optionalDateStringSchema,
+  fromDate: localDateStringSchema, // YYYY-MM-DD
+  toDate: optionalLocalDateStringSchema,
 });
 
 // ─── Stats ──────────────────────────────────────────────
 export const trendFiltersSchema = daysWindowSchema;
 
 export const reviewFiltersSchema = z.object({
-  date: optionalDateStringSchema,
+  date: optionalLocalDateStringSchema,
 });
 
-export const domainStatsFiltersSchema = dateRangeSchema;
+export const domainStatsFiltersSchema = localDateRangeSchema;

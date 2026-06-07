@@ -152,6 +152,27 @@ describe("auth route handlers", () => {
     expect(await response.json()).toEqual({ message: "Session expired" });
   });
 
+  it("logout revokes the server session with a non-empty JSON body", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    } as Response);
+
+    await logoutPOST(createRequest({ sessionToken: "session-token-1" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain("/api/auth/logout");
+    // An empty application/json body is rejected by Fastify before the route
+    // runs, which would leave the backend session un-revoked.
+    expect(init?.body).toBeTruthy();
+    expect(init?.body).not.toBe("");
+    const headers = new Headers(init?.headers);
+    expect(headers.get("x-session-token")).toBe("session-token-1");
+  });
+
   it("logout clears the cookie even if the backend call fails", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockRejectedValue(new Error("backend unavailable"));

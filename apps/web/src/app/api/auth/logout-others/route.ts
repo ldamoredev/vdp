@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Fall back to an empty JSON object: createBackendHeaders sends
+  // Content-Type: application/json and Fastify rejects an empty body.
   const response = await fetch(buildBackendUrl("/api/auth/logout-others"), {
     method: "POST",
     headers: createBackendHeaders(sessionToken),
-    body: await request.text(),
+    body: (await request.text()) || "{}",
     cache: "no-store",
   });
 
