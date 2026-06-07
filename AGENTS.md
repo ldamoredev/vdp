@@ -50,17 +50,6 @@ pnpm exec tsc --noEmit -p server/tsconfig.json
 
 Run targeted checks before broad checks. Unit tests should use fake repositories and should not require Docker unless the code under test genuinely needs the database.
 
-## Codex Skills
-
-Project-specific Codex skills live under `.agents/skills/`.
-
-- Use `$vdp-server-module` for backend domain modules, backend services, repositories, Fastify routes, and server-side agent tools.
-- Use `$vdp-frontend-module` for frontend feature modules, context/provider work, React Query hooks, selectors, and domain UI.
-- Use `$drizzle-migration` for schema, table, index, constraint, or migration changes.
-- Use `$agent-tool-author` for files under `server/src/modules/*/infrastructure/agent/tools/` or agent chat controllers.
-
-Command and workflow recipes live under `.codex/commands/` and `.codex/workflows/`.
-
 ## Backend Architecture
 
 Each real backend domain follows this module shape:
