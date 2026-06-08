@@ -4,6 +4,7 @@ import { TestDatabase } from '../integration/test-database';
 import { TestApp } from './TestApp';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { ALL_TEST_USERS, PRIMARY_TEST_USER, SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
+import { ScriptedAgentProvider, withScriptedProvider } from './ScriptedAgentProvider';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -204,6 +205,55 @@ describe('Tasks API — Cross-user isolation', () => {
         });
         expect(ownerView.json().task.scheduledDate).toBe(fromDate);
         expect(ownerView.json().task.carryOverCount).toBe(0);
+    });
+
+    it('derives the agent tool user from the request, not another user', async () => {
+        const agent = testApp.core.agentRegistry.get('tasks');
+        if (!agent) throw new Error('Tasks agent not registered');
+
+        const provider = new ScriptedAgentProvider([
+            {
+                text: '',
+                toolCalls: [
+                    { id: 'call-1', name: 'create_task', input: { title: 'Tarea privada del agente' } },
+                ],
+                stopReason: 'tool_use',
+            },
+            { text: 'Hecho.', toolCalls: [], stopReason: 'end_turn' },
+        ]);
+        const swap = withScriptedProvider(agent, provider);
+
+        try {
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/agent/chat',
+                headers: asUser(SECONDARY_TEST_USER.id),
+                payload: { message: 'Crea una tarea' },
+            });
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toContain('"event":"tool_result","tool":"create_task"');
+
+            // The task belongs to the requesting (secondary) user only.
+            const secondaryList = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks',
+                headers: asUser(SECONDARY_TEST_USER.id),
+            });
+            expect(secondaryList.json().tasks.map((task: { title: string }) => task.title)).toContain(
+                'Tarea privada del agente',
+            );
+
+            const primaryList = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks',
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            expect(primaryList.json().tasks.map((task: { title: string }) => task.title)).not.toContain(
+                'Tarea privada del agente',
+            );
+        } finally {
+            swap.restore();
+        }
     });
 
     it('does not expose another users agent conversations or messages', async () => {

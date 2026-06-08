@@ -5,6 +5,7 @@ import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 import { todayISO } from '../../../common/base/time/dates';
+import { ScriptedAgentProvider, withScriptedProvider } from './ScriptedAgentProvider';
 
 const testDb = new TestDatabase();
 const testApp = new TestApp();
@@ -274,6 +275,47 @@ describe('Tasks API — E2E', () => {
             expect(res.statusCode).toBe(400);
             expect(res.json().error).toBe('VALIDATION_ERROR');
             expect(res.json().message).toBe('Invalid request body');
+        });
+
+        it('runs the real agent loop and executes a tool scoped to the auth-context user', async () => {
+            const agent = testApp.core.agentRegistry.get('tasks');
+            if (!agent) throw new Error('Tasks agent not registered');
+
+            // First turn asks to create a task; second turn closes the conversation.
+            const provider = new ScriptedAgentProvider([
+                {
+                    text: '',
+                    toolCalls: [
+                        { id: 'call-1', name: 'create_task', input: { title: 'Tarea creada por el agente', priority: 3 } },
+                    ],
+                    stopReason: 'tool_use',
+                },
+                { text: 'Listo, cree la tarea.', toolCalls: [], stopReason: 'end_turn' },
+            ]);
+            const swap = withScriptedProvider(agent, provider);
+
+            try {
+                const res = await testApp.app.inject({
+                    method: 'POST',
+                    url: '/api/v1/tasks/agent/chat',
+                    payload: { message: 'Crea una tarea para hoy' },
+                });
+
+                expect(res.statusCode).toBe(200);
+                expect(res.body).toContain('"event":"tool_use","tool":"create_task"');
+                expect(res.body).toContain('"event":"tool_result","tool":"create_task"');
+                expect(res.body).toContain('"event":"done"');
+                expect(res.body).toContain('data: [DONE]');
+                // One generate to emit the tool call, one to finish after the result.
+                expect(provider.calls).toHaveLength(2);
+
+                // The tool actually persisted the task for the requesting user.
+                const list = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks' });
+                const titles = list.json().tasks.map((task: { title: string }) => task.title);
+                expect(titles).toContain('Tarea creada por el agente');
+            } finally {
+                swap.restore();
+            }
         });
 
         it('streams text, tool events, and done from the tasks agent', async () => {
