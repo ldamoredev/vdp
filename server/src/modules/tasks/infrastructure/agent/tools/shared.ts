@@ -1,3 +1,5 @@
+import { localDateStringSchema } from '@vdp/shared';
+
 import { AgentTool } from '../../../../common/base/agents/BaseAgent';
 
 export const TASK_STATUSES = ['pending', 'done', 'discarded'] as const;
@@ -36,4 +38,28 @@ export function jsonTool(definition: JsonToolDefinition): AgentTool {
         inputSchema: definition.inputSchema,
         execute: async (input) => JSON.stringify(await definition.execute(input)),
     };
+}
+
+/**
+ * Validate optional YYYY-MM-DD date fields coming from LLM tool input.
+ *
+ * Agent tools call services directly and skip the HTTP Zod layer, so a date the
+ * model invents (e.g. "tomorrow", "2026-13-40") would otherwise reach the
+ * repository and silently corrupt day-based grouping/carry-over. Returns an
+ * error object to surface back to the model, or null when every field is valid.
+ */
+export function invalidDateError(
+    input: ToolInput,
+    fields: readonly string[],
+): { error: string } | null {
+    for (const field of fields) {
+        const value = input[field];
+        if (value === undefined || value === null) continue;
+        if (!localDateStringSchema.safeParse(value).success) {
+            return {
+                error: `Invalid ${field}: expected a YYYY-MM-DD date, got ${JSON.stringify(value)}`,
+            };
+        }
+    }
+    return null;
 }

@@ -3,7 +3,7 @@ import { GetCarryOverRate } from '../../../services/GetCarryOverRate';
 import { GetCompletionByDomain } from '../../../services/GetCompletionByDomain';
 import { GetDayStats } from '../../../services/GetDayStats';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
-import { EMPTY_OBJECT_SCHEMA, jsonTool } from './shared';
+import { EMPTY_OBJECT_SCHEMA, invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskReviewTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
@@ -21,6 +21,9 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['date']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 return services.get(GetEndOfDayReview).execute(userId, input.date);
             },

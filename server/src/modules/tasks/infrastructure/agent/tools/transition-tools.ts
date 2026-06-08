@@ -3,7 +3,7 @@ import { CarryOverAllPending } from '../../../services/CarryOverAllPending';
 import { CarryOverTask } from '../../../services/CarryOverTask';
 import { CompleteTask } from '../../../services/CompleteTask';
 import { DiscardTask } from '../../../services/DiscardTask';
-import { TASK_ID_INPUT_SCHEMA, jsonTool } from './shared';
+import { TASK_ID_INPUT_SCHEMA, invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskTransitionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
@@ -30,6 +30,9 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 required: ['taskId'],
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['toDate']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 return (await services.get(CarryOverTask).execute(userId, input.taskId, input.toDate)) || { error: 'Task not found' };
             },
@@ -56,6 +59,9 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 required: ['fromDate'],
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['fromDate', 'toDate']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 const results = await services.get(CarryOverAllPending).execute(userId, input.fromDate, input.toDate);
                 return { carriedOver: results.length, tasks: results };

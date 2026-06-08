@@ -13,6 +13,7 @@ import {
     TASK_PRIORITIES,
     TASK_STATUSES,
     ToolInput,
+    invalidDateError,
     jsonTool,
 } from './shared';
 import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
@@ -49,7 +50,10 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 required: ['title'],
             },
             execute: async (input) => {
-                return createTaskWithSimilarityCheck(services, authContextStorage, input);
+                return (
+                    invalidDateError(input, ['scheduledDate']) ??
+                    (await createTaskWithSimilarityCheck(services, authContextStorage, input))
+                );
             },
         }),
         jsonTool({
@@ -81,6 +85,9 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 required: [],
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['scheduledDate', 'completedDate']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 const completedDate =
                     input.completedDate || (input.status === 'done' && !input.scheduledDate ? todayISO() : undefined);
@@ -125,6 +132,9 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 required: ['taskId'],
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['scheduledDate']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 const { taskId, ...data } = input;
                 return (await services.get(UpdateTask).execute(userId, taskId, data)) || { error: 'Task not found' };

@@ -318,6 +318,41 @@ describe('Tasks API — E2E', () => {
             }
         });
 
+        it('rejects an invalid date the agent passes to a tool without persisting anything', async () => {
+            const agent = testApp.core.agentRegistry.get('tasks');
+            if (!agent) throw new Error('Tasks agent not registered');
+
+            const provider = new ScriptedAgentProvider([
+                {
+                    text: '',
+                    toolCalls: [
+                        { id: 'call-1', name: 'create_task', input: { title: 'Tarea con fecha mala', scheduledDate: '2026-13-40' } },
+                    ],
+                    stopReason: 'tool_use',
+                },
+                { text: 'No pude crearla.', toolCalls: [], stopReason: 'end_turn' },
+            ]);
+            const swap = withScriptedProvider(agent, provider);
+
+            try {
+                const res = await testApp.app.inject({
+                    method: 'POST',
+                    url: '/api/v1/tasks/agent/chat',
+                    payload: { message: 'Crea una tarea para el 40 de diciembre' },
+                });
+
+                expect(res.statusCode).toBe(200);
+                expect(res.body).toContain('"event":"tool_result","tool":"create_task"');
+                expect(res.body).toContain('scheduledDate');
+
+                // Nothing was persisted from the malformed date.
+                const list = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks' });
+                expect(list.json().tasks).toHaveLength(0);
+            } finally {
+                swap.restore();
+            }
+        });
+
         it('streams text, tool events, and done from the tasks agent', async () => {
             const agent = testApp.core.agentRegistry.get('tasks');
             if (!agent) throw new Error('Tasks agent not registered');

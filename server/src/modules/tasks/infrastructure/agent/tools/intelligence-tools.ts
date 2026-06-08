@@ -4,7 +4,7 @@ import { GetPlanningContext } from '../../../services/GetPlanningContext';
 import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { GetWalletSnapshot } from '../../../../wallet/services/GetWalletSnapshot';
-import { jsonTool } from './shared';
+import { invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
 
 export function createTaskIntelligenceTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
@@ -92,6 +92,9 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 },
             },
             execute: async (input) => {
+                const dateError = invalidDateError(input, ['date']);
+                if (dateError) return dateError;
+
                 const userId = authContextStorage.getAuthContext().userId!;
                 const review = await services.get(GetEndOfDayReview).execute(userId, input.date);
                 return {
