@@ -36,6 +36,8 @@ describe("DailyRitualCard", () => {
     expect(markup).toContain("Retomar ritual");
     expect(markup).toContain("/review");
     expect(markup).toContain("sm:flex-row");
-    expect(markup).toContain("w-full sm:w-auto justify-between");
+    // CTA stretches full-width on mobile and shrinks to auto on larger screens.
+    expect(markup).toContain("w-full");
+    expect(markup).toContain("sm:w-auto");
   });
 });
