@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
-import { TestDatabase } from '../integration/test-database';
+import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
 
 const testDb = new TestDatabase();

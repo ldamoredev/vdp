@@ -23,7 +23,6 @@ import {
 import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { assertFound } from '../../../common/http/errors';
 import { RouteContextHandler } from '../../../common/http/routes';
-import { parseBody, parseParams } from '../../../common/http/validation';
 
 // Services
 import { GetTasks } from '../../services/GetTasks';
@@ -45,6 +44,7 @@ type TaskFilters = z.input<typeof taskFiltersSchema>;
 type TaskIdParams = z.infer<typeof taskIdParamsSchema>;
 type CreateTaskBody = z.input<typeof createTaskSchema>;
 type UpdateTaskBody = z.infer<typeof updateTaskSchema>;
+type CarryOverBody = z.infer<typeof carryOverSchema>;
 type CarryOverAllBody = z.infer<typeof carryOverAllSchema>;
 type CreateTaskNoteBody = z.input<typeof createTaskNoteSchema>;
 type ReviewFilters = z.infer<typeof reviewFiltersSchema>;
@@ -78,7 +78,8 @@ export class TasksController extends HttpController {
     private registerStatusRoutes(routes: RouteRegister): void {
         routes
             .post('/:id/complete', { params: taskIdParamsSchema }, this.completeTask)
-            .post('/:id/carry-over', this.carryOverTask)
+            // body defaults to {} because carry-over accepts an empty POST
+            .post('/:id/carry-over', { params: taskIdParamsSchema, body: carryOverSchema.default({}) }, this.carryOverTask)
             .post('/:id/discard', { params: taskIdParamsSchema }, this.discardTask)
             .post('/carry-over-all', { body: carryOverAllSchema }, this.carryOverAllPending);
     }
@@ -172,12 +173,15 @@ export class TasksController extends HttpController {
         return reply.send(completed);
     };
 
-    private readonly carryOverTask = async (request: FastifyRequest, reply: FastifyReply) => {
+    private readonly carryOverTask: RouteContextHandler<TaskIdParams, undefined, CarryOverBody> = async ({
+        request,
+        params,
+        body,
+        reply,
+    }) => {
         const userId = request.auth.userId!;
-        const params = parseParams(taskIdParamsSchema, request.params);
-        const body = parseBody(carryOverSchema, request.body ?? {});
         const carried = assertFound(
-            await this.services.get(CarryOverTask).execute(userId, params.id, body.toDate),
+            await this.services.get(CarryOverTask).execute(userId, params!.id, body!.toDate),
             'Task not found',
         );
         return reply.send(carried);

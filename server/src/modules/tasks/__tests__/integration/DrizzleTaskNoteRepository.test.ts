@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DrizzleTaskRepository } from '../../infrastructure/db/DrizzleTaskRepository';
 import { DrizzleTaskNoteRepository } from '../../infrastructure/db/DrizzleTaskNoteRepository';
-import { testDb } from './test-database';
+import { testDb } from '../../../../test/test-database';
 
 const taskRepo = new DrizzleTaskRepository(testDb as any);
 const noteRepo = new DrizzleTaskNoteRepository(testDb as any);

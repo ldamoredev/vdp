@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import * as walletSchema from '../../../wallet/schema';
+import * as walletSchema from '../../../wallet/infrastructure/db/schema';
 import * as agentSchema from '../../infrastructure/agents/schema';
-import * as authSchema from '../../../auth/infrastructure/schema';
+import * as authSchema from '../../../auth/infrastructure/db/schema';
 import * as tasksSchema from '../../../tasks/infrastructure/db/schema';
 import * as embeddingsSchema from '../../../tasks/infrastructure/db/embeddings-schema';
 

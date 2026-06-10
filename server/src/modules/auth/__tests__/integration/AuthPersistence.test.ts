@@ -13,9 +13,9 @@ import { UpdateProfile } from '../../services/UpdateProfile';
 import { ChangePassword } from '../../services/ChangePassword';
 import { GetSecurityOverview } from '../../services/GetSecurityOverview';
 import { LogoutOtherSessions } from '../../services/LogoutOtherSessions';
-import { auditLogs, sessions } from '../../infrastructure/schema';
+import { auditLogs, sessions } from '../../infrastructure/db/schema';
 import { ConflictHttpError } from '../../../common/http/errors';
-import { testDb } from '../../../tasks/__tests__/integration/test-database';
+import { testDb } from '../../../../test/test-database';
 
 const userRepo = new DrizzleUserRepository(testDb as never);
 const sessionRepo = new DrizzleSessionRepository(testDb as never);

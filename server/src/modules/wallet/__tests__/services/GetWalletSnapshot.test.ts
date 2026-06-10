@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { localDateISO } from '../../../common/base/time/dates';
 import type { Category } from '../../domain/Category';
 import type { Transaction } from '../../domain/Transaction';
-import { FakeCategoryRepository } from '../../infrastructure/fake/FakeCategoryRepository';
-import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
+import { FakeCategoryRepository } from '../fakes/FakeCategoryRepository';
+import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
 import type { WalletSnapshot } from '../../services/GetWalletSnapshot';
 import { GetWalletSnapshot } from '../../services/GetWalletSnapshot';
 

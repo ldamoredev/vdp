@@ -8,7 +8,7 @@ import {
   date,
   index,
 } from "drizzle-orm/pg-core";
-import { users } from '../../../auth/infrastructure/schema';
+import { users } from '../../../auth/infrastructure/db/schema';
 
 export const tasksSchema = pgSchema("tasks");
 

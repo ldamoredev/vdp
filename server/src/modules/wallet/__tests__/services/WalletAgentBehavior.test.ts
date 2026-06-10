@@ -21,12 +21,12 @@ import { ExchangeRateRepository } from '../../domain/ExchangeRateRepository';
 import { InvestmentRepository } from '../../domain/InvestmentRepository';
 import { SavingsGoalRepository } from '../../domain/SavingsGoalRepository';
 import { TransactionRepository } from '../../domain/TransactionRepository';
-import { FakeAccountRepository } from '../../infrastructure/fake/FakeAccountRepository';
-import { FakeCategoryRepository } from '../../infrastructure/fake/FakeCategoryRepository';
-import { FakeExchangeRateRepository } from '../../infrastructure/fake/FakeExchangeRateRepository';
-import { FakeInvestmentRepository } from '../../infrastructure/fake/FakeInvestmentRepository';
-import { FakeSavingsGoalRepository } from '../../infrastructure/fake/FakeSavingsGoalRepository';
-import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
+import { FakeAccountRepository } from '../fakes/FakeAccountRepository';
+import { FakeCategoryRepository } from '../fakes/FakeCategoryRepository';
+import { FakeExchangeRateRepository } from '../fakes/FakeExchangeRateRepository';
+import { FakeInvestmentRepository } from '../fakes/FakeInvestmentRepository';
+import { FakeSavingsGoalRepository } from '../fakes/FakeSavingsGoalRepository';
+import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
 
 class ScriptedAgentProvider implements AgentProvider {
     readonly name = 'fake';

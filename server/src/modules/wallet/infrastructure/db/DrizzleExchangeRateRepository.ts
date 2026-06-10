@@ -1,5 +1,5 @@
 import { Database } from '../../../common/base/db/Database';
-import { exchangeRates } from '../../schema';
+import { exchangeRates } from './schema';
 import { CreateExchangeRateData, ExchangeRate } from '../../domain/ExchangeRate';
 import { ExchangeRateRepository } from '../../domain/ExchangeRateRepository';
 

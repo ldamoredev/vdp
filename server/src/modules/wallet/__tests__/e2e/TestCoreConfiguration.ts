@@ -16,7 +16,7 @@ import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/obse
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
 import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { WalletModule } from '../../WalletModule';
-import { TEST_DATABASE_CONNECTION_STRING } from '../../../tasks/__tests__/integration/test-database';
+import { TEST_DATABASE_CONNECTION_STRING } from '../../../../test/test-database';
 
 export class TestCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;

@@ -1,6 +1,6 @@
 import { Database } from '../../../common/base/db/Database';
 import { and, eq } from 'drizzle-orm';
-import { investments } from '../../schema';
+import { investments } from './schema';
 import { CreateInvestmentData, Investment, UpdateInvestmentData } from '../../domain/Investment';
 import { InvestmentRepository } from '../../domain/InvestmentRepository';
 

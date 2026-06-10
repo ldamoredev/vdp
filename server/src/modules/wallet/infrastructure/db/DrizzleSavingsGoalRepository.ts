@@ -6,7 +6,7 @@ import {
 } from '../../domain/SavingsGoal';
 import { SavingsGoalRepository } from '../../domain/SavingsGoalRepository';
 import { Database } from '../../../common/base/db/Database';
-import { savingsContributions, savingsGoals } from '../../schema';
+import { savingsContributions, savingsGoals } from './schema';
 import { and, eq } from 'drizzle-orm';
 
 export class DrizzleSavingsGoalRepository extends SavingsGoalRepository {

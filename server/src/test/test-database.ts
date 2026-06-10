@@ -1,11 +1,11 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as authSchema from '../../../auth/infrastructure/schema';
-import * as agentSchema from '../../../common/infrastructure/agents/schema';
-import * as walletSchema from '../../../wallet/schema';
-import * as tasksSchema from '../../infrastructure/db/schema';
-import * as embeddingsSchema from '../../infrastructure/db/embeddings-schema';
-import { DEFAULT_TEST_USERS, TestUser } from '../../../../test/testUsers';
+import * as authSchema from '../modules/auth/infrastructure/db/schema';
+import * as agentSchema from '../modules/common/infrastructure/agents/schema';
+import * as walletSchema from '../modules/wallet/infrastructure/db/schema';
+import * as tasksSchema from '../modules/tasks/infrastructure/db/schema';
+import * as embeddingsSchema from '../modules/tasks/infrastructure/db/embeddings-schema';
+import { DEFAULT_TEST_USERS, TestUser } from './testUsers';
 
 const SETUP_SQL = `
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

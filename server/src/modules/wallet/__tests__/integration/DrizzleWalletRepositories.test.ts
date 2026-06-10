@@ -6,7 +6,7 @@ import { DrizzleSavingsGoalRepository } from '../../infrastructure/db/DrizzleSav
 import { DrizzleInvestmentRepository } from '../../infrastructure/db/DrizzleInvestmentRepository';
 import { DrizzleExchangeRateRepository } from '../../infrastructure/db/DrizzleExchangeRateRepository';
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
-import { testDb } from './test-database';
+import { testDb } from '../../../../test/test-database';
 
 const accountRepo = new DrizzleAccountRepository(testDb as never);
 const categoryRepo = new DrizzleCategoryRepository(testDb as never);

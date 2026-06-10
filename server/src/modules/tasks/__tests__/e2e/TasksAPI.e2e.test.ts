@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { TestApp } from './TestApp';
-import { TestDatabase } from '../integration/test-database';
+import { TestDatabase } from '../../../../test/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';

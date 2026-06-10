@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { TestDatabase } from '../../../tasks/__tests__/integration/test-database';
+import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
 
 const testDb = new TestDatabase();

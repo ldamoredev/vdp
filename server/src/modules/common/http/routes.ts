@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { ZodType } from 'zod';
+import { ZodType, ZodTypeDef } from 'zod';
 
 import { parseBody, parseParams, parseQuery } from './validation';
 
@@ -20,10 +20,12 @@ export function defineRoute<TParams = undefined, TQuery = undefined, TBody = und
 
 type Maybe<T> = T | undefined;
 
+// Input is `unknown` so schemas whose input differs from their output
+// (e.g. `.default()`, coercions) are accepted; parsing takes unknown anyway.
 export type RouteSchemas<TParams, TQuery, TBody> = {
-    params?: ZodType<TParams>;
-    query?: ZodType<TQuery>;
-    body?: ZodType<TBody>;
+    params?: ZodType<TParams, ZodTypeDef, unknown>;
+    query?: ZodType<TQuery, ZodTypeDef, unknown>;
+    body?: ZodType<TBody, ZodTypeDef, unknown>;
 };
 
 export type RouteContextHandler<TParams, TQuery, TBody> = (

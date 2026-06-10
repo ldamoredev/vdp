@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FakeAccountRepository } from '../../infrastructure/fake/FakeAccountRepository';
-import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
-import { FakeCategoryRepository } from '../../infrastructure/fake/FakeCategoryRepository';
-import { FakeSavingsGoalRepository } from '../../infrastructure/fake/FakeSavingsGoalRepository';
-import { FakeInvestmentRepository } from '../../infrastructure/fake/FakeInvestmentRepository';
-import { FakeExchangeRateRepository } from '../../infrastructure/fake/FakeExchangeRateRepository';
+import { FakeAccountRepository } from '../fakes/FakeAccountRepository';
+import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
+import { FakeCategoryRepository } from '../fakes/FakeCategoryRepository';
+import { FakeSavingsGoalRepository } from '../fakes/FakeSavingsGoalRepository';
+import { FakeInvestmentRepository } from '../fakes/FakeInvestmentRepository';
+import { FakeExchangeRateRepository } from '../fakes/FakeExchangeRateRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { GetAccounts } from '../../services/GetAccounts';
 import { CreateAccount } from '../../services/CreateAccount';

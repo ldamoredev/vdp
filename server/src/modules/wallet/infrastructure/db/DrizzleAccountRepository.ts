@@ -1,7 +1,7 @@
 import { Account, CreateAccountData, UpdateAccountData } from '../../domain/Account';
 import { AccountRepository } from '../../domain/AccountRepository';
 import { Database } from '../../../common/base/db/Database';
-import { accounts } from '../../schema';
+import { accounts } from './schema';
 import { and, eq } from 'drizzle-orm';
 
 export class DrizzleAccountRepository extends AccountRepository {

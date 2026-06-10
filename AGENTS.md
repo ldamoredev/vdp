@@ -80,6 +80,11 @@ pnpm --filter @vdp/shared build
 
 Run targeted checks before broad checks. Unit tests should use fake repositories and should not require Docker unless the code under test genuinely needs the database.
 
+Backend test conventions:
+
+- Fake repositories live in `{domain}/__tests__/fakes/`, never inside `infrastructure/`.
+- Shared DB test infrastructure (`TestDatabase`, the vitest `global-setup`, seeded test users) lives in `server/src/test/`. Module test suites import it from there; do not create per-module copies or re-export shims.
+
 ## Backend Architecture
 
 `server/src/modules/Core.ts` owns shared infrastructure:
@@ -127,6 +132,8 @@ The active migration creates these PostgreSQL schemas:
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates.
 
 `server/src/modules/health/schema.ts` is scaffold code only and is not part of the active migration.
+
+Drizzle schema files live at `{domain}/infrastructure/db/schema.ts` (the core agent tables live at `common/infrastructure/agents/schema.ts`). Do not place schema files at the module root.
 
 Migrations are managed by Drizzle Kit in `server/src/migrations/`. Do not edit committed migrations; generate a new migration unless the user explicitly asks for a disposable local reset. Production data can be discarded only until Tasks starts being used for real personal work. After that, reassess migration and backfill discipline.
 

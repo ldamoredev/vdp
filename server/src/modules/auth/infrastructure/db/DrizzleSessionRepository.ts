@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 
 import { Database } from '../../../common/base/db/Database';
 import { CreateSessionData, SessionRecord, SessionRepository } from '../../domain/SessionRepository';
-import { sessions } from '../schema';
+import { sessions } from './schema';
 
 export class DrizzleSessionRepository extends SessionRepository {
     constructor(private readonly db: Database) {

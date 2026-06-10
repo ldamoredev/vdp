@@ -1,7 +1,7 @@
 import { Category, CreateCategoryData, UpdateCategoryData } from '../../domain/Category';
 import { CategoryRepository } from '../../domain/CategoryRepository';
 import { Database } from '../../../common/base/db/Database';
-import { categories } from '../../schema';
+import { categories } from './schema';
 import { and, eq } from 'drizzle-orm';
 
 export class DrizzleCategoryRepository extends CategoryRepository {

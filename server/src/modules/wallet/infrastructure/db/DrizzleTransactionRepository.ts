@@ -7,7 +7,7 @@ import {
 } from '../../domain/Transaction';
 import { TransactionRepository } from '../../domain/TransactionRepository';
 import { Database } from '../../../common/base/db/Database';
-import { transactions } from '../../schema';
+import { transactions } from './schema';
 import { and, desc, eq, gte, ilike, lte, sql, SQL } from 'drizzle-orm';
 
 export class DrizzleTransactionRepository extends TransactionRepository {

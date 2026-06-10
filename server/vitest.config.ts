@@ -26,7 +26,7 @@ export default defineConfig({
         test: {
           name: "integration",
           include: ["**/__tests__/integration/**/*.test.ts"],
-          globalSetup: ["modules/tasks/__tests__/integration/setup.ts"],
+          globalSetup: ["test/global-setup.ts"],
           pool: "forks",
           poolOptions: { forks: { singleFork: true } },
         },
@@ -35,7 +35,7 @@ export default defineConfig({
         test: {
           name: "e2e",
           include: ["**/__tests__/e2e/**/*.test.ts"],
-          globalSetup: ["modules/tasks/__tests__/integration/setup.ts"],
+          globalSetup: ["test/global-setup.ts"],
           pool: "forks",
           poolOptions: { forks: { singleFork: true } },
         },

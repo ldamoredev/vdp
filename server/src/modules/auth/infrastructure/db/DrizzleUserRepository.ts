@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 
 import { Database } from '../../../common/base/db/Database';
 import { CreateUserData, UserRecord, UserRepository } from '../../domain/UserRepository';
-import { users } from '../schema';
+import { users } from './schema';
 
 export class DrizzleUserRepository extends UserRepository {
     constructor(private readonly db: Database) {

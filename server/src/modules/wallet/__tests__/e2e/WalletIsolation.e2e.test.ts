@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { TestDatabase } from '../../../tasks/__tests__/integration/test-database';
+import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
 import { ALL_TEST_USERS, PRIMARY_TEST_USER, SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { localDateISO } from '../../../common/base/time/dates';
-import { FakeCategoryRepository } from '../../infrastructure/fake/FakeCategoryRepository';
-import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
+import { FakeCategoryRepository } from '../fakes/FakeCategoryRepository';
+import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
 import type { CategoryTrend } from '../../services/GetCategoryTrends';
 import { GetCategoryTrends } from '../../services/GetCategoryTrends';
 

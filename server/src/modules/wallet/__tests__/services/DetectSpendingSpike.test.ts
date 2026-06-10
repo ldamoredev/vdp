@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { FakeTransactionRepository } from '../../infrastructure/fake/FakeTransactionRepository';
+import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { DetectSpendingSpike } from '../../services/DetectSpendingSpike';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
