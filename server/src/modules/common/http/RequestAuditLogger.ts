@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 
 import { AuditLogRepository } from '../../auth/domain/AuditLogRepository';
-import { AuthContextStorage } from '../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from './AuthContextStorage';
 
 export class RequestAuditLogger {
     constructor(private readonly auditLogs: AuditLogRepository, private readonly authContextStorage: AuthContextStorage) {}

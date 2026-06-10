@@ -2,7 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { GetSpendingStats } from '../../../services/GetSpendingStats';
 import { jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createStatsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

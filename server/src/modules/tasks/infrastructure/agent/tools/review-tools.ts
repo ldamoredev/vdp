@@ -2,7 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetDayStats } from '../../../services/GetDayStats';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { EMPTY_OBJECT_SCHEMA, invalidDateError, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createTaskReviewTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

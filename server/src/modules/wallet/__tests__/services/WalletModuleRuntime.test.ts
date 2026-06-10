@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { AgentRepository, AgentConversationRecord, AgentMessageRecord } from '../../../common/base/agents/AgentRepository';
 import { AgentRegistry } from '../../../common/base/agents/AgentRegistry';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';

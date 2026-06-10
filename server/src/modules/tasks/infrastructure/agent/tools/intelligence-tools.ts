@@ -5,7 +5,7 @@ import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { GetWalletSnapshot } from '../../../../wallet/services/GetWalletSnapshot';
 import { invalidDateError, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createTaskIntelligenceTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

@@ -3,7 +3,7 @@ import { GetInvestments } from '../../../services/GetInvestments';
 import { CreateInvestment } from '../../../services/CreateInvestment';
 import { UpdateInvestment } from '../../../services/UpdateInvestment';
 import { CURRENCIES, INVESTMENT_TYPES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createInvestmentTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

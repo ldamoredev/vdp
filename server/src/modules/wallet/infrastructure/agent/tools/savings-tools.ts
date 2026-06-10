@@ -4,7 +4,7 @@ import { CreateSavingsGoal } from '../../../services/CreateSavingsGoal';
 import { UpdateSavingsGoal } from '../../../services/UpdateSavingsGoal';
 import { ContributeSavings } from '../../../services/ContributeSavings';
 import { CURRENCIES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createSavingsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

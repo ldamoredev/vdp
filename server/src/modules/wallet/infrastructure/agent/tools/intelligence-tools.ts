@@ -1,4 +1,4 @@
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
 import { GetTasksSnapshot } from '../../../../tasks/services/GetTasksSnapshot';
 import { GetCategoryTrends } from '../../../services/GetCategoryTrends';

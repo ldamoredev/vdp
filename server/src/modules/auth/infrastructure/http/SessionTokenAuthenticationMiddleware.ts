@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { AuthContextStorage } from './AuthContextStorage';
-import { AuthContext } from './AuthContext';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
+import { AuthContext } from '../../../common/http/AuthContext';
 import { HttpMiddleWare } from '../../../common/http/HttpMiddleWare';
 import { SessionService } from '../../services/SessionService';
 import { UserRepository } from '../../domain/UserRepository';

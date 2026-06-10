@@ -14,7 +14,7 @@ import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbed
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { WalletModule } from '../../WalletModule';
 import { TEST_DATABASE_CONNECTION_STRING } from '../../../../test/test-database';
 

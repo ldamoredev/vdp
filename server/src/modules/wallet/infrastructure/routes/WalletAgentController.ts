@@ -7,7 +7,7 @@ import { HttpController, RouteRegister } from '../../../common/http/HttpControll
 import { agentChatBodySchema, createAgentChatHandler } from '../../../common/http/agent-chat';
 import { assertFound } from '../../../common/http/errors';
 import { RouteContextHandler } from '../../../common/http/routes';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 type IdParams = { id: string };
 

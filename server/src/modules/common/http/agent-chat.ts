@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { z, ZodType } from 'zod';
 import type { BaseAgent } from '../base/agents/BaseAgent';
 import { getAgentErrorCode, type AgentErrorCode } from '../base/agents/AgentError';
-import { AuthContextStorage } from '../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from './AuthContextStorage';
 import { ServiceUnavailableHttpError } from './errors';
 import { parseBody } from './validation';
 

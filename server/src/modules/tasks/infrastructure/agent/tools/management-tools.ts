@@ -16,7 +16,7 @@ import {
     invalidDateError,
     jsonTool,
 } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createTaskManagementTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

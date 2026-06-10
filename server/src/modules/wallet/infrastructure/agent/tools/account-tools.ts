@@ -2,7 +2,7 @@ import { ServiceProvider } from '../../../../common/base/services/ServiceProvide
 import { GetAccounts } from '../../../services/GetAccounts';
 import { CreateAccount } from '../../../services/CreateAccount';
 import { ACCOUNT_TYPES, CURRENCIES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createAccountTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

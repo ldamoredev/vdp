@@ -18,7 +18,7 @@ import { TaskModule } from './tasks/TaskModule';
 import { WalletModule } from './wallet/WalletModule';
 import { Logger } from './common/base/observability/logging/Logger';
 import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
-import { AuthContextStorage } from './auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from './common/http/AuthContextStorage';
 import { AuthModule } from './auth/AuthModule';
 
 export class DefaultCoreConfiguration implements CoreConfig {

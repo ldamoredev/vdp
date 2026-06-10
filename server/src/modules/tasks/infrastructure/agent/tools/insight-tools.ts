@@ -1,4 +1,4 @@
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 import { TaskInsightsStore } from '../../../services/TaskInsightsStore';
 import { EMPTY_OBJECT_SCHEMA, jsonTool } from './shared';
 

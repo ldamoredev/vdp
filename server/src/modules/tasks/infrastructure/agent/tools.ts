@@ -5,7 +5,7 @@ import { createTaskIntelligenceTools } from './tools/intelligence-tools';
 import { createTaskManagementTools } from './tools/management-tools';
 import { createTaskReviewTools } from './tools/review-tools';
 import { createTaskTransitionTools } from './tools/transition-tools';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 export class TasksTools {
     static createTasksTools(services: ServiceProvider, authContextStorage: AuthContextStorage, insightsStore?: TaskInsightsStore) {

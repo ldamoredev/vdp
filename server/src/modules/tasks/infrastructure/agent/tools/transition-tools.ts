@@ -4,7 +4,7 @@ import { CarryOverTask } from '../../../services/CarryOverTask';
 import { CompleteTask } from '../../../services/CompleteTask';
 import { DiscardTask } from '../../../services/DiscardTask';
 import { TASK_ID_INPUT_SCHEMA, invalidDateError, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createTaskTransitionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

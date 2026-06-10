@@ -13,7 +13,7 @@ import { TraceService } from './common/base/observability/trace/TraceService';
 import { AgentProvider } from './common/base/agents/providers/AgentProvider';
 import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { Logger } from './common/base/observability/logging/Logger';
-import { AuthContextStorage } from './auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from './common/http/AuthContextStorage';
 import { HttpMiddleWare } from './common/http/HttpMiddleWare';
 
 export class Core {

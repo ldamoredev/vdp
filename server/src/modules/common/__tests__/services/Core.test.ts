@@ -13,7 +13,7 @@ import { TraceService, TraceSpan } from '../../base/observability/trace/TraceSer
 import { NoOpLangfuseLLMTraceService } from '../../infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { HttpController, RouteRegister } from '../../http/HttpController';
 import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogger';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 class FakeRepositoryProvider extends RepositoryProvider {

@@ -3,7 +3,7 @@ import { todayISO } from '../../../../common/base/time/dates';
 import { GetTransactions } from '../../../services/GetTransactions';
 import { CreateTransaction } from '../../../services/CreateTransaction';
 import { CURRENCIES, TRANSACTION_TYPES, jsonTool } from './shared';
-import { AuthContextStorage } from '../../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
 export function createTransactionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
     return [

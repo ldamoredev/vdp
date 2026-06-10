@@ -8,7 +8,7 @@ import { CreateUserData, UserRecord, UserRepository } from '../../../auth/domain
 import { EventBus } from '../../base/event-bus/EventBus';
 import { DomainModuleDescriptor } from '../../base/modules/DomainModuleDescriptor';
 import { HttpController } from '../../http/HttpController';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
+import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 class FakeCore {
