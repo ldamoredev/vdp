@@ -1,4 +1,3 @@
-import type { Task } from "@/lib/api/types";
 import type {
   BuildWalletReviewSignalsArgs,
   DailyReviewProgress,

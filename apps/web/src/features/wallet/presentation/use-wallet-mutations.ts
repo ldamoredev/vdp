@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { walletApi } from "@/lib/api/wallet";
+import { walletApi } from "@/features/wallet/presentation/wallet-api";
 import type {
   AccountType,
   Currency,

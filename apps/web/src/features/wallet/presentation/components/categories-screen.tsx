@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Tags } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
 import { useWalletActions, useWalletData } from "../use-wallet-context";

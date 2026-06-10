@@ -8,8 +8,8 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { StateCard } from "@/components/primitives/state-card";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
 import { useHistoryData, useHistoryActions } from "../use-history-context";
 
 export function HistoryClosureQueue() {

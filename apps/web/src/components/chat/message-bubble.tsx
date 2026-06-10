@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Loader2, Wrench } from "lucide-react";
-import { getToolDisplayName } from "@/lib/chat/tool-actions";
+import { getToolDisplayName } from "@/components/chat/tool-actions";
 import type { Message } from "./types";
 
 interface MessageBubbleProps {
@@ -28,10 +28,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return (
       <div className="flex gap-2">
         <div className="glass-card-static px-4 py-2.5 text-sm max-w-[85%] whitespace-pre-wrap leading-relaxed text-[var(--foreground)]">
-          {message.content || (
-            <div className="flex items-center gap-2 text-[var(--muted)]">
-              <Loader2 size={14} className="animate-spin" />
-              <span className="text-xs">Pensando...</span>
+          {message.content ||
+            (message.interrupted ? (
+              <span className="text-xs text-[var(--muted)]">
+                No llego respuesta. Intenta de nuevo.
+              </span>
+            ) : (
+              <div className="flex items-center gap-2 text-[var(--muted)]">
+                <Loader2 size={14} className="animate-spin" />
+                <span className="text-xs">Pensando...</span>
+              </div>
+            ))}
+          {message.interrupted && message.content && (
+            <div className="mt-1 text-[10px] text-[var(--muted)]">
+              Respuesta interrumpida
             </div>
           )}
           {message.traceUrl && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { healthApi } from "@/lib/api/health";
+import { healthApi } from "@/app/(domain)/health/health-api";
 import { metricConfig } from "./components/config";
 import { MetricCard } from "./components/metric-card";
 import { WeeklyChart } from "./components/weekly-chart";

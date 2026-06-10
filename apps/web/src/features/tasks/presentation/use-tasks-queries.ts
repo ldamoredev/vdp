@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { tasksApi } from "@/lib/api/tasks";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
 import { getTodayISO } from "@/lib/format";
 import { tasksQueryKeys } from "./tasks-query-keys";
 import {

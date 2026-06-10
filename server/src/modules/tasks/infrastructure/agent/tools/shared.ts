@@ -1,4 +1,4 @@
-import { localDateStringSchema } from '@vdp/shared';
+import { localDateStringSchema, type TasksAgentToolName } from '@vdp/shared';
 
 import { AgentTool } from '../../../../common/base/agents/BaseAgent';
 
@@ -21,11 +21,12 @@ export const TASK_ID_INPUT_SCHEMA = {
     required: ['taskId'],
 } as const;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- LLM tool inputs are validated by JSON schema at the provider level
+ 
 export type ToolInput = Record<string, any>;
 
 type JsonToolDefinition = {
-    name: string;
+    // Constrained to the shared registry so the web client can rely on it.
+    name: TasksAgentToolName;
     description: string;
     inputSchema: Record<string, unknown>;
     execute: (input: ToolInput) => Promise<unknown> | unknown;

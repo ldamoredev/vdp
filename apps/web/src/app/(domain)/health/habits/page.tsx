@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { healthApi } from "@/lib/api/health";
-import { formatDate, getTodayISO } from "@/lib/format";
+import { healthApi } from "@/app/(domain)/health/health-api";
+import { getTodayISO } from "@/lib/format";
 import { Plus, X, Check, Repeat } from "lucide-react";
 
 export default function HabitsPage() {

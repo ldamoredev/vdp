@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- constructor spread requires `any`
+ 
 export type SConstructor<T> = new (...args: any[]) => T;
 
 export class ServiceProvider {

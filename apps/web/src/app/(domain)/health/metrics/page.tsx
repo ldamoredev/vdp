@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { healthApi } from "@/lib/api/health";
+import { healthApi } from "@/app/(domain)/health/health-api";
 import { formatMetricValue, formatDate } from "@/lib/format";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Plus, X, Activity } from "lucide-react";

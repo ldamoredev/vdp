@@ -1,28 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { chatStream } from "@/lib/api/client";
+import { ApiError, chatStream } from "@/lib/api/client";
+import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
 import {
-  getToolDisplayName,
-  parseToolAction,
-  type ToolActionView,
-} from "@/lib/chat/tool-actions";
-import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+  applyStreamEvent,
+  getStreamErrorMessage,
+  markStreamInterrupted,
+  toRecord,
+  type ChatStreamEvent,
+} from "./chat-stream-reducer";
 import type { Message } from "./types";
-
-function getErrorMessage(code?: string, fallback?: string): string {
-  switch (code) {
-    case "provider_unavailable":
-      return "El proveedor de IA no esta disponible. Intenta de nuevo en unos minutos.";
-    case "tool_execution_failed":
-      return "Hubo un error al ejecutar una accion. Tus datos no se vieron afectados.";
-    case "conversation_not_found":
-      return "No se encontro la conversacion. Inicia una nueva.";
-    default:
-      return fallback ? `Error: ${fallback}` : "Ocurrio un error inesperado.";
-  }
-}
 
 export function useChatStream(args: {
   queryClient: QueryClient;
@@ -33,6 +22,14 @@ export function useChatStream(args: {
   const { queryClient, setMessages, setConversationId, loadConversationHistory } = args;
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  useEffect(() => stop, [stop]);
 
   async function handleSubmit(
     e: React.FormEvent,
@@ -45,113 +42,88 @@ export function useChatStream(args: {
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: input.trim() };
     const assistantId = (Date.now() + 1).toString();
     const userInput = input.trim();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const toolInputs = new Map<string, Record<string, unknown> | undefined>();
 
     setMessages((prev) => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
     setInput("");
+    setSendError(null);
     setIsStreaming(true);
 
-    let completedConversationId = conversationId;
+    let doneConversationId: string | undefined;
+    let receivedAnyEvent = false;
+    let sawTerminalEvent = false;
 
     try {
-      for await (const event of chatStream(agentEndpoint, userInput, conversationId)) {
-        if (event.event === "text") {
-          setMessages((prev) =>
-            prev.map((message) =>
-              message.id === assistantId
-                ? { ...message, content: message.content + event.text }
-                : message,
-            ),
-          );
-        } else if (event.event === "tool_use") {
-          const action: ToolActionView = {
-            title: getToolDisplayName(event.tool),
-            detail: "Ejecutando accion...",
-            tone: "info",
-          };
+      for await (const rawEvent of chatStream(agentEndpoint, userInput, conversationId, {
+        signal: controller.signal,
+      })) {
+        const event = rawEvent as ChatStreamEvent;
+        receivedAnyEvent = true;
 
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `tool-${Date.now()}`,
-              role: "tool",
-              content: action.detail || action.title,
-              toolName: event.tool,
-              action,
-              pending: true,
-              toolInput:
-                event.input && typeof event.input === "object"
-                  ? (event.input as Record<string, unknown>)
-                  : undefined,
-            },
-          ]);
+        setMessages((prev) => applyStreamEvent(prev, event, { assistantId }));
+
+        if (event.event === "tool_use") {
+          toolInputs.set(event.tool, toRecord(event.input));
         } else if (event.event === "tool_result") {
-          let toolInput: Record<string, unknown> | undefined;
-
-          setMessages((prev) => {
-            const toolIndex = prev.findLastIndex(
-              (message) =>
-                message.role === "tool" && message.toolName === event.tool,
-            );
-
-            if (toolIndex < 0) return prev;
-
-            const updated = [...prev];
-            toolInput = updated[toolIndex].toolInput;
-            const action = parseToolAction(
-              event.tool,
-              typeof event.result === "string" ? event.result : event.summary,
-            );
-            updated[toolIndex] = {
-              ...updated[toolIndex],
-              action,
-              pending: false,
-              content: action.detail || action.title,
-            };
-            return updated;
-          });
-
           syncTaskQueryState({
             tool: event.tool,
             result: typeof event.result === "string" ? event.result : undefined,
-            input: toolInput,
+            input: toolInputs.get(event.tool),
             queryClient,
           });
         } else if (event.event === "done") {
-          completedConversationId = event.conversationId;
+          doneConversationId = event.conversationId;
+          sawTerminalEvent = true;
           setConversationId(event.conversationId);
-          if (event.traceUrl) {
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === assistantId
-                  ? { ...message, traceUrl: event.traceUrl }
-                  : message,
-              ),
-            );
-          }
         } else if (event.event === "error") {
-          const errorMessage = getErrorMessage(event.code, event.error);
-          setMessages((prev) =>
-            prev.map((message) =>
-              message.id === assistantId
-                ? { ...message, content: errorMessage }
-                : message,
-            ),
-          );
+          sawTerminalEvent = true;
         }
       }
 
-      if (completedConversationId) {
-        await loadConversationHistory(completedConversationId);
+      if (!sawTerminalEvent) {
+        // El stream se corto sin evento done/error: marcar la respuesta como
+        // interrumpida en vez de dejarla truncada en silencio.
+        setMessages((prev) => markStreamInterrupted(prev, assistantId));
+        return;
       }
-    } catch (error: any) {
-      setMessages((prev) =>
-        prev.map((message) =>
-          message.id === assistantId
-            ? { ...message, content: `Error: ${error.message}` }
-            : message,
-        ),
-      );
+
+      if (doneConversationId) {
+        await loadConversationHistory(doneConversationId);
+      }
+    } catch (error: unknown) {
+      if (controller.signal.aborted) {
+        setMessages((prev) => markStreamInterrupted(prev, assistantId));
+      } else if (!receivedAnyEvent) {
+        // Fallo antes del primer evento: revertir los mensajes optimistas y
+        // devolver el texto al input para que reintentar sea un solo click.
+        setMessages((prev) =>
+          prev.filter((message) => message.id !== userMsg.id && message.id !== assistantId),
+        );
+        setInput(userInput);
+        setSendError(
+          getStreamErrorMessage(
+            error instanceof ApiError ? error.code : undefined,
+            error instanceof Error ? error.message : undefined,
+          ),
+        );
+      } else {
+        setMessages((prev) =>
+          applyStreamEvent(
+            prev,
+            {
+              event: "error",
+              error: error instanceof Error ? error.message : undefined,
+            },
+            { assistantId },
+          ),
+        );
+      }
     } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
       setIsStreaming(false);
     }
   }
@@ -160,6 +132,8 @@ export function useChatStream(args: {
     input,
     setInput,
     isStreaming,
+    sendError,
+    stop,
     handleSubmit,
   };
 }

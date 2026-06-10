@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Landmark, PencilLine, Plus, Trash2, Wallet2 } from "lucide-react";
+import { PencilLine, Plus, Trash2, Wallet2 } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
 import { formatMoney } from "@/lib/format";

@@ -3,7 +3,6 @@ import {
   dateRangeSchema,
   dateStringSchema,
   nullableDateStringSchema,
-  optionalDateStringSchema,
   uuidSchema,
 } from "./common";
 
@@ -114,3 +113,8 @@ export const statsQuerySchema = dateRangeSchema.extend({
   year: z.coerce.number().int().min(2020).optional(),
   currency: currencyEnum.optional(),
 });
+
+// Payload types inferred from the schemas, so clients build requests with the
+// exact shape the server validates.
+export type CreateTransactionInput = z.input<typeof createTransactionSchema>;
+export type UpdateTransactionInput = z.input<typeof updateTransactionSchema>;

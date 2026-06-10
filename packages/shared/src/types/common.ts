@@ -1,15 +1,16 @@
-export interface PaginatedResult<T> {
-  data: T[];
+// ─── API envelope ────────────────────────────────────────
+//
+// Shape of paginated list responses across all domains. The server builds
+// these with `paginatedCollection()`; the web client consumes them as-is.
+export interface PaginationMeta {
   total: number;
   limit: number;
   offset: number;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+export type PaginatedCollection<TKey extends string, TItem> = {
+  [K in TKey]: TItem[];
+} & PaginationMeta;
 
 export type Currency = "ARS" | "USD";
 

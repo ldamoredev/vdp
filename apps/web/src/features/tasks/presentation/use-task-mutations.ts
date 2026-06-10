@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { tasksApi } from "@/lib/api/tasks";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
 import type { TaskNote } from "@/lib/api/types";
 import { getTodayISO } from "@/lib/format";
-import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
 import { tasksQueryKeys } from "./tasks-query-keys";
 
 export function useTaskMutations(callbacks?: {

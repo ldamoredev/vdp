@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { healthApi } from "@/lib/api/health";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { healthApi } from "@/app/(domain)/health/health-api";
+import { formatDateTime } from "@/lib/format";
 import { Plus, X, Pill, Check, SkipForward, Clock } from "lucide-react";
 
 export default function MedicationsPage() {

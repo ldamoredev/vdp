@@ -1,6 +1,6 @@
 import { AlertTriangle, BarChart3, Sparkles } from "lucide-react";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
 import { useTasksData } from "../use-tasks-context";
 
 export function NextBestAction() {

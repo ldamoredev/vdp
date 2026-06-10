@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-breakpoint";
@@ -38,6 +38,12 @@ export function ChatPanel() {
     setConversationId: chat.setConversationId,
     loadConversationHistory: chat.loadConversationHistory,
   });
+
+  // Si cambia el dominio a mitad de un stream, cortarlo: el estado de
+  // mensajes se intercambia por el del dominio nuevo y el stream viejo
+  // escribiria sobre la conversacion equivocada.
+  const stopStream = stream.stop;
+  useEffect(() => () => stopStream(), [domainKey, stopStream]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,6 +129,11 @@ export function ChatPanel() {
         onSubmit={(e) => stream.handleSubmit(e, domain.agentEndpoint, chat.conversationId)}
         className="p-3 border-t border-[var(--glass-border)]"
       >
+        {stream.sendError && (
+          <p className="px-1 pb-2 text-xs text-[var(--red-soft-text)]">
+            {stream.sendError}
+          </p>
+        )}
         <div className="flex gap-2 items-center">
           <input
             ref={inputRef}
@@ -132,13 +143,24 @@ export function ChatPanel() {
             className="glass-input flex-1 px-3.5 py-2.5 text-[13px]"
             disabled={stream.isStreaming}
           />
-          <button
-            type="submit"
-            disabled={stream.isStreaming || !stream.input.trim()}
-            className="btn-primary p-2.5 disabled:opacity-30"
-          >
-            <Send size={15} />
-          </button>
+          {stream.isStreaming ? (
+            <button
+              type="button"
+              onClick={stream.stop}
+              aria-label="Detener respuesta"
+              className="btn-primary p-2.5"
+            >
+              <Square size={15} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!stream.input.trim()}
+              className="btn-primary p-2.5 disabled:opacity-30"
+            >
+              <Send size={15} />
+            </button>
+          )}
         </div>
       </form>
     </div>

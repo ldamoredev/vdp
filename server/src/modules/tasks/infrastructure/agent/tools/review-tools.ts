@@ -1,6 +1,4 @@
 import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetCarryOverRate } from '../../../services/GetCarryOverRate';
-import { GetCompletionByDomain } from '../../../services/GetCompletionByDomain';
 import { GetDayStats } from '../../../services/GetDayStats';
 import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
 import { EMPTY_OBJECT_SCHEMA, invalidDateError, jsonTool } from './shared';

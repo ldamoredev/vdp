@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { tasksApi } from "@/lib/api/tasks";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
 import type { Task } from "@/lib/api/types";
-import { buildBreakdownSuggestions } from "@/lib/tasks/breakdown-task";
+import { buildBreakdownSuggestions } from "@/features/tasks/presentation/breakdown-task";
 import { tasksQueryKeys } from "./tasks-query-keys";
 
 export function useTaskDetail(args: {

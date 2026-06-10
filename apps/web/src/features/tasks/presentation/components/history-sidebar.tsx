@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Trash2 } from "lucide-react";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
 import { useHistoryData } from "../use-history-context";
 
 export function HistorySidebar() {

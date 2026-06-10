@@ -172,8 +172,27 @@ Never print or log provider secrets.
 
 ## Frontend Architecture
 
+The frontend mirrors the backend module pattern: one folder per domain owns everything for that domain. Top-level layout of `apps/web/src/`:
+
+```text
+app/          Routes only. Pages are layout-only: provider plus layout, ideally under 30 lines.
+features/     One folder per domain (tasks, wallet, review, home). ALL domain code lives here.
+components/   Domain-free app chrome only: primitives/, shell/, chat/, auth/, demo/.
+lib/          Domain-free kernel only: api/client.ts + api/types.ts, stores, format, navigation, theme.
+```
+
+Do not create per-domain folders under `lib/` or `components/` (no `lib/tasks`, no `components/wallet`). If code is about a domain, it belongs in `features/{domain}/`.
+
+Import direction rules:
+
+- `lib/` imports nothing from `features/` or `components/`.
+- `features/{domain}/` may import `lib/`, `components/primitives/`, and other features' public modules: selectors, query keys, plain components. Never another feature's context/provider or internal hooks.
+- `components/` (shell, chat, auth) is the cross-domain composition layer: it may import feature public modules (for example the chat shell uses `features/tasks/presentation/chat-sync`).
+- `app/` may import anything.
+
 Frontend domains use the feature module pattern under `apps/web/src/features/{domain}/presentation/`:
 
+- `{domain}-api.ts`: HTTP client functions for the domain routes, built on `lib/api/client.ts`.
 - `{domain}-selectors.ts`: pure functions, no React imports, primary unit-test surface.
 - `{domain}-query-keys.ts`: React Query key factory.
 - `use-{domain}-queries.ts`: reads and derived state.
@@ -182,7 +201,7 @@ Frontend domains use the feature module pattern under `apps/web/src/features/{do
 - `use-{domain}-context.ts`: consumer hooks.
 - `components/`: components consume context directly. Pages pass no domain data props.
 
-Pages under `apps/web/src/app/(domain)/{domain}/page.tsx` should be layout-only: provider plus layout, ideally under 30 lines.
+API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 
 The frontend never calls the Fastify backend directly from client code. Client API calls go through `apps/web/src/app/api/proxy/v1/[...path]/route.ts`, which forwards to `NEXT_PUBLIC_API_URL`, attaches the `vdp_session` httpOnly cookie as `x-session-token`, and filters hop-by-hop headers.
 

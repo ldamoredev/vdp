@@ -83,12 +83,18 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   return res.json();
 }
 
-export async function* chatStream(endpoint: string, message: string, conversationId?: string) {
+export async function* chatStream(
+  endpoint: string,
+  message: string,
+  conversationId?: string,
+  options?: { signal?: AbortSignal },
+) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
     headers: buildHeaders(undefined, "application/json"),
     credentials: "same-origin",
     body: JSON.stringify({ message, conversationId }),
+    signal: options?.signal,
   });
   if (!res.ok) {
     const error = await res

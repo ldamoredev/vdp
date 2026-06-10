@@ -1,15 +1,91 @@
-import { request } from "./client";
-import type {
-  HealthMetric,
-  Habit,
-  HabitCompletion,
-  Medication,
-  MedicationLog,
-  Appointment,
-  BodyMeasurement,
-  TodaySummary,
-  WeeklyStat,
-} from "./types";
+import { request } from "@/lib/api/client";
+
+// Health is a demo/inactive domain (see AGENTS.md): there is no real backend
+// contract yet, so its API client and types live next to the demo pages
+// instead of in features/ or @vdp/shared.
+export interface HealthMetric {
+  id: string;
+  metricType: string;
+  value: string;
+  unit: string | null;
+  recordedAt: string;
+  source: string | null;
+  notes: string | null;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  description: string | null;
+  frequency: string;
+  targetValue: number | null;
+  unit: string | null;
+  icon: string | null;
+  color: string | null;
+  isActive: boolean;
+  streak?: number;
+  completedToday?: boolean;
+}
+
+export interface HabitCompletion {
+  id: string;
+  habitId: string;
+  date: string;
+  value: number | null;
+  notes: string | null;
+}
+
+export interface Medication {
+  id: string;
+  name: string;
+  dosage: string | null;
+  frequency: string;
+  timeOfDay: string | null;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  notes: string | null;
+}
+
+export interface MedicationLog {
+  id: string;
+  medicationId: string;
+  takenAt: string;
+  skipped: boolean;
+  notes: string | null;
+}
+
+export interface Appointment {
+  id: string;
+  title: string;
+  doctorName: string | null;
+  specialty: string | null;
+  location: string | null;
+  scheduledAt: string;
+  durationMinutes: number | null;
+  status: "upcoming" | "completed" | "cancelled";
+  notes: string | null;
+}
+
+export interface BodyMeasurement {
+  id: string;
+  measurementType: string;
+  value: string;
+  unit: string | null;
+  date: string;
+  notes: string | null;
+}
+
+export interface TodaySummary {
+  metrics: Record<string, { value: string; unit: string }>;
+  habitsCompleted: number;
+  habitsTotal: number;
+}
+
+export interface WeeklyStat {
+  date: string;
+  metrics: Record<string, number>;
+}
 
 export const healthApi = {
   // ─── Metrics ─────────────────────────────────────────────

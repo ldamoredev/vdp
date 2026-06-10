@@ -8,7 +8,7 @@ import { ChatPanel } from '@/components/shell/chat-panel';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { MobileTabBar } from '@/components/shell/mobile-tab-bar';
 import { InsightsProvider } from '@/components/shell/insights-provider';
-import { QuickCapture } from '@/components/tasks/quick-capture';
+import { QuickCapture } from '@/features/tasks/presentation/components/quick-capture';
 import { getDomainFromPathname } from '@/lib/navigation';
 import React from 'react';
 

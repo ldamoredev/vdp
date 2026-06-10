@@ -7,9 +7,9 @@ import {
   X,
 } from "lucide-react";
 import type { Task } from "@/lib/api/types";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
-import { CarryOverBadge } from "@/components/tasks/carry-over-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
+import { CarryOverBadge } from "@/features/tasks/presentation/components/carry-over-badge";
 import { getTaskTone } from "../tasks-dashboard-selectors";
 
 interface TaskRowProps {

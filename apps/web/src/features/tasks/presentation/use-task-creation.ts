@@ -2,12 +2,12 @@
 
 import { type SyntheticEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { tasksApi } from "@/lib/api/tasks";
-import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
+import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
 import {
   analyzeTaskDraft,
   buildClarifiedDescription,
-} from "@/lib/tasks/clarify-task";
+} from "@/features/tasks/presentation/clarify-task";
 import type { TaskFilter } from "./tasks-dashboard-selectors";
 
 export function useTaskCreation(callbacks: {

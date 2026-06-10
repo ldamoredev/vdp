@@ -2,7 +2,6 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Core } from '../../../Core';
 import { httpErrorHandler } from '../../../common/http/errors';
-import { AuthContextStorage } from '../../../auth/infrastructure/http/AuthContextStorage';
 import { TestCoreConfiguration } from './TestCoreConfiguration';
 import { getTestUser, PRIMARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskNote } from "@/lib/api/types";
+import type { Task } from "@/lib/api/types";
 import {
   sortExecutionQueue,
   getFilterTasks,

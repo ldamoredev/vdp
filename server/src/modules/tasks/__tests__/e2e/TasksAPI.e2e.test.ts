@@ -4,7 +4,7 @@ import { TestDatabase } from '../integration/test-database';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
-import { todayISO } from '../../../common/base/time/dates';
+import { localDateISO, todayISO } from '../../../common/base/time/dates';
 import { ScriptedAgentProvider, withScriptedProvider } from './ScriptedAgentProvider';
 
 const testDb = new TestDatabase();
@@ -521,11 +521,11 @@ describe('Tasks API — E2E', () => {
             const res = await testApp.app.inject({
                 method: 'POST',
                 url: `/api/v1/tasks/${task.id}/carry-over`,
-                payload: { toDate: '2026-03-25' },
+                payload: { toDate: '2099-03-25' },
             });
 
             expect(res.statusCode).toBe(200);
-            expect(res.json().scheduledDate).toBe('2026-03-25');
+            expect(res.json().scheduledDate).toBe('2099-03-25');
             expect(res.json().carryOverCount).toBe(1);
         });
     });
@@ -587,7 +587,7 @@ describe('Tasks API — E2E', () => {
             const res = await testApp.app.inject({
                 method: 'POST',
                 url: '/api/v1/tasks/carry-over-all',
-                payload: { fromDate: today, toDate: '2026-04-02' },
+                payload: { fromDate: today, toDate: '2099-04-02' },
             });
 
             expect(res.statusCode).toBe(200);
@@ -595,7 +595,7 @@ describe('Tasks API — E2E', () => {
             expect(body.carriedOver).toBe(2);
             expect(body.tasks).toHaveLength(2);
             for (const task of body.tasks) {
-                expect(task.scheduledDate).toBe('2026-04-02');
+                expect(task.scheduledDate).toBe('2099-04-02');
                 expect(task.carryOverCount).toBe(1);
             }
         });
@@ -671,12 +671,19 @@ describe('Tasks API — E2E', () => {
     describe('GET /api/v1/tasks/stats/carry-over', () => {
         it('returns the carry-over rate over the window', async () => {
             const today = todayISO();
+            const cursor = new Date();
+            cursor.setDate(cursor.getDate() - 2);
+            const twoDaysAgo = localDateISO(cursor);
+            cursor.setDate(cursor.getDate() + 1);
+            const oneDayAgo = localDateISO(cursor);
+
             await createTask({ title: 'Untouched', scheduledDate: today });
-            const { body: carried } = await createTask({ title: 'Carried', scheduledDate: today });
+            // Pull an overdue task forward — still inside the 7-day window.
+            const { body: carried } = await createTask({ title: 'Carried', scheduledDate: twoDaysAgo });
             await testApp.app.inject({
                 method: 'POST',
                 url: `/api/v1/tasks/${carried.id}/carry-over`,
-                payload: { toDate: today },
+                payload: { toDate: oneDayAgo },
             });
 
             const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/carry-over?days=7' });
@@ -742,6 +749,25 @@ describe('Tasks API — E2E', () => {
 
             expect(res.statusCode).toBe(422);
             expect(res.json().error).toBe('DOMAIN_ERROR');
+        });
+
+        it('rejects carrying a task over to its own day', async () => {
+            const today = todayISO();
+            const { body: task } = await createTask({ title: 'Same day carry', scheduledDate: today });
+
+            const res = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/tasks/${task.id}/carry-over`,
+                payload: { toDate: today },
+            });
+
+            expect(res.statusCode).toBe(422);
+            expect(res.json().error).toBe('DOMAIN_ERROR');
+
+            // The task keeps its date and carry-over counter untouched.
+            const getRes = await testApp.app.inject({ method: 'GET', url: `/api/v1/tasks/${task.id}` });
+            expect(getRes.json().task.scheduledDate).toBe(today);
+            expect(getRes.json().task.carryOverCount).toBe(0);
         });
     });
 

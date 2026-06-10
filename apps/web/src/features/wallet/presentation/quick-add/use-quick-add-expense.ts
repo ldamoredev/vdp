@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { walletApi } from "@/lib/api/wallet";
+import { walletApi } from "@/features/wallet/presentation/wallet-api";
 import { getTodayISO } from "@/lib/format";
 import type { Account, Category, Currency, Transaction } from "@/lib/api/types";
 import { walletQueryKeys } from "../wallet-query-keys";
@@ -51,8 +51,8 @@ export function useQuickAddExpense(): UseQuickAddExpenseResult {
     queryFn: () => walletApi.getTransactions(RECENT_TRANSACTIONS_QUERY_PARAMS),
   });
 
-  const accounts: Account[] = accountsQuery.data ?? [];
-  const categories: Category[] = categoriesQuery.data ?? [];
+  const accounts: Account[] = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
+  const categories: Category[] = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const expenseCategories = useMemo(
     () => categories.filter((category) => category.type === "expense"),
     [categories],

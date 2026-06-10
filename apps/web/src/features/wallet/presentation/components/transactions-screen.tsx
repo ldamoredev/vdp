@@ -56,7 +56,6 @@ function getTypeIcon(type: TransactionType) {
 export function TransactionsScreen() {
   const {
     transactions,
-    totalTransactions,
     transactionFilters,
     categories,
     currentTransactionsPage,

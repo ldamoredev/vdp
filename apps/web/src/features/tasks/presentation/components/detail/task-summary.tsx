@@ -1,6 +1,6 @@
-import type { Task, TaskNote } from "@/lib/api/types";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import type { Task } from "@/lib/api/types";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
 import { formatTaskDate } from "../../tasks-dashboard-selectors";
 
 interface TaskSummaryProps {

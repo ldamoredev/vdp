@@ -1,4 +1,4 @@
-import { request, withQueryParams } from "./client";
+import { request, withQueryParams } from "@/lib/api/client";
 import type {
   Account,
   Currency,
@@ -14,7 +14,7 @@ import type {
   MonthlyTrend,
   ExchangeRate,
   WalletTransactionListResponse,
-} from "./types";
+} from "@/lib/api/types";
 
 const W = "/wallet";
 

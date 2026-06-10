@@ -86,11 +86,11 @@ class FakeUserRepository extends UserRepository {
 }
 
 class FakeSessionRepository extends SessionRepository {
-    listActiveSessionsForUser(userId: string): Promise<SessionRecord[]> {
+    listActiveSessionsForUser(_userId: string): Promise<SessionRecord[]> {
         throw new Error('Method not implemented.');
     }
 
-    revokeOtherSessionsForUser(userId: string, currentSessionId: string, revokedAt: Date): Promise<void> {
+    revokeOtherSessionsForUser(_userId: string, _currentSessionId: string, _revokedAt: Date): Promise<void> {
         throw new Error('Method not implemented.');
     }
 
@@ -113,7 +113,7 @@ class FakeSessionRepository extends SessionRepository {
 }
 
 class FakeAuditLogRepository extends AuditLogRepository {
-    listRecentAuthLogsForActorUser(actorUserId: string, limit: number): Promise<AuditLogRecord[]> {
+    listRecentAuthLogsForActorUser(_actorUserId: string, _limit: number): Promise<AuditLogRecord[]> {
         throw new Error('Method not implemented.');
     }
     async createLog(): Promise<void> {}

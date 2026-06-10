@@ -3,13 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { walletApi } from "@/lib/api/wallet";
+import { walletApi } from "@/features/wallet/presentation/wallet-api";
 import { getTodayISO } from "@/lib/format";
-import type { Category, Transaction, TransactionType } from "@/lib/api/types";
+import type { Category, TransactionType } from "@/lib/api/types";
 import {
   type TransactionFormState,
 } from "./wallet-selectors";
 import { walletQueryKeys } from "./wallet-query-keys";
+import { validateTransactionFields } from "./transaction-form-validation";
 
 function createInitialTransactionForm(): TransactionFormState {
   return {
@@ -30,6 +31,7 @@ export function useWalletTransactionCreation() {
   const [form, setForm] = useState<TransactionFormState>(
     createInitialTransactionForm(),
   );
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const accountsQuery = useQuery({
     queryKey: walletQueryKeys.accounts,
@@ -49,7 +51,7 @@ export function useWalletTransactionCreation() {
     },
   });
 
-  const categories = categoriesQuery.data ?? [];
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const filteredCategories = useMemo(
     () =>
       categories.filter(
@@ -60,14 +62,30 @@ export function useWalletTransactionCreation() {
   );
 
   async function submitTransaction() {
-    await mutation.mutateAsync({
-      ...form,
-      accountId: form.accountId || accountsQuery.data?.[0]?.id || "",
-      categoryId: form.categoryId || null,
-      tags: form.tags
-        ? form.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
-        : [],
+    const accountId = form.accountId || accountsQuery.data?.[0]?.id || "";
+    const error = validateTransactionFields({
+      amount: form.amount,
+      accountId,
+      date: form.date,
     });
+    if (error !== null) {
+      setValidationError(error.message);
+      return;
+    }
+    setValidationError(null);
+
+    try {
+      await mutation.mutateAsync({
+        ...form,
+        accountId,
+        categoryId: form.categoryId || null,
+        tags: form.tags
+          ? form.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+          : [],
+      });
+    } catch {
+      // El mensaje ya queda expuesto via mutation.error / errorMessage.
+    }
   }
 
   return {
@@ -79,7 +97,8 @@ export function useWalletTransactionCreation() {
     isLoadingCategories: categoriesQuery.isLoading,
     isSubmitting: mutation.isPending,
     errorMessage:
-      mutation.error instanceof Error ? mutation.error.message : null,
+      validationError ??
+      (mutation.error instanceof Error ? mutation.error.message : null),
     setFormField: (field: keyof TransactionFormState, value: string) =>
       setForm((current) => ({
         ...current,

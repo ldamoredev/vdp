@@ -5,7 +5,15 @@ import type {
   CategoryType,
   InvestmentType,
   ExchangeRateType,
+  PaginatedCollection,
 } from "./common";
+
+// ─── Wallet API response shapes ──────────────────────────
+//
+// These are the JSON wire shapes served by the wallet HTTP routes: dates are
+// ISO strings, and some entities carry service-side enrichments
+// (`currentBalance`, `categoryName`). The server's internal domain models live
+// in `server/src/modules/wallet/domain/`.
 
 export interface Account {
   id: string;
@@ -13,37 +21,38 @@ export interface Account {
   currency: Currency;
   type: AccountType;
   initialBalance: string;
+  currentBalance?: string;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AccountWithBalance extends Account {
-  currentBalance: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  type: CategoryType;
-  icon: string | null;
-  parentId: string | null;
-  createdAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Transaction {
   id: string;
   accountId: string;
   categoryId: string | null;
+  categoryName?: string;
   type: TransactionType;
   amount: string;
   currency: Currency;
   description: string | null;
   date: string;
-  transferToAccountId: string | null;
+  transferToAccountId?: string | null;
   tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type WalletTransactionListResponse = PaginatedCollection<
+  "transactions",
+  Transaction
+>;
+
+export interface Category {
+  id: string;
+  name: string;
+  type: CategoryType;
+  icon: string | null;
 }
 
 export interface SavingsGoal {
@@ -54,24 +63,15 @@ export interface SavingsGoal {
   currency: Currency;
   deadline: string | null;
   isCompleted: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface SavingsContribution {
-  id: string;
-  goalId: string;
-  transactionId: string | null;
-  amount: string;
-  date: string;
-  note: string | null;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Investment {
   id: string;
   name: string;
   type: InvestmentType;
-  accountId: string | null;
+  accountId?: string | null;
   currency: Currency;
   investedAmount: string;
   currentValue: string;
@@ -80,8 +80,28 @@ export interface Investment {
   rate: string | null;
   notes: string | null;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WalletStatsSummary {
+  totalIncome: string;
+  totalExpenses: string;
+  netBalance: string;
+  transactionCount: number;
+}
+
+export interface CategoryStat {
+  categoryId: string | null;
+  categoryName: string;
+  total: number;
+  count: number;
+}
+
+export interface MonthlyTrend {
+  month: string;
+  income: number;
+  expense: number;
 }
 
 export interface ExchangeRate {
@@ -91,5 +111,5 @@ export interface ExchangeRate {
   rate: string;
   type: ExchangeRateType;
   date: string;
-  createdAt: Date;
+  createdAt?: string;
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getAgentConversationMessages, listAgentConversations } from '@/lib/api/agent';
-import type { AgentConversation } from '@/lib/api/types';
+import { getAgentConversationMessages, listAgentConversations } from './agent-api';
+import type { AgentConversation } from './agent-api';
 import { mapPersistedMessages } from './map-persisted-messages';
 import type { DomainConversationState, Message } from './types';
 

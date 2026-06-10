@@ -1,4 +1,4 @@
-import type { ToolActionView } from "@/lib/chat/tool-actions";
+import type { ToolActionView } from "@/components/chat/tool-actions";
 
 export interface Message {
   id: string;
@@ -9,6 +9,7 @@ export interface Message {
   pending?: boolean;
   toolInput?: Record<string, unknown>;
   traceUrl?: string;
+  interrupted?: boolean;
 }
 
 export type DomainConversationState = {

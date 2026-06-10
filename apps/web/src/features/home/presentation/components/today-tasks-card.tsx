@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, ListChecks } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { CollectionCard } from "@/components/primitives/collection-card";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
 import type { Task } from "@/lib/api/types";
 
 export interface TodayTasksCardProps {

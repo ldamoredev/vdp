@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- abstract constructor spread requires `any`
+ 
 type AbstractConstructor<T = unknown> = abstract new (...args: any[]) => T;
 
 export abstract class RepositoryProvider {

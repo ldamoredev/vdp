@@ -1,14 +1,11 @@
 import { FastifyReply } from 'fastify';
+import type { PaginatedCollection, PaginationMeta } from '@vdp/shared';
 
-export type PaginationMeta = {
-    total: number;
-    limit: number;
-    offset: number;
-};
+// The pagination envelope is part of the shared API contract: the web client
+// types list responses with the same PaginatedCollection from @vdp/shared.
+export type { PaginationMeta };
 
-export type PaginatedCollectionResponse<TKey extends string, TItem> = {
-    [K in TKey]: TItem[];
-} & PaginationMeta;
+export type PaginatedCollectionResponse<TKey extends string, TItem> = PaginatedCollection<TKey, TItem>;
 
 export type MessageResponse = {
     message: string;

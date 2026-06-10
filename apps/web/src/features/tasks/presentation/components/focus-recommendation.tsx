@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { StateCard } from "@/components/primitives/state-card";
-import { TaskPriorityBadge } from "@/components/tasks/task-priority-badge";
-import { TaskDomainBadge } from "@/components/tasks/task-domain-badge";
+import { TaskPriorityBadge } from "@/features/tasks/presentation/components/task-priority-badge";
+import { TaskDomainBadge } from "@/features/tasks/presentation/components/task-domain-badge";
 import { useTasksData, useTasksActions } from "../use-tasks-context";
 
 export function FocusRecommendation() {

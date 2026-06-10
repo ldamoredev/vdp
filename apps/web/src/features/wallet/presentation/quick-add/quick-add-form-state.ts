@@ -1,4 +1,6 @@
+import type { CreateTransactionInput } from "@vdp/shared";
 import type { Currency } from "@/lib/api/types";
+import { validateTransactionFields } from "../transaction-form-validation";
 
 export interface QuickAddFormState {
   amount: string;
@@ -16,16 +18,9 @@ export interface QuickAddDefaults {
   todayISO: string;
 }
 
-export interface CreateTransactionPayload {
+export type CreateTransactionPayload = CreateTransactionInput & {
   type: "expense";
-  amount: string;
-  currency: Currency;
-  accountId: string;
-  categoryId: string | null;
-  description: string | null;
-  date: string;
-  tags: string[];
-}
+};
 
 export function buildInitialQuickAddForm(
   defaults: QuickAddDefaults,
@@ -41,12 +36,11 @@ export function buildInitialQuickAddForm(
 }
 
 export function validateQuickAddForm(form: QuickAddFormState): string | null {
-  if (form.amount.trim() === "") return "Ingresá un monto";
-  const numericAmount = Number(form.amount);
-  if (Number.isNaN(numericAmount)) return "El monto no es un número válido";
-  if (numericAmount <= 0) return "El monto debe ser mayor a cero";
-  if (form.accountId.trim() === "") return "Elegí una cuenta";
-  return null;
+  const error = validateTransactionFields({
+    amount: form.amount,
+    accountId: form.accountId,
+  });
+  return error?.message ?? null;
 }
 
 export function buildCreateTransactionPayload(

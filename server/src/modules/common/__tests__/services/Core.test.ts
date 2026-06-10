@@ -1,4 +1,3 @@
-import { FastifyInstance } from 'fastify';
 import { describe, expect, it } from 'vitest';
 
 import { Core, CoreConfig } from '../../../Core';

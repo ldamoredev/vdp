@@ -22,6 +22,14 @@ export class CarryOverTask {
         }
 
         const targetDate = toDate || this.tomorrow();
+        // Carrying over means postponing: the new date must be strictly after the
+        // task's current date. This still allows pulling an overdue task forward
+        // to today, but blocks same-day "carry overs" and moves into the past.
+        if (targetDate <= task.scheduledDate) {
+            throw new DomainHttpError(
+                `Cannot carry over to ${targetDate}; the new date must be after the task's current date (${task.scheduledDate}).`,
+            );
+        }
         task.carryOver(targetDate);
 
         const saved = await this.repository.save(userId, task);

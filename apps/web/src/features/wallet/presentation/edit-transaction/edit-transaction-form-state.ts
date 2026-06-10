@@ -1,4 +1,8 @@
 import type { Transaction } from "@/lib/api/types";
+import {
+  validateTransactionFields,
+  type TransactionFieldError,
+} from "../transaction-form-validation";
 
 export interface EditTransactionFormState {
   amount: string;
@@ -8,10 +12,7 @@ export interface EditTransactionFormState {
   accountId: string;
 }
 
-export interface EditTransactionFormError {
-  field: "amount" | "date" | "accountId";
-  message: string;
-}
+export type EditTransactionFormError = TransactionFieldError;
 
 export function buildEditFormFromTransaction(
   transaction: Transaction,
@@ -28,28 +29,11 @@ export function buildEditFormFromTransaction(
 export function validateEditTransaction(
   form: EditTransactionFormState,
 ): EditTransactionFormError | null {
-  if (form.amount.trim() === "") {
-    return { field: "amount", message: "Ingresá un monto" };
-  }
-
-  const numericAmount = Number(form.amount);
-  if (Number.isNaN(numericAmount)) {
-    return { field: "amount", message: "El monto no es un número válido" };
-  }
-
-  if (numericAmount <= 0) {
-    return { field: "amount", message: "El monto debe ser mayor a cero" };
-  }
-
-  if (form.date.trim() === "") {
-    return { field: "date", message: "Ingresá una fecha" };
-  }
-
-  if (form.accountId.trim() === "") {
-    return { field: "accountId", message: "Elegí una cuenta" };
-  }
-
-  return null;
+  return validateTransactionFields({
+    amount: form.amount,
+    accountId: form.accountId,
+    date: form.date,
+  });
 }
 
 export function buildUpdatePayload(

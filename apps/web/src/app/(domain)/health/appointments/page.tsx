@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { healthApi } from "@/lib/api/health";
+import { healthApi } from "@/app/(domain)/health/health-api";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { Plus, X, CalendarClock, MapPin, User, Clock } from "lucide-react";
 

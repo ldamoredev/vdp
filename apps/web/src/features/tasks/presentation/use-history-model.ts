@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, format, subDays } from "date-fns";
-import { tasksApi } from "@/lib/api/tasks";
-import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
+import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
 import { getReviewSignals } from "./history-selectors";
 import { tasksQueryKeys } from "./tasks-query-keys";
 

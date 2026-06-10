@@ -73,8 +73,22 @@ describe('CarryOverTask', () => {
         expect(result!.carryOverCount).toBe(1);
     });
 
+    it('rejects carrying over to the same day', async () => {
+        const task = createTask({ scheduledDate: '2026-03-18', carryOverCount: 0 });
+        repo.seed([task]);
+
+        await expect(service.execute(userId, task.id, '2026-03-18')).rejects.toThrow(DomainHttpError);
+    });
+
+    it('rejects carrying over to an earlier day', async () => {
+        const task = createTask({ scheduledDate: '2026-03-18', carryOverCount: 0 });
+        repo.seed([task]);
+
+        await expect(service.execute(userId, task.id, '2026-03-17')).rejects.toThrow(DomainHttpError);
+    });
+
     it('does NOT emit TaskStuck when carryOverCount < 3', async () => {
-        const task = createTask({ carryOverCount: 1 }); // will be 2 after carry over
+        const task = createTask({ carryOverCount: 1, scheduledDate: '2026-03-18' }); // will be 2 after carry over
         repo.seed([task]);
 
         await service.execute(userId, task.id, '2026-03-19');
@@ -83,7 +97,7 @@ describe('CarryOverTask', () => {
     });
 
     it('emits TaskStuck when carryOverCount reaches 3', async () => {
-        const task = createTask({ carryOverCount: 2, title: 'Stuck task' }); // will be 3 after carry over
+        const task = createTask({ carryOverCount: 2, title: 'Stuck task', scheduledDate: '2026-03-18' }); // will be 3 after carry over
         repo.seed([task]);
 
         await service.execute(userId, task.id, '2026-03-19');

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { walletApi } from "@/lib/api/wallet";
+import { walletApi } from "@/features/wallet/presentation/wallet-api";
 import { walletQueryKeys } from "./wallet-query-keys";
 import {
   buildInitialTransactionFilters,

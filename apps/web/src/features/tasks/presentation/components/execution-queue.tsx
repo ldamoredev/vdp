@@ -1,7 +1,7 @@
 import { getFilterTasks } from "../tasks-dashboard-selectors";
 import { useTasksData, useTasksActions } from "../use-tasks-context";
 import { TaskRow } from "./task-row";
-import { EmptyTaskList } from "@/components/tasks/empty-task-list";
+import { EmptyTaskList } from "@/features/tasks/presentation/components/empty-task-list";
 
 export function ExecutionQueue() {
   const {

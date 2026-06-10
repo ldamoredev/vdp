@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { History, Loader2, Plus } from "lucide-react";
-import type { AgentConversation } from "@/lib/api/types";
+import type { AgentConversation } from "./agent-api";
 
 interface ConversationListProps {
   conversations: AgentConversation[];

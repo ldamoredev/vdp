@@ -1,4 +1,4 @@
-import { request, withQueryParams } from "./client";
+import { request, withQueryParams } from "@/lib/api/client";
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
@@ -11,7 +11,7 @@ import type {
   TaskReview,
   TaskStats,
   TaskTrendDay,
-} from "./types";
+} from "@/lib/api/types";
 
 export const tasksApi = {
   // ─── CRUD ────────────────────────────────────────────────

@@ -1,19 +1,23 @@
 import type { Query, QueryClient, QueryKey } from "@tanstack/react-query";
+import type { TasksAgentToolName } from "@vdp/shared";
 import { getTodayISO } from "@/lib/format";
 import type { Task, TaskListResponse } from "@/lib/api/types";
-import {
-  homeTaskQueryKeys,
-  tasksQueryKeys,
-} from "@/features/tasks/presentation/tasks-query-keys";
+import { homeTaskQueryKeys } from "@/features/home/presentation/home-query-keys";
+import { tasksQueryKeys } from "./tasks-query-keys";
 
-type TaskMutationTool =
-  | "create_task"
-  | "update_task"
-  | "delete_task"
-  | "complete_task"
-  | "carry_over_task"
-  | "discard_task"
-  | "carry_over_all_pending";
+// `satisfies` ties this subset to the shared registry: renaming a tool on the
+// server without updating @vdp/shared (or this list) fails typecheck here.
+const TASK_MUTATION_TOOLS = [
+  "create_task",
+  "update_task",
+  "delete_task",
+  "complete_task",
+  "carry_over_task",
+  "discard_task",
+  "carry_over_all_pending",
+] as const satisfies readonly TasksAgentToolName[];
+
+type TaskMutationTool = (typeof TASK_MUTATION_TOOLS)[number];
 
 type TaskSyncInput = {
   tool: string;
@@ -48,15 +52,7 @@ function parseResult(result?: string | null): unknown {
 }
 
 function isTaskMutationTool(tool: string): tool is TaskMutationTool {
-  return [
-    "create_task",
-    "update_task",
-    "delete_task",
-    "complete_task",
-    "carry_over_task",
-    "discard_task",
-    "carry_over_all_pending",
-  ].includes(tool);
+  return (TASK_MUTATION_TOOLS as readonly string[]).includes(tool);
 }
 
 function extractTasks(tool: TaskMutationTool, parsed: unknown) {

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Zap, X } from "lucide-react";
-import { tasksApi } from "@/lib/api/tasks";
-import { syncTaskQueryState } from "@/lib/tasks/chat-sync";
+import { tasksApi } from "@/features/tasks/presentation/tasks-api";
+import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
 import { priorityLabel } from "@/lib/format";
 
 export function QuickCapture() {
