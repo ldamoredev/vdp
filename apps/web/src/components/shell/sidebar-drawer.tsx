@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useIsMobile } from "@/hooks/use-breakpoint";
-import { useSidebarOpen } from "@/lib/use-shell-store";
+import { useIsMobile } from "@/lib/use-breakpoint";
+import { useSidebarOpen } from "@/lib/shell-store";
 import { shellStore } from "@/lib/shell-store";
 import { SidebarPanel } from "./sidebar-panel";
 

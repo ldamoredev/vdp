@@ -2,34 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { walletApi } from "@/features/wallet/presentation/wallet-api";
-import { tasksApi } from "@/features/tasks/presentation/tasks-api";
+import { walletApi } from "@/features/wallet/wallet-api";
+import { tasksApi } from "@/features/tasks/tasks-api";
 import { getTodayISO } from "@/lib/format";
-import { homeTaskQueryKeys } from "@/features/home/presentation/home-query-keys";
+import { homeTaskQueryKeys } from "@/features/home/home-query-keys";
 import {
   buildDailyReviewProgress,
   buildMorningReviewSummary,
   buildWalletReviewSignals,
-} from "@/features/review/presentation/daily-review-selectors";
+} from "@/features/review/daily-review-selectors";
 import {
   createEmptyDailyReviewState,
   loadDailyReviewState,
-} from "@/features/review/presentation/daily-review-storage";
-import { walletQueryKeys } from "@/features/wallet/presentation/wallet-query-keys";
-import { TaskStatsRow } from "@/features/home/presentation/components/task-stats-row";
-import { TodayTasksCard } from "@/features/home/presentation/components/today-tasks-card";
-import { DailyRitualCard } from "@/features/home/presentation/components/daily-ritual-card";
-import { WeeklyTrendCard } from "@/features/home/presentation/components/weekly-trend-card";
-import { WalletSnapshotCard } from "@/features/home/presentation/components/wallet-snapshot-card";
-import { ProductFocusCard } from "@/features/home/presentation/components/product-focus-card";
-import { CrossDomainSignalsCard } from "@/features/home/presentation/components/cross-domain-signals-card";
-import { OnboardingModal } from "@/features/home/presentation/components/onboarding-modal";
+} from "@/features/review/daily-review-storage";
+import { walletQueryKeys } from "@/features/wallet/wallet-query-keys";
+import { TaskStatsRow } from "@/features/home/components/task-stats-row";
+import { TodayTasksCard } from "@/features/home/components/today-tasks-card";
+import { DailyRitualCard } from "@/features/home/components/daily-ritual-card";
+import { WeeklyTrendCard } from "@/features/home/components/weekly-trend-card";
+import { WalletSnapshotCard } from "@/features/home/components/wallet-snapshot-card";
+import { ProductFocusCard } from "@/features/home/components/product-focus-card";
+import { CrossDomainSignalsCard } from "@/features/home/components/cross-domain-signals-card";
+import { OnboardingModal } from "@/features/home/components/onboarding-modal";
 import {
   ONBOARDING_STEPS,
   completeOnboarding,
   setOnboardingChromeState,
   shouldOpenOnboarding,
-} from "@/features/home/presentation/onboarding-storage";
+} from "@/features/home/onboarding-storage";
 
 export default function HomePage() {
   const today = getTodayISO();

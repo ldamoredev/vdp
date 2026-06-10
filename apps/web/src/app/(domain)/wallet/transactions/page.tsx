@@ -1,6 +1,6 @@
-import { TransactionsScreen } from "@/features/wallet/presentation/components/transactions-screen";
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
-import { buildInitialTransactionFilters } from "@/features/wallet/presentation/wallet-selectors";
+import { TransactionsScreen } from "@/features/wallet/components/transactions-screen";
+import { WalletProvider } from "@/features/wallet/wallet-context";
+import { buildInitialTransactionFilters } from "@/features/wallet/wallet-selectors";
 
 type TransactionsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

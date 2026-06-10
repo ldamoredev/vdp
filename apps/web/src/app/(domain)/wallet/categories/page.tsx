@@ -1,7 +1,7 @@
 "use client";
 
-import { CategoriesScreen } from "@/features/wallet/presentation/components/categories-screen";
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
+import { CategoriesScreen } from "@/features/wallet/components/categories-screen";
+import { WalletProvider } from "@/features/wallet/wallet-context";
 
 export default function WalletCategoriesPage() {
   return (

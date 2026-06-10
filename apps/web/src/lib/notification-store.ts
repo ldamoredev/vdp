@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { createStore } from "./create-store";
 
 export type NotificationType = "achievement" | "warning" | "suggestion";
@@ -43,3 +44,11 @@ export const notificationStore = {
 
   subscribe: store.subscribe,
 };
+
+export function useNotifications() {
+  return useSyncExternalStore(
+    notificationStore.subscribe,
+    notificationStore.getAll,
+    notificationStore.getAll
+  );
+}

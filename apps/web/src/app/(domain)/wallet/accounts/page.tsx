@@ -1,7 +1,7 @@
 "use client";
 
-import { AccountsScreen } from "@/features/wallet/presentation/components/accounts-screen";
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
+import { AccountsScreen } from "@/features/wallet/components/accounts-screen";
+import { WalletProvider } from "@/features/wallet/wallet-context";
 
 export default function WalletAccountsPage() {
   return (

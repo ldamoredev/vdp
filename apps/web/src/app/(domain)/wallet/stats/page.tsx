@@ -1,7 +1,7 @@
 "use client";
 
-import { StatsScreen } from "@/features/wallet/presentation/components/stats-screen";
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
+import { StatsScreen } from "@/features/wallet/components/stats-screen";
+import { WalletProvider } from "@/features/wallet/wallet-context";
 
 export default function StatsPage() {
   return (

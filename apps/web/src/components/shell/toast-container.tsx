@@ -1,6 +1,6 @@
 "use client";
 
-import { useNotifications } from "@/lib/use-notification-store";
+import { useNotifications } from "@/lib/notification-store";
 import { notificationStore, type Notification } from "@/lib/notification-store";
 import { X, Trophy, AlertTriangle, Lightbulb } from "lucide-react";
 

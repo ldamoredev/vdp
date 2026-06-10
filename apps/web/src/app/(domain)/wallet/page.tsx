@@ -1,7 +1,7 @@
 "use client";
 
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
-import { DashboardScreen } from "@/features/wallet/presentation/components/dashboard-screen";
+import { WalletProvider } from "@/features/wallet/wallet-context";
+import { DashboardScreen } from "@/features/wallet/components/dashboard-screen";
 
 export default function DashboardPage() {
   return (

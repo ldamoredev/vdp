@@ -187,10 +187,10 @@ Import direction rules:
 
 - `lib/` imports nothing from `features/` or `components/`.
 - `features/{domain}/` may import `lib/`, `components/primitives/`, and other features' public modules: selectors, query keys, plain components. Never another feature's context/provider or internal hooks.
-- `components/` (shell, chat, auth) is the cross-domain composition layer: it may import feature public modules (for example the chat shell uses `features/tasks/presentation/chat-sync`).
+- `components/` (shell, chat, auth) is the cross-domain composition layer: it may import feature public modules (for example the chat shell uses `features/tasks/chat-sync`).
 - `app/` may import anything.
 
-Frontend domains use the feature module pattern under `apps/web/src/features/{domain}/presentation/`:
+Frontend domains use the feature module pattern under `apps/web/src/features/{domain}/` (flat — no `presentation/` layer; the whole web feature is presentation):
 
 - `{domain}-api.ts`: HTTP client functions for the domain routes, built on `lib/api/client.ts`.
 - `{domain}-selectors.ts`: pure functions, no React imports, primary unit-test surface.

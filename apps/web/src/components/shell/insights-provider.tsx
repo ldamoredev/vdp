@@ -1,6 +1,6 @@
 "use client";
 
-import { useInsightsSSE } from "@/hooks/use-insights-sse";
+import { useInsightsSSE } from "@/components/shell/use-insights-sse";
 import { ToastContainer } from "./toast-container";
 
 /**

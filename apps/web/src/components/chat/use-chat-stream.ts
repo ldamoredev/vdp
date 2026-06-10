@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, chatStream } from "@/lib/api/client";
-import { syncTaskQueryState } from "@/features/tasks/presentation/chat-sync";
+import { syncTaskQueryState } from "@/features/tasks/chat-sync";
 import {
   applyStreamEvent,
   getStreamErrorMessage,

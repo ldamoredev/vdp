@@ -1,14 +1,14 @@
 "use client";
 
-import { TasksProvider } from "@/features/tasks/presentation/tasks-context";
-import { OperationalHeader } from "@/features/tasks/presentation/components/operational-header";
-import { QuickCaptureForm } from "@/features/tasks/presentation/components/quick-capture-form";
-import { PlanningSignal } from "@/features/tasks/presentation/components/planning-signal";
-import { FocusRecommendation } from "@/features/tasks/presentation/components/focus-recommendation";
-import { ExecutionQueue } from "@/features/tasks/presentation/components/execution-queue";
-import { NextBestAction, RecoveryBoard, WeeklyRhythm } from "@/features/tasks/presentation/components/sidebar-cards";
-import { DetailPanel } from "@/features/tasks/presentation/components/detail-panel";
-import { ClarificationGate } from "@/features/tasks/presentation/components/clarification-gate";
+import { TasksProvider } from "@/features/tasks/tasks-context";
+import { OperationalHeader } from "@/features/tasks/components/operational-header";
+import { QuickCaptureForm } from "@/features/tasks/components/quick-capture-form";
+import { PlanningSignal } from "@/features/tasks/components/planning-signal";
+import { FocusRecommendation } from "@/features/tasks/components/focus-recommendation";
+import { ExecutionQueue } from "@/features/tasks/components/execution-queue";
+import { NextBestAction, RecoveryBoard, WeeklyRhythm } from "@/features/tasks/components/sidebar-cards";
+import { DetailPanel } from "@/features/tasks/components/detail-panel";
+import { ClarificationGate } from "@/features/tasks/components/clarification-gate";
 import { ModulePage } from "@/components/primitives/module-page";
 
 export default function TasksDashboard() {

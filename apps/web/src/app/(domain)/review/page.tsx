@@ -1,10 +1,10 @@
 "use client";
 
 import { ModulePage } from "@/components/primitives/module-page";
-import { DailyReviewScreen } from "@/features/review/presentation/components/daily-review-screen";
-import { useDailyReviewModel } from "@/features/review/presentation/use-daily-review-model";
-import { EditTransactionSheet } from "@/features/wallet/presentation/edit-transaction/edit-transaction-sheet";
-import { WalletProvider } from "@/features/wallet/presentation/wallet-context";
+import { DailyReviewScreen } from "@/features/review/components/daily-review-screen";
+import { useDailyReviewModel } from "@/features/review/use-daily-review-model";
+import { EditTransactionSheet } from "@/features/wallet/edit-transaction/edit-transaction-sheet";
+import { WalletProvider } from "@/features/wallet/wallet-context";
 
 export default function ReviewPage() {
   const model = useDailyReviewModel();
