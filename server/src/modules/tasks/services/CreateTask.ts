@@ -23,9 +23,7 @@ export class CreateTask {
         }
 
         const task = await this.repository.createTask(userId, data);
-        this.embedTask.execute(userId, task.id).catch((err: unknown) => {
-            console.warn('[EmbedTask] failed for task', task.id, err instanceof Error ? err.message : err);
-        });
+        this.embedTask.executeInBackground(userId, task.id);
 
         return { task, similarTasks };
     }

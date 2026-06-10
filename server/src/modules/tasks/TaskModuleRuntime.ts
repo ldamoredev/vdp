@@ -88,6 +88,7 @@ export class TaskModuleRuntime {
                     this.taskNoteRepository(),
                     this.taskEmbeddingRepository(),
                     this.deps.embeddingProvider,
+                    this.deps.logger,
                 ),
         );
         this.deps.services.register(

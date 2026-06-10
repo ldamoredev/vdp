@@ -2,6 +2,8 @@ import { TaskRepository } from '../domain/TaskRepository';
 import { TaskNoteRepository } from '../domain/TaskNoteRepository';
 import { TaskEmbeddingRepository } from '../domain/TaskEmbeddingRepository';
 import { EmbeddingProvider } from '../../common/base/embeddings/EmbeddingProvider';
+import { Logger } from '../../common/base/observability/logging/Logger';
+import { NoOpLogger } from '../../common/infrastructure/observability/logging/NoOpLogger';
 
 export class EmbedTask {
     constructor(
@@ -9,7 +11,21 @@ export class EmbedTask {
         private noteRepository: TaskNoteRepository,
         private embeddingRepository: TaskEmbeddingRepository,
         private embeddingProvider: EmbeddingProvider,
+        private logger: Logger = new NoOpLogger(),
     ) {}
+
+    /**
+     * Fire-and-forget variant used by task mutations: an embedding failure
+     * must never fail the mutation that triggered it, only get logged.
+     */
+    executeInBackground(userId: string, taskId: string): void {
+        this.execute(userId, taskId).catch((err: unknown) => {
+            this.logger.warn('task embedding failed', {
+                taskId,
+                error: err instanceof Error ? err.message : String(err),
+            });
+        });
+    }
 
     async execute(userId: string, taskId: string): Promise<void> {
         const task = await this.taskRepository.getTask(userId, taskId);
