@@ -182,15 +182,6 @@ export abstract class BaseAgent {
         // Override in subclass
     }
 
-    /**
-     * Proactive evaluation: agent decides to act without user input.
-     * Called by the scheduler on a cron schedule.
-     * Override in domain agents to implement proactive behavior.
-     */
-    async evaluate(_context: AgentContext): Promise<void> {
-        // Override in subclass
-    }
-
     private async executeToolCall(toolCall: AgentToolCall): Promise<AgentToolResult> {
         try {
             const result = await this.executeTool(toolCall.name, toolCall.input);
@@ -218,11 +209,6 @@ export interface AgentTool {
     description: string;
     inputSchema: Record<string, unknown>;
     execute: (input: Record<string, unknown>) => Promise<string>;
-}
-
-export interface AgentContext {
-    recentEvents?: DomainEvent[];
-    additionalContext?: string;
 }
 
 export interface ChatCallbacks {

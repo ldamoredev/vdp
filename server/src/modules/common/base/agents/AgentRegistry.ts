@@ -5,7 +5,7 @@ import { NoOpLogger } from '../../infrastructure/observability/logging/NoOpLogge
 
 /**
  * Registry of all domain agents.
- * Used by the orchestrator and scheduler to access agents.
+ * Used by the agent chat routes and the status endpoint to access agents.
  */
 export class AgentRegistry {
   constructor(private readonly logger: Logger = new NoOpLogger()) {}
