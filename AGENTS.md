@@ -98,7 +98,9 @@ Backend test conventions:
 - `ModuleContext`
 - LLM and OpenTelemetry trace services
 
-`DefaultCoreConfiguration` wires concrete infrastructure: `Database`, `DrizzleRepositoryProvider`, logger, agent provider, embedding provider, auth context storage, and active module factories. Register active modules only through `DefaultCoreConfiguration.moduleFactories`.
+`DefaultCoreConfiguration` wires concrete infrastructure: `Database`, the repository registry, logger, agent provider, embedding provider, auth context storage, and active module factories. Register active modules only through `DefaultCoreConfiguration.moduleFactories`.
+
+Repository wiring is per-module: each module binds its repository tokens to Drizzle implementations in `{domain}/infrastructure/db/bindings.ts`, and `modules/DefaultRepositories.ts` composes them into a `RepositoryRegistry`. `modules/common/` must not import from domain modules; only the composition files at `modules/` root (`DefaultCoreConfiguration`, `DefaultRepositories`) enumerate domains.
 
 Each real backend domain follows this module shape:
 
@@ -112,6 +114,7 @@ server/src/modules/{domain}/
 ├── infrastructure/
 │   ├── db/
 │   │   ├── schema.ts
+│   │   ├── bindings.ts
 │   │   └── Drizzle{Entity}Repository.ts
 │   ├── routes/
 │   └── agent/

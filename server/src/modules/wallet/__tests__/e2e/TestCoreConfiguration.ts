@@ -8,7 +8,7 @@ import { EmbeddingProvider } from '../../../common/base/embeddings/EmbeddingProv
 import { DomainModuleFactory } from '../../../common/base/modules/DomainModuleFactory';
 import { Logger } from '../../../common/base/observability/logging/Logger';
 import { Database } from '../../../common/base/db/Database';
-import { DrizzleRepositoryProvider } from '../../../common/infrastructure/db/DrizzleRepositoryProvider';
+import { createDefaultRepositoryRegistry } from '../../../DefaultRepositories';
 import { OllamaAgentProvider } from '../../../common/base/agents/providers/OllamaAgentProvider';
 import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbeddingProvider';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
@@ -30,7 +30,7 @@ export class TestCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new NoOpLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(TEST_DATABASE_CONNECTION_STRING));
+        this.repositoryProvider = createDefaultRepositoryRegistry(new Database(TEST_DATABASE_CONNECTION_STRING));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();

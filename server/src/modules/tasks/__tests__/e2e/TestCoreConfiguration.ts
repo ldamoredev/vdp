@@ -9,7 +9,7 @@ import { CoreConfig } from '../../../Core';
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { LLMTraceService } from '../../../common/base/observability/trace/LLMTraceService';
 import { TraceService } from '../../../common/base/observability/trace/TraceService';
-import { DrizzleRepositoryProvider } from '../../../common/infrastructure/db/DrizzleRepositoryProvider';
+import { createDefaultRepositoryRegistry } from '../../../DefaultRepositories';
 import { Database } from '../../../common/base/db/Database';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
 import { OllamaAgentProvider } from '../../../common/base/agents/providers/OllamaAgentProvider';
@@ -34,7 +34,7 @@ export class TestCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new NoOpLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database(TEST_DATABASE_CONNECTION_STRING));
+        this.repositoryProvider = createDefaultRepositoryRegistry(new Database(TEST_DATABASE_CONNECTION_STRING));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
         this.agentProvider = new OllamaAgentProvider();

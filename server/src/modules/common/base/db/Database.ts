@@ -1,21 +1,9 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import * as walletSchema from '../../../wallet/infrastructure/db/schema';
-import * as agentSchema from '../../infrastructure/agents/schema';
-import * as authSchema from '../../../auth/infrastructure/db/schema';
-import * as tasksSchema from '../../../tasks/infrastructure/db/schema';
-import * as embeddingsSchema from '../../../tasks/infrastructure/db/embeddings-schema';
 
 export class Database {
   public query;
-  private schema = {
-    ...walletSchema,
-    ...agentSchema,
-    ...authSchema,
-    ...tasksSchema,
-    ...embeddingsSchema,
-  };
 
   constructor(connectionString?: string) {
     const pool = new pg.Pool({
@@ -27,6 +15,8 @@ export class Database {
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: Number(process.env.DB_CONN_TIMEOUT_MS) || 5_000,
     });
-    this.query = drizzle(pool, { schema: this.schema });
+    // Repositories use the SQL builder API (select/insert/update) with their
+    // module's own table objects, so no composed schema is needed here.
+    this.query = drizzle(pool);
   }
 }

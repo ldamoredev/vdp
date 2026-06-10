@@ -4,7 +4,7 @@ import { LLMTraceService } from './common/base/observability/trace/LLMTraceServi
 import { TraceService } from './common/base/observability/trace/TraceService';
 import { CoreConfig } from './Core';
 import { Database } from './common/base/db/Database';
-import { DrizzleRepositoryProvider } from './common/infrastructure/db/DrizzleRepositoryProvider';
+import { createDefaultRepositoryRegistry } from './DefaultRepositories';
 import { createLangfuseService } from './common/infrastructure/observability/trace/langfuse/LangfuseLLMTraceService';
 import {
     createOpenTelemetryService
@@ -33,7 +33,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
 
     constructor() {
         this.logger = new ConsoleLogger();
-        this.repositoryProvider = new DrizzleRepositoryProvider(new Database());
+        this.repositoryProvider = createDefaultRepositoryRegistry(new Database());
         this.llmTraceService = createLangfuseService(process.env, this.logger);
         this.traceService = createOpenTelemetryService(process.env, this.logger);
         this.agentProvider = createAgentProvider(process.env);
