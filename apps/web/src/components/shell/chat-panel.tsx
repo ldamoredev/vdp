@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bot, Send, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
 import { useIsMobile } from "@/lib/use-breakpoint";
-import { getDomainConfig, getDomainFromPathname } from "@/lib/navigation";
+import { domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ConversationList } from "@/components/chat/conversation-list";
@@ -19,13 +19,19 @@ function getAgentBasePath(endpoint: string) {
   return endpoint.replace(/\/chat$/, "");
 }
 
+const enabledDomains = domains.filter((d) => !d.disabled);
+
 export function ChatPanel() {
   const isOpen = useChatOpen();
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const domainKey = getDomainFromPathname(pathname);
-  const domain = domainKey ? getDomainConfig(domainKey) : null;
+  // Outside a domain (home, review, settings) the chat stays available with a
+  // user-selectable agent; inside a domain the route decides.
+  const routeDomainKey = getDomainFromPathname(pathname);
+  const [fallbackDomainKey, setFallbackDomainKey] = useState<DomainKey>("tasks");
+  const domainKey = routeDomainKey ?? fallbackDomainKey;
+  const domain = getDomainConfig(domainKey) ?? null;
   const agentBasePath = domain ? getAgentBasePath(domain.agentEndpoint) : null;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,7 +74,13 @@ export function ChatPanel() {
           : "w-96 border-l border-[var(--glass-border)] bg-[var(--sidebar)] backdrop-blur-xl flex flex-col h-full animate-slide-in-right"
       }
     >
-      <ChatHeader label={domain.label} isMobile={isMobile} />
+      <ChatHeader
+        label={domain.label}
+        isMobile={isMobile}
+        domainOptions={routeDomainKey ? undefined : enabledDomains}
+        selectedDomain={domainKey}
+        onSelectDomain={(key) => setFallbackDomainKey(key)}
+      />
 
       <ConversationList
         conversations={chat.conversations}

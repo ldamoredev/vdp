@@ -15,14 +15,11 @@ export default function TasksDashboard() {
   return (
     <TasksProvider>
       <ModulePage width="6xl" spacing="8">
+        {/* La acción de 20 veces por día (ver la cola y tildar) va antes que
+            las señales de planificación, que se leen una vez. */}
         <section className="grid gap-6 lg:grid-cols-[1.55fr_0.95fr]">
           <OperationalHeader />
           <QuickCaptureForm />
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
-          <PlanningSignal />
-          <FocusRecommendation />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.5fr_0.9fr]">
@@ -33,6 +30,11 @@ export default function TasksDashboard() {
             <RecoveryBoard />
             <WeeklyRhythm />
           </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+          <PlanningSignal />
+          <FocusRecommendation />
         </section>
 
         <ClarificationGate />

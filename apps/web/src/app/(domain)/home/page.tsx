@@ -21,7 +21,7 @@ import { TodayTasksCard } from "@/features/home/components/today-tasks-card";
 import { DailyRitualCard } from "@/features/home/components/daily-ritual-card";
 import { WeeklyTrendCard } from "@/features/home/components/weekly-trend-card";
 import { WalletSnapshotCard } from "@/features/home/components/wallet-snapshot-card";
-import { ProductFocusCard } from "@/features/home/components/product-focus-card";
+import { OperationalRhythmCard } from "@/features/home/components/operational-rhythm-card";
 import { CrossDomainSignalsCard } from "@/features/home/components/cross-domain-signals-card";
 import { OnboardingModal } from "@/features/home/components/onboarding-modal";
 import {
@@ -62,6 +62,16 @@ export default function HomePage() {
   const { data: recentInsights } = useQuery({
     queryKey: ["home", "tasks", "insights"],
     queryFn: () => tasksApi.getRecentInsights(5),
+  });
+
+  const { data: carryOverRate } = useQuery({
+    queryKey: ["home", "tasks", "carry-over-rate", 7],
+    queryFn: () => tasksApi.getCarryOverRate(7),
+  });
+
+  const { data: completionByDomain } = useQuery({
+    queryKey: ["home", "tasks", "by-domain"],
+    queryFn: () => tasksApi.getByDomain(),
   });
 
   const { data: reviewWalletTransactions } = useQuery({
@@ -162,14 +172,12 @@ export default function HomePage() {
 
     syncOnboardingState();
 
-    const intervalId = window.setInterval(syncOnboardingState, 250);
     window.addEventListener("focus", syncOnboardingState);
     window.addEventListener("storage", syncOnboardingState);
     window.addEventListener("pageshow", syncOnboardingState);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.clearInterval(intervalId);
       window.removeEventListener("focus", syncOnboardingState);
       window.removeEventListener("storage", syncOnboardingState);
       window.removeEventListener("pageshow", syncOnboardingState);
@@ -247,7 +255,7 @@ export default function HomePage() {
           />
           <CrossDomainSignalsCard insights={recentInsights ?? []} />
           <WeeklyTrendCard trend={trend} />
-          <ProductFocusCard />
+          <OperationalRhythmCard carryOver={carryOverRate} byDomain={completionByDomain} />
         </div>
       </div>
       </div>

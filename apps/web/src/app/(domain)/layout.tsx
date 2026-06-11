@@ -36,7 +36,7 @@ export default function DomainLayout({ children }: { children: React.ReactNode; 
 
                 <InsightsProvider/>
 
-                {domainKey === 'tasks' && <QuickCapture />}
+                <QuickCapture />
             </div>
         </AuthGate>
     );
