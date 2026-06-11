@@ -1,8 +1,6 @@
 import { DomainEvent, DomainName } from '../event-bus/DomainEvent';
 import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
-import { Skill, SkillRegistry } from './skills/SkillRegistry';
-import { SummarizeSkill } from './skills/SummarizeSkill';
 import { AgentProvider } from './providers/AgentProvider';
 import { AgentMessage, AgentToolCall, AgentToolDefinition, AgentToolResult } from './providers/types';
 import { LLMTraceService, Trace } from '../observability/trace/LLMTraceService';
@@ -24,7 +22,6 @@ export abstract class BaseAgent {
     abstract readonly systemPrompt: string;
     abstract readonly tools: AgentTool[];
 
-    protected skills: SkillRegistry;
     protected repositories: RepositoryProvider;
     protected services: ServiceProvider;
     protected provider: AgentProvider;
@@ -50,18 +47,8 @@ export abstract class BaseAgent {
         this.llmTraceService = llmTraceService;
         this.traceService = traceService;
         this.logger = logger;
-        this.skills = new SkillRegistry(logger);
         this.conversationStore = new AgentConversationStore(repositories);
         this.model = process.env.AGENT_MODEL || provider.defaultModel;
-        this.registerSkill(new SummarizeSkill());
-    }
-
-    registerSkill(skill: Skill) {
-        this.skills.register(skill)
-    }
-
-    getAllSkills(): Skill[] {
-        return this.skills.list();
     }
 
     /**

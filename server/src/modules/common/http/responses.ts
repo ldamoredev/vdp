@@ -21,7 +21,6 @@ export type StatusResponse = {
     timestamp: string;
     domains: string[];
     agents: string[];
-    skills: string[];
 };
 
 export function sendCreated<T>(reply: FastifyReply, payload: T) {
@@ -57,13 +56,11 @@ export function carryOverResponse<T>(tasks: T[]): CarryOverResponse<T> {
 export function buildStatusResponse(data: {
     domains: string[];
     agents: string[];
-    skills: string[];
 }): StatusResponse {
     return {
         status: 'ok',
         timestamp: new Date().toISOString(),
         domains: data.domains,
         agents: data.agents,
-        skills: data.skills,
     };
 }

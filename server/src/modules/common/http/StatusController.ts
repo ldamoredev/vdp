@@ -20,6 +20,5 @@ export class StatusController extends HttpController {
     private readonly health = async () => buildStatusResponse({
         domains: this.modules.map((module) => module.domain),
         agents: this.agentRegistry.getAll().map((agent) => agent.domain),
-        skills: this.agentRegistry.getAll().flatMap((agent) => agent.getAllSkills().map((skill) => skill.name)),
     });
 }
