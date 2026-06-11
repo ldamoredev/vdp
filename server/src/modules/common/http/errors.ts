@@ -7,6 +7,7 @@ export type HttpErrorCode =
     | 'NOT_FOUND'
     | 'CONFLICT'
     | 'DOMAIN_ERROR'
+    | 'TOO_MANY_REQUESTS'
     | 'SERVICE_UNAVAILABLE'
     | 'INTERNAL_ERROR';
 
@@ -61,6 +62,12 @@ export class ConflictHttpError extends HttpError {
 export class DomainHttpError extends HttpError {
     constructor(message: string, details?: unknown) {
         super(422, 'DOMAIN_ERROR', message, details);
+    }
+}
+
+export class TooManyRequestsHttpError extends HttpError {
+    constructor(message: string, details?: unknown) {
+        super(429, 'TOO_MANY_REQUESTS', message, details);
     }
 }
 

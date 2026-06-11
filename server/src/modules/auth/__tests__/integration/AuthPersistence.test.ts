@@ -8,6 +8,7 @@ import { PasswordService } from '../../services/PasswordService';
 import { SessionService } from '../../services/SessionService';
 import { RegisterUser } from '../../services/RegisterUser';
 import { LoginUser } from '../../services/LoginUser';
+import { LoginRateLimiter } from '../../services/LoginRateLimiter';
 import { LogoutUser } from '../../services/LogoutUser';
 import { UpdateProfile } from '../../services/UpdateProfile';
 import { ChangePassword } from '../../services/ChangePassword';
@@ -250,7 +251,7 @@ describe('Auth persistence integration', () => {
                 email: 'login@vdp.local',
                 displayName: 'Login User',
             });
-            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService, new LoginRateLimiter());
             const logoutUser = new LogoutUser(auditLogRepo, sessionService);
 
             const login = await loginUser.execute({
@@ -290,10 +291,55 @@ describe('Auth persistence integration', () => {
             expect(logoutEntries[0].actorSessionId).toBe(loginLog.actorSessionId);
         });
 
+        it('audits failed logins and the lockout transition without logging the password', async () => {
+            const user = await createPersistedUser({
+                email: 'bruteforce@vdp.local',
+                displayName: 'Targeted User',
+            });
+            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService, new LoginRateLimiter(2));
+
+            for (let attempt = 0; attempt < 2; attempt++) {
+                await expect(loginUser.execute({
+                    email: 'bruteforce@vdp.local',
+                    password: 'not-the-password',
+                    ipAddress: '10.0.0.9',
+                })).rejects.toMatchObject({ statusCode: 401 });
+            }
+
+            await expect(loginUser.execute({
+                email: 'bruteforce@vdp.local',
+                password: 'super-secret-password',
+            })).rejects.toMatchObject({ statusCode: 429 });
+
+            const failedEntries = await testDb.query
+                .select()
+                .from(auditLogs)
+                .where(eq(auditLogs.action, 'auth.login.failed'));
+
+            expect(failedEntries).toHaveLength(2);
+            expect(failedEntries[0].actorUserId).toBe(user.id);
+            expect(failedEntries[0].metadata).toMatchObject({
+                email: 'bruteforce@vdp.local',
+                ipAddress: '10.0.0.9',
+            });
+            expect(JSON.stringify(failedEntries[0].metadata)).not.toContain('not-the-password');
+
+            const lockoutEntries = await testDb.query
+                .select()
+                .from(auditLogs)
+                .where(eq(auditLogs.action, 'auth.login.rate_limited'));
+
+            expect(lockoutEntries).toHaveLength(1);
+
+            // The failed attempts surface through the security overview filter.
+            const recentAuthLogs = await auditLogRepo.listRecentAuthLogsForActorUser(user.id, 10);
+            expect(recentAuthLogs.some((log) => log.action === 'auth.login.failed')).toBe(true);
+        });
+
         it('updates the profile and records an audit log', async () => {
             const user = await createPersistedUser();
             const updateProfile = new UpdateProfile(userRepo, auditLogRepo);
-            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService, new LoginRateLimiter());
             const login = await loginUser.execute({
                 email: user.email,
                 password: 'super-secret-password',
@@ -324,7 +370,7 @@ describe('Auth persistence integration', () => {
                 displayName: 'Password User',
                 password: 'old-password-123',
             });
-            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService, new LoginRateLimiter());
             const changePassword = new ChangePassword(userRepo, auditLogRepo, passwordService, sessionService);
 
             const login = await loginUser.execute({
@@ -370,7 +416,7 @@ describe('Auth persistence integration', () => {
                 email: 'security@vdp.local',
                 displayName: 'Security User',
             });
-            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const loginUser = new LoginUser(userRepo, auditLogRepo, passwordService, sessionService, new LoginRateLimiter());
             const getSecurityOverview = new GetSecurityOverview(sessionService, auditLogRepo);
             const logoutOtherSessions = new LogoutOtherSessions(auditLogRepo, sessionService);
 

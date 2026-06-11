@@ -177,6 +177,24 @@ describe('Auth API — E2E', () => {
         });
     });
 
+    it('locks out repeated failed logins, even with the right password afterwards', async () => {
+        // Dedicated email: the limiter is in-process and does not reset
+        // between tests, so this lockout must not leak into other scenarios.
+        const email = 'ratelimit@vdp.local';
+        await registerUser({ email, displayName: 'Rate Limited' });
+
+        for (let attempt = 1; attempt <= 5; attempt++) {
+            const failed = await loginUser({ email, password: 'wrong-password-123' });
+            expect(failed.status).toBe(401);
+        }
+
+        const blocked = await loginUser({ email });
+        expect(blocked.status).toBe(429);
+        expect(blocked.body).toMatchObject({
+            error: 'TOO_MANY_REQUESTS',
+        });
+    });
+
     it('rejects duplicate email registration', async () => {
         const first = await registerUser({
             email: 'duplicate@vdp.local',

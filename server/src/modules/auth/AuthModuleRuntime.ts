@@ -8,6 +8,7 @@ import { SessionService } from './services/SessionService';
 import { GetSetupStatus } from './services/GetSetupStatus';
 import { RegisterUser } from './services/RegisterUser';
 import { LoginUser } from './services/LoginUser';
+import { LoginRateLimiter } from './services/LoginRateLimiter';
 import { LogoutUser } from './services/LogoutUser';
 import { UpdateProfile } from './services/UpdateProfile';
 import { ChangePassword } from './services/ChangePassword';
@@ -41,12 +42,15 @@ export class AuthModuleRuntime {
             ),
         );
 
+        services.register(LoginRateLimiter, () => new LoginRateLimiter());
+
         services.register(LoginUser, () =>
             new LoginUser(
                 repositories.get(UserRepository),
                 repositories.get(AuditLogRepository),
                 services.get(PasswordService),
                 services.get(SessionService),
+                services.get(LoginRateLimiter),
             ),
         );
 
