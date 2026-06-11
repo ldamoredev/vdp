@@ -5,7 +5,7 @@ import {
     TransactionFilters,
     PagedTransactions,
 } from '../../domain/Transaction';
-import { TransactionRepository } from '../../domain/TransactionRepository';
+import { CurrencyExpenseTotal, TransactionRepository } from '../../domain/TransactionRepository';
 import { Database } from '../../../common/base/db/Database';
 import { transactions } from './schema';
 import { and, desc, eq, gte, ilike, lte, sql, SQL } from 'drizzle-orm';
@@ -148,5 +148,21 @@ export class DrizzleTransactionRepository extends TransactionRepository {
             .where(and(...conditions));
 
         return result.balance;
+    }
+
+    async sumExpensesByCurrency(userId: string, from: string, to: string): Promise<CurrencyExpenseTotal[]> {
+        return this.db.query
+            .select({
+                currency: transactions.currency,
+                total: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)::text`,
+            })
+            .from(transactions)
+            .where(and(
+                eq(transactions.ownerUserId, userId),
+                eq(transactions.type, 'expense'),
+                gte(transactions.date, from),
+                lte(transactions.date, to),
+            ))
+            .groupBy(transactions.currency);
     }
 }

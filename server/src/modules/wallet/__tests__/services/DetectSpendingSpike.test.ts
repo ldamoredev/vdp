@@ -171,6 +171,85 @@ describe('DetectSpendingSpike', () => {
         expect(payload.percentageIncrease).toBe(50);
     });
 
+    it('does not mix currencies when computing averages', async () => {
+        const emitted: DomainEvent[] = [];
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
+
+        // ARS history: 100/week. USD history: 10/week.
+        for (let i = 1; i <= 4; i++) {
+            transactions.seed([
+                createTransaction({ amount: '100', currency: 'ARS', date: midWeekDate(i) }),
+                createTransaction({ amount: '10', currency: 'USD', date: midWeekDate(i) }),
+            ]);
+        }
+
+        // Current week: ARS 110 (10% — below threshold), USD 50 (400% — spike).
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        transactions.seed([
+            createTransaction({ amount: '110', currency: 'ARS', date: todayStr }),
+            createTransaction({ amount: '50', currency: 'USD', date: todayStr }),
+        ]);
+
+        await service.execute(userId);
+
+        expect(emitted).toHaveLength(1);
+        const payload = emitted[0].payload as Record<string, unknown>;
+        expect(payload.currency).toBe('USD');
+        expect(payload.totalExpenses).toBe('50.00');
+        expect(payload.previousAverage).toBe('10.00');
+        expect(payload.percentageIncrease).toBe(400);
+    });
+
+    it('emits one event per spiking currency', async () => {
+        const emitted: DomainEvent[] = [];
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
+
+        for (let i = 1; i <= 4; i++) {
+            transactions.seed([
+                createTransaction({ amount: '100', currency: 'ARS', date: midWeekDate(i) }),
+                createTransaction({ amount: '10', currency: 'USD', date: midWeekDate(i) }),
+            ]);
+        }
+
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        transactions.seed([
+            createTransaction({ amount: '200', currency: 'ARS', date: todayStr }),
+            createTransaction({ amount: '20', currency: 'USD', date: todayStr }),
+        ]);
+
+        await service.execute(userId);
+
+        expect(emitted).toHaveLength(2);
+        const currencies = emitted.map((e) => (e.payload as Record<string, unknown>).currency).sort();
+        expect(currencies).toEqual(['ARS', 'USD']);
+    });
+
+    it('ignores income when measuring spending', async () => {
+        const emitted: DomainEvent[] = [];
+        eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });
+
+        for (let i = 1; i <= 4; i++) {
+            transactions.seed([
+                createTransaction({ amount: '100', date: midWeekDate(i) }),
+            ]);
+        }
+
+        // Current week: expense within threshold + a large income that must not
+        // be counted as spending (the old net-balance sum did).
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        transactions.seed([
+            createTransaction({ amount: '120', date: todayStr }),
+            createTransaction({ amount: '5000', type: 'income', date: todayStr }),
+        ]);
+
+        await service.execute(userId);
+
+        expect(emitted).toHaveLength(0);
+    });
+
     it('uses absolute values for expense amounts', async () => {
         const emitted: DomainEvent[] = [];
         eventBus.on('wallet.spending.spike', (e) => { emitted.push(e); });

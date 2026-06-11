@@ -18,31 +18,31 @@ export class DetectSpendingSpike {
         const thisWeekStart = this.weekStart(now);
         const thisWeekEnd = this.formatDate(now);
 
-        const currentSum = await this.transactions.sumByDateRange(userId, thisWeekStart, thisWeekEnd);
-        const currentExpenses = Math.abs(parseFloat(currentSum));
+        // Expenses are compared per currency: ARS and USD amounts must never be
+        // mixed in the same average.
+        const currentByCurrency = await this.sumExpenses(userId, thisWeekStart, thisWeekEnd);
+        if (currentByCurrency.size === 0) return;
 
-        if (currentExpenses === 0) return;
-
-        const weeklyTotals: number[] = [];
+        const previousWeeks: Map<string, number>[] = [];
         for (let i = 1; i <= COMPARISON_WEEKS; i++) {
             const weekEnd = new Date(now);
             weekEnd.setDate(weekEnd.getDate() - 7 * i);
             const weekStart = this.weekStart(weekEnd);
-            const sum = await this.transactions.sumByDateRange(
-                userId,
-                weekStart,
-                this.formatDate(weekEnd),
-            );
-            weeklyTotals.push(Math.abs(parseFloat(sum)));
+            previousWeeks.push(await this.sumExpenses(userId, weekStart, this.formatDate(weekEnd)));
         }
 
-        const avgExpenses = weeklyTotals.reduce((a, b) => a + b, 0) / weeklyTotals.length;
-        if (avgExpenses === 0) return;
+        for (const [currency, currentExpenses] of currentByCurrency) {
+            if (currentExpenses === 0) continue;
 
-        const percentageIncrease = ((currentExpenses - avgExpenses) / avgExpenses) * 100;
+            const weeklyTotals = previousWeeks.map((week) => week.get(currency) ?? 0);
+            const avgExpenses = weeklyTotals.reduce((a, b) => a + b, 0) / weeklyTotals.length;
+            if (avgExpenses === 0) continue;
 
-        if (percentageIncrease >= SPIKE_THRESHOLD_PERCENT) {
+            const percentageIncrease = ((currentExpenses - avgExpenses) / avgExpenses) * 100;
+            if (percentageIncrease < SPIKE_THRESHOLD_PERCENT) continue;
+
             this.logger.info('spending spike detected', {
+                currency,
                 currentExpenses: currentExpenses.toFixed(2),
                 avgExpenses: avgExpenses.toFixed(2),
                 percentageIncrease: Math.round(percentageIncrease),
@@ -54,12 +54,17 @@ export class DetectSpendingSpike {
                     totalExpenses: currentExpenses.toFixed(2),
                     previousAverage: avgExpenses.toFixed(2),
                     percentageIncrease: Math.round(percentageIncrease),
-                    currency: 'ARS',
+                    currency,
                     periodFrom: thisWeekStart,
                     periodTo: thisWeekEnd,
                 }),
             );
         }
+    }
+
+    private async sumExpenses(userId: string, from: string, to: string): Promise<Map<string, number>> {
+        const totals = await this.transactions.sumExpensesByCurrency(userId, from, to);
+        return new Map(totals.map(({ currency, total }) => [currency, Math.abs(parseFloat(total))]));
     }
 
     private weekStart(date: Date): string {

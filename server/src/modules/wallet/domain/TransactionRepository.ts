@@ -6,6 +6,11 @@ import {
     PagedTransactions,
 } from './Transaction';
 
+export type CurrencyExpenseTotal = {
+    readonly currency: string;
+    readonly total: string;
+};
+
 export abstract class TransactionRepository {
     abstract list(userId: string, filters: TransactionFilters): Promise<PagedTransactions>;
     abstract findById(userId: string, id: string): Promise<Transaction | null>;
@@ -14,4 +19,5 @@ export abstract class TransactionRepository {
     abstract delete(userId: string, id: string): Promise<Transaction | null>;
     abstract sumByAccountId(userId: string, accountId: string): Promise<string>;
     abstract sumByDateRange(userId: string, from: string, to: string, accountId?: string): Promise<string>;
+    abstract sumExpensesByCurrency(userId: string, from: string, to: string): Promise<CurrencyExpenseTotal[]>;
 }

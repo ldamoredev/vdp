@@ -5,7 +5,7 @@ import {
     TransactionFilters,
     PagedTransactions,
 } from '../../domain/Transaction';
-import { TransactionRepository } from '../../domain/TransactionRepository';
+import { CurrencyExpenseTotal, TransactionRepository } from '../../domain/TransactionRepository';
 import { randomUUID } from 'crypto';
 
 export class FakeTransactionRepository extends TransactionRepository {
@@ -124,5 +124,18 @@ export class FakeTransactionRepository extends TransactionRepository {
             if (tx.type === 'expense') balance -= amount;
         }
         return balance.toString();
+    }
+
+    async sumExpensesByCurrency(_userId: string, from: string, to: string): Promise<CurrencyExpenseTotal[]> {
+        const totals = new Map<string, number>();
+        for (const tx of this.store.values()) {
+            if (tx.type !== 'expense') continue;
+            if (tx.date < from || tx.date > to) continue;
+            totals.set(tx.currency, (totals.get(tx.currency) ?? 0) + parseFloat(tx.amount));
+        }
+        return Array.from(totals.entries()).map(([currency, total]) => ({
+            currency,
+            total: total.toString(),
+        }));
     }
 }
