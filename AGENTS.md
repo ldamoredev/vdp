@@ -126,6 +126,13 @@ server/src/modules/{domain}/
 
 Use one service class per use case. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers should be thin HTTP adapters around services.
 
+Domain modeling: two styles coexist deliberately, and both are valid.
+
+- Rich entity class with behavior (`tasks/domain/Task.ts`: `complete()`, `carryOver()`, `isStuck()`). Default for new domains whose entities have state transitions or invariants of their own.
+- Plain `readonly` types with logic in services (`wallet/domain/*`, `auth/domain/*`). Appropriate when the domain is mostly orchestration across repositories (transfers, stats, contributions).
+
+Do not rewrite a module from one style to the other without an explicit reason; consistency-for-its-own-sake is not one.
+
 ## Database
 
 The active migration creates these PostgreSQL schemas:
