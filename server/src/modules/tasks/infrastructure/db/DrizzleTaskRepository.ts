@@ -219,6 +219,14 @@ export class DrizzleTaskRepository extends TaskRepository {
         return rows;
     }
 
+    async listOwnerUserIds(): Promise<string[]> {
+        const rows = await this.db.query
+            .selectDistinct({ ownerUserId: tasks.ownerUserId })
+            .from(tasks);
+
+        return rows.map((row) => row.ownerUserId);
+    }
+
     async getCompletionByDomain(userId: string, from?: string, to?: string): Promise<DomainStat[]> {
         const conditions: SQL[] = [eq(tasks.ownerUserId, userId), eq(tasks.status, "done")];
         if (from) conditions.push(gte(tasks.scheduledDate, from));

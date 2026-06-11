@@ -84,6 +84,7 @@ export class Core {
 
     async start() {
         await this.traceService.start();
+        await Promise.all(this.modules.map((module) => module.start?.()));
     }
 
     async shutdown(): Promise<void> {

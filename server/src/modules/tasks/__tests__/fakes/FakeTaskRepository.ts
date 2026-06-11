@@ -180,6 +180,17 @@ export class FakeTaskRepository extends TaskRepository {
         return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
     }
 
+    // The fake store is user-agnostic, so owners are configurable per test.
+    private ownerUserIds: string[] = ['test-user-id'];
+
+    setOwnerUserIds(ids: string[]): void {
+        this.ownerUserIds = ids;
+    }
+
+    async listOwnerUserIds(): Promise<string[]> {
+        return [...this.ownerUserIds];
+    }
+
     // ─── Stats ─────────────────────────────────────────
 
     async getCompletionByDomain(_userId: string, from?: string, to?: string): Promise<DomainStat[]> {

@@ -16,6 +16,7 @@ export abstract class TaskRepository {
     abstract countByDateAndStatus(userId: string, date: string, status: TaskStatus): Promise<number>;
     abstract countByDate(userId: string, date: string): Promise<DateCounts>;
     abstract getTrendByDateRange(userId: string, fromDate: string, toDate: string): Promise<DateTrendRow[]>;
+    abstract listOwnerUserIds(): Promise<string[]>;
 
     abstract getCompletionByDomain(userId: string, from?: string, to?: string): Promise<DomainStat[]>;
     abstract getCarryOverStats(userId: string, fromDate: string, toDate: string): Promise<CarryOverStats>;

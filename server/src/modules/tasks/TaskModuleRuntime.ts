@@ -24,6 +24,7 @@ import { GetCarryOverRate } from './services/GetCarryOverRate';
 import { GetCompletionByDomain } from './services/GetCompletionByDomain';
 import { GetDayStats } from './services/GetDayStats';
 import { GetEndOfDayReview } from './services/GetEndOfDayReview';
+import { RebuildStreaks } from './services/RebuildStreaks';
 import { RecommendationEngine } from './services/RecommendationEngine';
 import { GetTask } from './services/GetTask';
 import { GetTasks } from './services/GetTasks';
@@ -175,6 +176,25 @@ export class TaskModuleRuntime {
             CheckTasksOverload,
             () => new CheckTasksOverload(this.taskRepository(), this.deps.eventBus),
         );
+        this.deps.services.register(
+            RebuildStreaks,
+            () => new RebuildStreaks(this.taskRepository(), this.deps.insightsStore),
+        );
+    }
+
+    /**
+     * Called once at server start. A rehydration failure must never block
+     * boot: streaks fall back to the pre-existing behavior (empty until the
+     * next perfect day).
+     */
+    async rehydrateStreaks(): Promise<void> {
+        try {
+            await this.deps.services.get(RebuildStreaks).execute();
+        } catch (err: unknown) {
+            this.deps.logger.warn('streak rehydration failed', {
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
     }
 
     private subscribeToTaskEvents(): void {

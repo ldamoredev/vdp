@@ -33,6 +33,10 @@ export class TaskModule extends BaseModule {
         this.runtime.registerAgent();
     }
 
+    async start(): Promise<void> {
+        await this.runtime.rehydrateStreaks();
+    }
+
     getControllers(): HttpController[] {
         return this.runtime.createControllers();
     }
