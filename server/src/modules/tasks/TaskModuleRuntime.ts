@@ -197,6 +197,20 @@ export class TaskModuleRuntime {
         }
     }
 
+    /**
+     * Called once at server start. A rehydration failure must never block
+     * boot: insights fall back to an empty store, as before persistence.
+     */
+    async rehydrateInsights(): Promise<void> {
+        try {
+            await this.deps.insightsStore.hydrate();
+        } catch (err: unknown) {
+            this.deps.logger.warn('task insight rehydration failed', {
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
+    }
+
     private subscribeToTaskEvents(): void {
         const subscribers = [
             new CheckDailyCompletion(this.taskRepository(), this.deps.eventBus),

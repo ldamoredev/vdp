@@ -7,6 +7,8 @@ import {
   timestamp,
   date,
   index,
+  boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { users } from '../../../auth/infrastructure/db/schema';
 
@@ -61,5 +63,26 @@ export const taskNotes = tasksSchema.table(
   (table) => [
     index("task_notes_owner_user_idx").on(table.ownerUserId),
     index("task_notes_task_idx").on(table.taskId),
+  ]
+);
+
+// ─── Task Insights ───────────────────────────────────────
+// Durable backing for TaskInsightsStore: the in-memory store stays the read
+// model, this table survives restarts/deploys. Capped per user by the store.
+export const taskInsights = tasksSchema.table(
+  "task_insights",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    type: varchar("type", { length: 20 }).notNull(),
+    // Type: achievement, warning, suggestion
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    metadata: jsonb("metadata"),
+    read: boolean("read").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("task_insights_owner_created_idx").on(table.ownerUserId, table.createdAt),
   ]
 );

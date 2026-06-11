@@ -21,9 +21,11 @@ import { ExchangeRateRepository } from '../../domain/ExchangeRateRepository';
 import { InvestmentRepository } from '../../domain/InvestmentRepository';
 import { SavingsGoalRepository } from '../../domain/SavingsGoalRepository';
 import { TransactionRepository } from '../../domain/TransactionRepository';
+import { WalletInsightRepository } from '../../domain/WalletInsightRepository';
 import { FakeAccountRepository } from '../fakes/FakeAccountRepository';
 import { FakeCategoryRepository } from '../fakes/FakeCategoryRepository';
 import { FakeExchangeRateRepository } from '../fakes/FakeExchangeRateRepository';
+import { FakeWalletInsightRepository } from '../fakes/FakeWalletInsightRepository';
 import { FakeInvestmentRepository } from '../fakes/FakeInvestmentRepository';
 import { FakeSavingsGoalRepository } from '../fakes/FakeSavingsGoalRepository';
 import { FakeTransactionRepository } from '../fakes/FakeTransactionRepository';
@@ -165,6 +167,7 @@ function createContext(provider: AgentProvider) {
     repositories.register(SavingsGoalRepository, savingsGoalRepo);
     repositories.register(InvestmentRepository, investmentRepo);
     repositories.register(ExchangeRateRepository, exchangeRateRepo);
+    repositories.register(WalletInsightRepository, new FakeWalletInsightRepository());
     repositories.register(AgentRepository, agentRepository);
 
     const context: ModuleContext = {

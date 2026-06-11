@@ -1,4 +1,5 @@
 import { TaskInsightsStore } from './services/TaskInsightsStore';
+import { TaskInsightRepository } from './domain/TaskInsightRepository';
 import { HttpController } from '../common/http/HttpController';
 import { BaseModule } from '../common/base/modules/BaseModule';
 import { DomainModuleDescriptor } from '../common/base/modules/DomainModuleDescriptor';
@@ -17,7 +18,10 @@ export class TaskModule extends BaseModule {
 
     constructor(context: ModuleContext) {
         super(context);
-        this.insightsStore = new TaskInsightsStore(this.logger);
+        this.insightsStore = new TaskInsightsStore(
+            this.logger,
+            context.repositories.get(TaskInsightRepository),
+        );
         this.runtime = new TaskModuleRuntime({ ...context, insightsStore: this.insightsStore });
     }
 
@@ -34,6 +38,7 @@ export class TaskModule extends BaseModule {
     }
 
     async start(): Promise<void> {
+        await this.runtime.rehydrateInsights();
         await this.runtime.rehydrateStreaks();
     }
 

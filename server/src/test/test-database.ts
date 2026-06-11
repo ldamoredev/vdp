@@ -102,6 +102,17 @@ CREATE TABLE IF NOT EXISTS tasks.task_embeddings (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS tasks.task_insights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata JSONB,
+    read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_date);
 CREATE INDEX IF NOT EXISTS tasks_owner_user_idx ON tasks.tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
@@ -109,6 +120,7 @@ CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
 CREATE INDEX IF NOT EXISTS tasks_date_status_idx ON tasks.tasks(scheduled_date, status);
 CREATE INDEX IF NOT EXISTS task_notes_owner_user_idx ON tasks.task_notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
+CREATE INDEX IF NOT EXISTS task_insights_owner_created_idx ON tasks.task_insights(owner_user_id, created_at);
 CREATE INDEX IF NOT EXISTS core_msg_conversation_idx ON core.agent_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS agent_conv_domain_updated_idx ON core.agent_conversations(user_id, domain, updated_at);
 CREATE INDEX IF NOT EXISTS task_embeddings_task_id_idx ON tasks.task_embeddings(task_id);
@@ -206,6 +218,17 @@ CREATE TABLE IF NOT EXISTS wallet.exchange_rates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS wallet.wallet_insights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata JSONB,
+    read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS categories_parent_id_idx ON wallet.categories(parent_id);
 CREATE INDEX IF NOT EXISTS categories_owner_user_idx ON wallet.categories(owner_user_id);
 CREATE INDEX IF NOT EXISTS tx_owner_user_idx ON wallet.transactions(owner_user_id);
@@ -218,6 +241,7 @@ CREATE INDEX IF NOT EXISTS investments_owner_user_idx ON wallet.investments(owne
 CREATE INDEX IF NOT EXISTS investments_account_id_idx ON wallet.investments(account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
     ON wallet.exchange_rates(from_currency, to_currency, type, date);
+CREATE INDEX IF NOT EXISTS wallet_insights_owner_created_idx ON wallet.wallet_insights(owner_user_id, created_at);
 
 `;
 
@@ -247,7 +271,12 @@ export class TestDatabase {
     async truncate(options?: { users?: readonly TestUser[] }): Promise<void> {
         const client = await this.pool.connect();
         try {
-            await client.query(
+            // Fire-and-forget writes from the app (insight persistence, etc.)
+            // can still be in flight when a test truncates; their FK checks on
+            // core.users can deadlock against TRUNCATE's exclusive locks.
+            // Postgres aborts one side (40P01) — retrying the truncate wins.
+            await this.queryWithDeadlockRetry(
+                client,
                 `TRUNCATE
                     core.audit_logs,
                     core.sessions,
@@ -256,7 +285,9 @@ export class TestDatabase {
                     core.agent_conversations,
                     tasks.task_embeddings,
                     tasks.task_notes,
+                    tasks.task_insights,
                     tasks.tasks,
+                    wallet.wallet_insights,
                     wallet.savings_contributions,
                     wallet.transactions,
                     wallet.investments,
@@ -269,6 +300,23 @@ export class TestDatabase {
             await this.seedUsers(options?.users ?? DEFAULT_TEST_USERS);
         } finally {
             client.release();
+        }
+    }
+
+    private async queryWithDeadlockRetry(
+        client: pg.PoolClient,
+        sql: string,
+        attempts = 3,
+    ): Promise<void> {
+        for (let attempt = 1; ; attempt++) {
+            try {
+                await client.query(sql);
+                return;
+            } catch (err: unknown) {
+                const isDeadlock = (err as { code?: string }).code === '40P01';
+                if (!isDeadlock || attempt >= attempts) throw err;
+                await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
+            }
         }
     }
 

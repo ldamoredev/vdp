@@ -1,4 +1,7 @@
 import { randomUUID } from 'crypto';
+import { Logger } from '../../common/base/observability/logging/Logger';
+import { NoOpLogger } from '../../common/infrastructure/observability/logging/NoOpLogger';
+import { WalletInsightRepository } from '../domain/WalletInsightRepository';
 
 export type WalletInsightType = 'achievement' | 'warning' | 'suggestion';
 
@@ -29,8 +32,33 @@ export type WalletInsightListener = (insight: WalletInsight, userId: string) => 
 const MAX_INSIGHTS_PER_USER = 50;
 
 export class WalletInsightsStore {
+    constructor(
+        private readonly repository?: WalletInsightRepository,
+        private readonly logger: Logger = new NoOpLogger(),
+    ) {}
+
     private insights: StoredWalletInsight[] = [];
     private readonly listeners = new Set<WalletInsightListener>();
+
+    /**
+     * Reload the in-memory state from the repository. Called once at boot,
+     * before the HTTP server accepts traffic.
+     */
+    async hydrate(): Promise<void> {
+        if (!this.repository) return;
+
+        const rows = await this.repository.listAll();
+        this.insights = rows.map((row) => ({
+            id: row.id,
+            userId: row.userId,
+            type: row.type as WalletInsightType,
+            title: row.title,
+            message: row.message,
+            createdAt: row.createdAt,
+            read: row.read,
+            metadata: row.metadata,
+        }));
+    }
 
     addInsight(input: NewWalletInsight): WalletInsight {
         const insight: StoredWalletInsight = {
@@ -46,9 +74,34 @@ export class WalletInsightsStore {
 
         this.insights.push(insight);
         this.trimInsights(input.userId);
+        // Listeners run before persisting: the SSE handler may mark the
+        // insight read synchronously, and the insert must carry that state.
         this.notifyListeners(insight);
+        this.persistInsight(insight);
 
         return this.toInsight(insight);
+    }
+
+    private persistInsight(insight: StoredWalletInsight): void {
+        if (!this.repository) return;
+
+        this.repository
+            .insert({
+                id: insight.id,
+                userId: insight.userId,
+                type: insight.type,
+                title: insight.title,
+                message: insight.message,
+                metadata: insight.metadata,
+                read: insight.read,
+                createdAt: insight.createdAt,
+            })
+            .then(() => this.repository?.trimToNewest(insight.userId, MAX_INSIGHTS_PER_USER))
+            .catch((err: unknown) => {
+                this.logger.error('failed to persist wallet insight', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            });
     }
 
     getUnreadInsights(userId: string): WalletInsight[] {
@@ -62,6 +115,11 @@ export class WalletInsightsStore {
 
         if (insight) {
             insight.read = true;
+            this.repository?.markRead(userId, insightId).catch((err: unknown) => {
+                this.logger.error('failed to persist wallet insight read flag', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            });
         }
     }
 

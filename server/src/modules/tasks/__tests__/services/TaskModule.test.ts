@@ -17,10 +17,12 @@ import { TaskModule } from '../../TaskModule';
 import { TaskEmbeddingRepository } from '../../domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from '../../domain/TaskNoteRepository';
 import { TaskRepository } from '../../domain/TaskRepository';
+import { TaskInsightRepository } from '../../domain/TaskInsightRepository';
 import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
 import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepository';
 import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
+import { FakeTaskInsightRepository } from '../fakes/FakeTaskInsightRepository';
 import { AddTaskNote } from '../../services/AddTaskNote';
 import { CreateTask } from '../../services/CreateTask';
 import { FindSimilarTasks } from '../../services/FindSimilarTasks';
@@ -103,6 +105,7 @@ function createContext(): ModuleContext {
     repositories.register(TaskNoteRepository, new FakeTaskNoteRepository());
     repositories.register(TaskEmbeddingRepository, new FakeTaskEmbeddingRepository());
     repositories.register(AgentRepository, new FakeAgentRepository());
+    repositories.register(TaskInsightRepository, new FakeTaskInsightRepository());
 
     return {
         repositories,

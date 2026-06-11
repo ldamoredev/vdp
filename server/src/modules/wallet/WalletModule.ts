@@ -5,6 +5,7 @@ import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { WalletModuleRuntime } from './WalletModuleRuntime';
 import { HttpMiddleWare } from '../common/http/HttpMiddleWare';
 import { WalletInsightsStore } from './services/WalletInsightsStore';
+import { WalletInsightRepository } from './domain/WalletInsightRepository';
 
 export class WalletModule extends BaseModule {
     private static readonly descriptor: DomainModuleDescriptor = {
@@ -16,11 +17,18 @@ export class WalletModule extends BaseModule {
 
     constructor(context: ModuleContext) {
         super(context);
-        this.insightsStore = new WalletInsightsStore();
+        this.insightsStore = new WalletInsightsStore(
+            context.repositories.get(WalletInsightRepository),
+            this.logger,
+        );
         this.runtime = new WalletModuleRuntime({
             ...context,
             insightsStore: this.insightsStore,
         });
+    }
+
+    async start(): Promise<void> {
+        await this.runtime.rehydrateInsights();
     }
 
     protected registerServices() {

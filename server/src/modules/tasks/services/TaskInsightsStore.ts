@@ -1,15 +1,19 @@
 import { diffLocalDateISODays } from '../../common/base/time/dates';
 import { Logger } from '../../common/base/observability/logging/Logger';
 import { NoOpLogger } from '../../common/infrastructure/observability/logging/NoOpLogger';
+import { TaskInsightRepository } from '../domain/TaskInsightRepository';
 
 /**
- * In-memory store for task insights, streaks, and proactive suggestions.
+ * Store for task insights, streaks, and proactive suggestions.
  *
  * Event handlers populate this store reactively.
  * The agent reads it via the `get_insights` tool to surface
  * relevant information when the user next chats.
  *
- * v3: Persist to DB for cross-restart durability.
+ * Reads are served from memory; when a repository is provided, writes are
+ * persisted fire-and-forget and `hydrate()` reloads the memory state at boot.
+ * Streaks stay memory-only: RebuildStreaks reconstructs them from task
+ * history on start.
  */
 
 export type InsightType = 'achievement' | 'warning' | 'suggestion';
@@ -53,7 +57,10 @@ export type NewInsight = {
 };
 
 export class TaskInsightsStore {
-    constructor(private readonly logger: Logger = new NoOpLogger()) {}
+    constructor(
+        private readonly logger: Logger = new NoOpLogger(),
+        private readonly repository?: TaskInsightRepository,
+    ) {}
 
     private insights: StoredInsight[] = [];
     private readonly streaks = new Map<string, StreakData>();
@@ -82,9 +89,62 @@ export class TaskInsightsStore {
 
         this.insights.push(insight);
         this.trimInsights(input.userId);
+        // Listeners run before persisting: the SSE handler may mark the
+        // insight read synchronously, and the insert must carry that state.
         this.notifyListeners(insight);
+        this.persistInsight(insight);
 
         return this.toInsight(insight);
+    }
+
+    /**
+     * Reload the in-memory state from the repository. Called once at boot,
+     * before the HTTP server accepts traffic.
+     */
+    async hydrate(): Promise<void> {
+        if (!this.repository) return;
+
+        const rows = await this.repository.listAll();
+        this.insights = rows.map((row) => ({
+            id: row.id,
+            userId: row.userId,
+            type: row.type as InsightType,
+            title: row.title,
+            message: row.message,
+            createdAt: row.createdAt,
+            read: row.read,
+            metadata: row.metadata,
+        }));
+    }
+
+    private persistInsight(insight: StoredInsight): void {
+        if (!this.repository) return;
+
+        this.repository
+            .insert({
+                id: insight.id,
+                userId: insight.userId,
+                type: insight.type,
+                title: insight.title,
+                message: insight.message,
+                metadata: insight.metadata,
+                read: insight.read,
+                createdAt: insight.createdAt,
+            })
+            .then(() => this.repository?.trimToNewest(insight.userId, this.maxInsights))
+            .catch((err: unknown) => {
+                this.logger.error('failed to persist task insight', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            });
+    }
+
+    private persistReadFlag(operation: Promise<void> | undefined): void {
+        operation?.catch((err: unknown) => {
+            this.logger.error('failed to persist task insight read flag', {
+                error: err instanceof Error ? err.message : String(err),
+            });
+        });
     }
 
     private trimInsights(userId: string): void {
@@ -148,8 +208,14 @@ export class TaskInsightsStore {
     }
 
     markAllRead(userId?: string): void {
+        const affectedUserIds = new Set<string>();
         for (const insight of this.filterInsights(userId)) {
             insight.read = true;
+            affectedUserIds.add(insight.userId);
+        }
+
+        for (const affectedUserId of affectedUserIds) {
+            this.persistReadFlag(this.repository?.markAllRead(affectedUserId));
         }
     }
 
@@ -160,6 +226,7 @@ export class TaskInsightsStore {
 
         if (insight) {
             insight.read = true;
+            this.persistReadFlag(this.repository?.markRead(userId, insightId));
         }
     }
 

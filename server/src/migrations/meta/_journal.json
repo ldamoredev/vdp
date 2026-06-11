@@ -8,6 +8,13 @@
       "when": 1775215944586,
       "tag": "0000_wooden_plazm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781186770139,
+      "tag": "0001_unknown_titanium_man",
+      "breakpoints": true
     }
   ]
 }

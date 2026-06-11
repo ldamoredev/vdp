@@ -5,6 +5,7 @@ import { DrizzleTransactionRepository } from '../../infrastructure/db/DrizzleTra
 import { DrizzleSavingsGoalRepository } from '../../infrastructure/db/DrizzleSavingsGoalRepository';
 import { DrizzleInvestmentRepository } from '../../infrastructure/db/DrizzleInvestmentRepository';
 import { DrizzleExchangeRateRepository } from '../../infrastructure/db/DrizzleExchangeRateRepository';
+import { DrizzleWalletInsightRepository } from '../../infrastructure/db/DrizzleWalletInsightRepository';
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 import { testDb } from '../../../../test/test-database';
 
@@ -105,6 +106,94 @@ describe('Drizzle wallet repositories', () => {
 
             const rangedNet = await transactionRepo.sumByDateRange(userId, '2026-03-11', '2026-03-31', account.id);
             expect(rangedNet).toBe('820.00');
+        });
+
+        it('sums expenses grouped by currency, excluding income', async () => {
+            const account = await accountRepo.create(userId, {
+                name: 'Multi',
+                currency: 'ARS',
+                type: 'bank',
+                initialBalance: '0',
+            });
+
+            await transactionRepo.create(userId, {
+                accountId: account.id,
+                type: 'expense',
+                amount: '100.00',
+                currency: 'ARS',
+                date: '2026-03-10',
+            });
+            await transactionRepo.create(userId, {
+                accountId: account.id,
+                type: 'expense',
+                amount: '50.00',
+                currency: 'ARS',
+                date: '2026-03-12',
+            });
+            await transactionRepo.create(userId, {
+                accountId: account.id,
+                type: 'expense',
+                amount: '20.00',
+                currency: 'USD',
+                date: '2026-03-12',
+            });
+            await transactionRepo.create(userId, {
+                accountId: account.id,
+                type: 'income',
+                amount: '900.00',
+                currency: 'ARS',
+                date: '2026-03-12',
+            });
+            await transactionRepo.create(userId, {
+                accountId: account.id,
+                type: 'expense',
+                amount: '999.00',
+                currency: 'ARS',
+                date: '2026-04-01', // outside range
+            });
+
+            const totals = await transactionRepo.sumExpensesByCurrency(userId, '2026-03-01', '2026-03-31');
+            const byCurrency = new Map(totals.map(({ currency, total }) => [currency, total]));
+
+            expect(byCurrency.get('ARS')).toBe('150.00');
+            expect(byCurrency.get('USD')).toBe('20.00');
+            expect(totals).toHaveLength(2);
+        });
+    });
+
+    describe('wallet insights', () => {
+        it('roundtrips insert, markRead, listAll, and trim', async () => {
+            const insightRepo = new DrizzleWalletInsightRepository(testDb as never);
+            const base = {
+                userId,
+                type: 'warning',
+                title: 'Pico de gasto',
+                message: 'Subió 60%',
+                metadata: { source: 'wallet.spending.spike' },
+                read: false,
+            };
+
+            await insightRepo.insert({ ...base, id: '00000000-0000-0000-0000-00000000aa01', createdAt: new Date('2026-06-01T10:00:00Z') });
+            await insightRepo.insert({ ...base, id: '00000000-0000-0000-0000-00000000aa02', createdAt: new Date('2026-06-02T10:00:00Z') });
+            await insightRepo.insert({ ...base, id: '00000000-0000-0000-0000-00000000aa03', createdAt: new Date('2026-06-03T10:00:00Z') });
+
+            await insightRepo.markRead(userId, '00000000-0000-0000-0000-00000000aa02');
+
+            const all = await insightRepo.listAll();
+            expect(all.map((row) => row.id)).toEqual([
+                '00000000-0000-0000-0000-00000000aa01',
+                '00000000-0000-0000-0000-00000000aa02',
+                '00000000-0000-0000-0000-00000000aa03',
+            ]);
+            expect(all[1].read).toBe(true);
+            expect(all[0].metadata).toEqual({ source: 'wallet.spending.spike' });
+
+            await insightRepo.trimToNewest(userId, 2);
+            const trimmed = await insightRepo.listAll();
+            expect(trimmed.map((row) => row.id)).toEqual([
+                '00000000-0000-0000-0000-00000000aa02',
+                '00000000-0000-0000-0000-00000000aa03',
+            ]);
         });
     });
 

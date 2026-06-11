@@ -89,6 +89,20 @@ export class WalletModuleRuntime {
         ];
     }
 
+    /**
+     * Called once at server start. A rehydration failure must never block
+     * boot: insights fall back to an empty store, as before persistence.
+     */
+    async rehydrateInsights(): Promise<void> {
+        try {
+            await this.deps.insightsStore.hydrate();
+        } catch (err: unknown) {
+            this.deps.logger.warn('wallet insight rehydration failed', {
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
+    }
+
     private subscribeInsightsToSSE(): void {
         this.deps.insightsStore.onInsight((insight, userId) => {
             if (this.deps.sseBroadcaster.hasClients(userId)) {
