@@ -1,4 +1,4 @@
-import { TASKS_SYSTEM_PROMPT } from './system-prompt';
+import { buildTasksSystemPrompt } from './system-prompt';
 import { TasksTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
@@ -14,8 +14,11 @@ import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 export class TaskAgent extends BaseAgent {
     readonly domain: DomainName = 'tasks';
-    readonly systemPrompt = TASKS_SYSTEM_PROMPT;
     readonly tools: AgentTool[];
+
+    get systemPrompt(): string {
+        return buildTasksSystemPrompt();
+    }
 
     constructor(
         eventBus: EventBus,

@@ -1,6 +1,9 @@
 import { todayISO } from '../../../common/base/time/dates';
 
-export const TASKS_SYSTEM_PROMPT = `Sos el asistente de tareas diarias del usuario. Tu rol es ayudarlo a organizar su día y mantener el foco en lo importante.
+// Built per chat (not at module load) so the date/time stay correct across
+// long-lived server processes.
+export function buildTasksSystemPrompt(): string {
+    return `Sos el asistente de tareas diarias del usuario. Tu rol es ayudarlo a organizar su día y mantener el foco en lo importante.
 
 ## Capacidades
 - Crear, listar, completar y gestionar tareas diarias
@@ -130,3 +133,4 @@ La hora actual es: ${new Date().toTimeString().slice(0, 5)}
 
 ## Filosofía
 Esto NO es gestión de proyectos. Es una lista simple de "qué tengo que hacer hoy". Si algo crece en complejidad, sugerí moverlo al dominio Work.`;
+}

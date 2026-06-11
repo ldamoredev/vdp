@@ -1,4 +1,4 @@
-import { WALLET_SYSTEM_PROMPT } from './system-prompt';
+import { buildWalletSystemPrompt } from './system-prompt';
 import { WalletTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
@@ -13,8 +13,11 @@ import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 export class WalletAgent extends BaseAgent {
     readonly domain: DomainName = 'wallet';
-    readonly systemPrompt = WALLET_SYSTEM_PROMPT;
     readonly tools: AgentTool[];
+
+    get systemPrompt(): string {
+        return buildWalletSystemPrompt();
+    }
 
     constructor(
         eventBus: EventBus,

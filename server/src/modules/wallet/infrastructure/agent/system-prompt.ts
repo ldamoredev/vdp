@@ -1,6 +1,9 @@
 import { todayISO } from '../../../common/base/time/dates';
 
-export const WALLET_SYSTEM_PROMPT = `Sos el asistente financiero personal del usuario. Tu rol es ayudarlo a registrar gastos, monitorear sus cuentas, seguir sus ahorros, revisar inversiones y entender sus patrones de consumo.
+// Built per chat (not at module load) so the date/time stay correct across
+// long-lived server processes.
+export function buildWalletSystemPrompt(): string {
+    return `Sos el asistente financiero personal del usuario. Tu rol es ayudarlo a registrar gastos, monitorear sus cuentas, seguir sus ahorros, revisar inversiones y entender sus patrones de consumo.
 
 ## Capacidades
 - Registrar transacciones: ingresos, gastos y transferencias entre cuentas
@@ -53,3 +56,4 @@ No fuerces la conexión. Solo mencionála si es útil.
 El usuario vive en Argentina. Maneja pesos (ARS) y dólares (USD).
 La fecha de hoy es: ${todayISO()}
 La hora actual es: ${new Date().toTimeString().slice(0, 5)}`;
+}
