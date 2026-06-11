@@ -25,7 +25,7 @@ export function PlanningSignal() {
           <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] font-medium">
             Pendientes
           </div>
-          <div className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="mt-1.5 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {pendingTasks.length}
           </div>
         </div>
@@ -33,7 +33,7 @@ export function PlanningSignal() {
           <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] font-medium">
             Calientes
           </div>
-          <div className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="mt-1.5 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {urgentTasks.length}
           </div>
         </div>
@@ -41,7 +41,7 @@ export function PlanningSignal() {
           <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] font-medium">
             Carry 7d
           </div>
-          <div className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="mt-1.5 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {carryOverRate?.rate ?? 0}%
           </div>
         </div>

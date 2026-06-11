@@ -74,7 +74,7 @@ export function OperationalHeader() {
             <Target size={15} style={{ color: "var(--violet-soft-text)" }} />
           </div>
           <div className="mt-2.5 flex items-end gap-1.5">
-            <div className="text-3xl font-bold tracking-tight text-[var(--foreground)]">
+            <div className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
               {completionRate}%
             </div>
             <div className="pb-1 text-xs text-[var(--muted)]">
@@ -100,7 +100,7 @@ export function OperationalHeader() {
             </span>
             <Flame size={15} style={{ color: "var(--amber-soft-text)" }} />
           </div>
-          <div className="mt-2.5 text-3xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="mt-2.5 text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {urgentTasks.length}
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">
@@ -117,7 +117,7 @@ export function OperationalHeader() {
             </span>
             <BarChart3 size={15} style={{ color: "var(--violet-soft-text)" }} />
           </div>
-          <div className="mt-2.5 text-3xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="mt-2.5 text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {completionAverage}%
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">

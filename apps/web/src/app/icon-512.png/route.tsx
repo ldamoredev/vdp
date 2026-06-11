@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
-const background = "#020617";
-const gradientA = "rgba(59, 130, 246, 0.95)";
+const background = "#07040D";
+const gradientA = "rgba(124, 106, 245, 0.95)";
 const gradientB = "rgba(168, 85, 247, 0.88)";
 
 export async function GET() {

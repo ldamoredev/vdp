@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { ThemeProvider } from "@/lib/theme";
 
-const APP_THEME_COLOR = "#020617";
+const APP_THEME_COLOR = "#07040D";
 
 export const metadata: Metadata = {
   title: "VDP — Life Operating System",

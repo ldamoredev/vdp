@@ -45,7 +45,7 @@ export function TaskStatsRow({
           />
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-3xl font-bold tracking-tight text-[var(--foreground)]">
+          <span className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {tasksCompleted}
           </span>
           <span className="text-sm text-[var(--muted)]">
@@ -75,7 +75,7 @@ export function TaskStatsRow({
           </div>
           <span className="badge-muted badge">Hoy</span>
         </div>
-        <div className="text-3xl font-bold tracking-tight text-[var(--foreground)]">
+        <div className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
           {tasksPending}
         </div>
         <span className="mt-1.5 block text-xs text-[var(--muted)]">
@@ -104,7 +104,7 @@ export function TaskStatsRow({
             className="text-[var(--muted)] transition-all group-hover:text-[var(--violet-soft-text)] group-hover:translate-x-0.5"
           />
         </div>
-        <div className="text-3xl font-bold tracking-tight text-[var(--foreground)]">
+        <div className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
           {averageCompletion}%
         </div>
         <span className="mt-1.5 block text-xs text-[var(--muted)]">

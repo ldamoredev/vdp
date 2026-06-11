@@ -66,7 +66,7 @@ export function DashboardScreen() {
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--muted)]">
                 Ingresos
               </span>
-              <div className="mt-2 text-2xl font-bold tracking-tight text-[var(--accent-green)]">
+              <div className="mt-2 text-2xl font-data font-bold tracking-tight text-[var(--accent-green)]">
                 +{formatMoney(Number(statsSummary?.totalIncome ?? 0), "ARS")}
               </div>
             </div>
@@ -74,7 +74,7 @@ export function DashboardScreen() {
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--muted)]">
                 Gastos
               </span>
-              <div className="mt-2 text-2xl font-bold tracking-tight text-[var(--accent-red)]">
+              <div className="mt-2 text-2xl font-data font-bold tracking-tight text-[var(--accent-red)]">
                 -{formatMoney(Number(statsSummary?.totalExpenses ?? 0), "ARS")}
               </div>
             </div>
@@ -82,7 +82,7 @@ export function DashboardScreen() {
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--muted)]">
                 Neto
               </span>
-              <div className="mt-2 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+              <div className="mt-2 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
                 {formatMoney(Number(statsSummary?.netBalance ?? 0), "ARS")}
               </div>
             </div>

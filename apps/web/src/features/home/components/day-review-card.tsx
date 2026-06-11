@@ -32,14 +32,14 @@ export function DayReviewCard({
       <div className="grid gap-3 p-4 md:grid-cols-3">
         <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
           <div className="text-xs text-[var(--muted)] mb-1">Total</div>
-          <div className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+          <div className="text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
             {total}
           </div>
         </div>
         <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
           <div className="text-xs text-[var(--muted)] mb-1">Completadas</div>
           <div
-            className="text-2xl font-bold tracking-tight"
+            className="text-2xl font-data font-bold tracking-tight"
             style={{ color: "var(--emerald-soft-text)" }}
           >
             {completed}
@@ -48,7 +48,7 @@ export function DayReviewCard({
         <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
           <div className="text-xs text-[var(--muted)] mb-1">Carry-over</div>
           <div
-            className="text-2xl font-bold tracking-tight"
+            className="text-2xl font-data font-bold tracking-tight"
             style={{ color: "var(--amber-soft-text)" }}
           >
             {carriedToday}

@@ -38,19 +38,19 @@ export function DailyRitualCard({
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Tareas</div>
-            <div className="mt-1 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
               {taskCount}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Wallet</div>
-            <div className="mt-1 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
               {walletCount}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Alertas</div>
-            <div className="mt-1 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
               {insightCount}
             </div>
           </div>

@@ -10,8 +10,8 @@ describe("app installability metadata", () => {
     expect(appManifest.short_name).toBe("VDP");
     expect(appManifest.start_url).toBe("/home");
     expect(appManifest.display).toBe("standalone");
-    expect(appManifest.background_color).toBe("#020617");
-    expect(appManifest.theme_color).toBe("#020617");
+    expect(appManifest.background_color).toBe("#07040D");
+    expect(appManifest.theme_color).toBe("#07040D");
     expect(appManifest.icons).toEqual([
       {
         src: "/icon-192.png",
@@ -30,7 +30,7 @@ describe("app installability metadata", () => {
     expect(viewport).toEqual({
       width: "device-width",
       initialScale: 1,
-      themeColor: "#020617",
+      themeColor: "#07040D",
     });
 
     expect(metadata.appleWebApp).toMatchObject({

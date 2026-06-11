@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
 
-const background = "#020617";
-const gradientA = "rgba(59, 130, 246, 0.95)";
-const gradientB = "rgba(16, 185, 129, 0.9)";
+const background = "#07040D";
+const gradientA = "rgba(124, 106, 245, 0.95)";
+const gradientB = "rgba(168, 85, 247, 0.9)";
 
 export async function GET() {
   return new ImageResponse(
@@ -25,7 +25,7 @@ export async function GET() {
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(circle at 35% 22%, rgba(59,130,246,0.4), transparent 42%), radial-gradient(circle at 74% 20%, rgba(16,185,129,0.32), transparent 34%)",
+              "radial-gradient(circle at 35% 22%, rgba(124,106,245,0.4), transparent 42%), radial-gradient(circle at 74% 20%, rgba(168,85,247,0.32), transparent 34%)",
           }}
         />
         <div
