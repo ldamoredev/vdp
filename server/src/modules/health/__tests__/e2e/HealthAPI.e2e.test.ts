@@ -265,6 +265,78 @@ describe('Health API — E2E', () => {
         expect(await findMilestoneInsight()).toHaveLength(1);
     });
 
+    it('covers the goal loop: create, deadline signal, graduate into a habit, isolation', async () => {
+        function daysAhead(n: number): string {
+            const d = new Date();
+            d.setDate(d.getDate() + n);
+            return localDateISO(d);
+        }
+
+        // Creation validations
+        const past = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/health/goals',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { title: 'Mal', targetDate: daysAgo(1) },
+        });
+        expect(past.statusCode).toBe(422);
+
+        // A goal due in 5 days: listing it should fire the t7 deadline signal.
+        const created = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/health/goals',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { title: 'Empezar el gym', targetDate: daysAhead(5) },
+        });
+        expect(created.statusCode).toBe(201);
+        expect(created.json()).toMatchObject({ status: 'active', daysLeft: 5 });
+        const goalId = created.json().id;
+
+        await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/goals',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        // Decision task lands in Tasks (fire-and-forget: poll briefly).
+        let decision: { title: string; priority: number } | undefined;
+        for (let attempt = 0; attempt < 20 && !decision; attempt++) {
+            const tasks = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/tasks?scheduledDate=${localDateISO(new Date())}`,
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            decision = tasks.json().tasks.find(
+                (task: { title: string }) => task.title === 'Decidir meta: Empezar el gym',
+            );
+            if (!decision) await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        expect(decision).toBeDefined();
+        expect(decision!.priority).toBe(2);
+
+        // Isolation
+        const otherComplete = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/health/goals/${goalId}/complete`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+        expect(otherComplete.statusCode).toBe(404);
+
+        // Graduation: completes the goal and creates the habit in one call.
+        const graduated = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/health/goals/${goalId}/graduate`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { habitName: 'Gimnasio', emoji: '🏋️' },
+        });
+        expect(graduated.statusCode).toBe(200);
+        expect(graduated.json().goal.status).toBe('done');
+        expect(graduated.json().habit.name).toBe('Gimnasio');
+
+        const habits = await listHabits(PRIMARY_TEST_USER.id);
+        expect(habits.body.habits.map((h: { name: string }) => h.name)).toContain('Gimnasio');
+    });
+
     it('runs the cross-domain flow: broken streak creates a recovery task for the right user', async () => {
         const created = await createHabit(PRIMARY_TEST_USER.id, 'Gimnasio');
         const habitId = created.body.id;

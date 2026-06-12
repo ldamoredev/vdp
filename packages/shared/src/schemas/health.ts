@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { idParamsSchema, optionalLocalDateStringSchema } from "./common";
+import {
+  idParamsSchema,
+  localDateStringSchema,
+  optionalLocalDateStringSchema,
+} from "./common";
 
 // ─── Habits (the only live health surface) ───────────────
 export const createHabitSchema = z.object({
@@ -27,4 +31,16 @@ export const createCounterSchema = z.object({
 
 export const counterRelapseSchema = z.object({
   date: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
+});
+
+// ─── Goals with deadlines ────────────────────────────────
+export const createGoalSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  notes: z.string().nullable().optional(),
+  targetDate: localDateStringSchema, // YYYY-MM-DD, must be in the future
+});
+
+export const graduateGoalSchema = z.object({
+  habitName: z.string().trim().min(1).max(100),
+  emoji: z.string().trim().max(8).nullable().optional(),
 });

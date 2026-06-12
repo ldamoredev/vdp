@@ -74,6 +74,10 @@ export const HEALTH_AGENT_TOOL_NAMES = [
   "list_counters",
   "create_counter",
   "relapse_counter",
+  // goals
+  "list_goals",
+  "create_goal",
+  "complete_goal",
 ] as const;
 
 export type HealthAgentToolName = (typeof HEALTH_AGENT_TOOL_NAMES)[number];

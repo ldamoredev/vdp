@@ -8,6 +8,7 @@ import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBroken } from '../../../health/domain/events/HabitStreakBroken';
 import { HabitMilestone } from '../../../health/domain/events/HabitMilestone';
 import { CounterMilestone } from '../../../health/domain/events/CounterMilestone';
+import { GoalDeadlineApproaching } from '../../../health/domain/events/GoalDeadlineApproaching';
 import { todayISO } from '../../../common/base/time/dates';
 
 function createMockCreateTask(): CreateTask {
@@ -228,6 +229,45 @@ describe('CrossDomainEventHandlers', () => {
         }));
 
         expect(addSpy.mock.calls[0][0].message).not.toContain('$');
+    });
+
+    it('creates a warning insight and a decision task when a goal deadline approaches', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new GoalDeadlineApproaching({
+            userId: 'test-user-id',
+            goalId: 'goal-1',
+            title: 'Empezar el gym',
+            targetDate: '2026-06-19',
+            daysLeft: 5,
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            type: 'warning',
+            title: 'Meta cerca del límite: "Empezar el gym"',
+        });
+        expect(addSpy.mock.calls[0][0].message).toContain('Vence en 5 días');
+
+        expect(createTask.execute).toHaveBeenCalledOnce();
+        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(taskData.title).toBe('Decidir meta: Empezar el gym');
+        expect(taskData.priority).toBe(2);
+        expect(taskData.domain).toBe('health');
+    });
+
+    it('escalates the goal task to P3 at one day left and words overdue goals', async () => {
+        await eventBus.emit(new GoalDeadlineApproaching({
+            userId: 'test-user-id',
+            goalId: 'goal-1',
+            title: 'Empezar dieta',
+            targetDate: '2026-06-10',
+            daysLeft: -2,
+        }));
+
+        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(taskData.priority).toBe(3);
+        expect(taskData.description).toContain('Venció hace 2 días');
     });
 
     it('does not react to unrelated events', async () => {

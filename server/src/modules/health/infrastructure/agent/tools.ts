@@ -9,6 +9,9 @@ import { GetHabitsOverview } from '../../services/GetHabitsOverview';
 import { CreateCounter } from '../../services/CreateCounter';
 import { GetCountersOverview } from '../../services/GetCountersOverview';
 import { RelapseCounter } from '../../services/RelapseCounter';
+import { CompleteGoal } from '../../services/CompleteGoal';
+import { CreateGoal } from '../../services/CreateGoal';
+import { GetGoalsOverview } from '../../services/GetGoalsOverview';
 
 type ToolInput = Record<string, unknown>;
 
@@ -162,6 +165,61 @@ export class HealthTools {
                         typeof input.date === 'string' ? input.date : undefined,
                     );
                     return services.get(GetCountersOverview).buildRow(userId(), counter);
+                },
+            }),
+            jsonTool({
+                name: 'list_goals',
+                description:
+                    'List the user\'s goals with target dates, status, and days left ' +
+                    '(negative = overdue). Call this before completing or discussing goals.',
+                inputSchema: { type: 'object', properties: {}, required: [] },
+                execute: async () => services.get(GetGoalsOverview).execute(userId()),
+            }),
+            jsonTool({
+                name: 'create_goal',
+                description:
+                    'Create a goal with a deadline (e.g. "Empezar el gym" antes del 2026-07-01). ' +
+                    'targetDate must be a future YYYY-MM-DD date.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        title: { type: 'string', description: 'Goal title, short and concrete' },
+                        targetDate: { type: 'string', description: 'Deadline, YYYY-MM-DD, in the future' },
+                        notes: { type: 'string', description: 'Optional context notes' },
+                    },
+                    required: ['title', 'targetDate'],
+                },
+                execute: async (input) => {
+                    const title = typeof input.title === 'string' ? input.title.trim() : '';
+                    if (!title) return { error: 'Goal title is required' };
+                    if (!localDateStringSchema.safeParse(input.targetDate).success) {
+                        return { error: `Invalid targetDate: expected YYYY-MM-DD, got ${JSON.stringify(input.targetDate)}` };
+                    }
+
+                    const goal = await services.get(CreateGoal).execute(userId(), {
+                        title,
+                        targetDate: input.targetDate as string,
+                        notes: typeof input.notes === 'string' ? input.notes : null,
+                    });
+                    return services.get(GetGoalsOverview).buildRow(goal);
+                },
+            }),
+            jsonTool({
+                name: 'complete_goal',
+                description:
+                    'Mark a goal as done. Use list_goals first to get the goalId. After completing, ' +
+                    'offer to turn the goal into a daily habit (use create_habit if the user accepts).',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        goalId: { type: 'string', description: 'Goal ID' },
+                    },
+                    required: ['goalId'],
+                },
+                execute: async (input) => {
+                    if (typeof input.goalId !== 'string') return { error: 'goalId is required' };
+                    const goal = await services.get(CompleteGoal).execute(userId(), input.goalId);
+                    return services.get(GetGoalsOverview).buildRow(goal);
                 },
             }),
         ];

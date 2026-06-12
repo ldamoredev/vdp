@@ -8,6 +8,7 @@ import {
   uniqueIndex,
   decimal,
   integer,
+  text,
 } from "drizzle-orm/pg-core";
 import { users } from '../../../auth/infrastructure/db/schema';
 
@@ -89,5 +90,28 @@ export const counterAttempts = healthSchema.table(
   (table) => [
     index("counter_attempts_counter_idx").on(table.counterId),
     index("counter_attempts_owner_user_idx").on(table.ownerUserId),
+  ]
+);
+
+// ─── Goals with deadlines ────────────────────────────────
+// One-shot outcomes with a target date. deadline_notified is the lazy
+// detection dedupe stage (none/t7/t1), persisted before emitting.
+export const goals = healthSchema.table(
+  "goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    title: varchar("title", { length: 120 }).notNull(),
+    notes: text("notes"),
+    targetDate: date("target_date").notNull(),
+    status: varchar("status", { length: 12 }).notNull().default("active"),
+    deadlineNotified: varchar("deadline_notified", { length: 4 }).notNull().default("none"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("goals_owner_user_idx").on(table.ownerUserId),
+    index("goals_status_idx").on(table.status),
   ]
 );

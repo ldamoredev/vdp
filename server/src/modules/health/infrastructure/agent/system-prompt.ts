@@ -12,6 +12,8 @@ export function buildHealthSystemPrompt(): string {
 - Listar contadores de "días sin/desde" (ej: días sin fumar) con días actuales, mejor intento y plata no gastada estimada
 - Crear contadores (acepta fecha de inicio pasada y costo diario opcional en ARS)
 - Registrar recaídas: cierran el intento actual al historial y el contador arranca de nuevo
+- Listar y crear metas con fecha límite (ej: "Empezar el gym antes del 1/7")
+- Completar metas — y cuando una meta se cumple, ofrecer convertirla en hábito diario
 
 ## Reglas
 - Responde SIEMPRE en el idioma que use el usuario (español por defecto)
@@ -30,6 +32,9 @@ export function buildHealthSystemPrompt(): string {
 - "Dejé de fumar hace N días/meses" → creá un contador con startedAt en esa fecha
 - "Fumé" / "recaí" → registrá la recaída en el contador correspondiente
 - "¿Cuántos días llevo sin X?" → usá \`list_counters\`
+- "Quiero empezar X antes de [fecha]" → creá una meta con esa fecha límite
+- Meta cumplida → completala y ofrecé el loop de graduación: "¿La convertimos en hábito diario?" (si acepta, usá \`create_habit\` con un nombre corto derivado de la meta)
+- Una meta es cómo arranca un hábito; un hábito es cómo la meta se queda ganada
 
 ## Contexto
 El usuario vive en Argentina.

@@ -2,6 +2,7 @@ import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { HabitRepository } from './domain/HabitRepository';
 import { CounterRepository } from './domain/CounterRepository';
+import { GoalRepository } from './domain/GoalRepository';
 import { HealthAgent } from './infrastructure/agent/HealthAgent';
 import { HealthAgentController } from './infrastructure/routes/HealthAgentController';
 import { HealthController } from './infrastructure/routes/HealthController';
@@ -14,6 +15,11 @@ import { ArchiveCounter } from './services/ArchiveCounter';
 import { CreateCounter } from './services/CreateCounter';
 import { GetCountersOverview } from './services/GetCountersOverview';
 import { RelapseCounter } from './services/RelapseCounter';
+import { CompleteGoal } from './services/CompleteGoal';
+import { CreateGoal } from './services/CreateGoal';
+import { DropGoal } from './services/DropGoal';
+import { GetGoalsOverview } from './services/GetGoalsOverview';
+import { GraduateGoal } from './services/GraduateGoal';
 
 export class HealthModuleRuntime {
     constructor(private deps: ModuleContext) {}
@@ -35,6 +41,16 @@ export class HealthModuleRuntime {
         );
         this.deps.services.register(RelapseCounter, () => new RelapseCounter(this.counterRepository()));
         this.deps.services.register(ArchiveCounter, () => new ArchiveCounter(this.counterRepository()));
+
+        this.deps.services.register(CreateGoal, () => new CreateGoal(this.goalRepository()));
+        this.deps.services.register(GetGoalsOverview, () =>
+            new GetGoalsOverview(this.goalRepository(), this.deps.eventBus),
+        );
+        this.deps.services.register(CompleteGoal, () => new CompleteGoal(this.goalRepository()));
+        this.deps.services.register(DropGoal, () => new DropGoal(this.goalRepository()));
+        this.deps.services.register(GraduateGoal, () =>
+            new GraduateGoal(this.goalRepository(), this.deps.services.get(CreateHabit)),
+        );
     }
 
     registerEventHandlers(): void {
@@ -69,6 +85,10 @@ export class HealthModuleRuntime {
 
     private counterRepository(): CounterRepository {
         return this.deps.repositories.get(CounterRepository);
+    }
+
+    private goalRepository(): GoalRepository {
+        return this.deps.repositories.get(GoalRepository);
     }
 
     private agentRepository(): AgentRepository {

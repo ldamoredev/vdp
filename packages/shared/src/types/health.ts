@@ -51,3 +51,33 @@ export interface CountersOverviewResponse {
   counters: CounterOverview[];
   date: string;
 }
+
+// ─── Goals with deadlines ────────────────────────────────
+
+export type GoalStatus = "active" | "done" | "dropped";
+
+export interface Goal {
+  id: string;
+  title: string;
+  notes: string | null;
+  targetDate: string;
+  status: GoalStatus;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GoalOverview extends Goal {
+  /** Days until the target date; negative when overdue. */
+  daysLeft: number;
+}
+
+export interface GoalsOverviewResponse {
+  goals: GoalOverview[];
+  date: string;
+}
+
+export interface GraduateGoalResponse {
+  goal: Goal;
+  habit: Habit;
+}

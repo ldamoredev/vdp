@@ -9,6 +9,7 @@ import { SpendingSpikePayload } from '../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBrokenPayload } from '../../health/domain/events/HabitStreakBroken';
 import { HabitMilestonePayload } from '../../health/domain/events/HabitMilestone';
 import { CounterMilestonePayload } from '../../health/domain/events/CounterMilestone';
+import { GoalDeadlineApproachingPayload } from '../../health/domain/events/GoalDeadlineApproaching';
 
 /**
  * Cross-domain event handlers for the Tasks module.
@@ -40,6 +41,48 @@ export class CrossDomainEventHandlers implements EventSubscriber {
         this.eventBus.on('health.counter.milestone', (event: DomainEvent) => {
             this.handleCounterMilestone(event.payload as CounterMilestonePayload);
         });
+        this.eventBus.on('health.goal.deadline_approaching', (event: DomainEvent) => {
+            this.handleGoalDeadlineApproaching(event.payload as GoalDeadlineApproachingPayload);
+        });
+    }
+
+    private handleGoalDeadlineApproaching(payload: GoalDeadlineApproachingPayload): void {
+        const deadlineLine = payload.daysLeft < 0
+            ? `Venció hace ${Math.abs(payload.daysLeft)} día${Math.abs(payload.daysLeft) === 1 ? '' : 's'} (${payload.targetDate}).`
+            : payload.daysLeft === 0
+                ? `Vence HOY (${payload.targetDate}).`
+                : `Vence en ${payload.daysLeft} día${payload.daysLeft === 1 ? '' : 's'} (${payload.targetDate}).`;
+
+        this.insightsStore.addInsight({
+            userId: payload.userId,
+            type: 'warning',
+            title: `Meta cerca del límite: "${payload.title}"`,
+            message: `${deadlineLine} Decidila: arrancala, cumplila o soltala — pero que no venza sola.`,
+            metadata: {
+                source: 'health.goal.deadline_approaching',
+                goalId: payload.goalId,
+                targetDate: payload.targetDate,
+                daysLeft: payload.daysLeft,
+                actionHref: '/health',
+                actionLabel: 'Ver metas',
+            },
+        });
+
+        this.createTask
+            .execute(payload.userId, {
+                title: `Decidir meta: ${payload.title}`,
+                description:
+                    `${deadlineLine} Esta tarea existe para que la meta no venza sin una decisión: ` +
+                    `cumplirla, arrancarla hoy, o soltarla a conciencia.`,
+                priority: payload.daysLeft <= 1 ? 3 : 2,
+                scheduledDate: todayISO(),
+                domain: 'health',
+            })
+            .catch((err: unknown) => {
+                this.logger.error('cross-domain: failed to create goal deadline task', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            });
     }
 
     private handleCounterMilestone(payload: CounterMilestonePayload): void {
