@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { HabitOverview } from "@/lib/api/types";
+import type { CounterOverview, HabitOverview } from "@/lib/api/types";
 import {
   buildHabitsSummary,
+  counterContextLabel,
+  sortCounters,
   sortHabitsForToday,
   streakLabel,
 } from "../health-selectors";
@@ -59,6 +61,49 @@ describe("sortHabitsForToday", () => {
     const input = [habit({ name: "b" }), habit({ name: "a" })];
     sortHabitsForToday(input);
     expect(input[0].name).toBe("b");
+  });
+});
+
+function counter(overrides: Partial<CounterOverview> = {}): CounterOverview {
+  return {
+    id: overrides.id ?? crypto.randomUUID(),
+    name: overrides.name ?? "Sin fumar",
+    emoji: null,
+    dailyCost: overrides.dailyCost ?? null,
+    startedAt: overrides.startedAt ?? "2026-06-01",
+    archivedAt: null,
+    createdAt: "2026-06-01T00:00:00Z",
+    updatedAt: "2026-06-01T00:00:00Z",
+    currentDays: overrides.currentDays ?? 0,
+    bestDays: overrides.bestDays ?? 0,
+    attemptCount: overrides.attemptCount ?? 1,
+    moneyNotSpent: overrides.moneyNotSpent ?? null,
+  };
+}
+
+describe("sortCounters", () => {
+  it("puts the longest-running counter first", () => {
+    const sorted = sortCounters([
+      counter({ name: "Corto", currentDays: 2 }),
+      counter({ name: "Largo", currentDays: 90 }),
+    ]);
+
+    expect(sorted.map((c) => c.name)).toEqual(["Largo", "Corto"]);
+  });
+});
+
+describe("counterContextLabel", () => {
+  it("shows the start date on a first attempt", () => {
+    expect(counterContextLabel(counter({ currentDays: 10, startedAt: "2026-06-02" }))).toBe(
+      "desde 2026-06-02",
+    );
+    expect(counterContextLabel(counter({ currentDays: 0 }))).toBe("Arrancó hoy");
+  });
+
+  it("shows the best attempt after relapses", () => {
+    expect(
+      counterContextLabel(counter({ currentDays: 3, bestDays: 42, attemptCount: 3 })),
+    ).toBe("mejor intento: 42 · intento #3");
   });
 });
 

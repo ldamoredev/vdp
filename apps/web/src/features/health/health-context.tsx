@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode } from "react";
-import type { HabitOverview } from "@/lib/api/types";
+import type { CounterOverview, HabitOverview } from "@/lib/api/types";
 import type { HabitsSummary } from "./health-selectors";
 import { useHealthQueries } from "./use-health-queries";
 import { useHealthMutations } from "./use-health-mutations";
@@ -14,6 +14,13 @@ export interface HealthQueriesValue {
   habitsError: boolean;
   newHabitName: string;
   isCreatingHabit: boolean;
+  counters: CounterOverview[];
+  isLoadingCounters: boolean;
+  countersError: boolean;
+  newCounterName: string;
+  newCounterDailyCost: string;
+  newCounterStartedAt: string;
+  isCreatingCounter: boolean;
 }
 
 export interface HealthActionsValue {
@@ -23,6 +30,13 @@ export interface HealthActionsValue {
   uncompleteHabit: (habitId: string) => void;
   archiveHabit: (habitId: string) => void;
   isHabitBusy: (habitId: string) => boolean;
+  setNewCounterName: (value: string) => void;
+  setNewCounterDailyCost: (value: string) => void;
+  setNewCounterStartedAt: (value: string) => void;
+  createCounter: (event: React.FormEvent) => void;
+  relapseCounter: (counterId: string) => void;
+  archiveCounter: (counterId: string) => void;
+  isCounterBusy: (counterId: string) => boolean;
 }
 
 export const HealthQueriesContext = createContext<HealthQueriesValue | null>(null);
@@ -40,6 +54,13 @@ export function HealthProvider({ children }: { children: ReactNode }) {
     habitsError: queries.habitsError,
     newHabitName: mutations.newHabitName,
     isCreatingHabit: mutations.isCreatingHabit,
+    counters: queries.counters,
+    isLoadingCounters: queries.isLoadingCounters,
+    countersError: queries.countersError,
+    newCounterName: mutations.newCounterName,
+    newCounterDailyCost: mutations.newCounterDailyCost,
+    newCounterStartedAt: mutations.newCounterStartedAt,
+    isCreatingCounter: mutations.isCreatingCounter,
   };
 
   const actionsValue: HealthActionsValue = {
@@ -49,6 +70,13 @@ export function HealthProvider({ children }: { children: ReactNode }) {
     uncompleteHabit: mutations.uncompleteHabit,
     archiveHabit: mutations.archiveHabit,
     isHabitBusy: mutations.isHabitBusy,
+    setNewCounterName: mutations.setNewCounterName,
+    setNewCounterDailyCost: mutations.setNewCounterDailyCost,
+    setNewCounterStartedAt: mutations.setNewCounterStartedAt,
+    createCounter: mutations.createCounter,
+    relapseCounter: mutations.relapseCounter,
+    archiveCounter: mutations.archiveCounter,
+    isCounterBusy: mutations.isCounterBusy,
   };
 
   return (

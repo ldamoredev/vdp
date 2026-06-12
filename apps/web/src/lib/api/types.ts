@@ -44,4 +44,7 @@ export type {
   Habit,
   HabitOverview,
   HabitsOverviewResponse,
+  Counter,
+  CounterOverview,
+  CountersOverviewResponse,
 } from "@vdp/shared";

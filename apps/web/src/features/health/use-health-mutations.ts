@@ -8,9 +8,16 @@ import { healthQueryKeys } from "./health-query-keys";
 export function useHealthMutations() {
   const queryClient = useQueryClient();
   const [newHabitName, setNewHabitName] = useState("");
+  const [newCounterName, setNewCounterName] = useState("");
+  const [newCounterDailyCost, setNewCounterDailyCost] = useState("");
+  const [newCounterStartedAt, setNewCounterStartedAt] = useState("");
 
   function invalidateHabits() {
     void queryClient.invalidateQueries({ queryKey: healthQueryKeys.habits });
+  }
+
+  function invalidateCounters() {
+    void queryClient.invalidateQueries({ queryKey: healthQueryKeys.counters });
   }
 
   const createMutation = useMutation({
@@ -43,11 +50,55 @@ export function useHealthMutations() {
     createMutation.mutate({ name });
   }
 
+  const createCounterMutation = useMutation({
+    mutationFn: healthApi.createCounter,
+    onSuccess: () => {
+      setNewCounterName("");
+      setNewCounterDailyCost("");
+      setNewCounterStartedAt("");
+      invalidateCounters();
+    },
+  });
+
+  const relapseMutation = useMutation({
+    mutationFn: (counterId: string) => healthApi.relapseCounter(counterId),
+    onSuccess: () => {
+      invalidateCounters();
+      // A relapse can be followed by milestone/money insights elsewhere.
+      void queryClient.invalidateQueries({ queryKey: ["home", "tasks", "insights"] });
+    },
+  });
+
+  const archiveCounterMutation = useMutation({
+    mutationFn: healthApi.archiveCounter,
+    onSuccess: invalidateCounters,
+  });
+
+  function createCounter(event: React.FormEvent) {
+    event.preventDefault();
+    const name = newCounterName.trim();
+    if (!name || createCounterMutation.isPending) return;
+
+    const dailyCost = newCounterDailyCost.trim();
+    createCounterMutation.mutate({
+      name,
+      dailyCost: dailyCost ? dailyCost : null,
+      startedAt: newCounterStartedAt || undefined,
+    });
+  }
+
   function isHabitBusy(habitId: string) {
     return (
       (completeMutation.isPending && completeMutation.variables === habitId) ||
       (uncompleteMutation.isPending && uncompleteMutation.variables === habitId) ||
       (archiveMutation.isPending && archiveMutation.variables === habitId)
+    );
+  }
+
+  function isCounterBusy(counterId: string) {
+    return (
+      (relapseMutation.isPending && relapseMutation.variables === counterId) ||
+      (archiveCounterMutation.isPending && archiveCounterMutation.variables === counterId)
     );
   }
 
@@ -60,5 +111,16 @@ export function useHealthMutations() {
     uncompleteHabit: (habitId: string) => uncompleteMutation.mutate(habitId),
     archiveHabit: (habitId: string) => archiveMutation.mutate(habitId),
     isHabitBusy,
+    newCounterName,
+    setNewCounterName,
+    newCounterDailyCost,
+    setNewCounterDailyCost,
+    newCounterStartedAt,
+    setNewCounterStartedAt,
+    isCreatingCounter: createCounterMutation.isPending,
+    createCounter,
+    relapseCounter: (counterId: string) => relapseMutation.mutate(counterId),
+    archiveCounter: (counterId: string) => archiveCounterMutation.mutate(counterId),
+    isCounterBusy,
   };
 }

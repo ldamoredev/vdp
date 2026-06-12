@@ -1,4 +1,4 @@
-import type { HabitOverview } from "@/lib/api/types";
+import type { CounterOverview, HabitOverview } from "@/lib/api/types";
 
 export type HabitsSummary = {
   total: number;
@@ -38,4 +38,29 @@ export function streakLabel(habit: HabitOverview): string | null {
   if (habit.streak === 1 && habit.completedToday) return "Arrancó hoy";
   if (habit.bestStreak >= 3 && habit.streak === 0) return `Mejor racha: ${habit.bestStreak}`;
   return null;
+}
+
+/** Longest-running counters first — they carry the most at stake. */
+export function sortCounters(counters: readonly CounterOverview[]): CounterOverview[] {
+  return [...counters].sort((left, right) => {
+    if (left.currentDays !== right.currentDays) {
+      return right.currentDays - left.currentDays;
+    }
+    return left.name.localeCompare(right.name);
+  });
+}
+
+export function counterContextLabel(counter: CounterOverview): string {
+  const parts: string[] = [];
+
+  if (counter.attemptCount > 1) {
+    parts.push(`mejor intento: ${counter.bestDays}`);
+    parts.push(`intento #${counter.attemptCount}`);
+  }
+
+  if (parts.length === 0) {
+    return counter.currentDays === 0 ? "Arrancó hoy" : `desde ${counter.startedAt}`;
+  }
+
+  return parts.join(" · ");
 }

@@ -3,12 +3,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { healthApi } from "./health-api";
 import { healthQueryKeys } from "./health-query-keys";
-import { buildHabitsSummary, sortHabitsForToday } from "./health-selectors";
+import { buildHabitsSummary, sortCounters, sortHabitsForToday } from "./health-selectors";
 
 export function useHealthQueries() {
   const habitsQuery = useQuery({
     queryKey: healthQueryKeys.habits,
     queryFn: healthApi.getHabits,
+  });
+
+  const countersQuery = useQuery({
+    queryKey: healthQueryKeys.counters,
+    queryFn: healthApi.getCounters,
   });
 
   const habits = sortHabitsForToday(habitsQuery.data?.habits ?? []);
@@ -19,5 +24,8 @@ export function useHealthQueries() {
     date: habitsQuery.data?.date,
     isLoadingHabits: habitsQuery.isLoading,
     habitsError: habitsQuery.isError,
+    counters: sortCounters(countersQuery.data?.counters ?? []),
+    isLoadingCounters: countersQuery.isLoading,
+    countersError: countersQuery.isError,
   };
 }

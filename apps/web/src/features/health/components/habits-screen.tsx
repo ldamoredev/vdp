@@ -4,6 +4,7 @@ import { HeartPulse, Plus } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { useHealthData, useHealthActions } from "../use-health-context";
 import { HabitRow } from "./habit-row";
+import { CountersSection } from "./counters-section";
 
 export function HabitsScreen() {
   const { habits, summary, isLoadingHabits, habitsError, newHabitName, isCreatingHabit } =
@@ -107,6 +108,8 @@ export function HabitsScreen() {
           )}
         </div>
       </div>
+
+      <CountersSection />
     </ModulePage>
   );
 }
