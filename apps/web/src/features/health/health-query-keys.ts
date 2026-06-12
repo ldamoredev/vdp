@@ -6,4 +6,5 @@ export const healthQueryKeys = {
   all: healthKeys.all,
   habits: healthKeys.key("habits"),
   counters: healthKeys.key("counters"),
+  goals: healthKeys.key("goals"),
 } as const;

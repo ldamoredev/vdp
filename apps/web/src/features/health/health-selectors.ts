@@ -1,4 +1,4 @@
-import type { CounterOverview, HabitOverview } from "@/lib/api/types";
+import type { CounterOverview, GoalOverview, HabitOverview } from "@/lib/api/types";
 
 export type HabitsSummary = {
   total: number;
@@ -48,6 +48,36 @@ export function sortCounters(counters: readonly CounterOverview[]): CounterOverv
     }
     return left.name.localeCompare(right.name);
   });
+}
+
+/** Active goals only, most urgent first (overdue on top, then closest deadline). */
+export function sortActiveGoals(goals: readonly GoalOverview[]): GoalOverview[] {
+  return goals
+    .filter((goal) => goal.status === "active")
+    .sort((left, right) => {
+      if (left.daysLeft !== right.daysLeft) {
+        return left.daysLeft - right.daysLeft;
+      }
+      return left.title.localeCompare(right.title);
+    });
+}
+
+export type GoalUrgency = "overdue" | "soon" | "calm";
+
+export function goalUrgency(goal: GoalOverview): GoalUrgency {
+  if (goal.daysLeft < 0) return "overdue";
+  if (goal.daysLeft <= 7) return "soon";
+  return "calm";
+}
+
+export function goalDeadlineLabel(goal: GoalOverview): string {
+  if (goal.daysLeft < 0) {
+    const days = Math.abs(goal.daysLeft);
+    return `venció hace ${days} día${days === 1 ? "" : "s"}`;
+  }
+  if (goal.daysLeft === 0) return "vence hoy";
+  if (goal.daysLeft === 1) return "vence mañana";
+  return `${goal.daysLeft} días`;
 }
 
 export function counterContextLabel(counter: CounterOverview): string {

@@ -5,6 +5,7 @@ import { ModulePage } from "@/components/primitives/module-page";
 import { useHealthData, useHealthActions } from "../use-health-context";
 import { HabitRow } from "./habit-row";
 import { CountersSection } from "./counters-section";
+import { GoalsSection } from "./goals-section";
 
 export function HabitsScreen() {
   const { habits, summary, isLoadingHabits, habitsError, newHabitName, isCreatingHabit } =
@@ -108,6 +109,8 @@ export function HabitsScreen() {
           )}
         </div>
       </div>
+
+      <GoalsSection />
 
       <CountersSection />
     </ModulePage>

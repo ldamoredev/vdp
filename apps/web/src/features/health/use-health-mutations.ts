@@ -11,6 +11,9 @@ export function useHealthMutations() {
   const [newCounterName, setNewCounterName] = useState("");
   const [newCounterDailyCost, setNewCounterDailyCost] = useState("");
   const [newCounterStartedAt, setNewCounterStartedAt] = useState("");
+  const [newGoalTitle, setNewGoalTitle] = useState("");
+  const [newGoalTargetDate, setNewGoalTargetDate] = useState("");
+  const [graduationOffer, setGraduationOffer] = useState<{ goalId: string; title: string } | null>(null);
 
   function invalidateHabits() {
     void queryClient.invalidateQueries({ queryKey: healthQueryKeys.habits });
@@ -18,6 +21,10 @@ export function useHealthMutations() {
 
   function invalidateCounters() {
     void queryClient.invalidateQueries({ queryKey: healthQueryKeys.counters });
+  }
+
+  function invalidateGoals() {
+    void queryClient.invalidateQueries({ queryKey: healthQueryKeys.goals });
   }
 
   const createMutation = useMutation({
@@ -74,6 +81,39 @@ export function useHealthMutations() {
     onSuccess: invalidateCounters,
   });
 
+  const createGoalMutation = useMutation({
+    mutationFn: healthApi.createGoal,
+    onSuccess: () => {
+      setNewGoalTitle("");
+      setNewGoalTargetDate("");
+      invalidateGoals();
+    },
+  });
+
+  const completeGoalMutation = useMutation({
+    mutationFn: healthApi.completeGoal,
+    onSuccess: (goal) => {
+      invalidateGoals();
+      // The graduation loop: offer turning the won goal into a daily habit.
+      setGraduationOffer({ goalId: goal.id, title: goal.title });
+    },
+  });
+
+  const dropGoalMutation = useMutation({
+    mutationFn: healthApi.dropGoal,
+    onSuccess: invalidateGoals,
+  });
+
+  const graduateGoalMutation = useMutation({
+    mutationFn: ({ goalId, habitName }: { goalId: string; habitName: string }) =>
+      healthApi.graduateGoal(goalId, { habitName }),
+    onSuccess: () => {
+      setGraduationOffer(null);
+      invalidateGoals();
+      void queryClient.invalidateQueries({ queryKey: healthQueryKeys.habits });
+    },
+  });
+
   function createCounter(event: React.FormEvent) {
     event.preventDefault();
     const name = newCounterName.trim();
@@ -92,6 +132,21 @@ export function useHealthMutations() {
       (completeMutation.isPending && completeMutation.variables === habitId) ||
       (uncompleteMutation.isPending && uncompleteMutation.variables === habitId) ||
       (archiveMutation.isPending && archiveMutation.variables === habitId)
+    );
+  }
+
+  function createGoal(event: React.FormEvent) {
+    event.preventDefault();
+    const title = newGoalTitle.trim();
+    if (!title || !newGoalTargetDate || createGoalMutation.isPending) return;
+    createGoalMutation.mutate({ title, targetDate: newGoalTargetDate });
+  }
+
+  function isGoalBusy(goalId: string) {
+    return (
+      (completeGoalMutation.isPending && completeGoalMutation.variables === goalId) ||
+      (dropGoalMutation.isPending && dropGoalMutation.variables === goalId) ||
+      (graduateGoalMutation.isPending && graduateGoalMutation.variables?.goalId === goalId)
     );
   }
 
@@ -122,5 +177,19 @@ export function useHealthMutations() {
     relapseCounter: (counterId: string) => relapseMutation.mutate(counterId),
     archiveCounter: (counterId: string) => archiveCounterMutation.mutate(counterId),
     isCounterBusy,
+    newGoalTitle,
+    setNewGoalTitle,
+    newGoalTargetDate,
+    setNewGoalTargetDate,
+    isCreatingGoal: createGoalMutation.isPending,
+    createGoal,
+    completeGoal: (goalId: string) => completeGoalMutation.mutate(goalId),
+    dropGoal: (goalId: string) => dropGoalMutation.mutate(goalId),
+    isGoalBusy,
+    graduationOffer,
+    dismissGraduationOffer: () => setGraduationOffer(null),
+    graduateGoal: (goalId: string, habitName: string) =>
+      graduateGoalMutation.mutate({ goalId, habitName }),
+    isGraduating: graduateGoalMutation.isPending,
   };
 }

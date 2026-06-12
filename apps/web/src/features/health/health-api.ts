@@ -3,6 +3,9 @@ import type {
   Counter,
   CounterOverview,
   CountersOverviewResponse,
+  GoalOverview,
+  GoalsOverviewResponse,
+  GraduateGoalResponse,
   Habit,
   HabitsOverviewResponse,
 } from "@/lib/api/types";
@@ -49,5 +52,26 @@ export const healthApi = {
     request<Counter>(`/health/counters/${counterId}/archive`, {
       method: "POST",
       body: JSON.stringify({}),
+    }),
+  getGoals: () => request<GoalsOverviewResponse>("/health/goals"),
+  createGoal: (data: { title: string; targetDate: string; notes?: string | null }) =>
+    request<GoalOverview>("/health/goals", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  completeGoal: (goalId: string) =>
+    request<GoalOverview>(`/health/goals/${goalId}/complete`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  dropGoal: (goalId: string) =>
+    request<GoalOverview>(`/health/goals/${goalId}/drop`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  graduateGoal: (goalId: string, data: { habitName: string; emoji?: string | null }) =>
+    request<GraduateGoalResponse>(`/health/goals/${goalId}/graduate`, {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };

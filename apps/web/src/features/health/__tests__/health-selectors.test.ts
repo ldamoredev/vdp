@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { CounterOverview, HabitOverview } from "@/lib/api/types";
+import type { GoalOverview } from "@/lib/api/types";
 import {
   buildHabitsSummary,
   counterContextLabel,
+  goalDeadlineLabel,
+  goalUrgency,
+  sortActiveGoals,
   sortCounters,
   sortHabitsForToday,
   streakLabel,
@@ -104,6 +108,46 @@ describe("counterContextLabel", () => {
     expect(
       counterContextLabel(counter({ currentDays: 3, bestDays: 42, attemptCount: 3 })),
     ).toBe("mejor intento: 42 · intento #3");
+  });
+});
+
+function goal(overrides: Partial<GoalOverview> = {}): GoalOverview {
+  return {
+    id: overrides.id ?? crypto.randomUUID(),
+    title: overrides.title ?? "Empezar el gym",
+    notes: null,
+    targetDate: overrides.targetDate ?? "2026-07-01",
+    status: overrides.status ?? "active",
+    completedAt: null,
+    createdAt: "2026-06-01T00:00:00Z",
+    updatedAt: "2026-06-01T00:00:00Z",
+    daysLeft: overrides.daysLeft ?? 10,
+  };
+}
+
+describe("sortActiveGoals", () => {
+  it("keeps only active goals, most urgent first (overdue on top)", () => {
+    const sorted = sortActiveGoals([
+      goal({ title: "Lejos", daysLeft: 30 }),
+      goal({ title: "Hecha", status: "done", daysLeft: 1 }),
+      goal({ title: "Vencida", daysLeft: -3 }),
+      goal({ title: "Cerca", daysLeft: 2 }),
+    ]);
+
+    expect(sorted.map((g) => g.title)).toEqual(["Vencida", "Cerca", "Lejos"]);
+  });
+});
+
+describe("goalUrgency / goalDeadlineLabel", () => {
+  it("classifies and words deadlines", () => {
+    expect(goalUrgency(goal({ daysLeft: -2 }))).toBe("overdue");
+    expect(goalUrgency(goal({ daysLeft: 5 }))).toBe("soon");
+    expect(goalUrgency(goal({ daysLeft: 20 }))).toBe("calm");
+
+    expect(goalDeadlineLabel(goal({ daysLeft: -1 }))).toBe("venció hace 1 día");
+    expect(goalDeadlineLabel(goal({ daysLeft: 0 }))).toBe("vence hoy");
+    expect(goalDeadlineLabel(goal({ daysLeft: 1 }))).toBe("vence mañana");
+    expect(goalDeadlineLabel(goal({ daysLeft: 12 }))).toBe("12 días");
   });
 });
 

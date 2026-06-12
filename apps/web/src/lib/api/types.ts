@@ -47,4 +47,9 @@ export type {
   Counter,
   CounterOverview,
   CountersOverviewResponse,
+  GoalStatus,
+  Goal,
+  GoalOverview,
+  GoalsOverviewResponse,
+  GraduateGoalResponse,
 } from "@vdp/shared";

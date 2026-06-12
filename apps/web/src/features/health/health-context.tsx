@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode } from "react";
-import type { CounterOverview, HabitOverview } from "@/lib/api/types";
+import type { CounterOverview, GoalOverview, HabitOverview } from "@/lib/api/types";
 import type { HabitsSummary } from "./health-selectors";
 import { useHealthQueries } from "./use-health-queries";
 import { useHealthMutations } from "./use-health-mutations";
@@ -21,6 +21,14 @@ export interface HealthQueriesValue {
   newCounterDailyCost: string;
   newCounterStartedAt: string;
   isCreatingCounter: boolean;
+  goals: GoalOverview[];
+  isLoadingGoals: boolean;
+  goalsError: boolean;
+  newGoalTitle: string;
+  newGoalTargetDate: string;
+  isCreatingGoal: boolean;
+  graduationOffer: { goalId: string; title: string } | null;
+  isGraduating: boolean;
 }
 
 export interface HealthActionsValue {
@@ -37,6 +45,14 @@ export interface HealthActionsValue {
   relapseCounter: (counterId: string) => void;
   archiveCounter: (counterId: string) => void;
   isCounterBusy: (counterId: string) => boolean;
+  setNewGoalTitle: (value: string) => void;
+  setNewGoalTargetDate: (value: string) => void;
+  createGoal: (event: React.FormEvent) => void;
+  completeGoal: (goalId: string) => void;
+  dropGoal: (goalId: string) => void;
+  isGoalBusy: (goalId: string) => boolean;
+  graduateGoal: (goalId: string, habitName: string) => void;
+  dismissGraduationOffer: () => void;
 }
 
 export const HealthQueriesContext = createContext<HealthQueriesValue | null>(null);
@@ -61,6 +77,14 @@ export function HealthProvider({ children }: { children: ReactNode }) {
     newCounterDailyCost: mutations.newCounterDailyCost,
     newCounterStartedAt: mutations.newCounterStartedAt,
     isCreatingCounter: mutations.isCreatingCounter,
+    goals: queries.goals,
+    isLoadingGoals: queries.isLoadingGoals,
+    goalsError: queries.goalsError,
+    newGoalTitle: mutations.newGoalTitle,
+    newGoalTargetDate: mutations.newGoalTargetDate,
+    isCreatingGoal: mutations.isCreatingGoal,
+    graduationOffer: mutations.graduationOffer,
+    isGraduating: mutations.isGraduating,
   };
 
   const actionsValue: HealthActionsValue = {
@@ -77,6 +101,14 @@ export function HealthProvider({ children }: { children: ReactNode }) {
     relapseCounter: mutations.relapseCounter,
     archiveCounter: mutations.archiveCounter,
     isCounterBusy: mutations.isCounterBusy,
+    setNewGoalTitle: mutations.setNewGoalTitle,
+    setNewGoalTargetDate: mutations.setNewGoalTargetDate,
+    createGoal: mutations.createGoal,
+    completeGoal: mutations.completeGoal,
+    dropGoal: mutations.dropGoal,
+    isGoalBusy: mutations.isGoalBusy,
+    graduateGoal: mutations.graduateGoal,
+    dismissGraduationOffer: mutations.dismissGraduationOffer,
   };
 
   return (
