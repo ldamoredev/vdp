@@ -141,7 +141,7 @@ when the previous one is in real daily use. Every feature stays inside the exist
 `health` module (services + tables + frontend feature components), so the New Domain
 Gate applies as a per-feature checklist, not a new module.
 
-### H1. Abstinence counters — "days since" (user story)
+### H1. Abstinence counters — "days since" (user story) — SHIPPED June 2026
 
 > "Como había dejado de fumar, tenía metas tipo contador que llevaba la cuenta
 > de días desde que dejé."
@@ -222,8 +222,8 @@ The single most-tracked body metric and the natural companion of diet/gym goals
 sparkline trend on the habits screen, mono `font-data` rendering. Explicitly not
 a metrics platform — one metric, until proven insufficient.
 
-Suggested order: H1 → H2 → P1 → H3 (v0) → P2 → P3. H1 first because it is the
-owner's most-lived use case with the smallest scope and the strongest
+Suggested order: ~~H1~~ → H2 → P1 → H3 (v0) → P2 → P3. H1 shipped first because
+it is the owner's most-lived use case with the smallest scope and the strongest
 cross-domain payoff; P1 right after H2 because graduated gym/diet goals need
 weekly cadence to become honest habits.
 
