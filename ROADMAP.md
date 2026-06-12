@@ -18,7 +18,8 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 1. ~~Recovery: restore local confidence, CI, and manual app verification.~~ Done.
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
-4. Expansion: Health shipped as the habits slice. Next: deepen the slice (or add cross-domain signals) before opening another domain.
+4. Expansion: Health shipped as the habits slice, deepened with H1 counters and H2 goals. **Paused after H2 (June 2026)** in favor of the Architecture Track below.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/frontend-mirror-analysis.md`](./docs/architecture/frontend-mirror-analysis.md). Phase 4 resumes (P1 → H3v0 → P2 → P3) when it completes.
 
 ## Phase 0: Recovery
 
@@ -133,7 +134,66 @@ For any further expansion (deepening Health or opening People/Work/Study), satis
 
 Done when: the new surface meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
 
+## Architecture Track (ACTIVE — June 2026)
+
+Owner-approved in the June 2026 architecture session. Source of truth for rationale,
+decisions, and detailed plans: [`docs/architecture/frontend-mirror-analysis.md`](./docs/architecture/frontend-mirror-analysis.md).
+One phase per work session unless noted. Phase 4 below is paused until this track completes.
+
+Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
+Fastify, single Render service, Vercel retired); presenters (Humble Object) + CQBus +
+`core/` composition root mirroring the backend; React Query removed; `FetchHttpClient`
+over `abstract-http-client`; `react-presenter` used as published (under Vite its
+optional react-navigation `require` is harmless at runtime — no custom publish).
+
+### A1. Vite SPA port (no pattern change)
+
+Mechanical port of `apps/web` from Next.js to Vite + react-router: routes 1:1, swap
+`next/link`/`next/navigation` (23 coupled files), static `index.html` with PWA manifest
+and theme script, cookie handling moves into the Fastify auth module, delete the
+Next proxy/auth routes/middleware, serve same-origin (dev: Vite proxy; prod: Fastify
+static). Done when: Playwright e2e green, manual smoke passes (login, tasks, wallet,
+health, chat, insights), Next dependencies removed.
+
+### A2. Health pilot on the full architecture (~2–3 sessions)
+
+`core/` (Core.ts + CQBus + FetchHttpClient + gateways) and `ui/` (presenters + humble
+views) built for the health module only, coexisting with the other features on the old
+pattern. Includes the SSE insights flow (not just CRUD). Done when: `features/health/`
+deleted, presenter/service/infra tests in place (no React under `core/`, lint-enforced),
+RQ gone from health, `docs/architecture/frontend-module-template.md` extracted, owner
+smoke. Details: analysis doc §7.
+
+### A3. Skills wave 1 (can run parallel to A2)
+
+`.claude/skills/`: `code-review` (three sections: design / repo rules / tests; single
+severity = warning, blocks commit/push), `tdd-workflow` (test-first for non-integration
+tests, regression-test-first for bugfixes), `create-service-api` (pre-CQBus form),
+`create-aggregate` (backend), `create-agent-tool`. These encode rules already in force.
+Skeletons and owner resolutions: analysis doc §10.
+
+### A4. Skills wave 2 (after the pilot)
+
+`create-service-web`, `create-presenter-web`, and the lighter web variant of
+`create-aggregate`, written from the pilot's proven template.
+
+### A5. Frontend migration by module
+
+One module per session, per-feature gate, legacy folder deleted at the end of each:
+review → home → tasks → wallet → shell/chat. Coexistence rules (one-way import
+ratchet, RQ provider stays until the last consumer dies): analysis doc §8.
+
+### A6. CQBus on the api
+
+Coexistence with `ServiceProvider`, identity middleware first (makes the auth-context
+rule structural), health converted first, then logging/OTel middlewares, then
+auth → tasks → wallet; `ServiceProvider` deleted; `create-service-api` updated to its
+final CQBus form. Open product decision for this phase: `RequestAuditLogger` as a bus
+middleware. Details: analysis doc §11.
+
 ## Phase 4: Health Deepening
+
+**PAUSED after H2 (June 2026): the Architecture Track above runs first; resume with P1.**
 
 Source: the owner's real prior usage in Notion (user stories H1–H3) plus researched
 proposals (P1–P3). One feature at a time, in the order below; each one ships only
