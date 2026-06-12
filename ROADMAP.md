@@ -162,7 +162,7 @@ start date ("Sin fumar — día 94").
   core of dedicated quit apps (Kwit, Quit Tracker); VDP composes it with the
   wallet instead of a fake in-app piggy bank.
 
-### H2. Goals with deadlines (user story)
+### H2. Goals with deadlines (user story) — SHIPPED June 2026
 
 > "Tenía metas con una fecha límite: empezar el gym, empezar dieta."
 
@@ -254,7 +254,7 @@ The single most-tracked body metric and the natural companion of diet/gym goals
 sparkline trend on the habits screen, mono `font-data` rendering. Explicitly not
 a metrics platform — one metric, until proven insufficient.
 
-Suggested order: ~~H1~~ → H2 → P1 → H3 (v0) → P2 → P3. H1 shipped first because
+Suggested order: ~~H1~~ → ~~H2~~ → P1 → H3 (v0) → P2 → P3. H1 shipped first because
 it is the owner's most-lived use case with the smallest scope and the strongest
 cross-domain payoff; P1 right after H2 because graduated gym/diet goals need
 weekly cadence to become honest habits.
