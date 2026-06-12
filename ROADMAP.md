@@ -6,21 +6,19 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 
 | Domain | Backend | Frontend | Agent | Status |
 |--------|---------|----------|-------|--------|
-| Tasks | ✅ | ✅ | ✅ | Stable reference module; must be production-ready for personal daily use |
+| Tasks | ✅ | ✅ | ✅ | Stable reference module; production-ready for personal daily use |
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
-| Health | Schema scaffold only | Disabled demo/API pages | — | Inactive; not a real domain yet |
+| Health | ✅ | ✅ | ✅ | Active as a thin slice: daily habits only (streaks + cross-domain signals) |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
 
 ## Order Of Work
 
-1. Recovery: restore local confidence, CI, and manual app verification.
-2. Tasks production-readiness: validate the module end to end before real daily use.
-3. Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.
-4. Expansion: only after the previous gates pass, choose and build the next real domain.
-
-No new product/domain work should start until the recovery and Tasks gates are complete.
+1. ~~Recovery: restore local confidence, CI, and manual app verification.~~ Done.
+2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
+3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
+4. Expansion: Health shipped as the habits slice. Next: deepen the slice (or add cross-domain signals) before opening another domain.
 
 ## Phase 0: Recovery
 
@@ -129,13 +127,11 @@ Done when: production-like auth smoke passes, session failure modes are understo
 
 ## Phase 3: Expansion
 
-Do not start this phase until Recovery, Tasks readiness, and Auth hardening are complete.
+Health shipped (June 2026) as a deliberately thin slice through the full New Domain Gate: daily habits with per-day completion, streaks, archive, agent tools, and two cross-domain signals into Tasks (`health.habit.streak_broken` → recovery task + insight, `health.habit.milestone` → achievement insight). Metrics, medications, appointments, and body tracking stay out until the habits slice proves real daily use.
 
-Most likely next candidate: Health, because it already has a scaffold schema and disabled/demo frontend pages.
+For any further expansion (deepening Health or opening People/Work/Study), satisfy the New Domain Gate in `AGENTS.md`. At minimum: backend module registration, migration, entities, repositories, services, HTTP controllers using auth context, cross-user isolation tests, shared contracts, frontend feature module, navigation registration, and agent tooling only after the auth-context rules are satisfied.
 
-Before making any inactive domain real, satisfy the New Domain Gate in `AGENTS.md`. At minimum, the domain needs backend module registration, migration, entities, repositories, services, HTTP controllers using auth context, cross-user isolation tests, shared contracts, frontend feature module, navigation registration, and agent tooling only after the auth-context rules are satisfied.
-
-Done when: the new domain meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
+Done when: the new surface meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
 
 ## Data Constraint
 

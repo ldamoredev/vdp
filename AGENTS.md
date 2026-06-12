@@ -20,29 +20,20 @@ The repo uses pnpm workspaces and Turborepo. The current package manager is pinn
 
 Active backend modules are registered in `server/src/modules/DefaultCoreConfiguration.ts`:
 
-- `auth`: first-party users, email/password login, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
+- `auth`: first-party users, email/password login, failed-login rate limiting, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
+- `health`: active as a deliberately thin slice — daily habits only (create, complete/uncomplete per day, archive, streaks) with backend, frontend, and agent. Metrics/medications/appointments/body stay out until the habits slice proves daily use.
 
-Inactive or partial domains:
+Inactive domains:
 
-- `health`: only `server/src/modules/health/schema.ts` plus disabled/demo frontend/API pages exist. It is not registered in `DefaultCoreConfiguration` and is not a real domain yet.
-- `people`, `work`, `study`: disabled placeholder/demo frontend pages only.
+- `people`, `work`, `study`: disabled placeholder frontend pages only.
 
 Do not treat inactive domains as real product surfaces until they pass the full backend/frontend gate in this file.
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. As of the current recovery plan, the next steps are:
-
-1. Restore the local quality baseline for tests, TypeScript, and lint.
-2. Fix CI.
-3. Bring up the app for owner verification.
-4. Fully validate Tasks end to end before real daily use.
-5. Harden auth.
-6. Only then expand to the next real domain.
-
-Health is still the most coherent next domain candidate, but new domain work should wait until recovery, Tasks validation, and auth hardening gates are complete.
+Follow `ROADMAP.md` for priority. Recovery, Tasks production-readiness, and auth hardening are complete; Health (habits slice) is the first expansion domain and is live. Next expansion work should deepen the habits slice or compose more cross-domain signals before opening another domain.
 
 ## Commands
 
@@ -135,13 +126,12 @@ Do not rewrite a module from one style to the other without an explicit reason; 
 
 ## Database
 
-The active migration creates these PostgreSQL schemas:
+The active migrations create these PostgreSQL schemas:
 
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
-- `tasks`: tasks, task notes, task embeddings.
-- `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates.
-
-`server/src/modules/health/schema.ts` is scaffold code only and is not part of the active migration.
+- `tasks`: tasks, task notes, task embeddings, task insights.
+- `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
+- `health`: habits, habit logs.
 
 Drizzle schema files live at `{domain}/infrastructure/db/schema.ts` (the core agent tables live at `common/infrastructure/agents/schema.ts`). Do not place schema files at the module root.
 
@@ -235,7 +225,11 @@ Same-origin auth routes live under `apps/web/src/app/api/auth/*` and manage the 
 
 ## Cross-Domain Behavior
 
-The first live cross-domain signal is Wallet emitting `wallet.spending.spike`, which Tasks handles through `CrossDomainEventHandlers` by creating a high-priority review task and insight.
+Live cross-domain signals, all handled by Tasks through `CrossDomainEventHandlers`:
+
+- `wallet.spending.spike` → high-priority review task + warning insight.
+- `health.habit.streak_broken` → habit recovery task + warning insight.
+- `health.habit.milestone` → achievement insight.
 
 Future cross-domain signals should follow the same pattern:
 
