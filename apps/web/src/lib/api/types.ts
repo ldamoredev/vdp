@@ -40,4 +40,8 @@ export type {
   CategoryStat,
   MonthlyTrend,
   ExchangeRate,
+  // Health
+  Habit,
+  HabitOverview,
+  HabitsOverviewResponse,
 } from "@vdp/shared";
