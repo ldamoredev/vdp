@@ -23,7 +23,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `auth`: first-party users, email/password login, failed-login rate limiting, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
-- `health`: active as a deliberately thin slice — daily habits only (create, complete/uncomplete per day, archive, streaks) with backend, frontend, and agent. Metrics/medications/appointments/body stay out until the habits slice proves daily use.
+- `health`: active as a deliberately thin slice — daily habits (per-day completion, streaks, archive) plus "days since" abstinence counters (relapse history with best attempt, lazy milestones, money-not-spent estimate). Backend, frontend, and agent. Metrics/medications/appointments/body stay out until planned in ROADMAP Phase 4.
 
 Inactive domains:
 
@@ -33,7 +33,21 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Recovery, Tasks production-readiness, and auth hardening are complete; Health (habits slice) is the first expansion domain and is live. Next expansion work should deepen the habits slice or compose more cross-domain signals before opening another domain.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Active work is **ROADMAP Phase 4 (Health deepening)**: H1 counters shipped; **next is H2 (goals with deadlines)**, then P1 → H3v0 → P2 → P3 in that order. One feature per work session.
+
+Owner-pending items (do not attempt from a local session):
+
+- Production smoke of the auth/session flow through Vercel/Render/Supabase (closes Phase 2 formally).
+- Production has NOT yet run migrations `0001`–`0003`; they must be applied on the next deploy before the new features work there.
+
+## Working Agreement (how sessions run)
+
+- Work directly on `main`. Never create branches or PRs unless the owner asks.
+- One ROADMAP feature per session, in the Phase 4 order. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs), verify, then STOP and summarize for the owner.
+- Do not commit until the owner explicitly says so. When they do: split into logical commits (backend / frontend / docs), imperative messages explaining the why, then push to `main`.
+- After shipping a feature, mark it in `ROADMAP.md` (SHIPPED + strikethrough in the order line) and reconcile this file if runtime status changed.
+- Local verification before claiming done, then a manual browser smoke against the real app. Clean up any smoke data you created in the dev DB afterwards.
+- Dev infrastructure quirks: `pnpm infra:start` fails because port 5432 is taken; the real dev Postgres is the `vdp-postgres-dev` container on port 55432 (`docker start vdp-postgres-dev`), credentials `vdp:vdp`, database `vdp`. Run migrations with `DATABASE_URL='postgresql://vdp:vdp@localhost:55432/vdp' pnpm db:migrate` from `server/`.
 
 ## Commands
 
@@ -75,6 +89,11 @@ Backend test conventions:
 
 - Fake repositories live in `{domain}/__tests__/fakes/`, never inside `infrastructure/`.
 - Shared DB test infrastructure (`TestDatabase`, the vitest `global-setup`, seeded test users) lives in `server/src/test/`. Module test suites import it from there; do not create per-module copies or re-export shims.
+- `TestDatabase.SETUP_SQL` is a handwritten schema snapshot, separate from the Drizzle migrations: every new table must be added there AND to the `truncate()` list (see Database section).
+- `truncate()` retries on Postgres deadlock (40P01): the app's fire-and-forget writes (insight persistence) can race the TRUNCATE between tests. Keep that retry.
+- E2E suites boot a per-module `TestApp` + `TestCoreConfiguration` (auth faked via the `x-test-user-id` header). When a feature's cross-domain flow matters, boot both modules together — see `health/__tests__/e2e/TestCoreConfiguration.ts` which loads Health + Tasks.
+- The login rate limiter is in-process and does NOT reset between e2e tests; tests that trip it must use a dedicated email.
+- Unit tests pin time with `vi.useFakeTimers()` + `vi.setSystemTime(...)`; e2e uses the real clock and relative date helpers (`daysAgo(n)`).
 
 ## Backend Architecture
 
@@ -131,7 +150,11 @@ The active migrations create these PostgreSQL schemas:
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
 - `tasks`: tasks, task notes, task embeddings, task insights.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
-- `health`: habits, habit logs.
+- `health`: habits, habit logs, counters, counter attempts.
+
+Money amounts are per-currency (ARS and USD coexist). NEVER sum amounts across currencies — `DetectSpendingSpike` groups by currency for exactly this reason. New money aggregations must filter or group by currency.
+
+Adding a table requires THREE synchronized changes: (1) the Drizzle schema at `{domain}/infrastructure/db/schema.ts` plus `pnpm db:generate`, (2) the handwritten `SETUP_SQL` snapshot in `server/src/test/test-database.ts`, and (3) the `TRUNCATE` list in the same file. Tests will pass while production breaks (or vice versa) if these drift.
 
 Drizzle schema files live at `{domain}/infrastructure/db/schema.ts` (the core agent tables live at `common/infrastructure/agents/schema.ts`). Do not place schema files at the module root.
 
@@ -176,6 +199,22 @@ Provider selection:
 - Embeddings use `EMBEDDING_PROVIDER=ollama` or a noop provider by default.
 
 Never print or log provider secrets.
+
+Hard agent rules learned in production:
+
+- System prompts MUST be builder functions evaluated per chat (`buildTasksSystemPrompt()` + a `get systemPrompt()` getter). Never a module-level const: template literals interpolate `todayISO()` at import time and the agent's "today" freezes at boot.
+- Tool names are typed against the registry in `packages/shared/src/constants/agent-tools.ts`. Adding a tool means adding it there first; server definitions and web tool handling both typecheck against it.
+- Tools must validate LLM-provided date strings with `localDateStringSchema` before passing them to services (tools bypass the HTTP Zod layer).
+- The agent must never see a `userId` — always derive it inside the tool from `authContextStorage.getAuthContext()`.
+
+## Insights And Time-Based Signals
+
+There is NO scheduler/cron in the stack. Time-based signals use two patterns:
+
+1. **Write-time detection** for signals triggered by a user action: e.g. `CompleteHabitDay` computes streak breaks and milestones when a habit is completed, and only for `date === today` (backfills stay silent). See `tasks` events and `health/services/CompleteHabitDay.ts`.
+2. **Lazy detection on overview load** for signals that need time to pass with no interaction: e.g. counter milestones in `health/services/GetCountersOverview.ts`. The dedupe state is a persisted column (`last_milestone_notified`) updated and saved BEFORE emitting the event — a failed emit may cost one insight but can never duplicate. After long gaps, emit only the highest crossed milestone, not every intermediate one. H2 goal deadlines must follow this same pattern.
+
+Insight stores (`TaskInsightsStore`, `WalletInsightsStore`) are in-memory read models backed by Postgres: writes persist fire-and-forget through `TaskInsightRepository`/`WalletInsightRepository`, and `hydrate()` reloads state at boot via the module `start()` hook. Inside `addInsight`, listeners run BEFORE persisting so the SSE live-read marking lands in the insert. Keep that order.
 
 ## Frontend Architecture
 
@@ -223,6 +262,14 @@ Same-origin auth routes live under `apps/web/src/app/api/auth/*` and manage the 
 - Use lucide icons for tool buttons when an icon exists.
 - Make pages and controls responsive; text must not overflow or overlap.
 
+Visual identity ("tinta iris" — June 2026 design pass, all tokens in `apps/web/src/app/globals.css`):
+
+- Palette: violet-cast ink `#07040D` (dark) / violet porcelain `#FAF8FC` (light); default accent electric iris `#7C6AF5`; per-domain accents via `.domain-{key}` overrides. Do NOT reintroduce the old slate/Tailwind-blue look.
+- Three type roles: Bricolage Grotesque for display (`h1`, `h2`, `.font-display`), Inter for body/UI, JetBrains Mono for data via `.font-data`.
+- Signature rule: every key metric (money, percentages, counters, day counts) wears `.font-data`. The body has global `tabular-nums`. New metric UI must follow this.
+- Buttons `btn-primary`/`btn-secondary` are pills. Radii tokens: lg 20px / xl 26px.
+- PWA chrome color is `#07040D` and is asserted in `apps/web/src/app/__tests__/manifest.test.ts` — keep them in sync if it ever changes.
+
 ## Cross-Domain Behavior
 
 Live cross-domain signals, all handled by Tasks through `CrossDomainEventHandlers`:
@@ -230,13 +277,15 @@ Live cross-domain signals, all handled by Tasks through `CrossDomainEventHandler
 - `wallet.spending.spike` → high-priority review task + warning insight.
 - `health.habit.streak_broken` → habit recovery task + warning insight.
 - `health.habit.milestone` → achievement insight.
+- `health.counter.milestone` → achievement insight (includes money-not-spent when the counter has a daily cost).
 
 Future cross-domain signals should follow the same pattern:
 
-- Emit a domain event from the source module.
-- Subscribe in the target module via `eventBus`.
-- Run actions through services, never direct DB writes.
-- Tests must cover the happy path and error resilience. Event bus subscribers must not block unrelated work.
+- Emit a domain event from the source module (`{domain}/domain/events/`, payload type exported — Tasks imports payload types directly; that coupling is accepted).
+- Subscribe in `tasks/services/CrossDomainEventHandlers.ts` via `eventBus`.
+- Run actions through services, never direct DB writes. Task creation inside handlers is fire-and-forget with a `.catch` + logger (insight must land even if the task fails).
+- Insight metadata supports `actionHref`/`actionLabel` for deep links.
+- Tests on both sides: emission in the source module's unit tests, handling in `CrossDomainEventHandlers.test.ts`, and the full flow in the source module's e2e (note: poll briefly for the created task — handler task creation is async).
 
 ## New Domain Gate
 

@@ -178,6 +178,38 @@ tasks (today-sized).
   a habit — "Empezar el gym" done → habit "Gimnasio" created with one tap. A goal
   is how a habit gets started; a habit is how a goal stays won.
 
+Implementation notes (blueprint for the next session — mirror the H1 counters
+implementation, it is the closest template):
+
+- Table `health.goals`: id, owner_user_id (FK users, cascade), title varchar(120),
+  notes text null, target_date date, status varchar(12) default 'active'
+  (active/done/dropped), deadline_notified varchar(4) default 'none'
+  (none/t7/t1 — the lazy-detection dedupe stage), completed_at timestamptz null,
+  created_at, updated_at. Add to drizzle schema + migration + test-database
+  SETUP_SQL + truncate list.
+- Rich `Goal` entity: `complete()`, `drop()`, `markDeadlineNotified(stage)`.
+- Services: CreateGoal (target date must be in the future), GetGoalsOverview
+  (computes daysLeft; lazy deadline detection: if active and daysLeft <= 1 and
+  stage < t1 → notify t1; else if daysLeft <= 7 and stage < t7 → notify t7;
+  persist the stage BEFORE emitting, same as counters), CompleteGoal, DropGoal,
+  and GraduateGoal (completes the goal AND creates a habit from a given name,
+  composing the existing CreateHabit service — returns both).
+- Event `health.goal.deadline_approaching` {userId, goalId, title, targetDate,
+  daysLeft}; handled in tasks `CrossDomainEventHandlers`: warning insight +
+  review task (P2 at t7, P3 at t1) scheduled today, domain 'health'.
+- Routes under `/api/v1/health/goals`: GET list, POST create, POST :id/complete,
+  POST :id/drop, POST :id/graduate {habitName, emoji?}.
+- Agent tools: list_goals, create_goal, complete_goal (offer graduation in the
+  prompt rules: when a goal completes, suggest the habit conversion).
+- Frontend: GoalsSection on /health below counters (create form: title + date;
+  rows with daysLeft in `.font-data`, overdue state, complete/drop buttons;
+  completing offers an inline "convertir en hábito" affordance that calls
+  graduate). Selectors: sortGoals (closest deadline first, overdue on top),
+  goalUrgencyLabel.
+- Tests mirror counters: entity + services unit (fake repo, fake timers),
+  CrossDomainEventHandlers cases, e2e in HealthAPI.e2e.test.ts (CRUD, deadline
+  signal via dedupe-column reset trick, graduation creates the habit, isolation).
+
 ### H3. Medical records — fichas médicas (user story)
 
 > "Tenía documentos y fichas médicas, debe haber una sección para eso."
