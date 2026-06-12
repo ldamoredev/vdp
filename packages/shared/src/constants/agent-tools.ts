@@ -65,4 +65,13 @@ export const WALLET_AGENT_TOOL_NAMES = [
 
 export type WalletAgentToolName = (typeof WALLET_AGENT_TOOL_NAMES)[number];
 
-export type AgentToolName = TasksAgentToolName | WalletAgentToolName;
+export const HEALTH_AGENT_TOOL_NAMES = [
+  // habits
+  "list_habits",
+  "create_habit",
+  "complete_habit",
+] as const;
+
+export type HealthAgentToolName = (typeof HEALTH_AGENT_TOOL_NAMES)[number];
+
+export type AgentToolName = TasksAgentToolName | WalletAgentToolName | HealthAgentToolName;

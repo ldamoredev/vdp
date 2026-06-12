@@ -6,14 +6,16 @@ import { TaskInsightsStore } from './TaskInsightsStore';
 import { CreateTask } from './CreateTask';
 import { Logger } from '../../common/base/observability/logging/Logger';
 import { SpendingSpikePayload } from '../../wallet/domain/events/SpendingSpike';
+import { HabitStreakBrokenPayload } from '../../health/domain/events/HabitStreakBroken';
+import { HabitMilestonePayload } from '../../health/domain/events/HabitMilestone';
 
 /**
  * Cross-domain event handlers for the Tasks module.
  *
- * Listens to events from other domains (e.g., Wallet) and generates
+ * Listens to events from other domains (Wallet, Health) and generates
  * task insights + actionable tasks when relevant patterns are detected.
  *
- * This is the first implementation of the cross-domain thesis:
+ * This is the implementation of the cross-domain thesis:
  * "It knows I overspent AND it creates a task to review it."
  */
 export class CrossDomainEventHandlers implements EventSubscriber {
@@ -27,6 +29,63 @@ export class CrossDomainEventHandlers implements EventSubscriber {
     subscribe(): void {
         this.eventBus.on('wallet.spending.spike', (event: DomainEvent) => {
             this.handleSpendingSpike(event.payload as SpendingSpikePayload);
+        });
+        this.eventBus.on('health.habit.streak_broken', (event: DomainEvent) => {
+            this.handleHabitStreakBroken(event.payload as HabitStreakBrokenPayload);
+        });
+        this.eventBus.on('health.habit.milestone', (event: DomainEvent) => {
+            this.handleHabitMilestone(event.payload as HabitMilestonePayload);
+        });
+    }
+
+    private handleHabitStreakBroken(payload: HabitStreakBrokenPayload): void {
+        this.insightsStore.addInsight({
+            userId: payload.userId,
+            type: 'warning',
+            title: `Se cortó tu racha de "${payload.habitName}"`,
+            message:
+                `Llevabas ${payload.lostStreak} días seguidos (último: ${payload.lastCompletedDate}). ` +
+                `Retomaste hoy — el dato útil es no dejar pasar otro hueco.`,
+            metadata: {
+                source: 'health.habit.streak_broken',
+                habitId: payload.habitId,
+                lostStreak: payload.lostStreak,
+                lastCompletedDate: payload.lastCompletedDate,
+                actionHref: '/health',
+                actionLabel: 'Ver hábitos',
+            },
+        });
+
+        this.createTask
+            .execute(payload.userId, {
+                title: `Sostener hábito: ${payload.habitName}`,
+                description:
+                    `La racha de ${payload.lostStreak} días se cortó el ${payload.lastCompletedDate}. ` +
+                    `Hoy se retomó; esta tarea es el recordatorio de mantenerla esta semana.`,
+                priority: 2,
+                scheduledDate: todayISO(),
+                domain: 'health',
+            })
+            .catch((err: unknown) => {
+                this.logger.error('cross-domain: failed to create habit recovery task', {
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            });
+    }
+
+    private handleHabitMilestone(payload: HabitMilestonePayload): void {
+        this.insightsStore.addInsight({
+            userId: payload.userId,
+            type: 'achievement',
+            title: `${payload.streak} días de "${payload.habitName}"`,
+            message: `Racha de ${payload.streak} días seguidos. Sostenido sin ruido — así se construye.`,
+            metadata: {
+                source: 'health.habit.milestone',
+                habitId: payload.habitId,
+                streak: payload.streak,
+                actionHref: '/health',
+                actionLabel: 'Ver hábitos',
+            },
         });
     }
 

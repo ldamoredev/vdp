@@ -5,6 +5,8 @@ import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { CreateTask } from '../../services/CreateTask';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
+import { HabitStreakBroken } from '../../../health/domain/events/HabitStreakBroken';
+import { HabitMilestone } from '../../../health/domain/events/HabitMilestone';
 import { todayISO } from '../../../common/base/time/dates';
 
 function createMockCreateTask(): CreateTask {
@@ -139,6 +141,54 @@ describe('CrossDomainEventHandlers', () => {
         }));
 
         expect(addSpy).toHaveBeenCalledOnce();
+    });
+
+    it('creates a warning insight and a recovery task when a habit streak breaks', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new HabitStreakBroken({
+            userId: 'test-user-id',
+            habitId: 'habit-1',
+            habitName: 'Gimnasio',
+            lostStreak: 12,
+            lastCompletedDate: '2026-06-08',
+            resumedDate: '2026-06-11',
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            userId: 'test-user-id',
+            type: 'warning',
+            title: 'Se cortó tu racha de "Gimnasio"',
+        });
+        const metadata = addSpy.mock.calls[0][0].metadata as Record<string, unknown>;
+        expect(metadata.source).toBe('health.habit.streak_broken');
+        expect(metadata.actionHref).toBe('/health');
+
+        expect(createTask.execute).toHaveBeenCalledOnce();
+        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(taskData.title).toBe('Sostener hábito: Gimnasio');
+        expect(taskData.domain).toBe('health');
+        expect(taskData.priority).toBe(2);
+        expect(taskData.scheduledDate).toBe(todayISO());
+    });
+
+    it('creates an achievement insight (and no task) on a habit milestone', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new HabitMilestone({
+            userId: 'test-user-id',
+            habitId: 'habit-1',
+            habitName: 'Leer',
+            streak: 7,
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            type: 'achievement',
+            title: '7 días de "Leer"',
+        });
+        expect(createTask.execute).not.toHaveBeenCalled();
     });
 
     it('does not react to unrelated events', async () => {

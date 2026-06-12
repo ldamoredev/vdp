@@ -1,6 +1,7 @@
 export * from "./types/common";
 export * from "./types/wallet";
 export * from "./types/tasks";
+export * from "./types/health";
 export * from "./schemas/common";
 export * from "./schemas/wallet";
 export * from "./schemas/health";

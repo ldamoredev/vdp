@@ -15,6 +15,13 @@
       "when": 1781186770139,
       "tag": "0001_unknown_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781223280833,
+      "tag": "0002_striped_layla_miller",
+      "breakpoints": true
     }
   ]
 }

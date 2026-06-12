@@ -16,6 +16,7 @@ import { createEmbeddingProvider } from './common/infrastructure/embeddings/crea
 import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
 import { TaskModule } from './tasks/TaskModule';
 import { WalletModule } from './wallet/WalletModule';
+import { HealthModule } from './health/HealthModule';
 import { Logger } from './common/base/observability/logging/Logger';
 import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
 import { AuthContextStorage } from './common/http/AuthContextStorage';
@@ -43,6 +44,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
             (context) => new AuthModule(context),
             (context) => new TaskModule(context),
             (context) => new WalletModule(context),
+            (context) => new HealthModule(context),
         ];
     }
 }

@@ -14,6 +14,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS tasks;
 CREATE SCHEMA IF NOT EXISTS wallet;
+CREATE SCHEMA IF NOT EXISTS health;
 
 CREATE TABLE IF NOT EXISTS core.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -218,6 +219,28 @@ CREATE TABLE IF NOT EXISTS wallet.exchange_rates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS health.habits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    emoji VARCHAR(8),
+    archived_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS health.habit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    habit_id UUID NOT NULL REFERENCES health.habits(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS habit_logs_habit_date_idx ON health.habit_logs(habit_id, date);
+CREATE INDEX IF NOT EXISTS habit_logs_owner_user_idx ON health.habit_logs(owner_user_id);
+CREATE INDEX IF NOT EXISTS habits_owner_user_idx ON health.habits(owner_user_id);
+
 CREATE TABLE IF NOT EXISTS wallet.wallet_insights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -287,6 +310,8 @@ export class TestDatabase {
                     tasks.task_notes,
                     tasks.task_insights,
                     tasks.tasks,
+                    health.habit_logs,
+                    health.habits,
                     wallet.wallet_insights,
                     wallet.savings_contributions,
                     wallet.transactions,
