@@ -133,6 +133,100 @@ For any further expansion (deepening Health or opening People/Work/Study), satis
 
 Done when: the new surface meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
 
+## Phase 4: Health Deepening
+
+Source: the owner's real prior usage in Notion (user stories H1–H3) plus researched
+proposals (P1–P3). One feature at a time, in the order below; each one ships only
+when the previous one is in real daily use. Every feature stays inside the existing
+`health` module (services + tables + frontend feature components), so the New Domain
+Gate applies as a per-feature checklist, not a new module.
+
+### H1. Abstinence counters — "days since" (user story)
+
+> "Como había dejado de fumar, tenía metas tipo contador que llevaba la cuenta
+> de días desde que dejé."
+
+The inverse of a habit: instead of marking every day, a counter runs up from a
+start date ("Sin fumar — día 94").
+
+- Scope: counter = name + start date + optional estimated daily cost (ARS).
+  "Recaí" resets the counter but preserves attempt history (current attempt vs
+  best attempt). No daily interaction required — that is the point.
+- Milestones (1/7/30/100/365 days) reuse the `health.habit.milestone` →
+  achievement-insight pattern. Detection without a scheduler: evaluate on
+  overview load, deduped with a `last_milestone_notified` column.
+- Cross-domain (the differentiator): with a daily cost set, the counter computes
+  money not spent and surfaces it as a periodic insight ("94 días sin fumar ≈
+  $X no gastados"). Insight only in v1 — no automatic Wallet writes.
+- Research note: day counter + money saved + milestone badges is the standard
+  core of dedicated quit apps (Kwit, Quit Tracker); VDP composes it with the
+  wallet instead of a fake in-app piggy bank.
+
+### H2. Goals with deadlines (user story)
+
+> "Tenía metas con una fecha límite: empezar el gym, empezar dieta."
+
+One-shot outcomes with a target date — distinct from habits (recurring) and
+tasks (today-sized).
+
+- Scope: goal = title + target date + status (active / done / dropped) + optional
+  notes. Deliberately NOT project management: no subtasks, no progress percent.
+- Cross-domain: deadline approaching (T-7 and T-1) with the goal still active →
+  review task + warning insight. Same no-scheduler constraint as H1: evaluate on
+  overview load with a dedupe column.
+- Graduation loop (signature move): completing a goal offers converting it into
+  a habit — "Empezar el gym" done → habit "Gimnasio" created with one tap. A goal
+  is how a habit gets started; a habit is how a goal stays won.
+
+### H3. Medical records — fichas médicas (user story)
+
+> "Tenía documentos y fichas médicas, debe haber una sección para eso."
+
+The personal medical archive: consultas, estudios, vacunas, recetas.
+
+- Scope v0 (no new infra): structured records — type (consulta / estudio /
+  vacuna / receta / otro), date, professional, specialty, free notes, and
+  external links (Drive/iCloud) for the actual documents.
+- Scope v1 (separate decision): file upload. This is the first blob storage in
+  the stack — Supabase Storage is the natural candidate given production already
+  runs on Supabase. Do not start v1 until v0 proves the section gets used.
+- Privacy rule: medical records are the most sensitive data in the system. They
+  are NOT exposed through agent tools by default (tool results travel to the LLM
+  provider); revisit only with an explicit owner decision.
+- Cross-domain: a record marked "pendiente" (estudio a realizar, orden vigente)
+  can create a task; full appointment tracking stays out of scope until needed.
+
+### P1. Flexible habit cadence — x times per week (proposal)
+
+Today's slice is daily-only. Real habits often aren't: gym 3x/week is the
+canonical case — and it is exactly what the H2 graduation loop will produce.
+Weekly-frequency scheduling is also the most common gap between basic and
+serious habit trackers (HabitNow, Streaks). Scope: per-habit cadence `daily`
+or `x per week`; streak math generalizes to consecutive *weeks* that met the
+target. The week-met/week-missed events reuse the existing milestone and
+streak-broken signals.
+
+### P2. Daily mood/energy check-in wired into the ritual (proposal)
+
+One tap (1–5) inside the existing daily review ritual — no new screen. The
+research case: mood-vs-activity correlation is the killer feature of Daylio
+and Bearable, but they can't see your task load. VDP can: weekly insight
+correlating mood with task carry-over and habit completion ("tus semanas de
+ánimo ≤2 coinciden con arrastre >40%"). Cheap to capture, compounds with every
+other domain, and gives the end-of-day ritual a reason to be opened daily.
+
+### P3. Weight tracking with trend (proposal)
+
+The single most-tracked body metric and the natural companion of diet/gym goals
+(H2): a goal can carry an optional target weight. Scope: one number per day max,
+sparkline trend on the habits screen, mono `font-data` rendering. Explicitly not
+a metrics platform — one metric, until proven insufficient.
+
+Suggested order: H1 → H2 → P1 → H3 (v0) → P2 → P3. H1 first because it is the
+owner's most-lived use case with the smallest scope and the strongest
+cross-domain payoff; P1 right after H2 because graduated gym/diet goals need
+weekly cadence to become honest habits.
+
 ## Data Constraint
 
 Production data can be discarded until the Tasks production-readiness checkpoint is complete. Once Tasks starts being used for real personal work, stop assuming task data is disposable and reassess migration/backfill discipline.
