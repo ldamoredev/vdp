@@ -1,6 +1,7 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { HabitRepository } from './domain/HabitRepository';
+import { CounterRepository } from './domain/CounterRepository';
 import { HealthAgent } from './infrastructure/agent/HealthAgent';
 import { HealthAgentController } from './infrastructure/routes/HealthAgentController';
 import { HealthController } from './infrastructure/routes/HealthController';
@@ -9,6 +10,10 @@ import { CompleteHabitDay } from './services/CompleteHabitDay';
 import { CreateHabit } from './services/CreateHabit';
 import { GetHabitsOverview } from './services/GetHabitsOverview';
 import { UncompleteHabitDay } from './services/UncompleteHabitDay';
+import { ArchiveCounter } from './services/ArchiveCounter';
+import { CreateCounter } from './services/CreateCounter';
+import { GetCountersOverview } from './services/GetCountersOverview';
+import { RelapseCounter } from './services/RelapseCounter';
 
 export class HealthModuleRuntime {
     constructor(private deps: ModuleContext) {}
@@ -23,6 +28,13 @@ export class HealthModuleRuntime {
             new UncompleteHabitDay(this.habitRepository()),
         );
         this.deps.services.register(ArchiveHabit, () => new ArchiveHabit(this.habitRepository()));
+
+        this.deps.services.register(CreateCounter, () => new CreateCounter(this.counterRepository()));
+        this.deps.services.register(GetCountersOverview, () =>
+            new GetCountersOverview(this.counterRepository(), this.deps.eventBus),
+        );
+        this.deps.services.register(RelapseCounter, () => new RelapseCounter(this.counterRepository()));
+        this.deps.services.register(ArchiveCounter, () => new ArchiveCounter(this.counterRepository()));
     }
 
     registerEventHandlers(): void {
@@ -53,6 +65,10 @@ export class HealthModuleRuntime {
 
     private habitRepository(): HabitRepository {
         return this.deps.repositories.get(HabitRepository);
+    }
+
+    private counterRepository(): CounterRepository {
+        return this.deps.repositories.get(CounterRepository);
     }
 
     private agentRepository(): AgentRepository {

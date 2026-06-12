@@ -6,6 +6,9 @@ import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { CompleteHabitDay } from '../../services/CompleteHabitDay';
 import { CreateHabit } from '../../services/CreateHabit';
 import { GetHabitsOverview } from '../../services/GetHabitsOverview';
+import { CreateCounter } from '../../services/CreateCounter';
+import { GetCountersOverview } from '../../services/GetCountersOverview';
+import { RelapseCounter } from '../../services/RelapseCounter';
 
 type ToolInput = Record<string, unknown>;
 
@@ -88,6 +91,77 @@ export class HealthTools {
                         input.habitId,
                         typeof input.date === 'string' ? input.date : undefined,
                     );
+                },
+            }),
+            jsonTool({
+                name: 'list_counters',
+                description:
+                    'List the user\'s "days since" counters (e.g. days without smoking) with current ' +
+                    'days, best attempt, and estimated money not spent. Call this before relapsing or ' +
+                    'discussing a counter.',
+                inputSchema: { type: 'object', properties: {}, required: [] },
+                execute: async () => services.get(GetCountersOverview).execute(userId()),
+            }),
+            jsonTool({
+                name: 'create_counter',
+                description:
+                    'Create a "days since" counter (e.g. "Sin fumar"). startedAt accepts a past ' +
+                    'YYYY-MM-DD date for things quit a while ago; dailyCost (ARS, decimal string) ' +
+                    'enables the money-not-spent estimate.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: { type: 'string', description: 'Counter name, e.g. "Sin fumar"' },
+                        emoji: { type: 'string', description: 'Optional emoji' },
+                        dailyCost: { type: 'string', description: 'Optional estimated daily cost in ARS, e.g. "4500.00"' },
+                        startedAt: { type: 'string', description: 'Optional YYYY-MM-DD start date, defaults to today' },
+                    },
+                    required: ['name'],
+                },
+                execute: async (input) => {
+                    const name = typeof input.name === 'string' ? input.name.trim() : '';
+                    if (!name) return { error: 'Counter name is required' };
+                    if (input.startedAt !== undefined && input.startedAt !== null
+                        && !localDateStringSchema.safeParse(input.startedAt).success) {
+                        return { error: `Invalid startedAt: expected YYYY-MM-DD, got ${JSON.stringify(input.startedAt)}` };
+                    }
+
+                    const counter = await services.get(CreateCounter).execute(userId(), {
+                        name,
+                        emoji: typeof input.emoji === 'string' ? input.emoji : null,
+                        dailyCost: typeof input.dailyCost === 'string' ? input.dailyCost : null,
+                        startedAt: typeof input.startedAt === 'string' ? input.startedAt : undefined,
+                    });
+                    return services.get(GetCountersOverview).buildRow(userId(), counter);
+                },
+            }),
+            jsonTool({
+                name: 'relapse_counter',
+                description:
+                    'Register a relapse on a counter: closes the current attempt into the history ' +
+                    'and restarts from the relapse date. Use list_counters first to get the counterId. ' +
+                    'Be matter-of-fact about it — the useful datum is restarting, not the guilt.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        counterId: { type: 'string', description: 'Counter ID' },
+                        date: { type: 'string', description: 'Optional YYYY-MM-DD relapse date, defaults to today' },
+                    },
+                    required: ['counterId'],
+                },
+                execute: async (input) => {
+                    if (typeof input.counterId !== 'string') return { error: 'counterId is required' };
+                    if (input.date !== undefined && input.date !== null
+                        && !localDateStringSchema.safeParse(input.date).success) {
+                        return { error: `Invalid date: expected YYYY-MM-DD, got ${JSON.stringify(input.date)}` };
+                    }
+
+                    const counter = await services.get(RelapseCounter).execute(
+                        userId(),
+                        input.counterId,
+                        typeof input.date === 'string' ? input.date : undefined,
+                    );
+                    return services.get(GetCountersOverview).buildRow(userId(), counter);
                 },
             }),
         ];

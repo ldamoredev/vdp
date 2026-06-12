@@ -7,6 +7,7 @@ import { NoOpLogger } from '../../../common/infrastructure/observability/logging
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBroken } from '../../../health/domain/events/HabitStreakBroken';
 import { HabitMilestone } from '../../../health/domain/events/HabitMilestone';
+import { CounterMilestone } from '../../../health/domain/events/CounterMilestone';
 import { todayISO } from '../../../common/base/time/dates';
 
 function createMockCreateTask(): CreateTask {
@@ -189,6 +190,44 @@ describe('CrossDomainEventHandlers', () => {
             title: '7 días de "Leer"',
         });
         expect(createTask.execute).not.toHaveBeenCalled();
+    });
+
+    it('creates an achievement insight with money on a counter milestone', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new CounterMilestone({
+            userId: 'test-user-id',
+            counterId: 'counter-1',
+            counterName: 'Sin fumar',
+            days: 30,
+            currentDays: 34,
+            moneyNotSpent: '153000.00',
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            type: 'achievement',
+            title: '30 días de "Sin fumar"',
+        });
+        expect(addSpy.mock.calls[0][0].message).toContain('$153000.00');
+        const metadata = addSpy.mock.calls[0][0].metadata as Record<string, unknown>;
+        expect(metadata.source).toBe('health.counter.milestone');
+        expect(createTask.execute).not.toHaveBeenCalled();
+    });
+
+    it('omits the money line when the counter has no daily cost', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new CounterMilestone({
+            userId: 'test-user-id',
+            counterId: 'counter-1',
+            counterName: 'Sin alcohol',
+            days: 7,
+            currentDays: 7,
+            moneyNotSpent: null,
+        }));
+
+        expect(addSpy.mock.calls[0][0].message).not.toContain('$');
     });
 
     it('does not react to unrelated events', async () => {

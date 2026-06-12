@@ -6,6 +6,8 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  decimal,
+  integer,
 } from "drizzle-orm/pg-core";
 import { users } from '../../../auth/infrastructure/db/schema';
 
@@ -44,5 +46,48 @@ export const habitLogs = healthSchema.table(
   (table) => [
     uniqueIndex("habit_logs_habit_date_idx").on(table.habitId, table.date),
     index("habit_logs_owner_user_idx").on(table.ownerUserId),
+  ]
+);
+
+// ─── Counters ("days since") ─────────────────────────────
+// Abstinence counters: they run up from started_at with no daily
+// interaction. A relapse closes the attempt into counter_attempts and
+// restarts the counter. last_milestone_notified dedupes lazy milestone
+// detection on overview load (no scheduler in the stack).
+export const counters = healthSchema.table(
+  "counters",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    name: varchar("name", { length: 100 }).notNull(),
+    emoji: varchar("emoji", { length: 8 }),
+    dailyCost: decimal("daily_cost", { precision: 15, scale: 2 }),
+    startedAt: date("started_at").notNull(),
+    lastMilestoneNotified: integer("last_milestone_notified").notNull().default(0),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("counters_owner_user_idx").on(table.ownerUserId),
+  ]
+);
+
+export const counterAttempts = healthSchema.table(
+  "counter_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    counterId: uuid("counter_id")
+      .notNull()
+      .references(() => counters.id, { onDelete: 'cascade' }),
+    startedAt: date("started_at").notNull(),
+    endedAt: date("ended_at").notNull(),
+    days: integer("days").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("counter_attempts_counter_idx").on(table.counterId),
+    index("counter_attempts_owner_user_idx").on(table.ownerUserId),
   ]
 );

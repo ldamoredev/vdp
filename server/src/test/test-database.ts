@@ -241,6 +241,33 @@ CREATE UNIQUE INDEX IF NOT EXISTS habit_logs_habit_date_idx ON health.habit_logs
 CREATE INDEX IF NOT EXISTS habit_logs_owner_user_idx ON health.habit_logs(owner_user_id);
 CREATE INDEX IF NOT EXISTS habits_owner_user_idx ON health.habits(owner_user_id);
 
+CREATE TABLE IF NOT EXISTS health.counters (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    emoji VARCHAR(8),
+    daily_cost NUMERIC(15, 2),
+    started_at DATE NOT NULL,
+    last_milestone_notified INTEGER NOT NULL DEFAULT 0,
+    archived_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS health.counter_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    counter_id UUID NOT NULL REFERENCES health.counters(id) ON DELETE CASCADE,
+    started_at DATE NOT NULL,
+    ended_at DATE NOT NULL,
+    days INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS counters_owner_user_idx ON health.counters(owner_user_id);
+CREATE INDEX IF NOT EXISTS counter_attempts_counter_idx ON health.counter_attempts(counter_id);
+CREATE INDEX IF NOT EXISTS counter_attempts_owner_user_idx ON health.counter_attempts(owner_user_id);
+
 CREATE TABLE IF NOT EXISTS wallet.wallet_insights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -312,6 +339,8 @@ export class TestDatabase {
                     tasks.tasks,
                     health.habit_logs,
                     health.habits,
+                    health.counter_attempts,
+                    health.counters,
                     wallet.wallet_insights,
                     wallet.savings_contributions,
                     wallet.transactions,

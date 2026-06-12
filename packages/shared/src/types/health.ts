@@ -22,3 +22,32 @@ export interface HabitsOverviewResponse {
   habits: HabitOverview[];
   date: string;
 }
+
+// ─── Counters ("days since") ─────────────────────────────
+
+export interface Counter {
+  id: string;
+  name: string;
+  emoji: string | null;
+  /** Estimated daily cost in ARS; enables the money-not-spent estimate. */
+  dailyCost: string | null;
+  /** Start date (YYYY-MM-DD) of the current attempt. */
+  startedAt: string;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CounterOverview extends Counter {
+  /** Full days elapsed in the current attempt (day 0 = started today). */
+  currentDays: number;
+  bestDays: number;
+  /** Total attempts including the current one. */
+  attemptCount: number;
+  moneyNotSpent: string | null;
+}
+
+export interface CountersOverviewResponse {
+  counters: CounterOverview[];
+  date: string;
+}

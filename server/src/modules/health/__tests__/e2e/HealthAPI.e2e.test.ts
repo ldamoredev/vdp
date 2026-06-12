@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { sql } from 'drizzle-orm';
 
 import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
@@ -159,6 +160,109 @@ describe('Health API — E2E', () => {
         // Still intact for the owner
         const ownList = await listHabits(PRIMARY_TEST_USER.id);
         expect(ownList.body.habits).toHaveLength(1);
+    });
+
+    it('covers the counter loop: create with past start, relapse, isolation', async () => {
+        const created = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/health/counters',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { name: 'Sin fumar', dailyCost: '1000.00', startedAt: daysAgo(10) },
+        });
+        expect(created.statusCode).toBe(201);
+        expect(created.json()).toMatchObject({
+            name: 'Sin fumar',
+            currentDays: 10,
+            bestDays: 10,
+            attemptCount: 1,
+            moneyNotSpent: '10000.00',
+        });
+        const counterId = created.json().id;
+
+        // Relapse closes the attempt and restarts today.
+        const relapsed = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/health/counters/${counterId}/relapse`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: {},
+        });
+        expect(relapsed.statusCode).toBe(200);
+        expect(relapsed.json()).toMatchObject({
+            currentDays: 0,
+            bestDays: 10,
+            attemptCount: 2,
+        });
+
+        // Isolation: the other user sees nothing and cannot touch it.
+        const otherList = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/counters',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+        expect(otherList.json().counters).toHaveLength(0);
+
+        const otherRelapse = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/health/counters/${counterId}/relapse`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: {},
+        });
+        expect(otherRelapse.statusCode).toBe(404);
+    });
+
+    it('emits a counter milestone as a tasks insight on overview load, exactly once', async () => {
+        // Creation with a past start suppresses retroactive milestones, so a
+        // fresh counter never fires on its first load...
+        const created = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/health/counters',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { name: 'Sin alcohol', dailyCost: '500.00', startedAt: daysAgo(7) },
+        });
+        expect(created.statusCode).toBe(201);
+
+        async function findMilestoneInsight() {
+            const insights = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/tasks/insights?limit=20',
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            return insights.json().insights.filter(
+                (insight: { title: string }) => insight.title.includes('Sin alcohol'),
+            );
+        }
+
+        await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/counters',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(await findMilestoneInsight()).toHaveLength(0);
+
+        // ...then "time passes": reset the dedupe column to simulate the
+        // milestone being crossed since the last notification.
+        await testDb.query.execute(
+            sql`UPDATE health.counters SET last_milestone_notified = 1 WHERE id = ${created.json().id}`,
+        );
+
+        await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/counters',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        const milestones = await findMilestoneInsight();
+        expect(milestones).toHaveLength(1);
+        expect(milestones[0].title).toBe('7 días de "Sin alcohol"');
+        expect(milestones[0].message).toContain('$3500.00');
+
+        // Loading again must not duplicate it.
+        await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/counters',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(await findMilestoneInsight()).toHaveLength(1);
     });
 
     it('runs the cross-domain flow: broken streak creates a recovery task for the right user', async () => {

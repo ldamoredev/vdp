@@ -8,6 +8,7 @@ import { Logger } from '../../common/base/observability/logging/Logger';
 import { SpendingSpikePayload } from '../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBrokenPayload } from '../../health/domain/events/HabitStreakBroken';
 import { HabitMilestonePayload } from '../../health/domain/events/HabitMilestone';
+import { CounterMilestonePayload } from '../../health/domain/events/CounterMilestone';
 
 /**
  * Cross-domain event handlers for the Tasks module.
@@ -35,6 +36,33 @@ export class CrossDomainEventHandlers implements EventSubscriber {
         });
         this.eventBus.on('health.habit.milestone', (event: DomainEvent) => {
             this.handleHabitMilestone(event.payload as HabitMilestonePayload);
+        });
+        this.eventBus.on('health.counter.milestone', (event: DomainEvent) => {
+            this.handleCounterMilestone(event.payload as CounterMilestonePayload);
+        });
+    }
+
+    private handleCounterMilestone(payload: CounterMilestonePayload): void {
+        const moneyLine = payload.moneyNotSpent
+            ? ` ≈ $${payload.moneyNotSpent} ARS que no se fueron.`
+            : '';
+
+        this.insightsStore.addInsight({
+            userId: payload.userId,
+            type: 'achievement',
+            title: `${payload.days} días de "${payload.counterName}"`,
+            message:
+                `Cruzaste los ${payload.days} días (llevás ${payload.currentDays}).${moneyLine}` +
+                ` El contador corre solo — vos solo no lo cortes.`,
+            metadata: {
+                source: 'health.counter.milestone',
+                counterId: payload.counterId,
+                days: payload.days,
+                currentDays: payload.currentDays,
+                moneyNotSpent: payload.moneyNotSpent,
+                actionHref: '/health',
+                actionLabel: 'Ver contadores',
+            },
         });
     }
 
