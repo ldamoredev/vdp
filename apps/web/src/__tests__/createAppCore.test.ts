@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GetHabitsOverview } from "@/core/app/health/GetHabitsOverview";
 import { CreateGoal } from "@/core/app/health/CreateGoal";
+import { ListTasks } from "@/core/app/tasks/ListTasks";
 import { createAppCore } from "@/createAppCore";
 
 /**
@@ -40,5 +41,14 @@ describe("createAppCore", () => {
     await expect(
       core.execute(new CreateGoal({ title: "Gym", targetDate: "2026-07-01" })),
     ).resolves.toBeUndefined();
+  });
+
+  it("registers the tasks handlers on the bus", async () => {
+    stubFetchOk({ tasks: [], total: 0, limit: 50, offset: 0 });
+    const core = createAppCore();
+
+    const result = await core.execute(new ListTasks());
+
+    expect(result).toEqual({ tasks: [], total: 0 });
   });
 });

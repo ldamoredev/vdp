@@ -1,5 +1,6 @@
 import { Core } from "@/core/Core";
 import { HealthModule } from "@/core/app/health/HealthModule";
+import { TasksModule } from "@/core/app/tasks/TasksModule";
 
 /**
  * App composition root: builds the Core and registers every feature module's
@@ -7,5 +8,5 @@ import { HealthModule } from "@/core/app/health/HealthModule";
  * DefaultCoreConfiguration — add each module here as it is migrated.
  */
 export function createAppCore(): Core {
-  return new Core().use(new HealthModule());
+  return new Core().use(new HealthModule()).use(new TasksModule());
 }
