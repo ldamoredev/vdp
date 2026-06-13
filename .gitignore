@@ -13,8 +13,9 @@ dist/
 .claude/*
 !.claude/skills/
 
-# Agent tooling (local)
-.agents/
+# Agent tooling (local); .agents/skills is a symlink to .claude/skills (tracked)
+.agents/*
+!.agents/skills
 .codex/
 .junie/
 .kiro/
