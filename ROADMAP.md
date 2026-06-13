@@ -177,9 +177,14 @@ rationale and owner resolutions: analysis doc §10.
 
 ### A5. Frontend migration by module
 
-One module per session, per-feature gate, legacy folder deleted at the end of each:
-review → home → tasks → wallet → shell/chat. Coexistence rules (one-way import
-ratchet, RQ provider stays until the last consumer dies): analysis doc §8.
+Order **reordered (June 2026)** from the original review→home→tasks→wallet: review
+and home are cross-domain aggregators that depend on tasks and wallet (they read
+`tasksApi`/`walletApi`, use `WalletProvider`/`EditTransactionSheet`/`useTaskMutations`),
+so the base domains migrate first to avoid building partial gateways or having a
+presenter call legacy APIs. New order: **tasks → wallet → review → home → shell/chat**.
+Each is multi-session (tasks ~3.8k LOC, wallet ~4.8k); per-feature gate, legacy folder
+deleted at the end of each. Coexistence rules (one-way import ratchet, RQ provider stays
+until the last consumer dies): analysis doc §8.
 
 ### A6. CQBus on the api
 
