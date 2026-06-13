@@ -8,7 +8,10 @@ dist/
 .DS_Store
 .pnpm-store
 .idea
-.claude
+
+# Claude Code: commit project skills, keep local config out
+.claude/*
+!.claude/skills/
 
 # Agent tooling (local)
 .agents/
