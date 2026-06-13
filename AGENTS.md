@@ -9,8 +9,8 @@ This file is the source of truth for agents, architecture rules, safety rules, a
 VDP is a personal "Life Operating System" monorepo.
 
 ```text
-apps/web/          Next.js 15 frontend
-server/            Fastify 5 backend
+apps/web/          Vite SPA frontend (React 19 + react-router 7)
+server/            Fastify 5 backend (also serves the SPA build in production)
 packages/shared/   Zod schemas and shared TypeScript types
 ```
 
@@ -33,11 +33,11 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Active work is **ROADMAP Phase 4 (Health deepening)**: H1 counters shipped; **next is H2 (goals with deadlines)**, then P1 → H3v0 → P2 → P3 in that order. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 (Health deepening) shipped H1 counters and H2 goals, then **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/frontend-mirror-analysis.md`): A1 Vite port is SHIPPED; **next is A2 (health pilot on presenters + CQBus + Core)**, then skills waves, per-module migration, and CQBus on the api. Phase 4 resumes with P1 afterwards. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
-- Production smoke of the auth/session flow through Vercel/Render/Supabase (closes Phase 2 formally).
+- Re-deploy production as a single Render service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
 - Production has NOT yet run migrations `0001`–`0003`; they must be applied on the next deploy before the new features work there.
 
 ## Working Agreement (how sessions run)
@@ -218,23 +218,26 @@ Insight stores (`TaskInsightsStore`, `WalletInsightsStore`) are in-memory read m
 
 ## Frontend Architecture
 
-The frontend mirrors the backend module pattern: one folder per domain owns everything for that domain. Top-level layout of `apps/web/src/`:
+The frontend is a Vite SPA (no SSR). It mirrors the backend module pattern: one folder per domain owns everything for that domain. Top-level layout of `apps/web/src/`:
 
 ```text
-app/          Routes only. Pages are layout-only: provider plus layout, ideally under 30 lines.
+main.tsx      Entry: mounts <WebApp/> under React StrictMode.
+WebApp.tsx    Startup: ThemeProvider + Providers + RouterProvider.
+routes.tsx    The whole route tree (react-router createBrowserRouter), 1:1 with pages/.
+pages/        Route components only: provider plus screen, ideally under 30 lines.
 features/     One folder per domain (tasks, wallet, review, home). ALL domain code lives here.
-components/   Domain-free app chrome only: primitives/, shell/, chat/, auth/, demo/.
+components/   Domain-free app chrome only: primitives/, shell/, chat/, auth/.
 lib/          Domain-free kernel only: api/client.ts + api/types.ts, stores, format, navigation, theme.
 ```
 
-Do not create per-domain folders under `lib/` or `components/` (no `lib/tasks`, no `components/wallet`). If code is about a domain, it belongs in `features/{domain}/`.
+The domain shell (`components/shell/domain-layout.tsx`) renders an `<Outlet/>` behind `AuthGate`; route errors render `domain-error.tsx` / `root-error.tsx` via router `errorElement`. Do not create per-domain folders under `lib/` or `components/` (no `lib/tasks`, no `components/wallet`). If code is about a domain, it belongs in `features/{domain}/`.
 
 Import direction rules:
 
 - `lib/` imports nothing from `features/` or `components/`.
 - `features/{domain}/` may import `lib/`, `components/primitives/`, and other features' public modules: selectors, query keys, plain components. Never another feature's context/provider or internal hooks.
 - `components/` (shell, chat, auth) is the cross-domain composition layer: it may import feature public modules (for example the chat shell uses `features/tasks/chat-sync`).
-- `app/` may import anything.
+- `pages/` and `routes.tsx` may import anything.
 
 Frontend domains use the feature module pattern under `apps/web/src/features/{domain}/` (flat — no `presentation/` layer; the whole web feature is presentation):
 
@@ -249,26 +252,26 @@ Frontend domains use the feature module pattern under `apps/web/src/features/{do
 
 API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 
-The frontend never calls the Fastify backend directly from client code. Client API calls go through `apps/web/src/app/api/proxy/v1/[...path]/route.ts`, which forwards to `NEXT_PUBLIC_API_URL`, attaches the `vdp_session` httpOnly cookie as `x-session-token`, and filters hop-by-hop headers.
+The SPA talks to the API **same-origin** — there is no BFF or proxy layer. `lib/api/client.ts` calls `/api/v1/...` with relative paths. In dev, the Vite server proxies `/api` to the Fastify backend (`VITE_API_PROXY_TARGET`, default `http://localhost:4000`). In production, Fastify serves the SPA build itself (`server/src/App.ts` `registerSpaStatic`; dist path via `WEB_DIST_PATH` or `../apps/web/dist`), so same-origin holds without configuration.
 
-Same-origin auth routes live under `apps/web/src/app/api/auth/*` and manage the `vdp_session` cookie. Backend auth routes live under `/api/auth/*`.
+Auth is cookie-native on the backend: `/api/auth/login` and `/api/auth/register` set the `vdp_session` httpOnly cookie (see `auth/infrastructure/http/session-cookie.ts`), logout and change-password clear it, and `SessionTokenAuthenticationMiddleware` accepts the cookie or the `x-session-token` header. Invalid browser cookies are cleared on 401. Non-`/api` paths are public at the middleware level (they are SPA assets/routes); client-side redirect to `/login` is `AuthGate`'s job. The global API rate limit is configurable via `RATE_LIMIT_MAX` (default 300/min per IP; e2e uses a high value).
 
 ## Frontend UI Rules
 
-- Stack: Next.js 15, React 19, TailwindCSS v4, React Query v5, `lucide-react`.
+- Stack: Vite, React 19, react-router 7, TailwindCSS v4, React Query v5, `lucide-react`.
 - Do not add Shadcn/Radix component libraries.
 - Use existing primitives and feature patterns before adding new abstractions.
 - Keep operational/product screens dense, calm, and usable; do not turn app surfaces into marketing pages.
 - Use lucide icons for tool buttons when an icon exists.
 - Make pages and controls responsive; text must not overflow or overlap.
 
-Visual identity ("tinta iris" — June 2026 design pass, all tokens in `apps/web/src/app/globals.css`):
+Visual identity ("tinta iris" — June 2026 design pass, all tokens in `apps/web/src/globals.css`):
 
 - Palette: violet-cast ink `#07040D` (dark) / violet porcelain `#FAF8FC` (light); default accent electric iris `#7C6AF5`; per-domain accents via `.domain-{key}` overrides. Do NOT reintroduce the old slate/Tailwind-blue look.
 - Three type roles: Bricolage Grotesque for display (`h1`, `h2`, `.font-display`), Inter for body/UI, JetBrains Mono for data via `.font-data`.
 - Signature rule: every key metric (money, percentages, counters, day counts) wears `.font-data`. The body has global `tabular-nums`. New metric UI must follow this.
 - Buttons `btn-primary`/`btn-secondary` are pills. Radii tokens: lg 20px / xl 26px.
-- PWA chrome color is `#07040D` and is asserted in `apps/web/src/app/__tests__/manifest.test.ts` — keep them in sync if it ever changes.
+- PWA chrome color is `#07040D`, lives in `apps/web/index.html` + `apps/web/public/manifest.webmanifest`, and is asserted in `apps/web/src/__tests__/manifest.test.ts` — keep them in sync if it ever changes.
 
 ## Cross-Domain Behavior
 

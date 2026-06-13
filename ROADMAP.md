@@ -146,7 +146,7 @@ Fastify, single Render service, Vercel retired); presenters (Humble Object) + CQ
 over `abstract-http-client`; `react-presenter` used as published (under Vite its
 optional react-navigation `require` is harmless at runtime — no custom publish).
 
-### A1. Vite SPA port (no pattern change)
+### A1. Vite SPA port (no pattern change) — SHIPPED June 2026
 
 Mechanical port of `apps/web` from Next.js to Vite + react-router: routes 1:1, swap
 `next/link`/`next/navigation` (23 coupled files), static `index.html` with PWA manifest

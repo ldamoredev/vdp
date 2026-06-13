@@ -26,7 +26,7 @@ The web app authenticates through same-origin auth routes and an `httpOnly` `vdp
 
 ```
 vdp/
-├── apps/web/          # Next.js 15 frontend
+├── apps/web/          # Vite SPA frontend (React 19 + react-router 7)
 ├── server/            # Fastify 5 backend
 └── packages/shared/   # Zod schemas + TypeScript types
 ```
@@ -54,7 +54,7 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 | `pnpm test:unit` | Run web tests and server unit tests |
 | `pnpm test:integration` | Run server integration tests |
 | `pnpm test:e2e` | Run server and web E2E tests |
-| `pnpm clean` | Remove all node_modules, dist, .next, .turbo |
+| `pnpm clean` | Remove all node_modules, dist, .turbo |
 
 ### Server (`@vdp/server`)
 
@@ -159,11 +159,9 @@ pnpm dev
 | `LANGFUSE_PUBLIC_KEY` | Langfuse public key |
 | `LANGFUSE_HOST` | Langfuse host URL |
 
-### Web (`apps/web/.env.local`)
+### Web
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | **Yes** | — | Backend API base URL (e.g., `http://localhost:4000/api/v1`) |
+The SPA calls the API same-origin (no env needed). In dev, Vite proxies `/api` to the backend; override the target with `VITE_API_PROXY_TARGET` (default `http://localhost:4000`). In production the Fastify server serves the SPA build (`WEB_DIST_PATH` overrides the dist location).
 <!-- END:AUTO-GENERATED:ENV -->
 
 <!-- AUTO-GENERATED:API -->
