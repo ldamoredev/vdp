@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 import {
   AlertTriangle,
   ChevronRight,
@@ -24,7 +24,7 @@ export function TaskStatsRow({
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 stagger-children">
       <Link
-        href="/tasks"
+        to="/tasks"
         className="glass-card group cursor-pointer p-5 transition-all"
       >
         <div className="mb-3 flex items-center justify-between">
@@ -84,7 +84,7 @@ export function TaskStatsRow({
       </div>
 
       <Link
-        href="/tasks/history"
+        to="/tasks/history"
         className="glass-card group cursor-pointer p-5 transition-all"
       >
         <div className="mb-3 flex items-center justify-between">

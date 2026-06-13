@@ -1,6 +1,4 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
+import { Outlet, useLocation } from "react-router";
 import { IconRail } from '@/components/shell/icon-rail';
 import { SidebarDrawer } from '@/components/shell/sidebar-drawer';
 import { Header } from '@/components/shell/header';
@@ -12,8 +10,8 @@ import { QuickCapture } from '@/features/tasks/components/quick-capture';
 import { getDomainFromPathname } from '@/lib/navigation';
 import React from 'react';
 
-export default function DomainLayout({ children }: { children: React.ReactNode; }) {
-    const pathname = usePathname();
+export default function DomainLayout() {
+    const { pathname } = useLocation();
     const domainKey = getDomainFromPathname(pathname);
 
     return (
@@ -27,7 +25,7 @@ export default function DomainLayout({ children }: { children: React.ReactNode; 
 
                 <div className="flex flex-col flex-1 overflow-hidden">
                     <Header/>
-                    <main className="relative flex-1 overflow-auto p-4 pb-20 md:p-8 md:pb-8">{children}</main>
+                    <main className="relative flex-1 overflow-auto p-4 pb-20 md:p-8 md:pb-8"><Outlet /></main>
                 </div>
 
                 <ChatPanel/>

@@ -1,5 +1,3 @@
-"use client";
-
 import { HeartPulse, Plus } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { useHealthData, useHealthActions } from "../use-health-context";

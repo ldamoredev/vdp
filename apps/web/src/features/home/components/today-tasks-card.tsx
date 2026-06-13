@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, CheckCircle2, ListChecks, Plus } from "lucide-react";
@@ -48,7 +46,7 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
       icon={<ListChecks size={16} style={{ color: "var(--violet-soft-text)" }} />}
       action={
         <Link
-          href="/tasks"
+          to="/tasks"
           className="text-xs transition-colors"
           style={{ color: "var(--violet-soft-text)" }}
         >

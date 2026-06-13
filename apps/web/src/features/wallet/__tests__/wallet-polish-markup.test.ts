@@ -1,6 +1,22 @@
-import React, { createElement } from "react";
+import React, { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("react-router", () => ({
+  Link: ({
+    to,
+    children,
+    className,
+  }: {
+    to: string;
+    children: ReactNode;
+    className?: string;
+  }) => createElement("a", { href: to, className }, children),
+  useNavigate: () => () => {},
+  useLocation: () => ({ pathname: "/" }),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
+}));
+
 import { WalletOperationalHeader } from "../components/wallet-operational-header";
 import { WalletTransactionRow } from "../components/wallet-transaction-row";
 import { WalletEmptyState } from "../components/wallet-empty-state";

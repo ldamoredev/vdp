@@ -3,14 +3,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WalletSnapshotCard } from "../wallet-snapshot-card";
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
+vi.mock("react-router", () => ({
+  Link: ({
+    to,
     children,
   }: {
-    href: string;
+    to: string;
     children: ReactNode;
-  }) => createElement("a", { href }, children),
+  }) => createElement("a", { href: to }, children),
+  useNavigate: () => () => {},
+  useLocation: () => ({ pathname: "/" }),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
 }));
 
 afterEach(() => {

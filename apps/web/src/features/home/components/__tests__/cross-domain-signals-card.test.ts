@@ -2,14 +2,17 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
+vi.mock("react-router", () => ({
+  Link: ({
+    to,
     children,
   }: {
-    href: string;
+    to: string;
     children: ReactNode;
-  }) => createElement("a", { href }, children),
+  }) => createElement("a", { href: to }, children),
+  useNavigate: () => () => {},
+  useLocation: () => ({ pathname: "/" }),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
 }));
 
 import { CrossDomainSignalsCard } from "../cross-domain-signals-card";

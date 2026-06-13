@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router";
 
 interface WalletEmptyStateProps {
   title: string;
@@ -22,7 +22,7 @@ export function WalletEmptyState({
       <p className="text-sm font-medium text-[var(--foreground)]">{title}</p>
       <p className="mt-1 text-xs text-[var(--muted)]">{body}</p>
       {ctaLabel && ctaHref ? (
-        <Link href={ctaHref} className="btn-primary mt-4 inline-flex">
+        <Link to={ctaHref} className="btn-primary mt-4 inline-flex">
           {ctaLabel}
         </Link>
       ) : null}

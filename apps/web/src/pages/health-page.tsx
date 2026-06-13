@@ -1,5 +1,3 @@
-"use client";
-
 import { HealthProvider } from "@/features/health/health-context";
 import { HabitsScreen } from "@/features/health/components/habits-screen";
 

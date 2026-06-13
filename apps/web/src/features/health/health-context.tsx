@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, type ReactNode } from "react";
 import type { CounterOverview, GoalOverview, HabitOverview } from "@/lib/api/types";
 import type { HabitsSummary } from "./health-selectors";

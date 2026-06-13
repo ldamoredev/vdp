@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { getTodayISO } from "@/lib/format";
 import type { Currency, AccountType, CategoryType, InvestmentType } from "@/lib/api/types";

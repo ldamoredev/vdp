@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 const PLAYWRIGHT_BACKEND_PORT = 43100;
 const PLAYWRIGHT_FRONTEND_PORT = 43101;
 const PLAYWRIGHT_DATABASE_URL = 'postgresql://test:test@localhost:5433/vdp_test';
-const PLAYWRIGHT_API_URL = `http://127.0.0.1:${PLAYWRIGHT_BACKEND_PORT}/api/v1`;
+const PLAYWRIGHT_API_PROXY_TARGET = `http://127.0.0.1:${PLAYWRIGHT_BACKEND_PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -32,15 +32,18 @@ export default defineConfig({
         // queues requests under load instead of failing them.
         DB_POOL_MAX: '30',
         DB_CONN_TIMEOUT_MS: '20000',
+        // The suite's rapid navigations exceed any human-scale per-IP budget.
+        RATE_LIMIT_MAX: '2000',
       },
     },
     {
-      command: `pnpm exec next dev --hostname 127.0.0.1 --port ${PLAYWRIGHT_FRONTEND_PORT}`,
+      command: `pnpm exec vite --host 127.0.0.1 --port ${PLAYWRIGHT_FRONTEND_PORT} --strictPort`,
       port: PLAYWRIGHT_FRONTEND_PORT,
       reuseExistingServer: false,
       timeout: 120_000,
       env: {
-        NEXT_PUBLIC_API_URL: PLAYWRIGHT_API_URL,
+        // The Vite dev server proxies /api to the e2e backend (same-origin cookies).
+        VITE_API_PROXY_TARGET: PLAYWRIGHT_API_PROXY_TARGET,
       },
     },
   ],

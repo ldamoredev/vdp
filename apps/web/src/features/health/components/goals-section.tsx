@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Check, Flag, Plus, Sparkles, X } from "lucide-react";
 import { useHealthData, useHealthActions } from "../use-health-context";

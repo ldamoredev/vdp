@@ -1,15 +1,6 @@
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
 
 const nodeGlobals = {
   Buffer: "readonly",
@@ -49,22 +40,9 @@ const testGlobals = {
   vi: "readonly",
 };
 
-const nextConfig = compat.extends("next/core-web-vitals").map((config) => ({
-  ...config,
-  files: ["apps/web/**/*.{js,jsx,ts,tsx}"],
-  settings: {
-    ...config.settings,
-    next: {
-      ...config.settings?.next,
-      rootDir: "apps/web/",
-    },
-  },
-}));
-
 export default [
   {
     ignores: [
-      "**/.next/**",
       "**/coverage/**",
       "**/dist/**",
       "**/node_modules/**",
@@ -74,7 +52,6 @@ export default [
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  ...nextConfig,
   {
     files: ["**/*.{ts,tsx}"],
     rules: {
@@ -106,6 +83,13 @@ export default [
         ...browserGlobals,
         ...nodeGlobals,
       },
+    },
+    plugins: {
+      "react-hooks": reactHooks,
+    },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
     },
   },
   {

@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";
 import { useWalletTransactionFormActions, useWalletTransactionFormData } from "../use-wallet-transaction-form-context";
@@ -26,7 +24,7 @@ export function TransactionFormScreen() {
   return (
     <ModulePage width="lg" spacing="6">
       <Link
-        href="/wallet/transactions"
+        to="/wallet/transactions"
         className="mb-6 inline-flex items-center gap-2 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
       >
         <ArrowLeft size={16} />

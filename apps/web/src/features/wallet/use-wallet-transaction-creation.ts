@@ -1,7 +1,5 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { useMemo, useState } from "react";
 import { walletApi } from "@/features/wallet/wallet-api";
 import { getTodayISO } from "@/lib/format";
@@ -26,7 +24,7 @@ function createInitialTransactionForm(): TransactionFormState {
 }
 
 export function useWalletTransactionCreation() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<TransactionFormState>(
     createInitialTransactionForm(),
@@ -47,7 +45,7 @@ export function useWalletTransactionCreation() {
     mutationFn: walletApi.createTransaction,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: walletQueryKeys.all });
-      router.push("/wallet/transactions");
+      navigate("/wallet/transactions");
     },
   });
 
@@ -110,6 +108,6 @@ export function useWalletTransactionCreation() {
               : value,
       })),
     submitTransaction,
-    cancel: () => router.back(),
+    cancel: () => navigate(-1),
   };
 }

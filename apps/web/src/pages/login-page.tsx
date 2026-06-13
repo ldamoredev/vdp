@@ -1,10 +1,21 @@
-"use client";
-
 import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router";
 import type { CurrentUser } from "@/lib/auth";
-import { AuthErrorPayload, getFriendlyAuthError } from "./auth-messages";
+import {
+  AuthErrorPayload,
+  getFriendlyAuthError,
+  getLoginNotice,
+  resolvePostLoginPath,
+} from "./auth-messages";
+
+export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const nextPath = resolvePostLoginPath(searchParams.get("next"));
+  const notice = getLoginNotice(searchParams.get("message"));
+
+  return <LoginPageClient nextPath={nextPath} notice={notice} />;
+}
 
 type AuthSuccessPayload = {
   user: CurrentUser;
@@ -36,7 +47,7 @@ export function LoginPageClient({
   nextPath: string;
   notice?: string;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"loading" | "login" | "register">("loading");
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
@@ -111,8 +122,7 @@ export function LoginPageClient({
         return;
       }
 
-      router.replace(nextPath);
-      router.refresh();
+      navigate(nextPath, { replace: true });
     } catch {
       setError("Error de conexion");
       setLoading(false);

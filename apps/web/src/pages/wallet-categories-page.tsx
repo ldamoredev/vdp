@@ -1,5 +1,3 @@
-"use client";
-
 import { CategoriesScreen } from "@/features/wallet/components/categories-screen";
 import { WalletProvider } from "@/features/wallet/wallet-context";
 

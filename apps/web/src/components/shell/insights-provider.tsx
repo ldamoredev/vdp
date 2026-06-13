@@ -1,5 +1,3 @@
-"use client";
-
 import { useInsightsSSE } from "@/components/shell/use-insights-sse";
 import { ToastContainer } from "./toast-container";
 

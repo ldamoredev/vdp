@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "react-router";
 import {
   ArrowDownLeft,
   ArrowRight,
@@ -47,7 +47,7 @@ export function WalletSnapshotCard({
             </h3>
           </div>
           <Link
-            href="/wallet/transactions/new"
+            to="/wallet/transactions/new"
             className="flex items-center gap-1.5 text-xs font-medium text-[var(--blue-soft-text)] transition-colors hover:text-[var(--accent)]"
           >
             Nueva transaccion
@@ -88,7 +88,7 @@ export function WalletSnapshotCard({
           </h3>
         </div>
         <Link
-          href="/wallet/transactions/new"
+          to="/wallet/transactions/new"
           className="flex items-center gap-1.5 text-xs font-medium text-[var(--blue-soft-text)] transition-colors hover:text-[var(--accent)]"
         >
           Nueva transaccion

@@ -30,13 +30,12 @@
     "infra:reset": "docker compose down -v && docker compose up -d",
     "prepare": "test -d .git && ./scripts/install-hooks.sh || true",
     "commit": "git commit",
-    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache apps/**/.next"
+    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && rm -rf .turbo apps/**/.turbo packages/**/.turbo apps/**/dist packages/**/dist whisper-cache"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^15.1.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "turbo": "^2.8.17",
     "typescript-eslint": "^8.60.1"
   }

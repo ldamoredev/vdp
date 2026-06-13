@@ -1,7 +1,5 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router";
 
 interface Contact {
   readonly id: string;
@@ -159,7 +157,7 @@ export default function PeopleDashboard() {
             <p className="text-sm text-[var(--muted)]">Cuidá tus relaciones, no pierdas el hilo de nadie</p>
           </div>
         </div>
-        <Link href="/" className="btn-secondary text-xs px-3 py-2">
+        <Link to="/" className="btn-secondary text-xs px-3 py-2">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
           </svg>

@@ -1,9 +1,7 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -34,7 +32,7 @@ import {
 import { ModulePage } from "@/components/primitives/module-page";
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   const [displayName, setDisplayName] = useState("");
@@ -111,8 +109,7 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
       await queryClient.invalidateQueries({ queryKey: ["auth"] });
-      router.replace("/login?message=password-changed");
-      router.refresh();
+      navigate("/login?message=password-changed", { replace: true });
     },
     onError: (error) => {
       setPasswordMessage(error instanceof Error ? error.message : "No se pudo cambiar la contrasena.");
@@ -183,8 +180,7 @@ export default function SettingsPage() {
 
     await logout();
     await queryClient.invalidateQueries({ queryKey: ["auth"] });
-    router.replace("/login");
-    router.refresh();
+    navigate("/login", { replace: true });
   }
 
   async function handleLogoutOthers() {

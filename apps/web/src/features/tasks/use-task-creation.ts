@@ -1,5 +1,3 @@
-"use client";
-
 import { type SyntheticEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/features/tasks/tasks-api";

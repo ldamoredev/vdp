@@ -1,20 +1,15 @@
+import { useSearchParams } from "react-router";
 import { TransactionsScreen } from "@/features/wallet/components/transactions-screen";
 import { WalletProvider } from "@/features/wallet/wallet-context";
 import { buildInitialTransactionFilters } from "@/features/wallet/wallet-selectors";
 
-type TransactionsPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export default async function TransactionsPage({
-  searchParams,
-}: TransactionsPageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+export default function TransactionsPage() {
+  const [searchParams] = useSearchParams();
   const initialTransactionFilters = buildInitialTransactionFilters({
-    from: resolvedSearchParams?.from,
-    to: resolvedSearchParams?.to,
-    type: resolvedSearchParams?.type,
-    categoryId: resolvedSearchParams?.categoryId,
+    from: searchParams.get("from") ?? undefined,
+    to: searchParams.get("to") ?? undefined,
+    type: searchParams.get("type") ?? undefined,
+    categoryId: searchParams.get("categoryId") ?? undefined,
   });
 
   return (

@@ -1,5 +1,3 @@
-"use client";
-
 import { useTasksQueries } from "./use-tasks-queries";
 import { useTaskMutations } from "./use-task-mutations";
 import { useTaskCreation } from "./use-task-creation";

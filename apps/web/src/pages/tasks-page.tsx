@@ -1,5 +1,3 @@
-"use client";
-
 import { TasksProvider } from "@/features/tasks/tasks-context";
 import { OperationalHeader } from "@/features/tasks/components/operational-header";
 import { QuickCaptureForm } from "@/features/tasks/components/quick-capture-form";

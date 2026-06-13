@@ -1,7 +1,5 @@
-"use client";
-
 import { ArrowRight, Plus } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router";
 import { useState } from "react";
 import type { Transaction } from "@/lib/api/types";
 import { formatMoney } from "@/lib/format";
@@ -46,13 +44,13 @@ export function DashboardScreen() {
               Gasto rápido
             </button>
             <Link
-              href="/wallet/transactions/new"
+              to="/wallet/transactions/new"
               className="btn-secondary w-full sm:w-auto justify-center"
             >
               Nueva transaccion
             </Link>
             <Link
-              href="/wallet/stats"
+              to="/wallet/stats"
               className="btn-secondary w-full sm:w-auto justify-center"
             >
               Ver estadisticas

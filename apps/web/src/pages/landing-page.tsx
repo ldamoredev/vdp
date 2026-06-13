@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const modules = [
@@ -118,7 +118,7 @@ export default function Home() {
           {activeModules.map((mod) => (
             <Link
               key={mod.key}
-              href={mod.href}
+              to={mod.href}
               className="group relative glass-card p-6 md:p-8 transition-all cursor-pointer overflow-hidden"
             >
               {/* Accent glow on hover */}

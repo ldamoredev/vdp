@@ -9,7 +9,7 @@ vi.mock("../use-daily-review-model", () => ({
   useDailyReviewModel: () => useDailyReviewModelMock(),
 }));
 
-import ReviewPage from "@/app/(domain)/review/page";
+import ReviewPage from "@/pages/review-page";
 
 beforeEach(() => {
   globalThis.React = React;

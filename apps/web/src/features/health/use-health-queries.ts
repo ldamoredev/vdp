@@ -1,5 +1,3 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
 import { healthApi } from "./health-api";
 import { healthQueryKeys } from "./health-query-keys";

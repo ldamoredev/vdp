@@ -1,5 +1,3 @@
-"use client";
-
 import { TransactionFormScreen } from "@/features/wallet/components/transaction-form-screen";
 import { WalletTransactionFormProvider } from "@/features/wallet/wallet-transaction-form-context";
 

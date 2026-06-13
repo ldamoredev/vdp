@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 
 export interface DailyRitualCardProps {
@@ -66,7 +66,7 @@ export function DailyRitualCard({
         ) : null}
 
         <Link
-          href={href}
+          to={href}
           className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-3 text-sm font-medium transition-colors sm:w-auto sm:justify-start"
           style={{ color: "var(--violet-soft-text)" }}
         >

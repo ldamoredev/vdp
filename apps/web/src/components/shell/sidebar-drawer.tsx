@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useLocation } from "react-router";
 import { useIsMobile } from "@/lib/use-breakpoint";
 import { useSidebarOpen } from "@/lib/shell-store";
 import { shellStore } from "@/lib/shell-store";
@@ -10,7 +8,7 @@ import { SidebarPanel } from "./sidebar-panel";
 export function SidebarDrawer() {
   const isMobile = useIsMobile();
   const isOpen = useSidebarOpen();
-  const pathname = usePathname();
+  const { pathname } = useLocation();
 
   // Auto-close drawer on navigation (mobile only)
   useEffect(() => {

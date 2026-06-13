@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Archive, RotateCcw } from "lucide-react";
 import type { CounterOverview } from "@/lib/api/types";

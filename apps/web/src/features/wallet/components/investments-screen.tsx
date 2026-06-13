@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { ModulePage } from "@/components/primitives/module-page";

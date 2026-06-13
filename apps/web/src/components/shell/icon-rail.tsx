@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "react-router";
+import { useLocation } from "react-router";
 import { Home } from "lucide-react";
 import {
   domains,
@@ -32,7 +30,7 @@ function DomainIcon({ domain, isActive }: { domain: DomainConfig; isActive: bool
 
   return (
     <Link
-      href={domain.navItems[0].href}
+      to={domain.navItems[0].href}
       title={domain.label}
       className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer group relative ${
         isActive
@@ -62,14 +60,14 @@ function DomainIcon({ domain, isActive }: { domain: DomainConfig; isActive: bool
 }
 
 export function IconRail() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { activeDomain, homeActive, settingsActive } = getShellNavState(pathname);
 
   return (
     <div className="w-14 flex flex-col items-center py-3 bg-[var(--icon-rail-bg)] border-r border-[var(--sidebar-border)]">
       {/* Home */}
       <Link
-        href="/home"
+        to="/home"
         className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all cursor-pointer ${
           homeActive
             ? "bg-[var(--active-overlay)] text-[var(--foreground)]"
@@ -96,7 +94,7 @@ export function IconRail() {
       <div className="w-6 h-px bg-[var(--divider)] my-4" />
 
       <Link
-        href={settingsNavItem.href}
+        to={settingsNavItem.href}
         title="Configuracion"
         className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer group relative ${
           settingsActive

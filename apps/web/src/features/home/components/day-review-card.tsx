@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 import { History } from "lucide-react";
 
 export interface DayReviewCardProps {
@@ -22,7 +22,7 @@ export function DayReviewCard({
           </h3>
         </div>
         <Link
-          href="/tasks/history"
+          to="/tasks/history"
           className="text-xs font-medium transition-colors"
           style={{ color: "var(--violet-soft-text)" }}
         >

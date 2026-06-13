@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "react-router";
 import { Radar, ArrowUpRight } from "lucide-react";
 import { CollectionCard } from "@/components/primitives/collection-card";
 import { getDomainConfig } from "@/lib/navigation";
@@ -164,7 +164,7 @@ export function CrossDomainSignalsCard({
                     {getDomainLabel(action.domain)}
                   </span>
                   <Link
-                    href={action.href}
+                    to={action.href}
                     className="inline-flex items-center gap-1 text-xs font-medium transition-colors"
                     style={{ color: "var(--violet-soft-text)" }}
                   >

@@ -1,4 +1,4 @@
-const API_BASE = "/api/proxy/v1";
+const API_BASE = "/api/v1";
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 

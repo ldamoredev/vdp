@@ -1,5 +1,3 @@
-"use client";
-
 import { createElement, useEffect, useState, type ComponentProps } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { TaskInsight, Transaction } from "@/lib/api/types";

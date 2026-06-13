@@ -1,5 +1,3 @@
-"use client";
-
 import { useNotifications } from "@/lib/notification-store";
 import { notificationStore, type Notification } from "@/lib/notification-store";
 import { X, Trophy, AlertTriangle, Lightbulb } from "lucide-react";
@@ -34,7 +32,7 @@ function Toast({ notification }: { notification: Notification }) {
 
   return (
     <div
-      className="animate-slide-in-right glass-card-static flex items-start gap-3 p-4 pr-3 max-w-sm border-l-2"
+      className="animate-toast-in glass-card-static flex items-start gap-3 p-4 pr-3 max-w-sm border-l-2"
       style={{
         borderLeftColor: `var(--accent-${notification.type === "achievement" ? "green" : notification.type === "warning" ? "amber" : "purple"})`,
         boxShadow: `0 4px 16px ${colors.glow}`,
@@ -67,7 +65,7 @@ export function ToastContainer() {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[60] flex flex-col gap-2 pointer-events-auto">
+    <div className="fixed right-4 top-20 z-[100] flex flex-col gap-2 pointer-events-auto">
       {notifications.map((n) => (
         <Toast key={n.id} notification={n} />
       ))}

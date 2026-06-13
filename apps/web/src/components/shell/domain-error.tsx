@@ -1,9 +1,11 @@
-"use client";
-
 import { useEffect } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
+import { useRouteError } from "react-router";
 
-export default function DomainError({ error, reset }: { error: Error & { digest?: string }; reset: () => void; }) {
+export default function DomainError() {
+  const error = useRouteError();
+  const message = error instanceof Error ? error.message : "";
+
   useEffect(() => {
     console.error("[VDP Error]", error);
   }, [error]);
@@ -21,10 +23,10 @@ export default function DomainError({ error, reset }: { error: Error & { digest?
           Algo salio mal
         </h2>
         <p className="text-sm text-[var(--muted)] mb-6 leading-relaxed">
-          {error.message || "Ocurrio un error inesperado. Intenta de nuevo."}
+          {message || "Ocurrio un error inesperado. Intenta de nuevo."}
         </p>
         <button
-          onClick={reset}
+          onClick={() => window.location.reload()}
           className="btn-primary mx-auto"
         >
           <RotateCcw size={14} />

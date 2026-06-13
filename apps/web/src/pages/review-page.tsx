@@ -1,5 +1,3 @@
-"use client";
-
 import { ModulePage } from "@/components/primitives/module-page";
 import { DailyReviewScreen } from "@/features/review/components/daily-review-screen";
 import { useDailyReviewModel } from "@/features/review/use-daily-review-model";

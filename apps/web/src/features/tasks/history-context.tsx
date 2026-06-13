@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext } from "react";
 import type { Task, TaskReview } from "@/lib/api/types";
 import type { ReviewSignal } from "./history-selectors";

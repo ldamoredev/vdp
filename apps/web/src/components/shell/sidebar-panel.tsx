@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "react-router";
+import { useLocation } from "react-router";
 import { Settings2 } from "lucide-react";
 import {
   getDomainFromPathname,
@@ -11,7 +9,7 @@ import {
 } from "@/lib/navigation";
 
 export function SidebarPanel() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const domainKey = getDomainFromPathname(pathname);
   const domain = domainKey ? getDomainConfig(domainKey) : null;
   const settingsRoute = isSettingsPath(pathname);
@@ -42,7 +40,7 @@ export function SidebarPanel() {
 
         <nav className="flex-1 p-2.5 space-y-0.5">
           <Link
-            href={settingsNavItem.href}
+            to={settingsNavItem.href}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer bg-[var(--accent)] text-white"
             style={{ boxShadow: "0 2px 10px var(--accent-glow)" }}
           >
@@ -99,7 +97,7 @@ export function SidebarPanel() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
                 isActive
                   ? "bg-[var(--accent)] text-white"

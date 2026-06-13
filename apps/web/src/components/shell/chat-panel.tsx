@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useLocation } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bot, Send, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -24,7 +22,7 @@ const enabledDomains = domains.filter((d) => !d.disabled);
 export function ChatPanel() {
   const isOpen = useChatOpen();
   const isMobile = useIsMobile();
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const queryClient = useQueryClient();
   // Outside a domain (home, review, settings) the chat stays available with a
   // user-selectable agent; inside a domain the route decides.

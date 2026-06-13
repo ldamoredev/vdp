@@ -1,5 +1,3 @@
-"use client";
-
 import { HistoryProvider } from "@/features/tasks/history-context";
 import { HistoryReviewHeader } from "@/features/tasks/components/history-review-header";
 import { HistoryReviewSignals } from "@/features/tasks/components/history-review-signals";

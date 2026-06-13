@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext } from "react";
 import type { Account, Category, Transaction } from "@/lib/api/types";
 import type { TransactionFormState } from "./wallet-selectors";

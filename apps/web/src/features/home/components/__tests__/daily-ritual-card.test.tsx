@@ -2,16 +2,19 @@ import React, { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
+vi.mock("react-router", () => ({
+  Link: ({
+    to,
     children,
     className,
   }: {
-    href: string;
+    to: string;
     children: ReactNode;
     className?: string;
-  }) => createElement("a", { href, className }, children),
+  }) => createElement("a", { href: to, className }, children),
+  useNavigate: () => () => {},
+  useLocation: () => ({ pathname: "/" }),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
 }));
 
 import { DailyRitualCard } from "../daily-ritual-card";

@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router";
 import {
   ArrowRightLeft,
   BarChart3,
@@ -226,7 +224,7 @@ export function StatsScreen() {
                 item.categoryId ? (
                 <Link
                   key={item.categoryId ?? `legend-${index}`}
-                  href={`/wallet/transactions?type=expense&categoryId=${item.categoryId}`}
+                  to={`/wallet/transactions?type=expense&categoryId=${item.categoryId}`}
                   className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-4 transition-all hover:shadow-sm hover:ring-1 hover:ring-[var(--glass-border)]"
                 >
                   <div className="flex items-center gap-3">

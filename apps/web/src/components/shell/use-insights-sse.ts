@@ -1,9 +1,7 @@
-"use client";
-
 import { useEffect, useRef } from "react";
 import { notificationStore, type Notification } from "@/lib/notification-store";
 
-const SSE_BASE = "/api/proxy/v1/tasks/insights/stream";
+const SSE_BASE = "/api/v1/tasks/insights/stream";
 
 const RECONNECT_DELAY_MS = 3000;
 const MAX_RECONNECT_DELAY_MS = 30000;

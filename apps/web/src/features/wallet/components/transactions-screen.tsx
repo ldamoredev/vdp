@@ -1,7 +1,5 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router";
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
 import {
@@ -112,7 +110,7 @@ export function TransactionsScreen() {
           </p>
         </div>
         <Link
-          href="/wallet/transactions/new"
+          to="/wallet/transactions/new"
           className="btn-primary w-full sm:w-auto justify-center"
         >
           <Plus size={16} />

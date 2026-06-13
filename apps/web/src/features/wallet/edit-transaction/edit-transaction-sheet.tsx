@@ -1,5 +1,3 @@
-"use client";
-
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Transaction } from "@/lib/api/types";

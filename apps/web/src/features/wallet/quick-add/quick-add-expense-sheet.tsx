@@ -1,5 +1,3 @@
-"use client";
-
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useQuickAddExpense } from "./use-quick-add-expense";

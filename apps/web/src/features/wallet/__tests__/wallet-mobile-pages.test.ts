@@ -5,16 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const useWalletDataMock = vi.fn();
 const useWalletActionsMock = vi.fn();
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
+vi.mock("react-router", () => ({
+  Link: ({
+    to,
     children,
     className,
   }: {
-    href: string;
+    to: string;
     children: ReactNode;
     className?: string;
-  }) => createElement("a", { href, className }, children),
+  }) => createElement("a", { href: to, className }, children),
+  useNavigate: () => () => {},
+  useLocation: () => ({ pathname: "/" }),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
 }));
 
 vi.mock("../use-wallet-context", () => ({

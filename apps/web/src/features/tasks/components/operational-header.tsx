@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router";
 import {
   BarChart3,
   CalendarClock,
@@ -55,7 +55,7 @@ export function OperationalHeader() {
               Reprogramar
             </button>
             <Link
-              href="/tasks/history"
+              to="/tasks/history"
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-2 text-[13px] font-medium text-[var(--foreground)] transition-all hover:translate-y-[-1px] hover:bg-[var(--hover-overlay-strong)]"
             >
               <History size={14} />

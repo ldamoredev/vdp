@@ -1,9 +1,7 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { ChevronDown, LogOut, Menu, MessageCircle, Settings2, Sparkles } from "lucide-react";
 import { chatStore } from "@/lib/chat-store";
 import { logout, useCurrentUser } from "@/lib/auth";
@@ -11,7 +9,7 @@ import { shellStore } from "@/lib/shell-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,8 +47,7 @@ export function Header() {
   async function handleLogout() {
     await logout();
     await queryClient.invalidateQueries({ queryKey: ["auth"] });
-    router.replace("/login");
-    router.refresh();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -102,7 +99,7 @@ export function Header() {
 
                 <div className="relative mt-2 space-y-1 rounded-[22px] bg-[color-mix(in_srgb,var(--background-secondary)_90%,transparent)] p-1.5">
                   <Link
-                    href="/settings"
+                    to="/settings"
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-[var(--foreground)] transition-all hover:bg-[var(--hover-overlay-strong)]"
                   >

@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, type SyntheticEvent, type RefObject } from "react";
 import type { Task, TaskNote, TaskReview } from "@/lib/api/types";
 import type { TaskFilter, PlanningTone } from "./tasks-dashboard-selectors";

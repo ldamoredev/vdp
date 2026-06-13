@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "react-router";
+import { useLocation } from "react-router";
 import { Home } from "lucide-react";
 import {
   domains,
@@ -15,7 +13,7 @@ const enabledDomains = domains.filter((d) => !d.disabled);
 function MobileTabItem({ domain, isActive }: { domain: DomainConfig; isActive: boolean }) {
   return (
     <Link
-      href={domain.navItems[0].href}
+      to={domain.navItems[0].href}
       className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-12 rounded-xl transition-all ${
         isActive
           ? "text-white"
@@ -38,7 +36,7 @@ function MobileTabItem({ domain, isActive }: { domain: DomainConfig; isActive: b
 }
 
 export function MobileTabBar() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { activeDomain, homeActive, settingsActive } = getShellNavState(pathname);
 
   return (
@@ -46,7 +44,7 @@ export function MobileTabBar() {
       <nav className="flex items-center justify-around h-14 bg-[var(--icon-rail-bg)] backdrop-blur-xl border-t border-[var(--sidebar-border)] safe-bottom px-2">
         {/* Home */}
         <Link
-          href="/home"
+          to="/home"
           className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-12 rounded-xl transition-all ${
             homeActive ? "text-[var(--foreground)]" : "text-[var(--muted)] active:scale-95"
           }`}
@@ -74,7 +72,7 @@ export function MobileTabBar() {
         ))}
 
         <Link
-          href={settingsNavItem.href}
+          to={settingsNavItem.href}
           className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-12 rounded-xl transition-all ${
             settingsActive ? "text-white" : "text-[var(--muted)] active:scale-95"
           }`}

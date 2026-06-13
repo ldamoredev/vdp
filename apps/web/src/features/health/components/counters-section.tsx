@@ -1,5 +1,3 @@
-"use client";
-
 import { Plus, TimerReset } from "lucide-react";
 import { useHealthData, useHealthActions } from "../use-health-context";
 import { CounterCard } from "./counter-card";

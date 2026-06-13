@@ -569,6 +569,18 @@ body::after {
   animation: slideInRight 0.4s ease-out both;
 }
 
+/* Toasts must stay visible even if the animation never runs (hidden tab at
+   mount, throttled timelines, reduced motion): animate transform only and
+   never gate opacity on animation playback. */
+.animate-toast-in {
+  animation: toastIn 0.4s ease-out;
+}
+
+@keyframes toastIn {
+  from { transform: translateX(24px); }
+  to { transform: translateX(0); }
+}
+
 .animate-slide-in-left {
   animation: slideInLeft 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
 }

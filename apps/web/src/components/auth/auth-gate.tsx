@@ -1,20 +1,18 @@
-"use client";
-
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useLocation, useNavigate } from "react-router";
 import { useCurrentUser } from "@/lib/auth";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { isLoading, isError } = useCurrentUser();
 
   useEffect(() => {
     if (!isLoading && isError) {
       const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
-      router.replace(`/login${next}`);
+      navigate(`/login${next}`, { replace: true });
     }
-  }, [isError, isLoading, pathname, router]);
+  }, [isError, isLoading, pathname, navigate]);
 
   if (isError) {
     return null;

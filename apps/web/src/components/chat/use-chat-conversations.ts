@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { getAgentConversationMessages, listAgentConversations } from './agent-api';
 import type { AgentConversation } from './agent-api';

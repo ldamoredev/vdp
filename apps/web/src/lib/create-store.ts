@@ -1,5 +1,3 @@
-"use client";
-
 type Listener = () => void;
 
 export function createStore<T>(initialState: T) {

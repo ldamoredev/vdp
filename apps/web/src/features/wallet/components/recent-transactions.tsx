@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router";
 import { CollectionCard } from "@/components/primitives/collection-card";
 import type { Transaction } from "@/lib/api/types";
 import { SkeletonRow } from "./skeleton";
@@ -22,7 +22,7 @@ export function RecentTransactions({
       icon={null}
       action={
         <Link
-          href="/wallet/transactions"
+          to="/wallet/transactions"
           className="flex items-center gap-1.5 text-xs font-medium text-[var(--accent)] transition-colors hover:text-[var(--blue-soft-text)]"
         >
           Ver todas
