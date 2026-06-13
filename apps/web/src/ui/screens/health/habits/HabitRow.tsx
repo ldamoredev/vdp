@@ -1,28 +1,24 @@
 import { Archive, Check, Flame } from "lucide-react";
-import type { HabitOverview } from "@/lib/api/types";
-import { streakLabel } from "../health-selectors";
+
+import type { HabitRowVM } from "@/ui/models/health/HabitsViewModel";
 
 interface HabitRowProps {
-  habit: HabitOverview;
-  busy: boolean;
-  onComplete: (id: string) => void;
-  onUncomplete: (id: string) => void;
+  habit: HabitRowVM;
+  onToggle: (id: string) => void;
   onArchive: (id: string) => void;
 }
 
-export function HabitRow({ habit, busy, onComplete, onUncomplete, onArchive }: HabitRowProps) {
-  const label = streakLabel(habit);
-
+export function HabitRow({ habit, onToggle, onArchive }: HabitRowProps) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[var(--glass-border)] px-4 py-3 transition-all hover:bg-[var(--hover-overlay)]">
       <button
         type="button"
-        onClick={() => (habit.completedToday ? onUncomplete(habit.id) : onComplete(habit.id))}
-        disabled={busy}
+        onClick={() => onToggle(habit.id)}
+        disabled={habit.busy}
         aria-label={
           habit.completedToday
-            ? `Desmarcar "${habit.name}"`
-            : `Marcar "${habit.name}" como hecho hoy`
+            ? `Desmarcar "${habit.displayName}"`
+            : `Marcar "${habit.displayName}" como hecho hoy`
         }
         className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border transition-all disabled:opacity-50 ${
           habit.completedToday
@@ -39,20 +35,17 @@ export function HabitRow({ habit, busy, onComplete, onUncomplete, onArchive }: H
             habit.completedToday ? "text-[var(--muted)]" : "text-[var(--foreground)]"
           }`}
         >
-          {habit.emoji ? `${habit.emoji} ` : ""}
-          {habit.name}
+          {habit.displayName}
         </span>
-        {label && (
+        {habit.streakLabel && (
           <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--muted)]">
-            {habit.streak >= 2 && (
-              <Flame size={11} className="text-[var(--amber-soft-text)]" />
-            )}
-            {label}
+            {habit.showStreakBadge && <Flame size={11} className="text-[var(--amber-soft-text)]" />}
+            {habit.streakLabel}
           </div>
         )}
       </div>
 
-      {habit.streak >= 2 && (
+      {habit.showStreakBadge && (
         <span className="font-data shrink-0 text-sm font-bold text-[var(--foreground)]">
           {habit.streak}
         </span>
@@ -61,7 +54,7 @@ export function HabitRow({ habit, busy, onComplete, onUncomplete, onArchive }: H
       <button
         type="button"
         onClick={() => onArchive(habit.id)}
-        disabled={busy}
+        disabled={habit.busy}
         title="Archivar hábito"
         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] opacity-0 transition-all hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)] focus:opacity-100 disabled:opacity-50 [div:hover>&]:opacity-100"
       >

@@ -1,10 +1,5 @@
-import { HealthProvider } from "@/features/health/health-context";
-import { HabitsScreen } from "@/features/health/components/habits-screen";
+import { HealthScreen } from "@/ui/screens/health/HealthScreen";
 
 export default function HealthPage() {
-  return (
-    <HealthProvider>
-      <HabitsScreen />
-    </HealthProvider>
-  );
+  return <HealthScreen />;
 }
