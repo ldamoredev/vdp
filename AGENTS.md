@@ -40,6 +40,13 @@ Owner-pending items (do not attempt from a local session):
 - Re-deploy production as a single Render service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
 - Production has NOT yet run migrations `0001`–`0003`; they must be applied on the next deploy before the new features work there.
 
+## Skills
+
+Project skills live in `.claude/skills/` (committed; local `.claude/` config stays gitignored). Use them:
+
+- `code-review` and `tdd-workflow` are process guards — apply them automatically (review the diff before any commit/push; drive changes test-first). `code-review` findings are warnings that block the commit/push until reported to the owner.
+- `create-service-api`, `create-service-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are generators — invoke when scaffolding that kind of unit. They encode the file lists and hard rules; they reference this file and the architecture docs rather than restating rules.
+
 ## Working Agreement (how sessions run)
 
 - Work directly on `main`. Never create branches or PRs unless the owner asks.

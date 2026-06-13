@@ -164,18 +164,16 @@ deleted, presenter/service/infra tests in place (no React under `core/`, lint-en
 RQ gone from health, `docs/architecture/frontend-module-template.md` extracted, owner
 smoke. Details: analysis doc §7.
 
-### A3. Skills wave 1 (can run parallel to A2)
+### A3 + A4. Claude Code skills — SHIPPED June 2026
 
-`.claude/skills/`: `code-review` (three sections: design / repo rules / tests; single
-severity = warning, blocks commit/push), `tdd-workflow` (test-first for non-integration
-tests, regression-test-first for bugfixes), `create-service-api` (pre-CQBus form),
-`create-aggregate` (backend), `create-agent-tool`. These encode rules already in force.
-Skeletons and owner resolutions: analysis doc §10.
-
-### A4. Skills wave 2 (after the pilot)
-
-`create-service-web`, `create-presenter-web`, and the lighter web variant of
-`create-aggregate`, written from the pilot's proven template.
+All seven skills live in `.claude/skills/` (committed). Wave 1 (process guards +
+backend generators): `code-review` (three sections design/repo-rules/tests, single
+severity = warning that blocks commit/push, auto-trigger), `tdd-workflow` (test-first
+for non-integration tests, regression-test-first for bugfixes, auto-trigger),
+`create-service-api` (pre-CQBus form), `create-aggregate` (backend + lighter web
+variant), `create-agent-tool`. Wave 2 (web generators, built on the A2 template):
+`create-service-web`, `create-presenter-web`. Generators are manual-invoke. Design
+rationale and owner resolutions: analysis doc §10.
 
 ### A5. Frontend migration by module
 
