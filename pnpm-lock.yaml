@@ -26,6 +26,21 @@ importers:
 
   apps/web:
     dependencies:
+      '@nbottarini/abstract-http-client':
+        specifier: ^0.4.2
+        version: 0.4.2
+      '@nbottarini/cqbus':
+        specifier: ^0.5.4
+        version: 0.5.4
+      '@nbottarini/observable':
+        specifier: 1.0.0-rc.4
+        version: 1.0.0-rc.4
+      '@nbottarini/react-observable':
+        specifier: 1.0.0-rc.4
+        version: 1.0.0-rc.4(react@19.2.4)
+      '@nbottarini/react-presenter':
+        specifier: 1.0.0-rc
+        version: 1.0.0-rc(react@19.2.4)
       '@tailwindcss/postcss':
         specifier: ^4.0.0
         version: 4.2.1
@@ -943,6 +958,46 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
+
+  '@nbottarini/abstract-http-client@0.4.2':
+    resolution: {integrity: sha512-yjiyibsSbVjxe/kYxyojxKsrfrGxIAUhMuswhKYeXoVHynyLzjchy7CwslLXMP9+DIPsG98v+pLo63akWwoJKw==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/cqbus@0.5.4':
+    resolution: {integrity: sha512-8DnB3B+iMuEGYcGcVBnfGAIoOqTV4Pb2+BE3xzm3sHKf17LT6lYr7Oe8qJnuYKlhHisratduoXKq3qe+7CK4Wg==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/javascript-extensions@0.7.3':
+    resolution: {integrity: sha512-whtYvvm7Da5O/VFQ0JLw3cbVj352tCQOyRqdNnOxb3o0wkKA4T2OCMwjkq2rSUp68EPkGTqqZaAn+pOab7NWOg==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/observable@1.0.0-rc.4':
+    resolution: {integrity: sha512-DHiNuh0FtLPHOT55cU95hR5KVyL2IxzKEbbhffMIXVO/fyJI2kzaRScn+7lrRStMR+IoIMDNg7Lxzm2W1aiCDA==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/react-observable@1.0.0-rc.4':
+    resolution: {integrity: sha512-qDCA0r7tE5a4OkJMZMcmjqOobsDof3FoE3NWvJmkOZS2nbbavhdgFV2UUZVX0xp7KUh8D2mM9LGOKnWtx65oRw==}
+    engines: {node: '>= 18.0.0'}
+    peerDependencies:
+      react: '*'
+
+  '@nbottarini/react-presenter@1.0.0-rc':
+    resolution: {integrity: sha512-kUkha04c/57r0Mqh5SqsscEsfSYmMn9z2d8c3dZM2nq8e1J6/5tcIybg6L8IPMvJNHekDg80quKfCxU4ghFrdw==}
+    engines: {node: '>= 18.0.0'}
+    peerDependencies:
+      react: '*'
+
+  '@nbottarini/unhandled-error-decorator@0.3.4':
+    resolution: {integrity: sha512-CoXMrWsC4+5R3ngeGBQK7dcJggSxU3hAiIrk7NdNOxQa6ELZrqkiWeJIS9WqrMAQNdWoFx5aJIhRYqUijLMUtg==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/validator-errors@1.1.0':
+    resolution: {integrity: sha512-2NQTXZ0y60bRp+1DqZURUytROPFfpolBxXv9mZ9dscQu1CA34qXb+6FvXj+C+mf7PgyukO150dTUwKl6gh7wcA==}
+    engines: {node: '>= 18.0.0'}
+
+  '@nbottarini/validator@1.1.0':
+    resolution: {integrity: sha512-Z9LP/8VPCV7A4w8evNFzrTPHiVCznSEpQnVJnOaBfgKQw9dmQjvwLvFzxCNi+BTguM/IJqe8MKiAFLMgYGHfDw==}
+    engines: {node: '>= 18.0.0'}
 
   '@opentelemetry/api-logs@0.213.0':
     resolution: {integrity: sha512-zRM5/Qj6G84Ej3F1yt33xBVY/3tnMxtL1fiDIxYbDWYaZ/eudVw3/PBiZ8G7JwUxXxjW8gU4g6LnOyfGKYHYgw==}
@@ -3640,6 +3695,10 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
+  ts-custom-error@3.3.1:
+    resolution: {integrity: sha512-5OX1tzOjxWEgsr/YEUWSuPrQ00deKLh6D7OTWcvNHm12/7QPyRh8SYpyWvA4IZv8H/+GQWQEh/kwo95Q9OVW1A==}
+    engines: {node: '>=14.0.0'}
+
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
@@ -4546,6 +4605,45 @@ snapshots:
       '@emnapi/runtime': 1.10.0
       '@tybys/wasm-util': 0.10.2
     optional: true
+
+  '@nbottarini/abstract-http-client@0.4.2':
+    dependencies:
+      ts-custom-error: 3.3.1
+
+  '@nbottarini/cqbus@0.5.4':
+    dependencies:
+      ts-custom-error: 3.3.1
+
+  '@nbottarini/javascript-extensions@0.7.3':
+    dependencies:
+      ts-custom-error: 3.3.1
+
+  '@nbottarini/observable@1.0.0-rc.4': {}
+
+  '@nbottarini/react-observable@1.0.0-rc.4(react@19.2.4)':
+    dependencies:
+      '@nbottarini/observable': 1.0.0-rc.4
+      react: 19.2.4
+
+  '@nbottarini/react-presenter@1.0.0-rc(react@19.2.4)':
+    dependencies:
+      '@nbottarini/unhandled-error-decorator': 0.3.4
+      '@nbottarini/validator': 1.1.0
+      react: 19.2.4
+
+  '@nbottarini/unhandled-error-decorator@0.3.4':
+    dependencies:
+      ts-custom-error: 3.3.1
+
+  '@nbottarini/validator-errors@1.1.0':
+    dependencies:
+      '@nbottarini/javascript-extensions': 0.7.3
+      ts-custom-error: 3.3.1
+
+  '@nbottarini/validator@1.1.0':
+    dependencies:
+      '@nbottarini/javascript-extensions': 0.7.3
+      '@nbottarini/validator-errors': 1.1.0
 
   '@opentelemetry/api-logs@0.213.0':
     dependencies:
@@ -7305,6 +7403,8 @@ snapshots:
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
+
+  ts-custom-error@3.3.1: {}
 
   tslib@2.8.1:
     optional: true

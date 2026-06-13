@@ -11,6 +11,11 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@nbottarini/abstract-http-client": "^0.4.2",
+    "@nbottarini/cqbus": "^0.5.4",
+    "@nbottarini/observable": "1.0.0-rc.4",
+    "@nbottarini/react-observable": "1.0.0-rc.4",
+    "@nbottarini/react-presenter": "1.0.0-rc",
     "@tailwindcss/postcss": "^4.0.0",
     "@tanstack/react-query": "^5.64.0",
     "@vdp/shared": "workspace:*",
