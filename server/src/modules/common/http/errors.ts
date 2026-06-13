@@ -95,6 +95,14 @@ export function httpErrorHandler(error: FastifyError, request: FastifyRequest, r
         } satisfies HttpErrorResponse);
     }
 
+    // @fastify/rate-limit throws a plain FastifyError; surface it as 429, not 500.
+    if (error.statusCode === 429) {
+        return reply.status(429).send({
+            error: 'TOO_MANY_REQUESTS',
+            message: error.message,
+        } satisfies HttpErrorResponse);
+    }
+
     request.log.error(error);
     return reply.status(500).send({
         error: 'INTERNAL_ERROR',

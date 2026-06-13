@@ -326,4 +326,108 @@ describe('Auth API — E2E', () => {
         expect(updatedOverview.body.sessions).toHaveLength(1);
         expect(updatedOverview.body.events[0]?.action).toBe('auth.logout_other_sessions');
     });
+
+    describe('session cookie flow (SPA same-origin auth)', () => {
+        function findSessionCookie(response: { cookies: Array<Record<string, unknown>> }) {
+            return response.cookies.find((cookie) => cookie.name === 'vdp_session');
+        }
+
+        it('register and login set the httpOnly session cookie', async () => {
+            const registerResponse = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/auth/register',
+                payload: {
+                    email: 'owner@vdp.local',
+                    displayName: 'Owner',
+                    password: 'super-secret-password',
+                },
+            });
+            expect(registerResponse.statusCode).toBe(200);
+            const registerCookie = findSessionCookie(registerResponse);
+            expect(registerCookie).toBeDefined();
+            expect(registerCookie!.value).toBe(registerResponse.json().sessionToken);
+            expect(registerCookie!.httpOnly).toBe(true);
+            expect(registerCookie!.path).toBe('/');
+
+            const loginResponse = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/auth/login',
+                payload: { email: 'owner@vdp.local', password: 'super-secret-password' },
+            });
+            expect(loginResponse.statusCode).toBe(200);
+            const loginCookie = findSessionCookie(loginResponse);
+            expect(loginCookie).toBeDefined();
+            expect(loginCookie!.value).toBe(loginResponse.json().sessionToken);
+            expect(loginCookie!.httpOnly).toBe(true);
+        });
+
+        it('authenticates with the session cookie alone, no x-session-token header', async () => {
+            const registered = await registerUser();
+            const token = registered.body.sessionToken as string;
+
+            const me = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/auth/me',
+                headers: { cookie: `vdp_session=${token}` },
+            });
+            expect(me.statusCode).toBe(200);
+            expect(me.json().user.email).toBe('owner@vdp.local');
+        });
+
+        it('logout via cookie revokes the session and clears the cookie', async () => {
+            const registered = await registerUser();
+            const token = registered.body.sessionToken as string;
+
+            const logout = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/auth/logout',
+                headers: { cookie: `vdp_session=${token}` },
+                payload: {},
+            });
+            expect(logout.statusCode).toBe(200);
+            const cleared = findSessionCookie(logout);
+            expect(cleared).toBeDefined();
+            expect(cleared!.value).toBe('');
+
+            const meAfter = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/auth/me',
+                headers: { cookie: `vdp_session=${token}` },
+            });
+            expect(meAfter.statusCode).toBe(401);
+        });
+
+        it('change-password clears the session cookie so the browser re-logs', async () => {
+            const registered = await registerUser();
+            const token = registered.body.sessionToken as string;
+
+            const changed = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/auth/change-password',
+                headers: { cookie: `vdp_session=${token}` },
+                payload: {
+                    currentPassword: 'super-secret-password',
+                    newPassword: 'brand-new-password-1',
+                },
+            });
+            expect(changed.statusCode).toBe(200);
+            const cleared = findSessionCookie(changed);
+            expect(cleared).toBeDefined();
+            expect(cleared!.value).toBe('');
+        });
+
+        it('clears a stale cookie when the session is invalid', async () => {
+            await registerUser();
+
+            const me = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/auth/me',
+                headers: { cookie: 'vdp_session=not-a-real-token' },
+            });
+            expect(me.statusCode).toBe(401);
+            const cleared = findSessionCookie(me);
+            expect(cleared).toBeDefined();
+            expect(cleared!.value).toBe('');
+        });
+    });
 });

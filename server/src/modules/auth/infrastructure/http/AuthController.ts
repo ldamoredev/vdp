@@ -11,6 +11,11 @@ import { LogoutOtherSessions } from '../../services/LogoutOtherSessions';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { RouteContextHandler } from '../../../common/http/routes';
 import { UnauthorizedHttpError } from '../../../common/http/errors';
+import {
+    SESSION_COOKIE_NAME,
+    sessionCookieClearOptions,
+    sessionCookieOptions,
+} from './session-cookie';
 
 const registerSchema = z.object({
     email: z.string().trim().email(),
@@ -100,6 +105,7 @@ export class AuthController extends HttpController {
             password: body!.password,
         });
 
+        reply.setCookie(SESSION_COOKIE_NAME, result.sessionToken, sessionCookieOptions());
         return reply.send(result);
     };
 
@@ -115,6 +121,7 @@ export class AuthController extends HttpController {
             ipAddress: request.ip ?? null,
         });
 
+        reply.setCookie(SESSION_COOKIE_NAME, result.sessionToken, sessionCookieOptions());
         return reply.send(result);
     };
 
@@ -127,6 +134,7 @@ export class AuthController extends HttpController {
             await this.logoutUser.execute(token);
         }
 
+        reply.clearCookie(SESSION_COOKIE_NAME, sessionCookieClearOptions());
         return reply.send({ ok: true });
     };
 
@@ -168,6 +176,8 @@ export class AuthController extends HttpController {
             newPassword: body!.newPassword,
         });
 
+        // Password change revokes sessions; clear the cookie so the browser re-logs.
+        reply.clearCookie(SESSION_COOKIE_NAME, sessionCookieClearOptions());
         return reply.send({ ok: true });
     };
 

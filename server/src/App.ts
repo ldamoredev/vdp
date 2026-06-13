@@ -1,7 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import Fastify from 'fastify';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
 
 import { Core } from './modules/Core';
 import { HttpController } from './modules/common/http/HttpController';
@@ -17,6 +22,7 @@ export class App {
         this.registerPlugins();
         this.registerMiddlewares();
         this.registerControllers();
+        this.registerSpaStatic();
         this.registerTimelineLogging();
     }
 
@@ -25,13 +31,56 @@ export class App {
             ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
             : ['http://localhost:3000'];
 
+        this.app.register(cookie);
         this.app.register(cors, { origin: allowedOrigins });
         this.app.register(helmet, { contentSecurityPolicy: false });
         this.app.register(rateLimit, {
-            max: 100,
+            // With the SPA talking to the API directly (no BFF coalescing requests),
+            // a fast navigation burst legitimately exceeds the old 100/min budget.
+            max: Number(process.env.RATE_LIMIT_MAX) || 300,
             timeWindow: '1 minute',
+            // SPA assets are served from this same process; only the API needs limiting.
+            allowList: (request) => request.url !== '/api' && !request.url.startsWith('/api/'),
         });
         this.app.setErrorHandler(httpErrorHandler);
+    }
+
+    // Production serves the web SPA build from this process (same-origin with the
+    // API, so the session cookie needs no proxy). No-op when the build is absent
+    // (local dev uses the Vite dev server with an /api proxy instead).
+    private registerSpaStatic() {
+        const distPath = process.env.WEB_DIST_PATH
+            ? path.resolve(process.env.WEB_DIST_PATH)
+            : path.resolve(process.cwd(), '../apps/web/dist');
+
+        if (!fs.existsSync(path.join(distPath, 'index.html'))) return;
+
+        this.app.register(fastifyStatic, {
+            root: distPath,
+            index: 'index.html',
+            cacheControl: false,
+            setHeaders: (res, filePath) => {
+                if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+                    // Vite emits content-hashed filenames under assets/.
+                    res.setHeader('cache-control', 'public, max-age=31536000, immutable');
+                } else {
+                    res.setHeader('cache-control', 'public, max-age=0');
+                }
+            },
+        });
+
+        this.app.setNotFoundHandler((request, reply) => {
+            if (request.url === '/api' || request.url.startsWith('/api/')) {
+                return reply.status(404).send({
+                    message: `Route ${request.method}:${request.url} not found`,
+                    error: 'Not Found',
+                    statusCode: 404,
+                });
+            }
+            return reply.sendFile('index.html');
+        });
+
+        this.app.log.info({ distPath }, 'Serving web SPA build');
     }
 
     private registerControllers() {

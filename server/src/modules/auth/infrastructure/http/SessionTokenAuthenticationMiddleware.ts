@@ -6,6 +6,7 @@ import { HttpMiddleWare } from '../../../common/http/HttpMiddleWare';
 import { SessionService } from '../../services/SessionService';
 import { UserRepository } from '../../domain/UserRepository';
 import { UnauthorizedHttpError } from '../../../common/http/errors';
+import { SESSION_COOKIE_NAME, sessionCookieClearOptions } from './session-cookie';
 
 type PublicPath = '/api/health' | '/api/auth/login' | '/api/auth/register' | '/api/auth/setup';
 
@@ -39,6 +40,11 @@ export class SessionTokenAuthenticationMiddleware extends HttpMiddleWare {
                 });
             }
 
+            if (this.isPublicPath(request.url) && !request.url.startsWith('/api')) {
+                // Static assets and SPA routes never need the session resolved.
+                return;
+            }
+
             try {
                 const session = await this.sessionService.findByToken(sessionToken);
                 if (!session) {
@@ -65,6 +71,10 @@ export class SessionTokenAuthenticationMiddleware extends HttpMiddleWare {
                 void this.sessionService.touchIfStale(session.id, session.lastSeenAt);
             } catch (error) {
                 if (this.isPublicPath(request.url)) return;
+                if (this.hasCookieToken(request)) {
+                    // Stale/invalid browser cookie: clear it so the client re-logs cleanly.
+                    reply.clearCookie(SESSION_COOKIE_NAME, sessionCookieClearOptions());
+                }
                 return reply.status(401).send({
                     error: 'UNAUTHORIZED',
                     message: error instanceof Error ? error.message : 'Invalid session',
@@ -74,7 +84,15 @@ export class SessionTokenAuthenticationMiddleware extends HttpMiddleWare {
     }
 
     private isPublicPath(url: string): boolean {
+        // Everything outside /api is the SPA (static assets + client routes):
+        // authentication there is enforced client-side and per API call.
+        if (url !== '/api' && !url.startsWith('/api/')) return true;
         return this.PUBLIC_PATHS.some((path) => url === path || url.startsWith(`${path}?`));
+    }
+
+    private hasCookieToken(request: FastifyRequest): boolean {
+        const cookieHeader = request.headers.cookie;
+        return typeof cookieHeader === 'string' && cookieHeader.includes(`${SESSION_COOKIE_NAME}=`);
     }
 
     private getSessionToken(request: FastifyRequest): string | null {

@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from 'fastify';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 
 import { Core } from '../../../Core';
@@ -16,6 +17,7 @@ export class TestApp {
         this.core = new Core(config);
         this.app = Fastify({ logger: false });
 
+        await this.app.register(cookie);
         await this.app.register(cors, { origin: true });
         this.app.setErrorHandler(httpErrorHandler);
 

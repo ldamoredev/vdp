@@ -6,6 +6,7 @@ WORKDIR /app
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY server/package.json server/package.json
+COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 RUN pnpm install --frozen-lockfile --prod=false
 
@@ -14,7 +15,8 @@ FROM deps AS build
 COPY tsconfig.base.json tsconfig.base.json
 COPY packages/shared packages/shared
 COPY server server
-RUN pnpm --filter @vdp/shared build && pnpm --filter @vdp/server build
+COPY apps/web apps/web
+RUN pnpm --filter @vdp/shared build && pnpm --filter @vdp/server build && pnpm --filter @vdp/web build
 
 # ─── Production image ────────────────────────────────────
 FROM node:24-slim AS runner
@@ -29,6 +31,7 @@ COPY --from=build --chown=appuser:appgroup /app/server/dist server/dist
 COPY --from=build --chown=appuser:appgroup /app/server/package.json server/package.json
 COPY --from=build --chown=appuser:appgroup /app/packages/shared/dist packages/shared/dist
 COPY --from=build --chown=appuser:appgroup /app/packages/shared/package.json packages/shared/package.json
+COPY --from=build --chown=appuser:appgroup /app/apps/web/dist apps/web/dist
 COPY --chown=appuser:appgroup server/src/migrations server/src/migrations
 COPY --chown=appuser:appgroup server/drizzle.config.ts server/drizzle.config.ts
 COPY --chown=appuser:appgroup pnpm-workspace.yaml package.json ./
