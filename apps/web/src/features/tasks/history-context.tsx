@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { Task, TaskReview } from "@/lib/api/types";
+import type { DomainStat, Task, TaskReview } from "@/lib/api/types";
 import type { ReviewSignal } from "./history-selectors";
 import { useHistoryModel } from "./use-history-model";
 
@@ -14,7 +14,7 @@ export interface HistoryQueriesValue {
   isToday: boolean;
   review: TaskReview | undefined;
   trend: { date: string; completionRate: number }[] | undefined;
-  domainStats: { domain: string | null; total: number; completed: number }[] | undefined;
+  domainStats: DomainStat[] | undefined;
   completedTasks: Task[];
   pendingTasks: Task[];
   discardedTasks: Task[];

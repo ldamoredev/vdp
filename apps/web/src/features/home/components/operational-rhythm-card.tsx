@@ -53,8 +53,8 @@ function toneClassName(tone: RhythmTone) {
 export function OperationalRhythmCard({ carryOver, byDomain }: OperationalRhythmCardProps) {
   const summary = buildRhythmSummary(carryOver);
   const topDomains = [...(byDomain ?? [])]
-    .filter((stat) => stat.total > 0)
-    .sort((left, right) => right.total - left.total)
+    .filter((stat) => stat.count > 0)
+    .sort((left, right) => right.count - left.count)
     .slice(0, 3);
 
   return (
@@ -87,14 +87,14 @@ export function OperationalRhythmCard({ carryOver, byDomain }: OperationalRhythm
           <div className="space-y-1.5">
             {topDomains.map((stat) => (
               <div
-                key={stat.domain}
+                key={stat.domain || "none"}
                 className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-2"
               >
                 <span className="text-sm font-medium capitalize text-[var(--foreground)]">
-                  {stat.domain}
+                  {stat.domain || "Sin dominio"}
                 </span>
                 <span className="text-xs text-[var(--muted)]">
-                  {stat.completed}/{stat.total} · {stat.rate}%
+                  {stat.count} completadas
                 </span>
               </div>
             ))}

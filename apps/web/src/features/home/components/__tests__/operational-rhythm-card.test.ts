@@ -35,9 +35,9 @@ describe("OperationalRhythmCard", () => {
       createElement(OperationalRhythmCard, {
         carryOver: { total: 12, carriedOver: 3, rate: 25, days: 7 },
         byDomain: [
-          { domain: "work", total: 8, completed: 6, rate: 75 },
-          { domain: "finanzas", total: 2, completed: 2, rate: 100 },
-          { domain: "health", total: 0, completed: 0, rate: 0 },
+          { domain: "work", count: 8 },
+          { domain: "finanzas", count: 2 },
+          { domain: "health", count: 0 },
         ],
       }),
     );
@@ -45,7 +45,7 @@ describe("OperationalRhythmCard", () => {
     expect(markup).toContain("25%");
     expect(markup).toContain("últimos 7 días");
     expect(markup).toContain("work");
-    expect(markup).toContain("6/8");
+    expect(markup).toContain("8 completadas");
     // Zero-volume domains stay out of the list.
     expect(markup).not.toContain("health");
   });

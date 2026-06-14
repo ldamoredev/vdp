@@ -90,10 +90,8 @@ export interface TaskReview {
 }
 
 export interface DomainStat {
-  domain: string;
-  total: number;
-  completed: number;
-  rate: number;
+  domain: string | null;
+  count: number;
 }
 
 export interface CarryOverAllResult {

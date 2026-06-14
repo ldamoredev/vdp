@@ -27,16 +27,16 @@ export function HistoryDomainStats() {
               </span>
             </div>
             <div className="text-lg font-bold text-[var(--foreground)]">
-              {stat.completed}
+              {stat.count}
             </div>
             <div className="text-[10px] text-[var(--muted)]">
-              de {stat.total} tareas
+              de {stat.count} tareas
             </div>
             <div className="progress-bar mt-2">
               <div
                 className="progress-bar-fill green"
                 style={{
-                  width: `${stat.total > 0 ? Math.round((stat.completed / stat.total) * 100) : 0}%`,
+                  width: `${stat.count > 0 ? 100 : 0}%`,
                 }}
               />
             </div>

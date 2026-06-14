@@ -137,6 +137,17 @@ describe("HttpTasksGateway", () => {
     expect(http.calls[0].url).toBe("/tasks/insights?limit=3");
   });
 
+  it("fetches completion by-domain stats", async () => {
+    const http = new FakeHttpClient({
+      "GET /tasks/stats/by-domain": [{ domain: null, count: 2 }],
+    });
+
+    const stats = await new HttpTasksGateway(http).getByDomain();
+
+    expect(stats).toEqual([{ domain: null, count: 2 }]);
+    expect(http.calls[0].url).toBe("/tasks/stats/by-domain");
+  });
+
   it("adds a note defaulting the type to note", async () => {
     const http = new FakeHttpClient({ "POST /tasks/t1/notes": { id: "n1" } });
     await new HttpTasksGateway(http).addNote("t1", "hola");
