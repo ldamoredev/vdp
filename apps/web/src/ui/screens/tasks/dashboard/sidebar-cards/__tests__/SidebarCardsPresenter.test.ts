@@ -45,7 +45,7 @@ async function build(tasks: TaskDto[]) {
   );
   const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
   await store.load();
-  const presenter = new SidebarCardsPresenter(vi.fn(), store, core, "2026-06-13");
+  const presenter = new SidebarCardsPresenter(vi.fn(), store, "2026-06-13");
   presenter.init(undefined);
   presenter.start();
   await flush();
@@ -148,7 +148,7 @@ describe("SidebarCardsPresenter", () => {
     );
     const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
     await store.load();
-    const presenter = new SidebarCardsPresenter(vi.fn(), store, core, "2026-06-13");
+    const presenter = new SidebarCardsPresenter(vi.fn(), store, "2026-06-13");
     presenter.init(undefined);
     presenter.start();
     await flush();

@@ -1,7 +1,5 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
-import type { Core } from "@/core/Core";
-import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
 import { buildPlanningSignal, type PlanningTone } from "@/core/domain/tasks/PlanningSignal";
 import type { PlanningSignalViewModel } from "@/ui/models/tasks/PlanningSignalViewModel";
 import type { TasksDashboardStore } from "../TasksDashboardStore";
@@ -27,17 +25,13 @@ const COPY: Record<PlanningTone, { headline: string; summary: string }> = {
 };
 
 /**
- * Planning signal: reads today's shared task list, loads its own carry-over
- * rate through the Core, then projects copy and metric labels for the view.
+ * Planning signal: reads today's shared task list and carry-over rate from the
+ * store, then projects the tone-driven copy and metric labels for the view.
  */
 export class PlanningSignalPresenter extends PresenterBase<PlanningSignalViewModel> {
-  private carryOverRate = 0;
-  private isLoading = false;
-
   constructor(
     onChange: ChangeFunc,
     private readonly store: TasksDashboardStore,
-    private readonly core: Core,
   ) {
     super(onChange);
   }
@@ -48,25 +42,14 @@ export class PlanningSignalPresenter extends PresenterBase<PlanningSignalViewMod
 
   start(): void {
     this.store.tasks$.subscribe(this, () => this.refresh());
-    void this.loadCarryOverRate();
+    this.store.carryOverRate$.subscribe(this, () => this.refresh());
+    this.store.isLoading$.subscribe(this, () => this.refresh());
   }
 
   stop(): void {
     this.store.tasks$.unsubscribe(this);
-  }
-
-  private async loadCarryOverRate(): Promise<void> {
-    this.isLoading = true;
-    this.refresh();
-    try {
-      const result = await this.core.execute(new GetCarryOverRate(7));
-      this.carryOverRate = result.rate;
-    } catch {
-      this.carryOverRate = 0;
-    } finally {
-      this.isLoading = false;
-      this.refresh();
-    }
+    this.store.carryOverRate$.unsubscribe(this);
+    this.store.isLoading$.unsubscribe(this);
   }
 
   private refresh(): void {
@@ -76,7 +59,7 @@ export class PlanningSignalPresenter extends PresenterBase<PlanningSignalViewMod
   private buildModel(): PlanningSignalViewModel {
     const signal = buildPlanningSignal({
       tasks: this.store.tasks$.value,
-      carryOverRate: this.carryOverRate,
+      carryOverRate: this.store.carryOverRate$.value,
     });
     const copy = COPY[signal.tone];
 
@@ -96,7 +79,7 @@ export class PlanningSignalPresenter extends PresenterBase<PlanningSignalViewMod
         this.carryOverRecommendation(signal.carryOverRate),
         this.pressureRecommendation(signal.stuckCount, signal.urgentCount),
       ],
-      isLoading: this.isLoading,
+      isLoading: this.store.isLoading$.value,
     };
   }
 

@@ -1,9 +1,5 @@
-import type { TaskStats, TaskTrendDay } from "@vdp/shared";
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
-import type { Core } from "@/core/Core";
-import { GetTaskTrend } from "@/core/app/tasks/GetTaskTrend";
-import { GetTodayStats } from "@/core/app/tasks/GetTodayStats";
 import { filterTasks, type Task } from "@/core/domain/tasks/Task";
 import type {
   NextBestActionTaskVM,
@@ -15,17 +11,13 @@ import type { TasksDashboardStore } from "../TasksDashboardStore";
 
 /**
  * Sidebar cards: a compact dashboard strip for the next best action, recovery
- * pressure, and weekly rhythm. Reads list/filter from the shared store and
- * loads stats/trend directly through the Core.
+ * pressure, and weekly rhythm. Reads everything (list, filter, stats, trend)
+ * from the shared store; loads nothing on its own.
  */
 export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> {
-  private stats: TaskStats | null = null;
-  private trend: TaskTrendDay[] = [];
-
   constructor(
     onChange: ChangeFunc,
     private readonly store: TasksDashboardStore,
-    private readonly core: Core,
     private readonly today: string,
   ) {
     super(onChange);
@@ -38,33 +30,15 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
   start(): void {
     this.store.tasks$.subscribe(this, () => this.refresh());
     this.store.filter$.subscribe(this, () => this.refresh());
-    void this.loadStats();
-    void this.loadTrend();
+    this.store.todayStats$.subscribe(this, () => this.refresh());
+    this.store.trend$.subscribe(this, () => this.refresh());
   }
 
   stop(): void {
     this.store.tasks$.unsubscribe(this);
     this.store.filter$.unsubscribe(this);
-  }
-
-  private async loadStats(): Promise<void> {
-    try {
-      this.stats = await this.core.execute(new GetTodayStats());
-    } catch {
-      this.stats = null;
-    } finally {
-      this.refresh();
-    }
-  }
-
-  private async loadTrend(): Promise<void> {
-    try {
-      this.trend = await this.core.execute(new GetTaskTrend(7));
-    } catch {
-      this.trend = [];
-    } finally {
-      this.refresh();
-    }
+    this.store.todayStats$.unsubscribe(this);
+    this.store.trend$.unsubscribe(this);
   }
 
   private refresh(): void {
@@ -85,7 +59,7 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
       weeklyRhythm: {
         title: "Ritmo semanal",
         days: this.weeklyRhythmDays(),
-        emptyText: this.trend.length === 0 ? "Todavia no hay tendencia suficiente." : null,
+        emptyText: this.store.trend$.value.length === 0 ? "Todavia no hay tendencia suficiente." : null,
       },
     };
   }
@@ -116,7 +90,7 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
 
   private recoveryMetrics(): RecoveryMetricVM[] {
     const pendingTasks = this.store.tasks$.value.filter((task) => task.isPending);
-    const pendingCount = this.stats?.pending ?? pendingTasks.length;
+    const pendingCount = this.store.todayStats$.value?.pending ?? pendingTasks.length;
     const carryOverCount = pendingTasks.filter((task) => task.carryOverCount > 0).length;
     const stuckCount = pendingTasks.filter((task) => task.isStuck).length;
 
@@ -140,7 +114,7 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
   }
 
   private weeklyRhythmDays(): WeeklyRhythmDayVM[] {
-    return this.trend
+    return this.store.trend$.value
       .slice()
       .reverse()
       .map((day) => ({

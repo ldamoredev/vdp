@@ -85,4 +85,44 @@ describe("TasksDashboardStore", () => {
 
     expect(store.error$.value).toBe(true);
   });
+
+  it("loads the shared derivatives (stats, trend, carry-over) once per load", async () => {
+    const gateway = new FakeTasksGateway();
+    vi.spyOn(gateway, "getTodayStats").mockResolvedValue({
+      total: 4,
+      completed: 1,
+      pending: 3,
+      completionRate: 25,
+    });
+    vi.spyOn(gateway, "getTrend").mockResolvedValue([
+      { date: "2026-06-13", total: 2, completed: 1, completionRate: 50 },
+    ]);
+    vi.spyOn(gateway, "getCarryOverRate").mockResolvedValue({ total: 10, carriedOver: 4, rate: 40, days: 7 });
+    const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } }).use(
+      new TasksModule(gateway),
+    );
+    const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
+
+    await store.load();
+
+    expect(store.todayStats$.value?.completionRate).toBe(25);
+    expect(store.trend$.value).toHaveLength(1);
+    expect(store.carryOverRate$.value).toBe(40);
+    expect((gateway.getTodayStats as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+  });
+
+  it("keeps the list usable when a derivative fails", async () => {
+    const gateway = new FakeTasksGateway();
+    vi.spyOn(gateway, "getCarryOverRate").mockRejectedValue(new Error("boom"));
+    const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } }).use(
+      new TasksModule(gateway),
+    );
+    const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
+
+    await store.load();
+
+    expect(store.error$.value).toBe(false);
+    expect(store.carryOverRate$.value).toBe(0);
+    expect(store.isLoading$.value).toBe(false);
+  });
 });

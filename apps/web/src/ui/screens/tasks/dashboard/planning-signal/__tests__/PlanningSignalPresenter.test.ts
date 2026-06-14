@@ -40,7 +40,7 @@ async function build(tasks: TaskDto[], carryOverRate = 0) {
   );
   const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
   await store.load();
-  const presenter = new PlanningSignalPresenter(vi.fn(), store, core);
+  const presenter = new PlanningSignalPresenter(vi.fn(), store);
   presenter.init(undefined);
   presenter.start();
   await flush();
@@ -80,7 +80,7 @@ describe("PlanningSignalPresenter", () => {
     expect(presenter.model.recommendations[1]).toContain("40%");
   });
 
-  it("exposes loading while carry-over rate is pending", async () => {
+  it("reflects the shared store's loading state", async () => {
     const gateway = new FakeTasksGateway();
     mockList(gateway, [taskDto()]);
     const pending = defer<{ total: number; carriedOver: number; rate: number; days: number }>();
@@ -89,14 +89,16 @@ describe("PlanningSignalPresenter", () => {
       new TasksModule(gateway),
     );
     const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
-    await store.load();
-    const presenter = new PlanningSignalPresenter(vi.fn(), store, core);
+    const presenter = new PlanningSignalPresenter(vi.fn(), store);
     presenter.init(undefined);
-
     presenter.start();
 
+    // Store load is in flight (carry-over rate pending), so the section is loading.
+    const loadPromise = store.load();
     expect(presenter.model.isLoading).toBe(true);
+
     pending.resolve({ total: 1, carriedOver: 0, rate: 0, days: 7 });
+    await loadPromise;
     await flush();
     expect(presenter.model.isLoading).toBe(false);
   });
@@ -141,7 +143,7 @@ describe("PlanningSignalPresenter", () => {
     );
     const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
     await store.load();
-    const presenter = new PlanningSignalPresenter(vi.fn(), store, core);
+    const presenter = new PlanningSignalPresenter(vi.fn(), store);
     presenter.init(undefined);
     presenter.start();
     await flush();
