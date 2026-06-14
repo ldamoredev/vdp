@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { Bot, Send, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
@@ -25,7 +24,6 @@ export function ChatPanel() {
   const isOpen = useChatOpen();
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
-  const queryClient = useQueryClient();
   const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
   // Outside a domain (home, review, settings) the chat stays available with a
@@ -41,7 +39,6 @@ export function ChatPanel() {
 
   const chat = useChatConversations({ domainKey, agentBasePath });
   const stream = useChatStream({
-    queryClient,
     onTaskMutation: () => void tasksEvents.emitTasksChanged(),
     setMessages: chat.setMessages,
     setConversationId: chat.setConversationId,

@@ -122,6 +122,5 @@ export default function {Domain}Dashboard() {
 
 ## Reference Implementation
 
-See `features/tasks/presentation/` for the complete example:
-- `tasks-context.tsx` + `use-tasks-context.ts` (index dashboard)
-- `history-context.tsx` + `use-history-context.ts` (sub-page)
+See `docs/architecture/frontend-module-template.md` and `ui/screens/tasks/` for the current
+presenters + Core module example.

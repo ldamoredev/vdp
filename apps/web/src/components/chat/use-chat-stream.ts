@@ -1,25 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, chatStream } from "@/lib/api/client";
-import { syncTaskQueryState } from "@/features/tasks/chat-sync";
 import { emitTasksChangedForAgentTool } from "./tasks-chat-sync-bridge";
 import {
   applyStreamEvent,
   getStreamErrorMessage,
   markStreamInterrupted,
-  toRecord,
   type ChatStreamEvent,
 } from "./chat-stream-reducer";
 import type { Message } from "./types";
 
 export function useChatStream(args: {
-  queryClient: QueryClient;
   onTaskMutation?: () => void;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setConversationId: (id: string | undefined) => void;
   loadConversationHistory: (id?: string) => Promise<void>;
 }) {
-  const { queryClient, onTaskMutation, setMessages, setConversationId, loadConversationHistory } = args;
+  const { onTaskMutation, setMessages, setConversationId, loadConversationHistory } = args;
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -44,7 +40,6 @@ export function useChatStream(args: {
     const userInput = input.trim();
     const controller = new AbortController();
     abortRef.current = controller;
-    const toolInputs = new Map<string, Record<string, unknown> | undefined>();
 
     setMessages((prev) => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
     setInput("");
@@ -64,15 +59,7 @@ export function useChatStream(args: {
 
         setMessages((prev) => applyStreamEvent(prev, event, { assistantId }));
 
-        if (event.event === "tool_use") {
-          toolInputs.set(event.tool, toRecord(event.input));
-        } else if (event.event === "tool_result") {
-          syncTaskQueryState({
-            tool: event.tool,
-            result: typeof event.result === "string" ? event.result : undefined,
-            input: toolInputs.get(event.tool),
-            queryClient,
-          });
+        if (event.event === "tool_result") {
           emitTasksChangedForAgentTool(event.tool, () => {
             onTaskMutation?.();
           });

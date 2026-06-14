@@ -6,7 +6,6 @@ import { ChatPanel } from '@/components/shell/chat-panel';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { MobileTabBar } from '@/components/shell/mobile-tab-bar';
 import { InsightsProvider } from '@/components/shell/insights-provider';
-import { QuickCapture } from '@/features/tasks/components/quick-capture';
 import { getDomainFromPathname } from '@/lib/navigation';
 import React from 'react';
 
@@ -33,8 +32,6 @@ export default function DomainLayout() {
                 <MobileTabBar />
 
                 <InsightsProvider/>
-
-                <QuickCapture />
             </div>
         </AuthGate>
     );

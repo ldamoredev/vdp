@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useCore } from "@/CoreProvider";
+import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
+import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
+import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
+import { GetTaskTrend } from "@/core/app/tasks/GetTaskTrend";
+import { GetTasksByDomain } from "@/core/app/tasks/GetTasksByDomain";
+import { GetTodayStats } from "@/core/app/tasks/GetTodayStats";
+import { ListTasks } from "@/core/app/tasks/ListTasks";
 import { walletApi } from "@/features/wallet/wallet-api";
-import { tasksApi } from "@/features/tasks/tasks-api";
 import { getTodayISO } from "@/lib/format";
 import { homeTaskQueryKeys } from "@/features/home/home-query-keys";
 import {
@@ -30,6 +37,7 @@ import {
 } from "@/features/home/onboarding-storage";
 
 export default function HomePage() {
+  const core = useCore();
   const today = getTodayISO();
   const [reviewState, setReviewState] = useState(() =>
     createEmptyDailyReviewState(today),
@@ -39,37 +47,37 @@ export default function HomePage() {
 
   const { data: taskStats } = useQuery({
     queryKey: homeTaskQueryKeys.taskStats,
-    queryFn: tasksApi.getTodayStats,
+    queryFn: () => core.execute(new GetTodayStats()),
   });
 
   const { data: todayTasks } = useQuery({
     queryKey: homeTaskQueryKeys.tasksToday(today),
-    queryFn: () => tasksApi.getTasks({ scheduledDate: today, limit: "5" }),
+    queryFn: () => core.execute(new ListTasks({ scheduledDate: today, limit: "5" })),
   });
 
   const { data: review } = useQuery({
     queryKey: homeTaskQueryKeys.review(today),
-    queryFn: () => tasksApi.getReview(today),
+    queryFn: () => core.execute(new GetTaskReview(today)),
   });
 
   const { data: trend } = useQuery({
     queryKey: homeTaskQueryKeys.trend(7),
-    queryFn: () => tasksApi.getTrend(7),
+    queryFn: () => core.execute(new GetTaskTrend(7)),
   });
 
   const { data: recentInsights } = useQuery({
     queryKey: ["home", "tasks", "insights"],
-    queryFn: () => tasksApi.getRecentInsights(5),
+    queryFn: () => core.execute(new GetRecentInsights(5)),
   });
 
   const { data: carryOverRate } = useQuery({
     queryKey: ["home", "tasks", "carry-over-rate", 7],
-    queryFn: () => tasksApi.getCarryOverRate(7),
+    queryFn: () => core.execute(new GetCarryOverRate(7)),
   });
 
   const { data: completionByDomain } = useQuery({
     queryKey: ["home", "tasks", "by-domain"],
-    queryFn: () => tasksApi.getByDomain(),
+    queryFn: () => core.execute(new GetTasksByDomain()),
   });
 
   const { data: reviewWalletTransactions } = useQuery({

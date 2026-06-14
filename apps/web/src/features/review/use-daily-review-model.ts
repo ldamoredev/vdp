@@ -1,10 +1,15 @@
 import { createElement, useEffect, useState, type ComponentProps } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TaskInsight, Transaction } from "@/lib/api/types";
-import { tasksApi } from "@/features/tasks/tasks-api";
+import { useCore } from "@/CoreProvider";
+import { CarryOverTask } from "@/core/app/tasks/CarryOverTask";
+import { CompleteTask } from "@/core/app/tasks/CompleteTask";
+import { DiscardTask } from "@/core/app/tasks/DiscardTask";
+import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
+import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
+import { useTasksEvents } from "@/TasksEventsProvider";
 import { walletApi } from "@/features/wallet/wallet-api";
 import { formatDate, getTodayISO } from "@/lib/format";
-import { useTaskMutations } from "@/features/tasks/use-task-mutations";
 import { DailyReviewDecisions } from "./components/daily-review-decisions";
 import { DailyReviewInsightsQueue } from "./components/daily-review-insights-queue";
 import { DailyReviewScreen } from "./components/daily-review-screen";
@@ -37,6 +42,19 @@ function buildTaskDetail(task: {
   return "Sigue pendiente al cierre del día y necesita una decisión explícita.";
 }
 
+function useTaskTransitionMutation(args: {
+  action: (taskId: string) => Promise<unknown>;
+  setTaskBusy: (taskId: string, busy: boolean) => void;
+  onSuccess: () => void;
+}) {
+  return useMutation({
+    mutationFn: args.action,
+    onMutate: (taskId: string) => args.setTaskBusy(taskId, true),
+    onSettled: (_data, _error, taskId) => args.setTaskBusy(taskId, false),
+    onSuccess: args.onSuccess,
+  });
+}
+
 export function useDailyReviewModel(): {
   dateLabel: string;
   progressLabel: string;
@@ -47,8 +65,11 @@ export function useDailyReviewModel(): {
     onClose: () => void;
   };
 } {
+  const core = useCore();
+  const queryClient = useQueryClient();
+  const tasksEvents = useTasksEvents();
   const today = getTodayISO();
-  const taskMutations = useTaskMutations();
+  const [busyTaskIds, setBusyTaskIds] = useState<Set<string>>(() => new Set());
   const [reviewState, setReviewState] = useState(() =>
     createEmptyDailyReviewState(today),
   );
@@ -59,7 +80,7 @@ export function useDailyReviewModel(): {
 
   const { data: review } = useQuery({
     queryKey: ["review", "tasks", "review", today],
-    queryFn: () => tasksApi.getReview(today),
+    queryFn: () => core.execute(new GetTaskReview(today)),
   });
 
   const { data: transactionsResult } = useQuery({
@@ -93,7 +114,7 @@ export function useDailyReviewModel(): {
 
   const { data: recentInsights } = useQuery({
     queryKey: ["review", "tasks", "insights", today],
-    queryFn: () => tasksApi.getRecentInsights(10),
+    queryFn: () => core.execute(new GetRecentInsights(10)),
   });
 
   const { data: categories } = useQuery({
@@ -172,6 +193,36 @@ export function useDailyReviewModel(): {
     }
   }, [hydrated, progress.completed, reviewState.completedAt]);
 
+  function refreshTasks() {
+    void queryClient.invalidateQueries({ queryKey: ["review", "tasks"] });
+    void tasksEvents.emitTasksChanged();
+  }
+
+  function setTaskBusy(taskId: string, busy: boolean) {
+    setBusyTaskIds((current) => {
+      const next = new Set(current);
+      if (busy) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  }
+
+  const completeTaskMutation = useTaskTransitionMutation({
+    action: (taskId) => core.execute(new CompleteTask(taskId)),
+    setTaskBusy,
+    onSuccess: refreshTasks,
+  });
+  const carryOverTaskMutation = useTaskTransitionMutation({
+    action: (taskId) => core.execute(new CarryOverTask(taskId)),
+    setTaskBusy,
+    onSuccess: refreshTasks,
+  });
+  const discardTaskMutation = useTaskTransitionMutation({
+    action: (taskId) => core.execute(new DiscardTask(taskId)),
+    setTaskBusy,
+    onSuccess: refreshTasks,
+  });
+
   const watchedCategories = (categories ?? [])
     .filter((category) => category.type === "expense")
     .map((category) => ({
@@ -228,10 +279,10 @@ export function useDailyReviewModel(): {
       progressLabel: progress.label,
       taskSection: createElement(DailyReviewTaskQueue, {
         tasks: taskQueue,
-        onComplete: taskMutations.completeTask,
-        onCarryOver: taskMutations.carryOverTask,
-        onDiscard: taskMutations.discardTask,
-        isTaskBusy: taskMutations.isTaskBusy,
+        onComplete: (taskId: string) => completeTaskMutation.mutate(taskId),
+        onCarryOver: (taskId: string) => carryOverTaskMutation.mutate(taskId),
+        onDiscard: (taskId: string) => discardTaskMutation.mutate(taskId),
+        isTaskBusy: (taskId: string) => busyTaskIds.has(taskId),
       }),
       walletSection: createElement(DailyReviewWalletQueue, {
         signals: walletSignals.visibleSignals,

@@ -2,33 +2,57 @@ import { Link } from "react-router";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, CheckCircle2, ListChecks, Plus } from "lucide-react";
-import { formatDateShort } from "@/lib/format";
+import { useCore } from "@/CoreProvider";
 import { CollectionCard } from "@/components/primitives/collection-card";
-import { TaskPriorityBadge } from "@/features/tasks/components/task-priority-badge";
-import { tasksApi } from "@/features/tasks/tasks-api";
-import { syncTaskQueryState } from "@/features/tasks/chat-sync";
-import { useTaskMutations } from "@/features/tasks/use-task-mutations";
-import type { Task } from "@/lib/api/types";
+import { CompleteTask } from "@/core/app/tasks/CompleteTask";
+import { CreateTask } from "@/core/app/tasks/CreateTask";
+import type { Task } from "@/core/domain/tasks/Task";
+import { useTasksEvents } from "@/TasksEventsProvider";
+import { formatDateShort, getTodayISO, priorityBadge, priorityLabel } from "@/lib/format";
+import { homeTaskQueryKeys } from "../home-query-keys";
 
 export interface TodayTasksCardProps {
   readonly tasks: readonly Task[];
 }
 
 export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
+  const core = useCore();
   const queryClient = useQueryClient();
-  const { completeTask, isTaskBusy } = useTaskMutations();
+  const tasksEvents = useTasksEvents();
+  const today = getTodayISO();
   const [newTitle, setNewTitle] = useState("");
+  const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
+
+  function refreshTasks() {
+    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.taskStats });
+    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.tasksToday(today) });
+    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.review(today) });
+    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.trend(7) });
+    void queryClient.invalidateQueries({ queryKey: ["home", "tasks"] });
+    void tasksEvents.emitTasksChanged();
+  }
 
   const createMutation = useMutation({
-    mutationFn: tasksApi.createTask,
-    onSuccess: (task) => {
-      syncTaskQueryState({
-        tool: "create_task",
-        parsedResult: task,
-        queryClient,
-      });
+    mutationFn: (input: { title: string; priority: number }) => core.execute(new CreateTask(input)),
+    onSuccess: () => {
       setNewTitle("");
+      refreshTasks();
     },
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: (taskId: string) => core.execute(new CompleteTask(taskId)),
+    onMutate: (taskId) => {
+      setBusyIds((current) => new Set(current).add(taskId));
+    },
+    onSettled: (_data, _error, taskId) => {
+      setBusyIds((current) => {
+        const next = new Set(current);
+        next.delete(taskId);
+        return next;
+      });
+    },
+    onSuccess: refreshTasks,
   });
 
   function handleCreate(event: React.FormEvent) {
@@ -87,8 +111,8 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => completeTask(task.id)}
-                  disabled={isTaskBusy(task.id)}
+                  onClick={() => completeMutation.mutate(task.id)}
+                  disabled={busyIds.has(task.id)}
                   aria-label={`Marcar "${task.title}" como hecha`}
                   className="group flex h-4 w-4 shrink-0 items-center justify-center rounded-md border border-[var(--glass-border)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
                 >
@@ -109,7 +133,9 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
                   {task.title}
                 </span>
                 <div className="mt-1 flex items-center gap-2">
-                  <TaskPriorityBadge priority={task.priority} />
+                  <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
+                    {priorityLabel(task.priority)}
+                  </span>
                   <span className="text-[10px] text-[var(--muted)]">
                     {formatDateShort(task.scheduledDate)}
                   </span>
