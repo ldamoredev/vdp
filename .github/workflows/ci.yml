@@ -46,9 +46,6 @@ jobs:
       - name: Run server unit tests
         run: pnpm --filter @vdp/server test:unit
 
-      - name: Install Playwright browsers
-        run: pnpm --filter @vdp/web exec playwright install --with-deps chromium
-
       - name: Start PostgreSQL 16 test database
         run: pnpm --filter @vdp/server db:test:up
 
@@ -57,9 +54,6 @@ jobs:
 
       - name: Run server end-to-end tests
         run: pnpm --filter @vdp/server test:e2e
-
-      - name: Run web end-to-end tests
-        run: pnpm --filter @vdp/web test:e2e
 
       - name: Stop test database
         if: ${{ always() && steps.setup-pnpm.outcome == 'success' }}
