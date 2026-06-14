@@ -5,6 +5,7 @@ import { Core } from "@/core/Core";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { Task } from "@/core/domain/tasks/Task";
+import { TasksEvents } from "@/ui/events/TasksEvents";
 import { HistoryPresenter } from "../HistoryPresenter";
 
 function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
@@ -67,9 +68,10 @@ function build({
   const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } }).use(
     new TasksModule(gateway),
   );
-  const presenter = new HistoryPresenter(vi.fn(), core);
+  const events = new TasksEvents();
+  const presenter = new HistoryPresenter(vi.fn(), core, events);
   presenter.init(undefined);
-  return { presenter, gateway, listTasks, getReview, getTrend, getByDomain };
+  return { presenter, gateway, listTasks, getReview, getTrend, getByDomain, events };
 }
 
 function deferred<T>() {
@@ -171,5 +173,18 @@ describe("HistoryPresenter", () => {
 
     expect(execute).toHaveBeenCalledWith("2026-06-14", "2026-06-15");
     expect(presenter.model.closureQueue.isCarryingOverAll).toBe(false);
+  });
+
+  it("reloads when shared tasksChanged fires", async () => {
+    const { presenter, getReview, events } = build();
+    presenter.start();
+    await flush();
+    const before = getReview.mock.calls.length;
+
+    await events.emitTasksChanged();
+    await flush();
+
+    expect(getReview.mock.calls.length).toBe(before + 1);
+    presenter.stop();
   });
 });

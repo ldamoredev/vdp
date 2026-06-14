@@ -1,9 +1,11 @@
 import { usePresenter } from "@nbottarini/react-presenter";
 
 import { useCore } from "@/CoreProvider";
+import { useTasksEvents } from "@/TasksEventsProvider";
 import { HistoryPresenter } from "./HistoryPresenter";
 
 export function useHistoryPresenter(): HistoryPresenter {
   const core = useCore();
-  return usePresenter((onChange) => new HistoryPresenter(onChange, core), undefined, [core]);
+  const events = useTasksEvents();
+  return usePresenter((onChange) => new HistoryPresenter(onChange, core, events), undefined, [core, events]);
 }

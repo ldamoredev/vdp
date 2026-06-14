@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, chatStream } from "@/lib/api/client";
 import { syncTaskQueryState } from "@/features/tasks/chat-sync";
+import { emitTasksChangedForAgentTool } from "./tasks-chat-sync-bridge";
 import {
   applyStreamEvent,
   getStreamErrorMessage,
@@ -13,11 +14,12 @@ import type { Message } from "./types";
 
 export function useChatStream(args: {
   queryClient: QueryClient;
+  onTaskMutation?: () => void;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setConversationId: (id: string | undefined) => void;
   loadConversationHistory: (id?: string) => Promise<void>;
 }) {
-  const { queryClient, setMessages, setConversationId, loadConversationHistory } = args;
+  const { queryClient, onTaskMutation, setMessages, setConversationId, loadConversationHistory } = args;
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -70,6 +72,9 @@ export function useChatStream(args: {
             result: typeof event.result === "string" ? event.result : undefined,
             input: toolInputs.get(event.tool),
             queryClient,
+          });
+          emitTasksChangedForAgentTool(event.tool, () => {
+            onTaskMutation?.();
           });
         } else if (event.event === "done") {
           doneConversationId = event.conversationId;

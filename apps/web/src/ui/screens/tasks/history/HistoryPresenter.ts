@@ -17,6 +17,7 @@ import {
 } from "@/core/domain/tasks/HistoryReview";
 import { Task } from "@/core/domain/tasks/Task";
 import { domainBadge, domainLabel, formatDate, getTodayISO } from "@/lib/format";
+import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type {
   HistoryClosureTaskVM,
   HistoryDomainStatsVM,
@@ -67,6 +68,7 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
   constructor(
     onChange: ChangeFunc,
     private readonly core: Core,
+    private readonly events: TasksEvents,
   ) {
     super(onChange);
   }
@@ -76,7 +78,13 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
   }
 
   start(): void {
+    this.events.tasksChanged.unsubscribe(this);
+    this.events.tasksChanged.subscribe(this, () => void this.load());
     void this.load();
+  }
+
+  stop(): void {
+    this.events.tasksChanged.unsubscribe(this);
   }
 
   goBack(): void {

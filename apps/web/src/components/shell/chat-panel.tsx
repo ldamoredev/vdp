@@ -8,6 +8,7 @@ import { useIsMobile } from "@/lib/use-breakpoint";
 import { domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
+import { useTasksEvents } from "@/TasksEventsProvider";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageBubble } from "@/components/chat/message-bubble";
@@ -25,6 +26,7 @@ export function ChatPanel() {
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
+  const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
   // Outside a domain (home, review, settings) the chat stays available with a
   // user-selectable agent; inside a domain the route decides.
@@ -40,6 +42,7 @@ export function ChatPanel() {
   const chat = useChatConversations({ domainKey, agentBasePath });
   const stream = useChatStream({
     queryClient,
+    onTaskMutation: () => void tasksEvents.emitTasksChanged(),
     setMessages: chat.setMessages,
     setConversationId: chat.setConversationId,
     loadConversationHistory: chat.loadConversationHistory,
