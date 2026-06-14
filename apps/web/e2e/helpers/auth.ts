@@ -18,7 +18,7 @@ export async function loginAsFreshUser(page: Page) {
   await expect(displayNameField).toBeVisible();
   await displayNameField.fill(displayName);
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Contrasena').fill(password);
+  await page.getByLabel('Contraseña').fill(password);
   const registerResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes('/api/auth/register') &&
@@ -54,7 +54,7 @@ export async function loginAsExistingUser(
   await expect(page.getByLabel('Email')).toBeVisible();
   await page.getByRole('button', { name: 'Iniciar sesion' }).click();
   await page.getByLabel('Email').fill(credentials.email);
-  await page.getByLabel('Contrasena').fill(credentials.password);
+  await page.getByLabel('Contraseña').fill(credentials.password);
 
   const loginResponsePromise = page.waitForResponse(
     (response) =>

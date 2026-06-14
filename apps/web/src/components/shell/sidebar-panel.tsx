@@ -60,7 +60,7 @@ export function SidebarPanel() {
               </span>
             </div>
             <p className="text-[11px] text-[var(--muted)] leading-relaxed">
-              Ajusta identidad, contrasena y sesion desde un unico panel.
+              Ajusta identidad, contraseña y sesion desde un unico panel.
             </p>
           </div>
         </div>

@@ -102,11 +102,11 @@ export async function changePassword(
   });
 
   const data = (await response.json().catch(() => ({
-    message: "No se pudo cambiar la contrasena",
+    message: "No se pudo cambiar la contraseña",
   }))) as { message?: string };
 
   if (!response.ok) {
-    throw new Error(data.message ?? "No se pudo cambiar la contrasena");
+    throw new Error(data.message ?? "No se pudo cambiar la contraseña");
   }
 }
 

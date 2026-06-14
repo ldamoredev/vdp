@@ -18,7 +18,7 @@ export function getFriendlyAuthError(
   }
 
   if (payload.error === "UNAUTHORIZED") {
-    return "Email o contrasena incorrectos.";
+    return "Email o contraseña incorrectos.";
   }
 
   if (payload.error === "VALIDATION_ERROR") {
@@ -30,7 +30,7 @@ export function getFriendlyAuthError(
   }
 
   if (payload.message === "Invalid credentials") {
-    return "Email o contrasena incorrectos.";
+    return "Email o contraseña incorrectos.";
   }
 
   return mode === "register"
@@ -40,7 +40,7 @@ export function getFriendlyAuthError(
 
 export function getLoginNotice(message?: string | null): string {
   if (message === "password-changed") {
-    return "Contrasena actualizada. Inicia sesion otra vez con tu nueva clave.";
+    return "Contraseña actualizada. Inicia sesion otra vez con tu nueva clave.";
   }
 
   return "";

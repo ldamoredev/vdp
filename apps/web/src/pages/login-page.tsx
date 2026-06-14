@@ -140,9 +140,9 @@ export function LoginPageClient({
     ? "Estamos revisando el estado de acceso de la app."
     : isRegisterMode
       ? hasUsers
-        ? "Abre tu espacio personal con email, nombre visible y una contrasena segura."
+        ? "Abre tu espacio personal con email, nombre visible y una contraseña segura."
         : "Crea la primera cuenta para empezar a usar VDP."
-      : "Ingresa con el email y la contrasena de tu cuenta.";
+      : "Ingresa con el email y la contraseña de tu cuenta.";
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: "var(--background)" }}>
@@ -268,7 +268,7 @@ export function LoginPageClient({
             <label className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--foreground)]">
-                  Contrasena
+                  Contraseña
                 </span>
                 {isRegisterMode && (
                   <span className="text-[11px] text-[var(--muted)]">
@@ -280,7 +280,7 @@ export function LoginPageClient({
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isRegisterMode ? "Crea una contrasena segura" : "Tu contrasena"}
+                placeholder={isRegisterMode ? "Crea una contraseña segura" : "Tu contraseña"}
                 required
                 minLength={8}
                 className="glass-input w-full px-4 py-2.5 text-sm"

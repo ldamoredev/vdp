@@ -15,7 +15,7 @@ describe("getFriendlyAuthError", () => {
   it("maps unauthorized errors to invalid-credentials copy", () => {
     expect(
       getFriendlyAuthError({ error: "UNAUTHORIZED" }, "login"),
-    ).toBe("Email o contrasena incorrectos.");
+    ).toBe("Email o contraseña incorrectos.");
   });
 
   it("preserves validation messages when present", () => {
@@ -40,7 +40,7 @@ describe("getFriendlyAuthError", () => {
 describe("getLoginNotice", () => {
   it("returns the password-change success notice", () => {
     expect(getLoginNotice("password-changed")).toBe(
-      "Contrasena actualizada. Inicia sesion otra vez con tu nueva clave.",
+      "Contraseña actualizada. Inicia sesion otra vez con tu nueva clave.",
     );
   });
 

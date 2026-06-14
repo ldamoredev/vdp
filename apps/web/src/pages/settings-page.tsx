@@ -104,7 +104,7 @@ export default function SettingsPage() {
       setPasswordMessage(null);
     },
     onSuccess: async () => {
-      setPasswordMessage("Contrasena actualizada. Vas a iniciar sesion de nuevo.");
+      setPasswordMessage("Contraseña actualizada. Vas a iniciar sesion de nuevo.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -112,7 +112,7 @@ export default function SettingsPage() {
       navigate("/login?message=password-changed", { replace: true });
     },
     onError: (error) => {
-      setPasswordMessage(error instanceof Error ? error.message : "No se pudo cambiar la contrasena.");
+      setPasswordMessage(error instanceof Error ? error.message : "No se pudo cambiar la contraseña.");
     },
   });
 
@@ -158,12 +158,12 @@ export default function SettingsPage() {
     event.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setPasswordMessage("La nueva contrasena y la confirmacion no coinciden.");
+      setPasswordMessage("La nueva contraseña y la confirmacion no coinciden.");
       return;
     }
 
     if (newPassword.length < 8) {
-      setPasswordMessage("La nueva contrasena debe tener al menos 8 caracteres.");
+      setPasswordMessage("La nueva contraseña debe tener al menos 8 caracteres.");
       return;
     }
 
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                   Renovar acceso
                 </h2>
                 <p className="text-sm leading-6 text-[var(--foreground-muted)]">
-                  Al cambiar la contrasena, el sistema invalida tus sesiones actuales y te pide volver a entrar.
+                  Al cambiar la contraseña, el sistema invalida tus sesiones actuales y te pide volver a entrar.
                 </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--accent)]">
@@ -409,17 +409,17 @@ export default function SettingsPage() {
 
             <form className="space-y-5" onSubmit={handlePasswordSubmit}>
               <PasswordField
-                label="Contrasena actual"
+                label="Contraseña actual"
                 value={currentPassword}
                 onChange={setCurrentPassword}
               />
               <PasswordField
-                label="Nueva contrasena"
+                label="Nueva contraseña"
                 value={newPassword}
                 onChange={setNewPassword}
               />
               <PasswordField
-                label="Confirmar nueva contrasena"
+                label="Confirmar nueva contraseña"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
               />
@@ -439,7 +439,7 @@ export default function SettingsPage() {
 
               {discardTarget === "password" && passwordDirty && (
                 <DiscardNotice
-                  message="Esto limpiara los campos de contrasena antes de enviar cambios al servidor."
+                  message="Esto limpiara los campos de contraseña antes de enviar cambios al servidor."
                   onConfirm={handleDiscardPassword}
                   onCancel={() => setDiscardTarget(null)}
                 />
@@ -456,7 +456,7 @@ export default function SettingsPage() {
                   }
                   className="inline-flex items-center justify-center rounded-2xl bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-[var(--background)] shadow-[var(--shadow-md)] transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {passwordMutation.isPending ? "Actualizando..." : "Cambiar contrasena"}
+                  {passwordMutation.isPending ? "Actualizando..." : "Cambiar contraseña"}
                 </button>
                 <button
                   type="button"
@@ -502,7 +502,7 @@ export default function SettingsPage() {
               <InsightRow
                 eyebrow="Politica"
                 title="Rotacion inmediata"
-                copy="Cada cambio de contrasena revoca las sesiones activas para evitar accesos heredados."
+                copy="Cada cambio de contraseña revoca las sesiones activas para evitar accesos heredados."
               />
               <InsightRow
                 eyebrow="Consejo"
@@ -971,7 +971,7 @@ function getSecurityEventTitle(event: SecurityEvent) {
     case "auth.logout_other_sessions":
       return "Cierre de otros dispositivos";
     case "auth.password_changed":
-      return "Contrasena actualizada";
+      return "Contraseña actualizada";
     case "auth.profile_updated":
       return "Perfil actualizado";
     default:
@@ -1008,7 +1008,7 @@ function getSecurityEventCopy(event: SecurityEvent) {
     case "auth.logout":
       return "Se cerro una sesion existente desde el flujo de salida.";
     case "auth.password_changed":
-      return "La contrasena se renovo y las sesiones anteriores quedaron invalidadas.";
+      return "La contraseña se renovo y las sesiones anteriores quedaron invalidadas.";
     default:
       return "Se registro una accion sensible asociada a tu cuenta.";
   }
