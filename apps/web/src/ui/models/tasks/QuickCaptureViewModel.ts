@@ -13,6 +13,24 @@ export interface QuickCaptureViewModel {
   priorityLabel: string;
   domainLabel: string;
   helperText: string;
+  /** Non-null while the clarification gate is open for a too-vague title. */
+  gate: ClarificationGateVM | null;
+}
+
+export interface ClarificationGateVM {
+  heading: string;
+  reasons: string[];
+  outcome: string;
+  nextStep: string;
+  outcomeLabel: string;
+  outcomePlaceholder: string;
+  nextStepLabel: string;
+  nextStepPlaceholder: string;
+  examples: string[];
+  canSaveClarified: boolean;
+  saveLabel: string;
+  keepEditingLabel: string;
+  createAnywayLabel: string;
 }
 
 export interface QuickCapturePriorityOptionVM {

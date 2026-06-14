@@ -2,7 +2,14 @@ import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
 import type { Core } from "@/core/Core";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
+import {
+  analyzeTaskDraft,
+  buildClarifiedDescription,
+  CLARIFICATION_EXAMPLES,
+  type TaskDraftAnalysis,
+} from "@/core/domain/tasks/clarify";
 import type {
+  ClarificationGateVM,
   QuickCaptureDomainOptionVM,
   QuickCapturePriorityOptionVM,
   QuickCaptureViewModel,
@@ -27,10 +34,14 @@ const DOMAIN_LABELS = [
   { value: "study", label: "Estudio" },
 ];
 
+const FALLBACK_PROMPTS = ["Que resultado concreto esperas?", "Cual es el siguiente paso visible?"];
+
 /**
- * Dashboard quick capture: owns the create-task draft, dispatches CreateTask
- * through the Core, then reloads and selects the created task in the shared
- * dashboard store.
+ * Dashboard quick capture. Owns the create-task draft and the clarification
+ * gate: a too-vague title (analyzeTaskDraft, domain) opens the gate asking for
+ * the expected outcome + next step before creating. On create, dispatches
+ * CreateTask through the Core, then reloads and selects the task in the store.
+ * The gate's Spanish copy is built here from the domain's boolean flags.
  */
 export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> {
   private title = "";
@@ -38,6 +49,10 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
   private domain = "";
   private isCreating = false;
   private errorMessage: string | null = null;
+  private analysis: TaskDraftAnalysis | null = null;
+  private gateOpen = false;
+  private outcome = "";
+  private nextStep = "";
 
   constructor(
     onChange: ChangeFunc,
@@ -73,7 +88,56 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     this.refresh();
   }
 
+  setOutcome(value: string): void {
+    this.outcome = value;
+    this.refresh();
+  }
+
+  setNextStep(value: string): void {
+    this.nextStep = value;
+    this.refresh();
+  }
+
+  /** Form submit: opens the clarification gate for a vague title, else creates. */
   async create(): Promise<void> {
+    const title = this.title.trim();
+    if (!title || this.isCreating) return;
+
+    const analysis = analyzeTaskDraft(title);
+    if (analysis.needsClarification) {
+      this.analysis = analysis;
+      this.gateOpen = true;
+      this.refresh();
+      return;
+    }
+    await this.submit({ withClarification: false });
+  }
+
+  /** Gate: create with the clarified outcome/next step folded into the description. */
+  confirmClarified(): Promise<void> {
+    return this.submit({ withClarification: true });
+  }
+
+  /** Gate: create as-is despite the warning. */
+  createAnyway(): Promise<void> {
+    return this.submit({ withClarification: false });
+  }
+
+  /** Gate: close it to keep editing the title. */
+  dismissGate(): void {
+    this.gateOpen = false;
+    this.refresh();
+  }
+
+  /** Gate: adopt a concrete example as the title and close the gate. */
+  useExample(example: string): void {
+    this.title = example;
+    this.gateOpen = false;
+    this.analysis = null;
+    this.refresh();
+  }
+
+  private async submit({ withClarification }: { withClarification: boolean }): Promise<void> {
     const title = this.title.trim();
     if (!title || this.isCreating) return;
 
@@ -85,6 +149,9 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       const task = await this.core.execute(
         new CreateTask({
           title,
+          description: withClarification
+            ? buildClarifiedDescription(this.outcome, this.nextStep)
+            : undefined,
           priority: this.priority,
           domain: this.domain || undefined,
         }),
@@ -105,6 +172,10 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     this.title = "";
     this.priority = DEFAULT_PRIORITY;
     this.domain = "";
+    this.outcome = "";
+    this.nextStep = "";
+    this.gateOpen = false;
+    this.analysis = null;
   }
 
   private refresh(): void {
@@ -127,7 +198,51 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       priorityLabel: "Prioridad operativa",
       domainLabel: "Dominio",
       helperText: "La tarea entra directo en la cola de ejecucion y el chat la ve al instante.",
+      gate: this.gateVM(),
     };
+  }
+
+  private gateVM(): ClarificationGateVM | null {
+    if (!this.gateOpen || !this.analysis) return null;
+    const prompts = this.prompts(this.analysis);
+    return {
+      heading: "Aclara la tarea antes de cargarla",
+      reasons: this.reasons(this.analysis),
+      outcome: this.outcome,
+      nextStep: this.nextStep,
+      outcomeLabel: "Resultado esperado",
+      outcomePlaceholder: prompts[0] ?? "Que tiene que quedar resuelto?",
+      nextStepLabel: "Siguiente paso concreto",
+      nextStepPlaceholder: prompts[1] ?? "Cual es la siguiente accion visible?",
+      examples: CLARIFICATION_EXAMPLES,
+      canSaveClarified:
+        (this.outcome.trim().length > 0 || this.nextStep.trim().length > 0) && !this.isCreating,
+      saveLabel: this.isCreating ? "Guardando..." : "Guardar clarificada",
+      keepEditingLabel: "Seguir editando",
+      createAnywayLabel: "Crear igual",
+    };
+  }
+
+  private reasons(analysis: TaskDraftAnalysis): string[] {
+    const reasons: string[] = [];
+    if (analysis.tooShort) {
+      reasons.push("El titulo es demasiado corto para saber que accion concreta implica.");
+    }
+    if (analysis.genericStart) {
+      reasons.push("La accion arranca con un verbo o etiqueta demasiado generica.");
+    }
+    return reasons;
+  }
+
+  private prompts(analysis: TaskDraftAnalysis): string[] {
+    const prompts: string[] = [];
+    if (analysis.needsOutcomePrompt) {
+      prompts.push("Que tiene que quedar resuelto cuando esta tarea termine?");
+    }
+    if (analysis.needsNextStepPrompt) {
+      prompts.push("Cual es el siguiente paso concreto que la vuelve ejecutable?");
+    }
+    return prompts.length > 0 ? prompts : FALLBACK_PROMPTS;
   }
 
   private priorityOptionVM(value: number): QuickCapturePriorityOptionVM {

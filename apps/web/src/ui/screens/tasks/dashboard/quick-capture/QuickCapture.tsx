@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { type FormEvent } from "react";
 
+import { ClarificationGate } from "./ClarificationGate";
 import { useQuickCapturePresenter } from "./useQuickCapturePresenter";
 
 export function QuickCapture() {
@@ -80,6 +81,20 @@ export function QuickCapture() {
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">{vm.helperText}</p>
+
+      {vm.gate && (
+        <ClarificationGate
+          gate={vm.gate}
+          actions={{
+            onOutcomeChange: (value) => presenter.setOutcome(value),
+            onNextStepChange: (value) => presenter.setNextStep(value),
+            onUseExample: (example) => presenter.useExample(example),
+            onSaveClarified: () => void presenter.confirmClarified(),
+            onKeepEditing: () => presenter.dismissGate(),
+            onCreateAnyway: () => void presenter.createAnyway(),
+          }}
+        />
+      )}
     </form>
   );
 }
