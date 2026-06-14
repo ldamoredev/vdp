@@ -67,6 +67,15 @@ export function priorityLabel(p: number): string {
   return p === 3 ? "Alta" : p === 2 ? "Media" : "Baja";
 }
 
+/** A task's scheduled date as a short es-AR label, e.g. "lun, 13 jun". */
+export function formatTaskDate(date: string): string {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("es-AR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
 export function priorityBadge(p: number): string {
   return p === 3 ? "badge-red" : p === 2 ? "badge-amber" : "badge-muted";
 }

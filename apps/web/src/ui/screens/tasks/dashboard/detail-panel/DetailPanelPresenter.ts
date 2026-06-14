@@ -7,6 +7,7 @@ import { ListTaskNotes } from "@/core/app/tasks/ListTaskNotes";
 import { buildPlanningSignal } from "@/core/domain/tasks/PlanningSignal";
 import type { Task } from "@/core/domain/tasks/Task";
 import type { TaskNote, TaskNoteType } from "@/core/domain/tasks/TaskNote";
+import { formatTaskDate } from "@/lib/format";
 import type {
   BreakdownSuggestionVM,
   DetailPanelViewModel,
@@ -255,7 +256,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
       priority: task.priority,
       domain: task.domain,
       metrics: [
-        { label: "Fecha", value: this.formatTaskDate(task.scheduledDate), className: "border-[var(--glass-border)] bg-[var(--hover-overlay)]" },
+        { label: "Fecha", value: formatTaskDate(task.scheduledDate), className: "border-[var(--glass-border)] bg-[var(--hover-overlay)]" },
         { label: "Carry-over", value: String(task.carryOverCount), className: "border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)]" },
         { label: "Notas", value: String(this.notesForActiveTask().length), className: "border-[var(--glass-border)] bg-[var(--hover-overlay)]" },
       ],
@@ -332,13 +333,5 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
       return "border-[var(--red-soft-border)] bg-[var(--red-soft-bg)] text-[var(--red-soft-text)]";
     }
     return "border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--foreground)]";
-  }
-
-  private formatTaskDate(date: string): string {
-    return new Date(`${date}T00:00:00`).toLocaleDateString("es-AR", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
   }
 }

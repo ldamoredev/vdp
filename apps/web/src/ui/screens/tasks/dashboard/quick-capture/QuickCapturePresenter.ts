@@ -8,6 +8,7 @@ import {
   CLARIFICATION_EXAMPLES,
   type TaskDraftAnalysis,
 } from "@/core/domain/tasks/clarify";
+import { domainLabel, priorityLabel } from "@/lib/format";
 import type {
   ClarificationGateVM,
   QuickCaptureDomainOptionVM,
@@ -19,19 +20,12 @@ import type { TasksDashboardStore } from "../TasksDashboardStore";
 const DEFAULT_PRIORITY = 2;
 const ERROR_MESSAGE = "No se pudo agregar la tarea. Probá de nuevo.";
 
-const PRIORITY_LABELS: Record<number, string> = {
-  1: "Baja",
-  2: "Media",
-  3: "Alta",
-};
-
-const DOMAIN_LABELS = [
+const DOMAIN_OPTIONS: QuickCaptureDomainOptionVM[] = [
   { value: "", label: "Sin dominio" },
-  { value: "wallet", label: "Finanzas" },
-  { value: "health", label: "Salud" },
-  { value: "work", label: "Trabajo" },
-  { value: "people", label: "Gente" },
-  { value: "study", label: "Estudio" },
+  ...["wallet", "health", "work", "people", "study"].map((value) => ({
+    value,
+    label: domainLabel(value),
+  })),
 ];
 
 const FALLBACK_PROMPTS = ["Que resultado concreto esperas?", "Cual es el siguiente paso visible?"];
@@ -188,7 +182,7 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       priority: this.priority,
       domain: this.domain,
       priorityOptions: [1, 2, 3].map((value) => this.priorityOptionVM(value)),
-      domainOptions: DOMAIN_LABELS.map((option) => this.domainOptionVM(option)),
+      domainOptions: DOMAIN_OPTIONS,
       canCreate: this.title.trim().length > 0 && !this.isCreating,
       isCreating: this.isCreating,
       submitLabel: this.isCreating ? "Agregando..." : "Agregar a hoy",
@@ -249,7 +243,7 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     const selected = this.priority === value;
     return {
       value,
-      label: PRIORITY_LABELS[value],
+      label: priorityLabel(value),
       selected,
       className: selected ? this.selectedPriorityClass(value) : this.unselectedPriorityClass(),
     };
