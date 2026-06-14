@@ -1,5 +1,6 @@
 import { FastifyReply } from 'fastify';
 import type { PaginatedCollection, PaginationMeta } from '@vdp/shared';
+import type { AgentChatAvailability } from '../base/agents/providers/createAgentProvider';
 
 // The pagination envelope is part of the shared API contract: the web client
 // types list responses with the same PaginatedCollection from @vdp/shared.
@@ -21,6 +22,7 @@ export type StatusResponse = {
     timestamp: string;
     domains: string[];
     agents: string[];
+    agentChat: AgentChatAvailability;
 };
 
 export function sendCreated<T>(reply: FastifyReply, payload: T) {
@@ -56,11 +58,13 @@ export function carryOverResponse<T>(tasks: T[]): CarryOverResponse<T> {
 export function buildStatusResponse(data: {
     domains: string[];
     agents: string[];
+    agentChat: AgentChatAvailability;
 }): StatusResponse {
     return {
         status: 'ok',
         timestamp: new Date().toISOString(),
         domains: data.domains,
         agents: data.agents,
+        agentChat: data.agentChat,
     };
 }

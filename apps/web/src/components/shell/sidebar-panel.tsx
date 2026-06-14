@@ -7,12 +7,14 @@ import {
   isSettingsPath,
   settingsNavItem,
 } from "@/lib/navigation";
+import { useAgentChatStatus } from "@/lib/agent-chat-status";
 
 export function SidebarPanel() {
   const { pathname } = useLocation();
   const domainKey = getDomainFromPathname(pathname);
   const domain = domainKey ? getDomainConfig(domainKey) : null;
   const settingsRoute = isSettingsPath(pathname);
+  const agentChat = useAgentChatStatus();
 
   if (!domain && !settingsRoute) return null;
 
@@ -116,11 +118,17 @@ export function SidebarPanel() {
       <div className="p-3 border-t border-[var(--sidebar-border)]">
         <div className="rounded-xl bg-[var(--hover-overlay)] border border-[var(--glass-border)] p-3">
           <div className="flex items-center gap-1.5 mb-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
-            <span className="text-[11px] font-medium text-[var(--foreground-muted)]">AI Activo</span>
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                agentChat.enabled ? "bg-[var(--accent-green)] animate-pulse" : "bg-[var(--muted)]"
+              }`}
+            />
+            <span className="text-[11px] font-medium text-[var(--foreground-muted)]">
+              {agentChat.enabled ? "AI Activo" : "AI Desactivado"}
+            </span>
           </div>
           <p className="text-[11px] text-[var(--muted)] leading-relaxed">
-            {domain.aiDescription}
+            {agentChat.enabled ? domain.aiDescription : "Configura un proveedor IA para habilitar el chat."}
           </p>
         </div>
       </div>

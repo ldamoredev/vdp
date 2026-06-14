@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createAgentProvider, resolveAgentProviderName } from '../../base/agents/providers/createAgentProvider';
+import {
+    createAgentProvider,
+    resolveAgentChatAvailability,
+    resolveAgentProviderName,
+} from '../../base/agents/providers/createAgentProvider';
 import { AnthropicAgentProvider } from '../../base/agents/providers/AnthropicAgentProvider';
 import { OllamaAgentProvider } from '../../base/agents/providers/OllamaAgentProvider';
 import { OpenAICompatibleAgentProvider } from '../../base/agents/providers/OpenAICompatibleAgentProvider';
@@ -95,5 +99,46 @@ describe('createAgentProvider', () => {
         })).toThrow(
             'OPENAI_COMPAT_BASE_URL is required when AGENT_PROVIDER=openai-compatible',
         );
+    });
+});
+
+describe('resolveAgentChatAvailability', () => {
+    it('disables agent chat when no remote provider credentials are configured', () => {
+        expect(resolveAgentChatAvailability({})).toEqual({
+            enabled: false,
+            reason: 'agent_provider_not_configured',
+        });
+    });
+
+    it('enables agent chat for a complete OpenAI-compatible configuration', () => {
+        expect(resolveAgentChatAvailability({
+            OPENAI_COMPAT_API_KEY: 'key',
+            OPENAI_COMPAT_BASE_URL: 'https://api.example.com/openai',
+        })).toEqual({ enabled: true });
+    });
+
+    it('keeps OpenAI-compatible chat disabled until both api key and base url exist', () => {
+        expect(resolveAgentChatAvailability({
+            AGENT_PROVIDER: 'openai-compatible',
+            OPENAI_COMPAT_API_KEY: 'key',
+        })).toEqual({
+            enabled: false,
+            reason: 'openai_compatible_not_configured',
+        });
+    });
+
+    it('enables agent chat for Anthropic when the key exists', () => {
+        expect(resolveAgentChatAvailability({ ANTHROPIC_API_KEY: 'key' })).toEqual({ enabled: true });
+    });
+
+    it('enables Ollama only when explicitly configured with a base url', () => {
+        expect(resolveAgentChatAvailability({ AGENT_PROVIDER: 'ollama' })).toEqual({
+            enabled: false,
+            reason: 'ollama_not_configured',
+        });
+        expect(resolveAgentChatAvailability({
+            AGENT_PROVIDER: 'ollama',
+            OLLAMA_BASE_URL: 'http://ollama:11434',
+        })).toEqual({ enabled: true });
     });
 });

@@ -33,7 +33,7 @@ const modules = [
     softBg: "var(--emerald-soft-bg)",
     softText: "var(--emerald-soft-text)",
     softBorder: "var(--emerald-soft-border)",
-    ready: false,
+    ready: true,
   },
   {
     key: "people",

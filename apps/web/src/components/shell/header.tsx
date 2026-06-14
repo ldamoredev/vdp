@@ -6,12 +6,14 @@ import { ChevronDown, LogOut, Menu, MessageCircle, Settings2, Sparkles } from "l
 import { chatStore } from "@/lib/chat-store";
 import { logout, useCurrentUser } from "@/lib/auth";
 import { shellStore } from "@/lib/shell-store";
+import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
+  const agentChat = useAgentChatStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -20,7 +22,7 @@ export function Header() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
-        chatStore.toggle();
+        if (agentChat.enabled) chatStore.toggle();
       }
 
       if (e.key === "Escape") {
@@ -29,7 +31,7 @@ export function Header() {
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [agentChat.enabled]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -43,6 +45,7 @@ export function Header() {
   }, []);
 
   const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
+  const chatDisabledMessage = agentChatDisabledMessage(agentChat);
 
   async function handleLogout() {
     await logout();
@@ -125,12 +128,14 @@ export function Header() {
           <ThemeToggle />
         </div>
         <button
-          onClick={chatStore.toggle}
-          className="header-shell-control flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-1.5 text-sm font-medium text-[var(--foreground-muted)] transition-all cursor-pointer group hover:border-[var(--glass-border-hover)] hover:bg-[var(--hover-overlay-strong)] hover:text-[var(--foreground)]"
+          onClick={agentChat.enabled ? chatStore.toggle : undefined}
+          disabled={!agentChat.enabled}
+          title={agentChat.enabled ? "Abrir chat IA" : chatDisabledMessage}
+          className="header-shell-control flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-1.5 text-sm font-medium text-[var(--foreground-muted)] transition-all cursor-pointer group hover:border-[var(--glass-border-hover)] hover:bg-[var(--hover-overlay-strong)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[var(--glass-border)] disabled:hover:bg-[var(--hover-overlay)] disabled:hover:text-[var(--foreground-muted)]"
         >
           <div className="relative">
             <MessageCircle size={15} strokeWidth={1.8} />
-            <Sparkles size={7} className="absolute -top-1 -right-1 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Sparkles size={7} className="absolute -top-1 -right-1 text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity group-disabled:opacity-0" />
           </div>
           <span className="hidden md:inline text-[13px]">Chat IA</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--hover-overlay)] border border-[var(--glass-border)] text-[var(--muted)]">

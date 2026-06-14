@@ -1,5 +1,6 @@
 import { AgentRegistry } from '../base/agents/AgentRegistry';
 import { DomainModuleDescriptor } from '../base/modules/DomainModuleDescriptor';
+import { resolveAgentChatAvailability } from '../base/agents/providers/createAgentProvider';
 import { HttpController, RouteRegister } from './HttpController';
 import { buildStatusResponse } from './responses';
 
@@ -20,5 +21,6 @@ export class StatusController extends HttpController {
     private readonly health = async () => buildStatusResponse({
         domains: this.modules.map((module) => module.domain),
         agents: this.agentRegistry.getAll().map((agent) => agent.domain),
+        agentChat: resolveAgentChatAvailability(),
     });
 }
