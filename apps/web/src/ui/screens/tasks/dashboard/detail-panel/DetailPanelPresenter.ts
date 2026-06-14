@@ -234,9 +234,10 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   private activeTask(): Task | null {
     const selectedId = this.store.selectedId$.value;
     if (!selectedId) return null;
-    return this.selectedTask?.id === selectedId
-      ? this.selectedTask
-      : this.store.tasks$.value.find((task) => task.id === selectedId) ?? null;
+    const storeTask = this.store.tasks$.value.find((task) => task.id === selectedId) ?? null;
+    if (this.selectedTask?.id !== selectedId) return storeTask;
+    if (storeTask && storeTask.updatedAt !== this.selectedTask.updatedAt) return storeTask;
+    return this.selectedTask ?? storeTask;
   }
 
   private notesForActiveTask(): TaskNote[] {
@@ -249,7 +250,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
       id: task.id,
       eyebrow: "Tarea seleccionada",
       title: task.title,
-      statusLabel: task.isDone ? "Hecha" : "Activa",
+      statusLabel: this.statusLabel(task),
       description:
         task.description ??
         "Sin descripcion adicional. Si necesitas preservar contexto para retomarla mejor, guardalo como nota.",
@@ -261,6 +262,12 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
         { label: "Notas", value: String(this.notesForActiveTask().length), className: "border-[var(--glass-border)] bg-[var(--hover-overlay)]" },
       ],
     };
+  }
+
+  private statusLabel(task: Task): string {
+    if (task.isDone) return "Hecha";
+    if (task.status === "discarded") return "Descartada";
+    return "Activa";
   }
 
   private selectorItems(): DetailTaskSelectorItemVM[] {

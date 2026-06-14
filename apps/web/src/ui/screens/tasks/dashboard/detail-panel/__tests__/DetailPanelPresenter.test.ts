@@ -118,6 +118,51 @@ describe("DetailPanelPresenter", () => {
     expect(presenter.model.selector.items.find((item) => item.id === "other")?.selected).toBe(true);
   });
 
+  it("updates the selected summary when the store reloads the same task with a newer state", async () => {
+    const { presenter, store, gateway } = await build([taskDto({ id: "hot", priority: 3 })]);
+    vi.spyOn(gateway, "listTasks").mockResolvedValue({
+      tasks: [
+        Task.from(
+          taskDto({
+            id: "hot",
+            priority: 3,
+            status: "done",
+            completedAt: "2026-06-13T09:00:00.000Z",
+            updatedAt: "2026-06-13T09:00:00.000Z",
+          }),
+        ),
+      ],
+      total: 1,
+    });
+
+    await store.load();
+    await flush();
+
+    expect(presenter.model.selectedTask?.statusLabel).toBe("Hecha");
+  });
+
+  it("labels a discarded selected task explicitly", async () => {
+    const { presenter, store, gateway } = await build([taskDto({ id: "hot", priority: 3 })]);
+    vi.spyOn(gateway, "listTasks").mockResolvedValue({
+      tasks: [
+        Task.from(
+          taskDto({
+            id: "hot",
+            priority: 3,
+            status: "discarded",
+            updatedAt: "2026-06-13T09:00:00.000Z",
+          }),
+        ),
+      ],
+      total: 1,
+    });
+
+    await store.load();
+    await flush();
+
+    expect(presenter.model.selectedTask?.statusLabel).toBe("Descartada");
+  });
+
   it("adds a manual breakdown step and reloads notes", async () => {
     const { presenter, gateway } = await build([taskDto({ id: "hot", priority: 3 })]);
     vi.spyOn(gateway, "addNote").mockResolvedValue(note({ id: "new", taskId: "hot", type: "breakdown_step" }));
