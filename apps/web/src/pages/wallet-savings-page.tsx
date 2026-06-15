@@ -1,10 +1,5 @@
-import { SavingsScreen } from "@/features/wallet/components/savings-screen";
-import { WalletProvider } from "@/features/wallet/wallet-context";
+import { SavingsScreen } from "@/ui/screens/wallet/savings/SavingsScreen";
 
 export default function SavingsPage() {
-  return (
-    <WalletProvider scope="savings">
-      <SavingsScreen />
-    </WalletProvider>
-  );
+  return <SavingsScreen />;
 }
