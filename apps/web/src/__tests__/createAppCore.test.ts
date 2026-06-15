@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { GetHabitsOverview } from "@/core/app/health/GetHabitsOverview";
 import { CreateGoal } from "@/core/app/health/CreateGoal";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
+import { GetAccounts } from "@/core/app/wallet/GetAccounts";
 import { createAppCore } from "@/createAppCore";
 
 /**
@@ -50,5 +51,14 @@ describe("createAppCore", () => {
     const result = await core.execute(new ListTasks());
 
     expect(result).toEqual({ tasks: [], total: 0 });
+  });
+
+  it("registers the wallet handlers on the bus", async () => {
+    stubFetchOk([]);
+    const core = createAppCore();
+
+    const result = await core.execute(new GetAccounts());
+
+    expect(result).toEqual([]);
   });
 });
