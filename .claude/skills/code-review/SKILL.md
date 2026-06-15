@@ -52,7 +52,7 @@ These are hard rules — a violation is a warning. Source of truth is [AGENTS.md
 - **Entities**: immutable snapshots, `fromSnapshot()`/`toSnapshot()`.
 - **DB**: a new table needs the three synchronized changes (Drizzle schema + `db:generate`, `SETUP_SQL`, `truncate()` list).
 - **Test placement**: fakes in `{domain}/__tests__/fakes/`, shared DB infra in `server/src/test/`.
-- **Frontend (post-A2)**: no React under `core/`; humble views (no logic in JSX beyond VM flags); one presenter per section, not a God-presenter; presenters StrictMode-idempotent; every new frontend module registered in `createAppCore`; the migration one-way ratchet (migrated code must not import `features/`). See [frontend-module-template.md](../../../docs/architecture/frontend-module-template.md).
+- **Frontend (post-A2)**: no React under `core/`; humble views (no logic in JSX beyond VM flags); one presenter per section, not a God-presenter; presenters StrictMode-idempotent; every new frontend module registered in `createAppCore`; the migration one-way ratchet (migrated code must not import `features/`). See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4.
 
 ### 3. Tests
 

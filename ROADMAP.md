@@ -19,7 +19,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters and H2 goals. **Paused after H2 (June 2026)** in favor of the Architecture Track below.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/frontend-mirror-analysis.md`](./docs/architecture/frontend-mirror-analysis.md). Phase 4 resumes (P1 → H3v0 → P2 → P3) when it completes.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Phase 4 resumes (P1 → H3v0 → P2 → P3) when it completes.
 
 ## Phase 0: Recovery
 
@@ -137,7 +137,7 @@ Done when: the new surface meets the Tasks reference shape and is verified throu
 ## Architecture Track (ACTIVE — June 2026)
 
 Owner-approved in the June 2026 architecture session. Source of truth for rationale,
-decisions, and detailed plans: [`docs/architecture/frontend-mirror-analysis.md`](./docs/architecture/frontend-mirror-analysis.md).
+decisions, and detailed plans: [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
 One phase per work session unless noted. Phase 4 below is paused until this track completes.
 
 Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
@@ -161,7 +161,7 @@ health, chat, insights), Next dependencies removed.
 views) built for the health module only, coexisting with the other features on the old
 pattern. Includes the SSE insights flow (not just CRUD). Done when: `features/health/`
 deleted, presenter/service/infra tests in place (no React under `core/`, lint-enforced),
-RQ gone from health, `docs/architecture/frontend-module-template.md` extracted, owner
+RQ gone from health, `docs/architecture/ARCHITECTURE.md` extracted, owner
 smoke. Details: analysis doc §7.
 
 ### A3 + A4. Claude Code skills — SHIPPED June 2026

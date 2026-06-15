@@ -47,7 +47,7 @@ For the frontend `core/domain` layer (post-A2). No persistence: the gateway hand
 - **No React, no Spanish/UI strings** in `core/domain` — classification and ordering only; labels live in the presenter.
 - Copy arrays before sorting.
 
-> The web variant is written after the first end-to-end module exists (A2 done). See [frontend-module-template.md](../../../docs/architecture/frontend-module-template.md) §1.
+> The web variant is written after the first end-to-end module exists (A2 done). See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 1 — domain).
 
 ## Steps & verification
 

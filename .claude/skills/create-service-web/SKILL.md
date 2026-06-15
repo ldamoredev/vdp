@@ -5,7 +5,7 @@ description: Scaffold one frontend application use case (a CQBus Command/Query +
 
 # create-service-web
 
-Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-service-api` so the api↔web use-case correspondence stays 1:1. Based on the A2 Health pilot; see [frontend-module-template.md](../../../docs/architecture/frontend-module-template.md) §2–3.
+Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-service-api` so the api↔web use-case correspondence stays 1:1. Based on the A2 Health pilot; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
 
 ## Inputs (ask if missing)
 

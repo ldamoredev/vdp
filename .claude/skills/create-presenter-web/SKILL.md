@@ -5,7 +5,7 @@ description: Scaffold a frontend presenter + ViewModel + humble view for one scr
 
 # create-presenter-web
 
-Scaffolds the UI layer for one **section** of a screen, following the A2 Health pilot. One presenter + ViewModel per sub-domain — never one God-presenter. See [frontend-module-template.md](../../../docs/architecture/frontend-module-template.md) §4.
+Scaffolds the UI layer for one **section** of a screen, following the A2 Health pilot. One presenter + ViewModel per sub-domain — never one God-presenter. See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 4 — UI).
 
 ## Inputs (ask if missing)
 

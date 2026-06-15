@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 (Health deepening) shipped H1 counters and H2 goals, then **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/frontend-mirror-analysis.md`): A1 Vite port is SHIPPED; **next is A2 (health pilot on presenters + CQBus + Core)**, then skills waves, per-module migration, and CQBus on the api. Phase 4 resumes with P1 afterwards. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 (Health deepening) shipped H1 counters and H2 goals, then **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/ARCHITECTURE.md`): A1 Vite port is SHIPPED; **next is A2 (health pilot on presenters + CQBus + Core)**, then skills waves, per-module migration, and CQBus on the api. Phase 4 resumes with P1 afterwards. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
