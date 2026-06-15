@@ -1,10 +1,5 @@
-import { InvestmentsScreen } from "@/features/wallet/components/investments-screen";
-import { WalletProvider } from "@/features/wallet/wallet-context";
+import { InvestmentsScreen } from "@/ui/screens/wallet/investments/InvestmentsScreen";
 
 export default function InvestmentsPage() {
-  return (
-    <WalletProvider scope="investments">
-      <InvestmentsScreen />
-    </WalletProvider>
-  );
+  return <InvestmentsScreen />;
 }

@@ -87,3 +87,16 @@ export const ACCOUNT_TYPE_LABELS: Record<
   crypto: "Crypto",
   investment: "Inversion",
 };
+
+/** Spanish labels for investment types (presentation; domain stays language-free). */
+export const INVESTMENT_TYPE_LABELS: Record<
+  "plazo_fijo" | "fci" | "cedear" | "crypto" | "bond" | "other",
+  string
+> = {
+  plazo_fijo: "Plazo fijo",
+  fci: "FCI",
+  cedear: "CEDEAR",
+  crypto: "Crypto",
+  bond: "Bono",
+  other: "Otro",
+};
