@@ -1,10 +1,5 @@
-import { AccountsScreen } from "@/features/wallet/components/accounts-screen";
-import { WalletProvider } from "@/features/wallet/wallet-context";
+import { AccountsScreen } from "@/ui/screens/wallet/accounts/AccountsScreen";
 
 export default function WalletAccountsPage() {
-  return (
-    <WalletProvider scope="accounts">
-      <AccountsScreen />
-    </WalletProvider>
-  );
+  return <AccountsScreen />;
 }
