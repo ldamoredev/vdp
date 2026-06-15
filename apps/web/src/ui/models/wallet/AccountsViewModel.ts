@@ -1,5 +1,8 @@
 import type { AccountType } from "@/core/domain/wallet/Account";
 import type { Currency } from "@vdp/shared";
+import type { SelectOptionVM, WalletEmptyStateVM } from "./common";
+
+export type { SelectOptionVM, WalletEmptyStateVM };
 
 export interface AccountsViewModel {
   title: string;
@@ -26,11 +29,6 @@ export interface AccountFormVM {
   canSubmit: boolean;
 }
 
-export interface SelectOptionVM {
-  value: string;
-  label: string;
-}
-
 export interface AccountItemVM {
   id: string;
   name: string;
@@ -40,11 +38,4 @@ export interface AccountItemVM {
   isEditing: boolean;
   editingName: string;
   isBusy: boolean;
-}
-
-export interface WalletEmptyStateVM {
-  title: string;
-  body: string;
-  ctaLabel?: string;
-  ctaHref?: string;
 }

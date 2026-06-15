@@ -19,7 +19,7 @@ export type UpdateAccountInput = Partial<CreateAccountInput>;
 export interface CreateCategoryInput {
   name: string;
   type: CategoryType;
-  icon: string;
+  icon: string | null;
 }
 
 export interface CreateTransactionInput {
