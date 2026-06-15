@@ -1,3 +1,4 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AgentRepository, AgentConversationRecord, AgentMessageRecord } from '../../../common/base/agents/AgentRepository';
@@ -113,6 +114,7 @@ function createContext(insightsStore: TaskInsightsStore): ModuleContext & { insi
 
     return {
         repositories,
+        bus: new CQBus(),
         services: new ServiceProvider(),
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),

@@ -1,96 +1,17 @@
-import React from "react";
 import { Link } from "react-router";
-import { Radar, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Radar } from "lucide-react";
 import { CollectionCard } from "@/ui/primitives/collection-card";
-import { getDomainConfig } from "@/lib/navigation";
 import type {
-  TaskInsight,
-  TaskInsightAction,
-  TaskInsightMetadata,
-} from "@/lib/api/types";
+  HomeInsightTone,
+  HomeSignalViewModel,
+} from "@/ui/models/home/HomeViewModel";
 
 export interface CrossDomainSignalsCardProps {
-  readonly insights: readonly TaskInsight[];
+  readonly insights: readonly HomeSignalViewModel[];
+  readonly countLabel: string;
 }
 
-function formatInsightDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function getDomainLabel(domain: string | undefined) {
-  if (!domain) return "Sistema";
-  return getDomainConfig(domain)?.label ?? `${domain.charAt(0).toUpperCase()}${domain.slice(1)}`;
-}
-
-function readMetadataString(
-  metadata: TaskInsightMetadata | undefined,
-  key: string,
-) {
-  const value = metadata?.[key];
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-function inferDomainFromHref(href: string) {
-  try {
-    const url = href.startsWith("http://") || href.startsWith("https://")
-      ? new URL(href)
-      : new URL(href, "https://vdp.local");
-
-    return url.pathname.split("/").filter(Boolean)[0];
-  } catch {
-    return undefined;
-  }
-}
-
-function inferDomainFromSource(source: string | undefined) {
-  return source?.split(".")[0] || undefined;
-}
-
-function resolveInsightAction(insight: TaskInsight): TaskInsightAction | undefined {
-  if (insight.action) {
-    return insight.action;
-  }
-
-  const href = readMetadataString(insight.metadata, "actionHref");
-  const label = readMetadataString(insight.metadata, "actionLabel");
-
-  if (!href || !label) {
-    return undefined;
-  }
-
-  return {
-    href,
-    label,
-    domain:
-      readMetadataString(insight.metadata, "actionDomain") ??
-      readMetadataString(insight.metadata, "domain") ??
-      inferDomainFromHref(href) ??
-      inferDomainFromSource(readMetadataString(insight.metadata, "source")) ??
-      "tasks",
-  };
-}
-
-function getTypeLabel(type: TaskInsight["type"]) {
-  switch (type) {
-    case "achievement":
-      return "Logro";
-    case "warning":
-      return "Alerta";
-    case "suggestion":
-      return "Sugerencia";
-  }
-}
-
-function getTypeBadgeClassName(type: TaskInsight["type"]) {
+function getTypeBadgeClassName(type: HomeInsightTone) {
   switch (type) {
     case "achievement":
       return "border-[color:rgba(16,185,129,0.24)] bg-[color:rgba(16,185,129,0.12)] text-[var(--emerald-soft-text)]";
@@ -103,6 +24,7 @@ function getTypeBadgeClassName(type: TaskInsight["type"]) {
 
 export function CrossDomainSignalsCard({
   insights,
+  countLabel,
 }: CrossDomainSignalsCardProps) {
   return (
     <CollectionCard
@@ -112,70 +34,64 @@ export function CrossDomainSignalsCard({
       icon={<Radar size={16} style={{ color: "var(--violet-soft-text)" }} />}
       action={
         <span className="text-xs text-[var(--muted)]">
-          {insights.length} reciente{insights.length === 1 ? "" : "s"}
+          {countLabel}
         </span>
       }
     >
       {insights.length > 0 ? (
-        insights.map((insight) => {
-          const action = resolveInsightAction(insight);
-          const periodFrom = readMetadataString(insight.metadata, "periodFrom");
-          const periodTo = readMetadataString(insight.metadata, "periodTo");
-
-          return (
-            <article
-              key={insight.id}
-              className="space-y-3 p-4 transition-colors hover:bg-[var(--hover-overlay)]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] ${getTypeBadgeClassName(insight.type)}`}
-                    >
-                      {getTypeLabel(insight.type)}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                      {getDomainLabel(action?.domain)}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-medium text-[var(--foreground)]">
-                    {insight.title}
-                  </h4>
-                </div>
-                <span className="shrink-0 text-[11px] text-[var(--muted)]">
-                  {formatInsightDate(insight.createdAt)}
-                </span>
-              </div>
-
-              <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">
-                {insight.message}
-              </p>
-
-              {periodFrom && periodTo ? (
-                <p className="text-[11px] text-[var(--muted)]">
-                  Ventana: {periodFrom} → {periodTo}
-                </p>
-              ) : null}
-
-              {action ? (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-[var(--muted)]">
-                    {getDomainLabel(action.domain)}
-                  </span>
-                  <Link
-                    to={action.href}
-                    className="inline-flex items-center gap-1 text-xs font-medium transition-colors"
-                    style={{ color: "var(--violet-soft-text)" }}
+        insights.map((insight) => (
+          <article
+            key={insight.id}
+            className="space-y-3 p-4 transition-colors hover:bg-[var(--hover-overlay)]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] ${getTypeBadgeClassName(insight.tone)}`}
                   >
-                    {action.label}
-                    <ArrowUpRight size={12} />
-                  </Link>
+                    {insight.typeLabel}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                    {insight.domainLabel}
+                  </span>
                 </div>
-              ) : null}
-            </article>
-          );
-        })
+                <h4 className="text-sm font-medium text-[var(--foreground)]">
+                  {insight.title}
+                </h4>
+              </div>
+              <span className="shrink-0 text-[11px] text-[var(--muted)]">
+                {insight.dateLabel}
+              </span>
+            </div>
+
+            <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">
+              {insight.message}
+            </p>
+
+            {insight.periodLabel ? (
+              <p className="text-[11px] text-[var(--muted)]">
+                {insight.periodLabel}
+              </p>
+            ) : null}
+
+            {insight.action ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-[var(--muted)]">
+                  {insight.action.domainLabel}
+                </span>
+                <Link
+                  to={insight.action.href}
+                  className="inline-flex items-center gap-1 text-xs font-medium transition-colors"
+                  style={{ color: "var(--violet-soft-text)" }}
+                >
+                  {insight.action.label}
+                  <ArrowUpRight size={12} />
+                </Link>
+              </div>
+            ) : null}
+          </article>
+        ))
       ) : (
         <div className="p-4 text-sm text-[var(--muted)]">
           Todavia no hay insights recientes

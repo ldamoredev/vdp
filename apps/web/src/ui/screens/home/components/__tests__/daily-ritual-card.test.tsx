@@ -27,12 +27,14 @@ describe("DailyRitualCard", () => {
   it("renders a resume CTA when a review is already in progress", () => {
     const markup = renderToStaticMarkup(
       createElement(DailyRitualCard, {
-        statusLabel: "2 de 4 bloques resueltos",
-        href: "/review",
-        ctaLabel: "Retomar ritual",
-        taskCount: 2,
-        walletCount: 1,
-        insightCount: 1,
+        model: {
+          statusLabel: "2 de 4 bloques resueltos",
+          href: "/review",
+          ctaLabel: "Retomar ritual",
+          taskCount: 2,
+          walletCount: 1,
+          insightCount: 1,
+        },
       }),
     );
 

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 export type AgentChatUnavailableReason =
   | "agent_provider_not_configured"
@@ -39,15 +39,35 @@ export async function fetchAgentChatStatus(): Promise<AgentChatStatus> {
 }
 
 export function useAgentChatStatus(): AgentChatStatus & { isLoading: boolean } {
-  const { data, isLoading } = useQuery({
-    queryKey: ["agent-chat-status"],
-    queryFn: fetchAgentChatStatus,
-    staleTime: 60_000,
-    retry: false,
+  const [status, setStatus] = useState<AgentChatStatus>({
+    enabled: false,
+    reason: "agent_status_unavailable",
   });
+  const [isLoading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchAgentChatStatus()
+      .then((nextStatus) => {
+        if (!cancelled) setStatus(nextStatus);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStatus({ enabled: false, reason: "agent_status_unavailable" });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return {
-    ...(data ?? { enabled: false as const, reason: "agent_status_unavailable" }),
+    ...status,
     isLoading,
   };
 }

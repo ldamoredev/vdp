@@ -45,12 +45,15 @@ export abstract class BaseModule implements DomainModule {
 
     bootstrap(): this {
         this.registerServices();
+        this.registerHandlers();
         this.registerEventHandlers();
         this.registerAgents();
         return this;
     }
 
     protected abstract registerServices(): void;
+
+    protected registerHandlers(): void {}
 
     protected abstract registerEventHandlers(): void;
 

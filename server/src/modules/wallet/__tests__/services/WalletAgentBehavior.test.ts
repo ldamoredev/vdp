@@ -1,3 +1,4 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { describe, expect, it } from 'vitest';
 
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
@@ -172,6 +173,7 @@ function createContext(provider: AgentProvider) {
 
     const context: ModuleContext = {
         repositories,
+        bus: new CQBus(),
         services: new ServiceProvider(),
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),

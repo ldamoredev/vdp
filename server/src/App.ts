@@ -7,8 +7,10 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
+import multipart from '@fastify/multipart';
 
 import { Core } from './modules/Core';
+import { MAX_FILE_BYTES } from './modules/medical/domain/file-validation';
 import { HttpController } from './modules/common/http/HttpController';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
@@ -34,6 +36,11 @@ export class App {
         this.app.register(cookie);
         this.app.register(cors, { origin: allowedOrigins });
         this.app.register(helmet, { contentSecurityPolicy: false });
+        // File uploads (medical attachments). One file per request, hard byte
+        // cap mirrored by the domain validator; the route reads request.file().
+        this.app.register(multipart, {
+            limits: { fileSize: MAX_FILE_BYTES, files: 1, fields: 4 },
+        });
         this.app.register(rateLimit, {
             // With the SPA talking to the API directly (no BFF coalescing requests),
             // a fast navigation burst legitimately exceeds the old 100/min budget.

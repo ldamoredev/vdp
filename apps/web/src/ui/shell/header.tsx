@@ -1,6 +1,5 @@
 import { Link } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { ChevronDown, LogOut, Menu, MessageCircle, Settings2, Sparkles } from "lucide-react";
 import { chatStore } from "@/lib/chat-store";
@@ -11,7 +10,6 @@ import { ThemeToggle } from "@/ui/primitives/theme-toggle";
 
 export function Header() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   const agentChat = useAgentChatStatus();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,7 +47,6 @@ export function Header() {
 
   async function handleLogout() {
     await logout();
-    await queryClient.invalidateQueries({ queryKey: ["auth"] });
     navigate("/login", { replace: true });
   }
 

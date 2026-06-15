@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
-import type { CurrentUser } from "@/lib/auth";
+import { clearCurrentUser, setAuthenticatedUser, type CurrentUser } from "@/lib/auth";
 import {
   AuthErrorPayload,
   getFriendlyAuthError,
@@ -48,7 +47,6 @@ export function LoginPageClient({
   notice?: string;
 }) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [mode, setMode] = useState<"loading" | "login" | "register">("loading");
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -112,11 +110,11 @@ export function LoginPageClient({
       }
 
       const payload = (await res.json()) as AuthSuccessPayload;
-      queryClient.setQueryData(["auth", "me"], payload.user);
+      setAuthenticatedUser(payload.user);
 
       const sessionReady = await waitForSessionConfirmation();
       if (!sessionReady) {
-        queryClient.removeQueries({ queryKey: ["auth", "me"], exact: true });
+        clearCurrentUser();
         setError("La sesion no quedo lista a tiempo. Intenta de nuevo.");
         setLoading(false);
         return;

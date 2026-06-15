@@ -9,6 +9,8 @@ export default defineConfig({
     "./src/modules/tasks/infrastructure/db/schema.ts",
     "./src/modules/tasks/infrastructure/db/embeddings-schema.ts",
     "./src/modules/health/infrastructure/db/schema.ts",
+    "./src/modules/medical/infrastructure/db/schema.ts",
+    "./src/modules/common/infrastructure/storage/schema.ts",
   ],
   out: "./src/migrations",
   dialect: "postgresql",

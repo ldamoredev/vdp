@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 
 export type CurrentUser = {
   id: string;
@@ -45,6 +45,33 @@ type SecurityOverviewResponse = {
   events: SecurityEvent[];
 };
 
+type CurrentUserSnapshot = {
+  data: CurrentUser | undefined;
+  error: Error | null;
+  isLoading: boolean;
+  loadedAt: number;
+};
+
+const CURRENT_USER_STALE_MS = 30_000;
+const currentUserSubscribers = new Set<() => void>();
+let currentUserSnapshot: CurrentUserSnapshot = {
+  data: undefined,
+  error: null,
+  isLoading: false,
+  loadedAt: 0,
+};
+let currentUserRequest: Promise<CurrentUser> | null = null;
+let currentUserVersion = 0;
+
+function notifyCurrentUserSubscribers(): void {
+  currentUserSubscribers.forEach((subscriber) => subscriber());
+}
+
+function setCurrentUserSnapshot(update: Partial<CurrentUserSnapshot>): void {
+  currentUserSnapshot = { ...currentUserSnapshot, ...update };
+  notifyCurrentUserSubscribers();
+}
+
 export async function fetchCurrentUser(): Promise<CurrentUser> {
   const response = await fetch("/api/auth/me", {
     cache: "no-store",
@@ -64,6 +91,7 @@ export async function logout(): Promise<void> {
     method: "POST",
     credentials: "same-origin",
   });
+  clearCurrentUser();
 }
 
 export async function updateProfile(
@@ -147,20 +175,151 @@ export async function logoutOtherSessions(): Promise<{ revokedSessions: number }
   return { revokedSessions: data.revokedSessions };
 }
 
-export function useCurrentUser() {
-  return useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: fetchCurrentUser,
-    retry: false,
-    staleTime: 30_000,
+export function setAuthenticatedUser(user: CurrentUser): void {
+  currentUserVersion += 1;
+  setCurrentUserSnapshot({
+    data: user,
+    error: null,
+    isLoading: false,
+    loadedAt: Date.now(),
   });
 }
 
-export function useSecurityOverview() {
-  return useQuery({
-    queryKey: ["auth", "security"],
-    queryFn: fetchSecurityOverview,
-    retry: false,
-    staleTime: 15_000,
+export function clearCurrentUser(): void {
+  currentUserVersion += 1;
+  currentUserRequest = null;
+  setCurrentUserSnapshot({
+    data: undefined,
+    error: new Error("Not authenticated"),
+    isLoading: false,
+    loadedAt: 0,
   });
+}
+
+export async function refreshCurrentUser(force = false): Promise<CurrentUser> {
+  const cachedUser = currentUserSnapshot.data;
+  const fresh =
+    cachedUser &&
+    !currentUserSnapshot.error &&
+    Date.now() - currentUserSnapshot.loadedAt < CURRENT_USER_STALE_MS;
+
+  if (!force && fresh) {
+    return cachedUser;
+  }
+
+  if (currentUserRequest) {
+    return currentUserRequest;
+  }
+
+  const requestVersion = currentUserVersion + 1;
+  currentUserVersion = requestVersion;
+  setCurrentUserSnapshot({ isLoading: true, error: null });
+  const request = fetchCurrentUser()
+    .then((user) => {
+      if (requestVersion === currentUserVersion) {
+        setCurrentUserSnapshot({
+          data: user,
+          error: null,
+          isLoading: false,
+          loadedAt: Date.now(),
+        });
+      }
+      return user;
+    })
+    .catch((error: unknown) => {
+      const nextError = error instanceof Error ? error : new Error("Not authenticated");
+      if (requestVersion === currentUserVersion) {
+        setCurrentUserSnapshot({
+          data: undefined,
+          error: nextError,
+          isLoading: false,
+          loadedAt: 0,
+        });
+      }
+      throw nextError;
+    })
+    .finally(() => {
+      if (currentUserRequest === request) {
+        currentUserRequest = null;
+      }
+    });
+
+  currentUserRequest = request;
+  return currentUserRequest;
+}
+
+export function useCurrentUser() {
+  const [snapshot, setSnapshot] = useState(currentUserSnapshot);
+
+  useEffect(() => {
+    const subscriber = () => setSnapshot(currentUserSnapshot);
+    currentUserSubscribers.add(subscriber);
+    void refreshCurrentUser().catch(() => {});
+
+    return () => {
+      currentUserSubscribers.delete(subscriber);
+    };
+  }, []);
+
+  const refetch = useCallback(() => refreshCurrentUser(true), []);
+
+  return {
+    data: snapshot.data,
+    error: snapshot.error,
+    isLoading: snapshot.isLoading,
+    isError: snapshot.error !== null,
+    refetch,
+  };
+}
+
+export function useSecurityOverview() {
+  const [data, setData] = useState<SecurityOverviewResponse | undefined>(undefined);
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const overview = await fetchSecurityOverview();
+      setData(overview);
+      return overview;
+    } catch (caught) {
+      const nextError = caught instanceof Error ? caught : new Error("No se pudo cargar la seguridad");
+      setError(nextError);
+      throw nextError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchSecurityOverview()
+      .then((overview) => {
+        if (!cancelled) setData(overview);
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setError(caught instanceof Error ? caught : new Error("No se pudo cargar la seguridad"));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return {
+    data,
+    error,
+    isLoading,
+    isError: error !== null,
+    refetch,
+  };
 }

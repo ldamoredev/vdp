@@ -56,6 +56,7 @@ export default function ReviewPage() {
           transaction={vm.editSheet.transaction}
           open={vm.editSheet.open}
           onClose={() => presenter.closeEdit()}
+          onSaved={() => void presenter.transactionUpdated()}
         />
       ) : null}
     </ModulePage>

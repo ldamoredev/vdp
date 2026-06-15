@@ -1,5 +1,7 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { CreateHabitCommand, CreateHabitCommandHandler } from './app/CreateHabitCommand';
+import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from './app/GetHabitsOverviewQuery';
 import { HabitRepository } from './domain/HabitRepository';
 import { CounterRepository } from './domain/CounterRepository';
 import { GoalRepository } from './domain/GoalRepository';
@@ -53,6 +55,16 @@ export class HealthModuleRuntime {
         );
     }
 
+    registerHandlers(): void {
+        this.deps.bus.registerHandler(GetHabitsOverviewQuery, () =>
+            new GetHabitsOverviewQueryHandler(this.habitRepository()),
+        );
+
+        this.deps.bus.registerHandler(CreateHabitCommand, () =>
+            new CreateHabitCommandHandler(this.habitRepository())
+        );
+    }
+
     registerEventHandlers(): void {
         // Health only emits events; the cross-domain reactions live in Tasks.
     }
@@ -74,7 +86,7 @@ export class HealthModuleRuntime {
 
     createControllers() {
         return [
-            new HealthController(this.deps.services),
+            new HealthController(this.deps.bus, this.deps.services),
             new HealthAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
         ];
     }

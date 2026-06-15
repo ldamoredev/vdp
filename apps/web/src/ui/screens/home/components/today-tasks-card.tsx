@@ -1,65 +1,25 @@
+import type { FormEvent } from "react";
 import { Link } from "react-router";
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, CheckCircle2, ListChecks, Plus } from "lucide-react";
-import { useCore } from "@/CoreProvider";
 import { CollectionCard } from "@/ui/primitives/collection-card";
-import { CompleteTask } from "@/core/app/tasks/CompleteTask";
-import { CreateTask } from "@/core/app/tasks/CreateTask";
-import type { Task } from "@/core/domain/tasks/Task";
-import { useTasksEvents } from "@/TasksEventsProvider";
-import { formatDateShort, getTodayISO, priorityBadge, priorityLabel } from "@/lib/format";
-import { homeTaskQueryKeys } from "../home-query-keys";
+import type { HomeTodayTasksViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface TodayTasksCardProps {
-  readonly tasks: readonly Task[];
+  readonly model: HomeTodayTasksViewModel;
+  readonly onTitleChange: (title: string) => void;
+  readonly onCreate: () => void;
+  readonly onComplete: (taskId: string) => void;
 }
 
-export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
-  const core = useCore();
-  const queryClient = useQueryClient();
-  const tasksEvents = useTasksEvents();
-  const today = getTodayISO();
-  const [newTitle, setNewTitle] = useState("");
-  const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
-
-  function refreshTasks() {
-    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.taskStats });
-    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.tasksToday(today) });
-    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.review(today) });
-    void queryClient.invalidateQueries({ queryKey: homeTaskQueryKeys.trend(7) });
-    void queryClient.invalidateQueries({ queryKey: ["home", "tasks"] });
-    void tasksEvents.emitTasksChanged();
-  }
-
-  const createMutation = useMutation({
-    mutationFn: (input: { title: string; priority: number }) => core.execute(new CreateTask(input)),
-    onSuccess: () => {
-      setNewTitle("");
-      refreshTasks();
-    },
-  });
-
-  const completeMutation = useMutation({
-    mutationFn: (taskId: string) => core.execute(new CompleteTask(taskId)),
-    onMutate: (taskId) => {
-      setBusyIds((current) => new Set(current).add(taskId));
-    },
-    onSettled: (_data, _error, taskId) => {
-      setBusyIds((current) => {
-        const next = new Set(current);
-        next.delete(taskId);
-        return next;
-      });
-    },
-    onSuccess: refreshTasks,
-  });
-
-  function handleCreate(event: React.FormEvent) {
+export function TodayTasksCard({
+  model,
+  onTitleChange,
+  onCreate,
+  onComplete,
+}: TodayTasksCardProps) {
+  function handleCreate(event: FormEvent) {
     event.preventDefault();
-    const trimmed = newTitle.trim();
-    if (!trimmed || createMutation.isPending) return;
-    createMutation.mutate({ title: trimmed, priority: 2 });
+    onCreate();
   }
 
   return (
@@ -80,15 +40,15 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
     >
         <form onSubmit={handleCreate} className="flex items-center gap-2 p-3">
           <input
-            value={newTitle}
-            onChange={(event) => setNewTitle(event.target.value)}
+            value={model.newTitle}
+            onChange={(event) => onTitleChange(event.target.value)}
             placeholder="Agregar tarea para hoy..."
-            disabled={createMutation.isPending}
+            disabled={model.isCreating}
             className="glass-input min-w-0 flex-1 px-3 py-2 text-sm"
           />
           <button
             type="submit"
-            disabled={!newTitle.trim() || createMutation.isPending}
+            disabled={!model.canCreate}
             aria-label="Agregar tarea"
             className="btn-primary shrink-0 p-2 disabled:opacity-30"
           >
@@ -96,13 +56,19 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
           </button>
         </form>
 
-        {tasks.length > 0 ? (
-          tasks.map((task) => (
+        {model.createError ? (
+          <div className="px-3 pb-3 text-xs text-[var(--red-soft-text)]">
+            {model.createError}
+          </div>
+        ) : null}
+
+        {model.tasks.length > 0 ? (
+          model.tasks.map((task) => (
             <div
               key={task.id}
               className="flex items-center gap-3 p-3 transition-colors hover:bg-[var(--hover-overlay)]"
             >
-              {task.status === "done" ? (
+              {task.completed ? (
                 <CheckCircle2
                   size={16}
                   style={{ color: "var(--emerald-soft-text)" }}
@@ -111,8 +77,8 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => completeMutation.mutate(task.id)}
-                  disabled={busyIds.has(task.id)}
+                  onClick={() => onComplete(task.id)}
+                  disabled={task.busy}
                   aria-label={`Marcar "${task.title}" como hecha`}
                   className="group flex h-4 w-4 shrink-0 items-center justify-center rounded-md border border-[var(--glass-border)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
                 >
@@ -125,7 +91,7 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
               <div className="min-w-0 flex-1">
                 <span
                   className={`text-sm ${
-                    task.status === "done"
+                    task.completed
                       ? "text-[var(--muted)] line-through"
                       : "text-[var(--foreground)]"
                   }`}
@@ -133,11 +99,11 @@ export function TodayTasksCard({ tasks }: TodayTasksCardProps) {
                   {task.title}
                 </span>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className={`badge text-[10px] ${priorityBadge(task.priority)}`}>
-                    {priorityLabel(task.priority)}
+                  <span className={`badge text-[10px] ${task.priorityBadgeClassName}`}>
+                    {task.priorityLabel}
                   </span>
                   <span className="text-[10px] text-[var(--muted)]">
-                    {formatDateShort(task.scheduledDate)}
+                    {task.scheduledDateLabel}
                   </span>
                 </div>
               </div>

@@ -1,25 +1,12 @@
 import { Link } from "react-router";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import type { HomeRitualViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface DailyRitualCardProps {
-  statusLabel: string;
-  href: string;
-  ctaLabel: string;
-  taskCount: number;
-  walletCount: number;
-  insightCount: number;
-  noteSummary?: string;
+  readonly model: HomeRitualViewModel;
 }
 
-export function DailyRitualCard({
-  statusLabel,
-  href,
-  ctaLabel,
-  taskCount,
-  walletCount,
-  insightCount,
-  noteSummary,
-}: DailyRitualCardProps) {
+export function DailyRitualCard({ model }: DailyRitualCardProps) {
   return (
     <div className="glass-card-static overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-[var(--glass-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -30,7 +17,7 @@ export function DailyRitualCard({
           </h3>
         </div>
         <span className="rounded-full border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--foreground)]">
-          {statusLabel}
+          {model.statusLabel}
         </span>
       </div>
 
@@ -39,38 +26,38 @@ export function DailyRitualCard({
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Tareas</div>
             <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
-              {taskCount}
+              {model.taskCount}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Wallet</div>
             <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
-              {walletCount}
+              {model.walletCount}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-3">
             <div className="text-xs text-[var(--muted)]">Alertas</div>
             <div className="mt-1 text-2xl font-data font-bold tracking-tight text-[var(--foreground)]">
-              {insightCount}
+              {model.insightCount}
             </div>
           </div>
         </div>
 
-        {noteSummary ? (
+        {model.noteSummary ? (
           <div className="rounded-xl border border-[var(--emerald-soft-border)] bg-[var(--emerald-soft-bg)] p-3 text-sm text-[var(--foreground)]">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} className="text-[var(--emerald-soft-text)]" />
-              {noteSummary}
+              {model.noteSummary}
             </div>
           </div>
         ) : null}
 
         <Link
-          to={href}
+          to={model.href}
           className="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] px-3 py-3 text-sm font-medium transition-colors sm:w-auto sm:justify-start"
           style={{ color: "var(--violet-soft-text)" }}
         >
-          {ctaLabel}
+          {model.ctaLabel}
           <ArrowRight size={14} />
         </Link>
       </div>

@@ -1,6 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { HomeWalletSnapshotViewModel } from "@/ui/models/home/HomeViewModel";
 import { WalletSnapshotCard } from "../wallet-snapshot-card";
 
 vi.mock("react-router", () => ({
@@ -16,64 +17,50 @@ vi.mock("react-router", () => ({
   useSearchParams: () => [new URLSearchParams(), () => {}],
 }));
 
-afterEach(() => {
-  vi.useRealTimers();
-});
+function wallet(overrides: Partial<HomeWalletSnapshotViewModel> = {}): HomeWalletSnapshotViewModel {
+  return {
+    isLoading: false,
+    netBalanceLabel: "$ 4.100,25",
+    incomeLabel: "+$ 12.500,50",
+    expensesLabel: "-$ 8.400,25",
+    transactionCountLabel: "12 movimientos",
+    activityLabel: "Ayer",
+    recentTransactions: [
+      {
+        id: "txn-1",
+        descriptionLabel: "Coffee run",
+        dateLabel: "04 abr 2026",
+        amountLabel: "-$ 1.599,99",
+        tone: "expense",
+      },
+      {
+        id: "txn-2",
+        descriptionLabel: "Invoice payment",
+        dateLabel: "03 abr 2026",
+        amountLabel: "+$ 2.200,00",
+        tone: "income",
+      },
+    ],
+    ...overrides,
+  };
+}
 
 describe("WalletSnapshotCard", () => {
   it("shows a loading state while wallet data is still resolving", () => {
     const markup = renderToStaticMarkup(
       createElement(WalletSnapshotCard, {
-        isLoading: true,
-        stats: undefined,
-        recentTransactions: [],
+        model: wallet({ isLoading: true, recentTransactions: [] }),
       }),
     );
 
     expect(markup).toContain('aria-busy="true"');
-    expect(markup).not.toContain("0 movimientos");
+    expect(markup).not.toContain("12 movimientos");
     expect(markup).not.toContain("Todavia no hay movimientos recientes");
   });
 
-  it("derives the activity badge from the newest transaction date", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-05T12:00:00.000Z"));
-
+  it("renders the snapshot supplied by the presenter", () => {
     const markup = renderToStaticMarkup(
-      createElement(WalletSnapshotCard, {
-        stats: {
-          totalIncome: "12500.5",
-          totalExpenses: "8400.25",
-          netBalance: "4100.25",
-          transactionCount: 12,
-        },
-        recentTransactions: [
-          {
-            id: "txn-1",
-            accountId: "acc-1",
-            categoryId: null,
-            type: "expense",
-            amount: "1599.99",
-            currency: "ARS",
-            description: "Coffee run",
-            date: "2026-04-04",
-            tags: [],
-            createdAt: "2026-04-04T09:00:00.000Z",
-          },
-          {
-            id: "txn-2",
-            accountId: "acc-1",
-            categoryId: null,
-            type: "income",
-            amount: "2200",
-            currency: "ARS",
-            description: "Invoice payment",
-            date: "2026-04-03",
-            tags: [],
-            createdAt: "2026-04-03T09:00:00.000Z",
-          },
-        ],
-      }),
+      createElement(WalletSnapshotCard, { model: wallet() }),
     );
 
     expect(markup).toContain("Resumen Wallet");
@@ -84,6 +71,5 @@ describe("WalletSnapshotCard", () => {
     expect(markup).toContain("/wallet/transactions/new");
     expect(markup).toContain("Coffee run");
     expect(markup).toContain("Ayer");
-    expect(markup).not.toContain("Hoy");
   });
 });

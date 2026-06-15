@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router";
 import {
   ArrowDownLeft,
@@ -6,54 +5,17 @@ import {
   ArrowUpRight,
   Wallet,
 } from "lucide-react";
-import { formatDateShort, formatMoney, formatRelative } from "@/lib/format";
-import type { Transaction, WalletStatsSummary } from "@/lib/api/types";
+import type { HomeWalletSnapshotViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface WalletSnapshotCardProps {
-  readonly stats: WalletStatsSummary | undefined;
-  readonly recentTransactions: readonly Transaction[];
-  readonly isLoading?: boolean;
+  readonly model: HomeWalletSnapshotViewModel;
 }
 
-export function WalletSnapshotCard({
-  stats,
-  recentTransactions,
-  isLoading = false,
-}: WalletSnapshotCardProps) {
-  const income = Number(stats?.totalIncome ?? 0);
-  const expenses = Number(stats?.totalExpenses ?? 0);
-  const netBalance = Number(stats?.netBalance ?? 0);
-  const transactionCount = stats?.transactionCount ?? recentTransactions.length;
-  const latestTransactions = recentTransactions.slice(0, 3);
-  const newestTransaction = recentTransactions.reduce<Transaction | undefined>(
-    (latest, transaction) => {
-      if (!latest) return transaction;
-      return transaction.date > latest.date ? transaction : latest;
-    },
-    undefined,
-  );
-  const activityLabel = newestTransaction
-    ? formatRelative(newestTransaction.date)
-    : "Recientes";
-
-  if (isLoading) {
+export function WalletSnapshotCard({ model }: WalletSnapshotCardProps) {
+  if (model.isLoading) {
     return (
       <div className="glass-card-static overflow-hidden" aria-busy="true">
-        <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
-          <div className="flex items-center gap-2">
-            <Wallet size={16} style={{ color: "var(--blue-soft-text)" }} />
-            <h3 className="text-sm font-medium text-[var(--foreground)]">
-              Resumen Wallet
-            </h3>
-          </div>
-          <Link
-            to="/wallet/transactions/new"
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--blue-soft-text)] transition-colors hover:text-[var(--accent)]"
-          >
-            Nueva transaccion
-            <ArrowRight size={12} />
-          </Link>
-        </div>
+        <Header />
 
         <div className="space-y-4 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -80,21 +42,7 @@ export function WalletSnapshotCard({
 
   return (
     <div className="glass-card-static overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
-        <div className="flex items-center gap-2">
-          <Wallet size={16} style={{ color: "var(--blue-soft-text)" }} />
-          <h3 className="text-sm font-medium text-[var(--foreground)]">
-            Resumen Wallet
-          </h3>
-        </div>
-        <Link
-          to="/wallet/transactions/new"
-          className="flex items-center gap-1.5 text-xs font-medium text-[var(--blue-soft-text)] transition-colors hover:text-[var(--accent)]"
-        >
-          Nueva transaccion
-          <ArrowRight size={12} />
-        </Link>
-      </div>
+      <Header />
 
       <div className="space-y-4 p-4">
         <div className="space-y-3">
@@ -104,7 +52,7 @@ export function WalletSnapshotCard({
               <ArrowUpRight size={13} className="text-[var(--accent-green)]" />
             </div>
             <div className="truncate text-lg font-bold tracking-tight tabular-nums text-[var(--foreground)]">
-              {formatMoney(netBalance, "ARS")}
+              {model.netBalanceLabel}
             </div>
           </div>
 
@@ -115,7 +63,7 @@ export function WalletSnapshotCard({
                 <ArrowDownLeft size={13} className="text-[var(--accent-green)]" />
               </div>
               <div className="truncate text-sm font-bold tracking-tight tabular-nums text-[var(--accent-green)]">
-                +{formatMoney(income, "ARS")}
+                {model.incomeLabel}
               </div>
             </div>
 
@@ -125,7 +73,7 @@ export function WalletSnapshotCard({
                 <ArrowUpRight size={13} className="text-[var(--accent-red)]" />
               </div>
               <div className="truncate text-sm font-bold tracking-tight tabular-nums text-[var(--accent-red)]">
-                -{formatMoney(expenses, "ARS")}
+                {model.expensesLabel}
               </div>
             </div>
           </div>
@@ -136,39 +84,35 @@ export function WalletSnapshotCard({
             <div>
               <div className="text-xs text-[var(--muted)]">Actividad reciente</div>
               <div className="text-sm font-medium text-[var(--foreground)]">
-                {transactionCount} movimientos
+                {model.transactionCountLabel}
               </div>
             </div>
-            <span className="badge-muted badge">{activityLabel}</span>
+            <span className="badge-muted badge">{model.activityLabel}</span>
           </div>
 
-          {latestTransactions.length > 0 ? (
+          {model.recentTransactions.length > 0 ? (
             <div className="space-y-2">
-              {latestTransactions.map((transaction) => (
+              {model.recentTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between rounded-lg border border-[var(--glass-border)] bg-[var(--background-secondary)] px-3 py-2"
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-[var(--foreground)]">
-                      {transaction.description || transaction.type}
+                      {transaction.descriptionLabel}
                     </div>
                     <div className="text-[11px] text-[var(--muted)]">
-                      {formatDateShort(transaction.date)}
+                      {transaction.dateLabel}
                     </div>
                   </div>
                   <div
                     className={`text-sm font-semibold tabular-nums ${
-                      transaction.type === "income"
+                      transaction.tone === "income"
                         ? "text-[var(--accent-green)]"
                         : "text-[var(--accent-red)]"
                     }`}
                   >
-                    {transaction.type === "income" ? "+" : "-"}
-                    {formatMoney(
-                      transaction.amount,
-                      transaction.currency as "ARS" | "USD",
-                    )}
+                    {transaction.amountLabel}
                   </div>
                 </div>
               ))}
@@ -180,6 +124,26 @@ export function WalletSnapshotCard({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Header() {
+  return (
+    <div className="flex items-center justify-between border-b border-[var(--glass-border)] p-4">
+      <div className="flex items-center gap-2">
+        <Wallet size={16} style={{ color: "var(--blue-soft-text)" }} />
+        <h3 className="text-sm font-medium text-[var(--foreground)]">
+          Resumen Wallet
+        </h3>
+      </div>
+      <Link
+        to="/wallet/transactions/new"
+        className="flex items-center gap-1.5 text-xs font-medium text-[var(--blue-soft-text)] transition-colors hover:text-[var(--accent)]"
+      >
+        Nueva transaccion
+        <ArrowRight size={12} />
+      </Link>
     </div>
   );
 }

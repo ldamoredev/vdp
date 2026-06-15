@@ -19,7 +19,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters and H2 goals. **Paused after H2 (June 2026)** in favor of the Architecture Track below.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Phase 4 resumes (P1 → H3v0 → P2 → P3) when it completes.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **next is A6 (CQBus on the api)**. Phase 4 resumes (P1 → H3v0 → P2 → P3) when the track completes.
 
 ## Phase 0: Recovery
 
@@ -175,7 +175,7 @@ variant), `create-agent-tool`. Wave 2 (web generators, built on the A2 template)
 `create-service-web`, `create-presenter-web`. Generators are manual-invoke. Design
 rationale and owner resolutions: analysis doc §10.
 
-### A5. Frontend migration by module
+### A5. Frontend migration by module — SHIPPED June 2026
 
 Order **reordered (June 2026)** from the original review→home→tasks→wallet: review
 and home are cross-domain aggregators that depend on tasks and wallet (they read
@@ -185,6 +185,14 @@ presenter call legacy APIs. New order: **tasks → wallet → review → home �
 Each is multi-session (tasks ~3.8k LOC, wallet ~4.8k); per-feature gate, legacy folder
 deleted at the end of each. Coexistence rules (one-way import ratchet, RQ provider stays
 until the last consumer dies): analysis doc §8.
+
+Shipped state: Tasks, Wallet, Review, Home, and shell/auth/chat residuals now run through
+the frontend `core/`, presenters, or small local UI stores/hooks. Legacy
+`features/tasks`, `features/wallet`, and `features/home` are gone; React Query has no
+remaining source usage and was removed from `apps/web` dependencies and lockfile. The
+final residual cleanup covered auth/session reads, settings mutations, login cache
+seeding, header logout invalidation, agent chat status, and the Review wallet edit
+sheet refresh path.
 
 ### A6. CQBus on the api
 

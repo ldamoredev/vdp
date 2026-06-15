@@ -5,22 +5,13 @@ import {
   ListChecks,
   TrendingUp,
 } from "lucide-react";
+import type { HomeStatsViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface TaskStatsRowProps {
-  readonly tasksCompleted: number;
-  readonly tasksTotal: number;
-  readonly tasksPending: number;
-  readonly tasksPct: number;
-  readonly averageCompletion: number;
+  readonly stats: HomeStatsViewModel;
 }
 
-export function TaskStatsRow({
-  tasksCompleted,
-  tasksTotal,
-  tasksPending,
-  tasksPct,
-  averageCompletion,
-}: TaskStatsRowProps) {
+export function TaskStatsRow({ stats }: TaskStatsRowProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 stagger-children">
       <Link
@@ -46,16 +37,16 @@ export function TaskStatsRow({
         </div>
         <div className="flex items-baseline gap-1.5">
           <span className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
-            {tasksCompleted}
+            {stats.tasksCompleted}
           </span>
           <span className="text-sm text-[var(--muted)]">
-            / {tasksTotal}
+            / {stats.tasksTotal}
           </span>
         </div>
         <div className="progress-bar mt-3">
           <div
             className="progress-bar-fill"
-            style={{ width: `${tasksPct}%`, background: "#8B5CF6" }}
+            style={{ width: `${stats.tasksPct}%`, background: "#8B5CF6" }}
           />
         </div>
       </Link>
@@ -76,10 +67,10 @@ export function TaskStatsRow({
           <span className="badge-muted badge">Hoy</span>
         </div>
         <div className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
-          {tasksPending}
+          {stats.tasksPending}
         </div>
         <span className="mt-1.5 block text-xs text-[var(--muted)]">
-          {tasksPending === 0 ? "Dia limpio" : "Quedan tareas abiertas"}
+          {stats.tasksPending === 0 ? "Dia limpio" : "Quedan tareas abiertas"}
         </span>
       </div>
 
@@ -105,7 +96,7 @@ export function TaskStatsRow({
           />
         </div>
         <div className="text-3xl font-data font-bold tracking-tight text-[var(--foreground)]">
-          {averageCompletion}%
+          {stats.averageCompletion}%
         </div>
         <span className="mt-1.5 block text-xs text-[var(--muted)]">
           Tasa media de completacion en 7 dias

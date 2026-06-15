@@ -22,6 +22,10 @@ export class HealthModule extends BaseModule {
         this.runtime.registerServices();
     }
 
+    protected registerHandlers() {
+        this.runtime.registerHandlers();
+    }
+
     protected registerEventHandlers() {
         this.runtime.registerEventHandlers();
     }

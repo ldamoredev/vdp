@@ -5,6 +5,7 @@ import { registerAuthRepositories } from './auth/infrastructure/db/bindings';
 import { registerTasksRepositories } from './tasks/infrastructure/db/bindings';
 import { registerWalletRepositories } from './wallet/infrastructure/db/bindings';
 import { registerHealthRepositories } from './health/infrastructure/db/bindings';
+import { registerMedicalRepositories } from './medical/infrastructure/db/bindings';
 
 /**
  * Composes the repository bindings of every active module. Like
@@ -21,5 +22,6 @@ export function createDefaultRepositoryRegistry(db: Database): RepositoryRegistr
     registerTasksRepositories(registry, db);
     registerWalletRepositories(registry, db);
     registerHealthRepositories(registry, db);
+    registerMedicalRepositories(registry, db);
     return registry;
 }

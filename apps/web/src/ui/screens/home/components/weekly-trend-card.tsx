@@ -1,8 +1,8 @@
 import { TrendingUp } from "lucide-react";
-import type { TaskTrendDay } from "@/lib/api/types";
+import type { HomeTrendDayViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface WeeklyTrendCardProps {
-  readonly trend: readonly TaskTrendDay[] | undefined;
+  readonly trend: readonly HomeTrendDayViewModel[];
 }
 
 export function WeeklyTrendCard({ trend }: WeeklyTrendCardProps) {
@@ -18,18 +18,18 @@ export function WeeklyTrendCard({ trend }: WeeklyTrendCardProps) {
         <span className="text-xs text-[var(--muted)]">Ultimos 7 dias</span>
       </div>
       <div className="space-y-3 p-4">
-        {trend && trend.length > 0 ? (
+        {trend.length > 0 ? (
           trend.map((day) => (
             <div key={day.date} className="flex items-center gap-3">
               <div className="w-16 text-xs text-[var(--muted)]">
-                {day.date.slice(5)}
+                {day.dateLabel}
               </div>
               <div className="flex-1">
                 <div className="progress-bar">
                   <div
                     className="progress-bar-fill"
                     style={{
-                      width: `${Math.max(day.completionRate, 4)}%`,
+                      width: `${day.barWidth}%`,
                       background:
                         "linear-gradient(to right, var(--accent), var(--accent-secondary))",
                     }}

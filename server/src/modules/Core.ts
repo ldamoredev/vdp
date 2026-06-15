@@ -1,3 +1,5 @@
+import { CQBus } from '@nbottarini/cqbus';
+
 import { DomainModule } from './common/base/modules/DomainModule';
 import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
 import { DomainModuleDescriptor } from './common/base/modules/DomainModuleDescriptor';
@@ -15,12 +17,14 @@ import { EmbeddingProvider } from './common/base/embeddings/EmbeddingProvider';
 import { Logger } from './common/base/observability/logging/Logger';
 import { AuthContextStorage } from './common/http/AuthContextStorage';
 import { HttpMiddleWare } from './common/http/HttpMiddleWare';
+import { AuthenticationMiddleware } from './common/app/auth/AuthenticationMiddleware';
 
 export class Core {
     public readonly logger: Logger;
     public readonly eventBus: EventBus;
     public readonly agentRegistry: AgentRegistry;
     public readonly sseBroadcaster: SSEBroadcaster;
+    public readonly bus: CQBus = new CQBus();
     public readonly services: ServiceProvider = new ServiceProvider();
     private readonly llmTraceService: LLMTraceService;
     private readonly traceService: TraceService;
@@ -38,6 +42,7 @@ export class Core {
         this.llmTraceService = config.llmTraceService;
         this.traceService = config.traceService;
         this.authContextStorage = config.authContextStorage;
+        this.bus.registerMiddleware(new AuthenticationMiddleware(this.authContextStorage));
         this.moduleContext = this.createModuleContext(config);
         this.modules = this.bootstrapModules(config.moduleFactories);
     }
@@ -45,6 +50,7 @@ export class Core {
     private createModuleContext(config: CoreConfig): ModuleContext {
         return {
             repositories: this.repositories,
+            bus: this.bus,
             services: this.services,
             eventBus: this.eventBus,
             agentRegistry: this.agentRegistry,

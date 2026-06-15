@@ -36,6 +36,13 @@
       "when": 1781276566927,
       "tag": "0004_useful_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781547888431,
+      "tag": "0005_faulty_stardust",
+      "breakpoints": true
     }
   ]
 }

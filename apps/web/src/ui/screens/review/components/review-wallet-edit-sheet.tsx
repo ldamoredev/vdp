@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useCore } from "@/CoreProvider";
 import { GetAccounts } from "@/core/app/wallet/GetAccounts";
 import { GetCategories } from "@/core/app/wallet/GetCategories";
 import { UpdateTransaction } from "@/core/app/wallet/UpdateTransaction";
+import type { Account } from "@/core/domain/wallet/Account";
+import type { Category } from "@/core/domain/wallet/Category";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
 import type { UpdateTransactionInput } from "@/core/domain/wallet/WalletGateway";
 import type {
@@ -17,6 +18,7 @@ interface ReviewWalletEditSheetProps {
   transaction: Transaction;
   open: boolean;
   onClose: () => void;
+  onSaved: () => void;
 }
 
 interface EditFormState {
@@ -73,11 +75,14 @@ export function ReviewWalletEditSheet({
   transaction,
   open,
   onClose,
+  onSaved,
 }: ReviewWalletEditSheetProps) {
   const core = useCore();
-  const queryClient = useQueryClient();
   const [form, setForm] = useState(() => buildForm(transaction));
   const [message, setMessage] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isSubmitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -85,29 +90,27 @@ export function ReviewWalletEditSheet({
     setMessage(null);
   }, [open, transaction]);
 
-  const { data: accounts } = useQuery({
-    queryKey: ["review", "wallet", "edit", "accounts"],
-    queryFn: () => core.execute(new GetAccounts()),
-    enabled: open,
-  });
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
 
-  const { data: categories } = useQuery({
-    queryKey: ["review", "wallet", "edit", "categories"],
-    queryFn: () => core.execute(new GetCategories()),
-    enabled: open,
-  });
+    Promise.all([
+      core.execute(new GetAccounts()),
+      core.execute(new GetCategories()),
+    ])
+      .then(([nextAccounts, nextCategories]) => {
+        if (cancelled) return;
+        setAccounts(nextAccounts);
+        setCategories(nextCategories);
+      })
+      .catch(() => {
+        if (!cancelled) setMessage("No se pudieron cargar las opciones de edicion");
+      });
 
-  const mutation = useMutation({
-    mutationFn: (input: UpdateTransactionInput) =>
-      core.execute(new UpdateTransaction(transaction.id, input)),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["review", "wallet"] });
-      onClose();
-    },
-    onError: () => {
-      setMessage("No se pudo guardar la transaccion");
-    },
-  });
+    return () => {
+      cancelled = true;
+    };
+  }, [core, open]);
 
   function setEditField(field: EditTransactionFormField, value: string): void {
     setForm((current) => ({ ...current, [field]: value }));
@@ -128,9 +131,13 @@ export function ReviewWalletEditSheet({
     }
 
     try {
-      await mutation.mutateAsync(payload);
+      setSubmitting(true);
+      await core.execute(new UpdateTransaction(transaction.id, payload));
+      onSaved();
     } catch {
-      // The mutation onError path exposes the user-facing message.
+      setMessage("No se pudo guardar la transaccion");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -143,19 +150,19 @@ export function ReviewWalletEditSheet({
     categoryId: form.categoryId,
     description: form.description,
     date: form.date,
-    accountOptions: (accounts ?? []).map((account) => ({
+    accountOptions: accounts.map((account) => ({
       value: account.id,
       label: `${account.name} (${account.currency})`,
     })),
-    categoryOptions: (categories ?? [])
+    categoryOptions: categories
       .filter((category) => category.type === transaction.type)
       .map((category) => ({
         value: category.id,
         label: `${category.icon ? `${category.icon} ` : ""}${category.name}`,
-      })),
+    })),
     message,
-    isSubmitting: mutation.isPending,
-    canSubmit: !mutation.isPending,
+    isSubmitting,
+    canSubmit: !isSubmitting,
   };
 
   return (

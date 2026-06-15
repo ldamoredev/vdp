@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
@@ -23,6 +22,7 @@ import {
   changePassword,
   logout,
   logoutOtherSessions,
+  setAuthenticatedUser,
   type SecurityEvent,
   type SecuritySession,
   useSecurityOverview,
@@ -33,7 +33,6 @@ import { ModulePage } from "@/ui/primitives/module-page";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   const [displayName, setDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -44,7 +43,16 @@ export default function SettingsPage() {
   const [securityMessage, setSecurityMessage] = useState<string | null>(null);
   const [securityTone, setSecurityTone] = useState<"success" | "warning" | "neutral">("neutral");
   const [discardTarget, setDiscardTarget] = useState<"profile" | "password" | null>(null);
-  const { data: securityOverview, isLoading: securityLoading } = useSecurityOverview();
+  const {
+    data: securityOverview,
+    isLoading: securityLoading,
+    refetch: refetchSecurityOverview,
+  } = useSecurityOverview();
+  const [isSavingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [isChangingPassword, setChangingPassword] = useState(false);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [isLoggingOutOthers, setLoggingOutOthers] = useState(false);
 
   const currentDisplayName = currentUser?.displayName ?? "";
   const normalizedDisplayName = displayName.trim();
@@ -84,63 +92,6 @@ export default function SettingsPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  const profileMutation = useMutation({
-    mutationFn: updateProfile,
-    onMutate: () => {
-      setProfileMessage(null);
-    },
-    onSuccess: async () => {
-      setProfileMessage("Nombre actualizado. Tu sesion ya refleja el cambio.");
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
-    },
-    onError: (error) => {
-      setProfileMessage(error instanceof Error ? error.message : "No se pudo actualizar el perfil.");
-    },
-  });
-
-  const passwordMutation = useMutation({
-    mutationFn: changePassword,
-    onMutate: () => {
-      setPasswordMessage(null);
-    },
-    onSuccess: async () => {
-      setPasswordMessage("Contraseña actualizada. Vas a iniciar sesion de nuevo.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
-      navigate("/login?message=password-changed", { replace: true });
-    },
-    onError: (error) => {
-      setPasswordMessage(error instanceof Error ? error.message : "No se pudo cambiar la contraseña.");
-    },
-  });
-
-  const logoutOthersMutation = useMutation({
-    mutationFn: logoutOtherSessions,
-    onMutate: () => {
-      setSecurityMessage(null);
-      setSecurityTone("neutral");
-    },
-    onSuccess: async ({ revokedSessions }) => {
-      setSecurityTone(revokedSessions > 0 ? "success" : "neutral");
-      setSecurityMessage(
-        revokedSessions > 0
-          ? `Se cerraron ${revokedSessions} ${revokedSessions === 1 ? "sesion remota" : "sesiones remotas"}.`
-          : "No habia otras sesiones activas para cerrar.",
-      );
-      await queryClient.invalidateQueries({ queryKey: ["auth", "security"] });
-    },
-    onError: (error) => {
-      setSecurityTone("warning");
-      setSecurityMessage(
-        error instanceof Error
-          ? error.message
-          : "No se pudieron cerrar las otras sesiones.",
-      );
-    },
-  });
-
   async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextName = normalizedDisplayName;
@@ -151,7 +102,19 @@ export default function SettingsPage() {
       return;
     }
 
-    await profileMutation.mutateAsync({ displayName: nextName });
+    setProfileMessage(null);
+    setProfileSaved(false);
+    setSavingProfile(true);
+    try {
+      const user = await updateProfile({ displayName: nextName });
+      setAuthenticatedUser(user);
+      setProfileSaved(true);
+      setProfileMessage("Nombre actualizado. Tu sesion ya refleja el cambio.");
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "No se pudo actualizar el perfil.");
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -167,10 +130,22 @@ export default function SettingsPage() {
       return;
     }
 
-    await passwordMutation.mutateAsync({
-      currentPassword,
-      newPassword,
-    });
+    setPasswordMessage(null);
+    setPasswordSaved(false);
+    setChangingPassword(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setPasswordSaved(true);
+      setPasswordMessage("Contraseña actualizada. Vas a iniciar sesion de nuevo.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      navigate("/login?message=password-changed", { replace: true });
+    } catch (error) {
+      setPasswordMessage(error instanceof Error ? error.message : "No se pudo cambiar la contraseña.");
+    } finally {
+      setChangingPassword(false);
+    }
   }
 
   async function handleLogout() {
@@ -179,12 +154,32 @@ export default function SettingsPage() {
     }
 
     await logout();
-    await queryClient.invalidateQueries({ queryKey: ["auth"] });
     navigate("/login", { replace: true });
   }
 
   async function handleLogoutOthers() {
-    await logoutOthersMutation.mutateAsync();
+    setSecurityMessage(null);
+    setSecurityTone("neutral");
+    setLoggingOutOthers(true);
+    try {
+      const { revokedSessions } = await logoutOtherSessions();
+      setSecurityTone(revokedSessions > 0 ? "success" : "neutral");
+      setSecurityMessage(
+        revokedSessions > 0
+          ? `Se cerraron ${revokedSessions} ${revokedSessions === 1 ? "sesion remota" : "sesiones remotas"}.`
+          : "No habia otras sesiones activas para cerrar.",
+      );
+      await refetchSecurityOverview().catch(() => undefined);
+    } catch (error) {
+      setSecurityTone("warning");
+      setSecurityMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cerrar las otras sesiones.",
+      );
+    } finally {
+      setLoggingOutOthers(false);
+    }
   }
 
   function handleDiscardProfile() {
@@ -322,7 +317,10 @@ export default function SettingsPage() {
                 </span>
                 <input
                   value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
+                  onChange={(event) => {
+                    setDisplayName(event.target.value);
+                    setProfileSaved(false);
+                  }}
                   className="w-full rounded-2xl border border-[var(--glass-border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-all placeholder:text-[var(--muted)] focus:border-[var(--glass-border-hover)] focus:ring-2 focus:ring-[var(--accent-glow)]"
                   placeholder="Tu nombre"
                 />
@@ -341,7 +339,7 @@ export default function SettingsPage() {
 
               {profileMessage && (
                 <InlineMessage
-                  tone={profileMutation.isSuccess ? "success" : profileDirty ? "warning" : "neutral"}
+                  tone={profileSaved ? "success" : profileDirty ? "warning" : "neutral"}
                   message={profileMessage}
                 />
               )}
@@ -364,14 +362,14 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={
-                    profileMutation.isPending ||
+                    isSavingProfile ||
                     !currentUser ||
                     !normalizedDisplayName ||
                     !profileDirty
                   }
                   className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_var(--accent-glow)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {profileMutation.isPending ? "Guardando..." : "Guardar cambios"}
+                  {isSavingProfile ? "Guardando..." : "Guardar cambios"}
                 </button>
                 <button
                   type="button"
@@ -411,22 +409,31 @@ export default function SettingsPage() {
               <PasswordField
                 label="Contraseña actual"
                 value={currentPassword}
-                onChange={setCurrentPassword}
+                onChange={(value) => {
+                  setCurrentPassword(value);
+                  setPasswordSaved(false);
+                }}
               />
               <PasswordField
                 label="Nueva contraseña"
                 value={newPassword}
-                onChange={setNewPassword}
+                onChange={(value) => {
+                  setNewPassword(value);
+                  setPasswordSaved(false);
+                }}
               />
               <PasswordField
                 label="Confirmar nueva contraseña"
                 value={confirmPassword}
-                onChange={setConfirmPassword}
+                onChange={(value) => {
+                  setConfirmPassword(value);
+                  setPasswordSaved(false);
+                }}
               />
 
               {passwordMessage && (
                 <InlineMessage
-                  tone={passwordMutation.isSuccess ? "success" : "warning"}
+                  tone={passwordSaved ? "success" : "warning"}
                   message={passwordMessage}
                 />
               )}
@@ -449,14 +456,14 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={
-                    passwordMutation.isPending ||
+                    isChangingPassword ||
                     !currentPassword ||
                     !newPassword ||
                     !confirmPassword
                   }
                   className="inline-flex items-center justify-center rounded-2xl bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-[var(--background)] shadow-[var(--shadow-md)] transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {passwordMutation.isPending ? "Actualizando..." : "Cambiar contraseña"}
+                  {isChangingPassword ? "Actualizando..." : "Cambiar contraseña"}
                 </button>
                 <button
                   type="button"
@@ -597,10 +604,10 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={handleLogoutOthers}
-                disabled={logoutOthersMutation.isPending || otherSessionsCount === 0}
+                disabled={isLoggingOutOthers || otherSessionsCount === 0}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--foreground)] px-4 py-3 text-sm font-semibold text-[var(--background)] shadow-[var(--shadow-md)] transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
               >
-                {logoutOthersMutation.isPending ? (
+                {isLoggingOutOthers ? (
                   <LoaderCircle size={15} strokeWidth={1.8} className="animate-spin" />
                 ) : (
                   <LogOut size={15} strokeWidth={1.8} />

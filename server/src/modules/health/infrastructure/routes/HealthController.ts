@@ -7,6 +7,7 @@ import {
     habitIdParamsSchema,
     habitLogSchema,
 } from '@vdp/shared';
+import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
 
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
@@ -16,8 +17,6 @@ import { RouteContextHandler } from '../../../common/http/routes';
 
 import { ArchiveHabit } from '../../services/ArchiveHabit';
 import { CompleteHabitDay } from '../../services/CompleteHabitDay';
-import { CreateHabit } from '../../services/CreateHabit';
-import { GetHabitsOverview } from '../../services/GetHabitsOverview';
 import { UncompleteHabitDay } from '../../services/UncompleteHabitDay';
 import { ArchiveCounter } from '../../services/ArchiveCounter';
 import { CreateCounter } from '../../services/CreateCounter';
@@ -28,6 +27,8 @@ import { CreateGoal } from '../../services/CreateGoal';
 import { DropGoal } from '../../services/DropGoal';
 import { GetGoalsOverview } from '../../services/GetGoalsOverview';
 import { GraduateGoal } from '../../services/GraduateGoal';
+import { CreateHabitCommand } from '../../app/CreateHabitCommand';
+import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
 
 type HabitIdParams = z.infer<typeof habitIdParamsSchema>;
 type CreateHabitBody = z.input<typeof createHabitSchema>;
@@ -40,7 +41,10 @@ type GraduateGoalBody = z.input<typeof graduateGoalSchema>;
 export class HealthController extends HttpController {
     readonly prefix = '/api/v1/health';
 
-    constructor(private services: ServiceResolver) {
+    constructor(
+        private readonly bus: CQBus,
+        private services: ServiceResolver,
+    ) {
         super();
     }
 
@@ -155,22 +159,15 @@ export class HealthController extends HttpController {
         return reply.send(counter.toSnapshot());
     };
 
-    private readonly listHabits: RouteContextHandler<undefined, undefined, undefined> = async ({
-        request,
-        reply,
-    }) => {
-        const userId = request.auth.userId!;
-        return reply.send(await this.services.get(GetHabitsOverview).execute(userId));
+    private readonly listHabits: RouteContextHandler<undefined, undefined, undefined> = async ({ reply }) => {
+        return reply.send(await this.bus.execute(new GetHabitsOverviewQuery()));
     };
 
     private readonly createHabit: RouteContextHandler<undefined, undefined, CreateHabitBody> = async ({
-        request,
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const habit = await this.services.get(CreateHabit).execute(userId, body!);
-        const row = await this.services.get(GetHabitsOverview).buildRow(userId, habit);
+        const row = await this.bus.execute(new CreateHabitCommand(body!));
         return sendCreated(reply, row);
     };
 

@@ -142,6 +142,12 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     this.refresh();
   }
 
+  async transactionUpdated(): Promise<void> {
+    this.editingTransaction = null;
+    this.refresh();
+    await this.load();
+  }
+
   private async runForTask(taskId: string, action: () => Promise<unknown>): Promise<void> {
     if (this.busyTaskIds.has(taskId)) return;
     this.busyTaskIds.add(taskId);

@@ -15,6 +15,7 @@ CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS tasks;
 CREATE SCHEMA IF NOT EXISTS wallet;
 CREATE SCHEMA IF NOT EXISTS health;
+CREATE SCHEMA IF NOT EXISTS medical;
 
 CREATE TABLE IF NOT EXISTS core.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -309,6 +310,41 @@ CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
     ON wallet.exchange_rates(from_currency, to_currency, type, date);
 CREATE INDEX IF NOT EXISTS wallet_insights_owner_created_idx ON wallet.wallet_insights(owner_user_id, created_at);
 
+CREATE TABLE IF NOT EXISTS core.file_blobs (
+    ref UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content BYTEA NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS medical.records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    type VARCHAR(16) NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    record_date DATE NOT NULL,
+    professional VARCHAR(160),
+    specialty VARCHAR(120),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS medical.attachments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    record_id UUID NOT NULL REFERENCES medical.records(id) ON DELETE CASCADE,
+    filename VARCHAR(200) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    storage_ref UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS medical_records_owner_user_idx ON medical.records(owner_user_id);
+CREATE INDEX IF NOT EXISTS medical_attachments_record_idx ON medical.attachments(record_id);
+CREATE INDEX IF NOT EXISTS medical_attachments_owner_user_idx ON medical.attachments(owner_user_id);
+
 `;
 
 export const TEST_DATABASE_CONNECTION_STRING = 'postgresql://test:test@localhost:5433/vdp_test';
@@ -349,6 +385,9 @@ export class TestDatabase {
                     core.users,
                     core.agent_messages,
                     core.agent_conversations,
+                    core.file_blobs,
+                    medical.attachments,
+                    medical.records,
                     tasks.task_embeddings,
                     tasks.task_notes,
                     tasks.task_insights,

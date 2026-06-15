@@ -1,3 +1,5 @@
+import { CQBus } from '@nbottarini/cqbus';
+
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { EventBus } from '../event-bus/EventBus';
 import { ServiceProvider } from '../services/ServiceProvider';
@@ -12,6 +14,7 @@ import { AuthContextStorage } from '../../http/AuthContextStorage';
 
 export type ModuleContext = {
     repositories: RepositoryProvider;
+    bus: CQBus;
     services: ServiceProvider;
     eventBus: EventBus;
     agentRegistry: AgentRegistry;
