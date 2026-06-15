@@ -1,10 +1,5 @@
-import { StatsScreen } from "@/features/wallet/components/stats-screen";
-import { WalletProvider } from "@/features/wallet/wallet-context";
+import { StatsScreen } from "@/ui/screens/wallet/stats/StatsScreen";
 
 export default function StatsPage() {
-  return (
-    <WalletProvider scope="stats">
-      <StatsScreen />
-    </WalletProvider>
-  );
+  return <StatsScreen />;
 }
