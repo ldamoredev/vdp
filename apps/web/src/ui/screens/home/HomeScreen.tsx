@@ -12,30 +12,30 @@ import { GetTransactions } from "@/core/app/wallet/GetTransactions";
 import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
 import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
 import { getTodayISO } from "@/lib/format";
-import { homeTaskQueryKeys } from "@/features/home/home-query-keys";
+import { homeTaskQueryKeys } from "@/ui/screens/home/home-query-keys";
 import {
   buildDailyReviewProgress,
   buildMorningReviewSummary,
   buildWalletReviewSignals,
-} from "@/features/review/daily-review-selectors";
+} from "@/ui/screens/review/daily-review-selectors";
 import {
   createEmptyDailyReviewState,
   loadDailyReviewState,
-} from "@/features/review/daily-review-storage";
-import { TaskStatsRow } from "@/features/home/components/task-stats-row";
-import { TodayTasksCard } from "@/features/home/components/today-tasks-card";
-import { DailyRitualCard } from "@/features/home/components/daily-ritual-card";
-import { WeeklyTrendCard } from "@/features/home/components/weekly-trend-card";
-import { WalletSnapshotCard } from "@/features/home/components/wallet-snapshot-card";
-import { OperationalRhythmCard } from "@/features/home/components/operational-rhythm-card";
-import { CrossDomainSignalsCard } from "@/features/home/components/cross-domain-signals-card";
-import { OnboardingModal } from "@/features/home/components/onboarding-modal";
+} from "@/ui/screens/review/daily-review-storage";
+import { TaskStatsRow } from "@/ui/screens/home/components/task-stats-row";
+import { TodayTasksCard } from "@/ui/screens/home/components/today-tasks-card";
+import { DailyRitualCard } from "@/ui/screens/home/components/daily-ritual-card";
+import { WeeklyTrendCard } from "@/ui/screens/home/components/weekly-trend-card";
+import { WalletSnapshotCard } from "@/ui/screens/home/components/wallet-snapshot-card";
+import { OperationalRhythmCard } from "@/ui/screens/home/components/operational-rhythm-card";
+import { CrossDomainSignalsCard } from "@/ui/screens/home/components/cross-domain-signals-card";
+import { OnboardingModal } from "@/ui/screens/home/components/onboarding-modal";
 import {
   ONBOARDING_STEPS,
   completeOnboarding,
   setOnboardingChromeState,
   shouldOpenOnboarding,
-} from "@/features/home/onboarding-storage";
+} from "@/ui/screens/home/onboarding-storage";
 
 export default function HomePage() {
   const core = useCore();

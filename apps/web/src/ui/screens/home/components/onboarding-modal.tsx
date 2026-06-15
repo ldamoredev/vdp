@@ -2,7 +2,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   ONBOARDING_STEPS,
   type OnboardingStep,
-} from "@/features/home/onboarding-storage";
+} from "@/ui/screens/home/onboarding-storage";
 
 const accentClassName: Record<OnboardingStep["accent"], string> = {
   violet:

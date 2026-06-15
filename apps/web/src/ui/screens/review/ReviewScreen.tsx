@@ -1,7 +1,7 @@
 import { ModulePage } from "@/ui/primitives/module-page";
-import { DailyReviewScreen } from "@/features/review/components/daily-review-screen";
-import { ReviewWalletEditSheet } from "@/features/review/components/review-wallet-edit-sheet";
-import { useDailyReviewModel } from "@/features/review/use-daily-review-model";
+import { DailyReviewScreen } from "@/ui/screens/review/components/daily-review-screen";
+import { ReviewWalletEditSheet } from "@/ui/screens/review/components/review-wallet-edit-sheet";
+import { useDailyReviewModel } from "@/ui/screens/review/use-daily-review-model";
 
 export default function ReviewPage() {
   const model = useDailyReviewModel();
