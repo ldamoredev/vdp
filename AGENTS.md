@@ -230,37 +230,31 @@ Insight stores (`TaskInsightsStore`, `WalletInsightsStore`) are in-memory read m
 
 ## Frontend Architecture
 
-The frontend is a Vite SPA (no SSR). It mirrors the backend module pattern: one folder per domain owns everything for that domain. Top-level layout of `apps/web/src/`:
+The frontend is a Vite SPA (no SSR) that mirrors the backend module pattern with **presenters + a command/query bus (CQBus) + a `core/` composition root**. Full detail and the 5-step procedure for adding a module live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) §4 — the canonical reference. Top-level layout of `apps/web/src/`:
 
 ```text
-main.tsx      Entry: mounts <WebApp/> under React StrictMode.
-WebApp.tsx    Startup: ThemeProvider + Providers + RouterProvider.
-routes.tsx    The whole route tree (react-router createBrowserRouter), 1:1 with pages/.
-pages/        Route components only: provider plus screen, ideally under 30 lines.
-features/     One folder per domain (tasks, wallet, review, home). ALL domain code lives here.
-components/   Domain-free app chrome only: primitives/, shell/, chat/, auth/.
-lib/          Domain-free kernel only: api/client.ts + api/types.ts, stores, format, navigation, theme.
+main.tsx          Entry: mounts <WebApp/> under React StrictMode.
+WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
+routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
+createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).
+core/             NO React under here (grep/lint enforced): domain/{m}, app/{m} (Command/Query+handlers
+                  + {M}Module), infrastructure/http (Http{M}Gateway + FetchHttpClient).
+ui/               All React: primitives/ (design-system leaves), shell/ (chrome + auth-gate),
+                  chat/ (agent chat shell), events/ ({M}Events channels), models/{m} (ViewModels),
+                  screens/{m} ({M}Presenter + use{M}Presenter + {M}Screen + co-located components/).
+lib/              Framework-agnostic kernel: api/client + api/types, format, navigation, theme, providers.
 ```
 
-The domain shell (`components/shell/domain-layout.tsx`) renders an `<Outlet/>` behind `AuthGate`; route errors render `domain-error.tsx` / `root-error.tsx` via router `errorElement`. Do not create per-domain folders under `lib/` or `components/` (no `lib/tasks`, no `components/wallet`). If code is about a domain, it belongs in `features/{domain}/`.
+There is **no `pages/`, `components/`, or `features/` layer** — that earlier split was collapsed into `ui/` during the architecture migration. Route screens live in `ui/screens/{module}/` and `routes.tsx` imports them directly. Component placement is ownership-based: **one-module → `ui/screens/{module}/components/`; shared leaf → `ui/primitives/`; app chrome → `ui/shell/`.** The domain shell (`ui/shell/domain-layout.tsx`) renders an `<Outlet/>` behind `AuthGate`; route errors render `ui/shell/domain-error.tsx` / `root-error.tsx` via router `errorElement`.
 
 Import direction rules:
 
-- `lib/` imports nothing from `features/` or `components/`.
-- `features/{domain}/` may import `lib/`, `components/primitives/`, and other features' public modules: selectors, query keys, plain components. Never another feature's context/provider or internal hooks.
-- `components/` (shell, chat, auth) is the cross-domain composition layer: it may import feature public modules (for example the chat shell uses `features/tasks/chat-sync`).
-- `pages/` and `routes.tsx` may import anything.
+- `core/` imports nothing from `ui/` and no React (enforced); it depends only on `@vdp/shared`, `lib/`, and the `@nbottarini` libraries.
+- `lib/` imports nothing from `core/` or `ui/`.
+- `ui/` may import `core/` (via `useCore()`/the bus), `lib/`, and `@vdp/shared`. A screen owns its own presenter/VM; cross-section coordination goes through `ui/events`, never by reaching into another screen's internals.
+- `routes.tsx` and entrypoints may import anything.
 
-Frontend domains use the feature module pattern under `apps/web/src/features/{domain}/` (flat — no `presentation/` layer; the whole web feature is presentation):
-
-- `{domain}-api.ts`: HTTP client functions for the domain routes, built on `lib/api/client.ts`.
-- `{domain}-selectors.ts`: pure functions, no React imports, primary unit-test surface.
-- `{domain}-query-keys.ts`: React Query key factory.
-- `use-{domain}-queries.ts`: reads and derived state.
-- `use-{domain}-mutations.ts`: writes and busy state.
-- `{domain}-context.tsx`: two contexts, reads and actions.
-- `use-{domain}-context.ts`: consumer hooks.
-- `components/`: components consume context directly. Pages pass no domain data props.
+Migration status: **health, tasks, wallet** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
 
 API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 
@@ -313,7 +307,7 @@ A domain is only real when it matches the Tasks template:
 5. Use-case services, one class per operation.
 6. HTTP controller using auth context for `userId`.
 7. Cross-user isolation tests.
-8. Frontend feature module following the two-context pattern.
+8. Frontend module following the `core/` + presenter pattern (ARCHITECTURE.md §4): domain + gateway, app handlers + `{Module}Module` registered in `createAppCore`, presenter + ViewModel + humble screen under `ui/screens/{module}`.
 9. Shared Zod schemas and cross-package types in `@vdp/shared`.
 10. Pages registered in `apps/web/src/lib/navigation.ts`.
 11. Agent registered only after tools follow the auth-context rules.
