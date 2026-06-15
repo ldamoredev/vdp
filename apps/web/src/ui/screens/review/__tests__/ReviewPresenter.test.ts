@@ -1,0 +1,108 @@
+import type { Task as TaskDto, TaskReview } from "@vdp/shared";
+import { describe, expect, it, vi } from "vitest";
+
+import { Core } from "@/core/Core";
+import { TasksModule } from "@/core/app/tasks/TasksModule";
+import { WalletModule } from "@/core/app/wallet/WalletModule";
+import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
+import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
+import { TasksEvents } from "@/ui/events/TasksEvents";
+import { ReviewPresenter } from "../ReviewPresenter";
+
+function pendingTask(overrides: Partial<TaskDto> = {}): TaskDto {
+  return {
+    id: "p1",
+    title: "Resolver alta",
+    description: null,
+    priority: 3,
+    status: "pending",
+    scheduledDate: "2026-06-14",
+    domain: null,
+    carryOverCount: 2,
+    completedAt: null,
+    createdAt: "2026-06-14T08:00:00.000Z",
+    updatedAt: "2026-06-14T08:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function review(overrides: Partial<TaskReview> = {}): TaskReview {
+  return {
+    date: "2026-06-14",
+    total: 1,
+    completed: 0,
+    pending: 1,
+    carriedOver: 0,
+    discarded: 0,
+    completionRate: 0,
+    pendingTasks: [pendingTask()],
+    allTasks: [pendingTask()],
+    ...overrides,
+  };
+}
+
+function build() {
+  const tasks = new FakeTasksGateway();
+  const wallet = new FakeWalletGateway();
+  const getReview = vi.spyOn(tasks, "getReview").mockResolvedValue(review());
+  const completeTask = vi.spyOn(tasks, "completeTask");
+  const core = new Core({
+    httpClient: {} as never,
+    loggingSink: { debug: vi.fn(), error: vi.fn() },
+  })
+    .use(new TasksModule(tasks))
+    .use(new WalletModule(wallet));
+  const events = new TasksEvents();
+  const presenter = new ReviewPresenter(vi.fn(), core, events);
+  presenter.init(undefined);
+  return { presenter, tasks, wallet, getReview, completeTask, events };
+}
+
+async function flush() {
+  for (let i = 0; i < 10; i += 1) await Promise.resolve();
+}
+
+describe("ReviewPresenter", () => {
+  it("aggregates today's review into the view model", async () => {
+    const { presenter, getReview } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(getReview).toHaveBeenCalledTimes(1);
+    expect(presenter.model.taskQueue).toHaveLength(1);
+    expect(presenter.model.taskQueue[0].title).toBe("Resolver alta");
+    // carryOverCount > 0 picks the "se arrastra" detail copy
+    expect(presenter.model.taskQueue[0].detail).toContain("se arrastra");
+    expect(presenter.model.dateLabel).toBeTruthy();
+    presenter.stop();
+  });
+
+  it("completes a task through the Core and reloads + signals the change", async () => {
+    const { presenter, completeTask, getReview, events } = build();
+    const emit = vi.spyOn(events, "emitTasksChanged");
+    presenter.start();
+    await flush();
+    const reviewsBefore = getReview.mock.calls.length;
+
+    await presenter.completeTask("p1");
+    await flush();
+
+    expect(completeTask).toHaveBeenCalledWith("p1");
+    expect(getReview.mock.calls.length).toBeGreaterThan(reviewsBefore); // reloaded
+    expect(emit).toHaveBeenCalled();
+    expect(presenter.isTaskBusy("p1")).toBe(false);
+    presenter.stop();
+  });
+
+  it("acknowledging a wallet signal does not crash and keeps the model consistent", async () => {
+    const { presenter } = build();
+    presenter.start();
+    await flush();
+
+    presenter.acknowledgeSignal("manual-signal");
+
+    expect(presenter.model.editSheet.open).toBe(false);
+    presenter.stop();
+  });
+});

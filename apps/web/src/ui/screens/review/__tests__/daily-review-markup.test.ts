@@ -3,10 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DailyReviewScreen } from "../components/daily-review-screen";
 
-const useDailyReviewModelMock = vi.fn();
+const useReviewPresenterMock = vi.fn();
 
-vi.mock("../use-daily-review-model", () => ({
-  useDailyReviewModel: () => useDailyReviewModelMock(),
+vi.mock("../useReviewPresenter", () => ({
+  useReviewPresenter: () => useReviewPresenterMock(),
 }));
 
 import ReviewPage from "@/ui/screens/review/ReviewScreen";
@@ -38,23 +38,27 @@ describe("DailyReviewScreen", () => {
 });
 
 describe("review page", () => {
-  it("renders the ritual screen using the review model", () => {
-    useDailyReviewModelMock.mockReturnValue({
-      dateLabel: "viernes, 10 abr",
-      progressLabel: "1 de 4 bloques resueltos",
-      screenProps: {
+  it("renders the ritual screen from the presenter view model", () => {
+    useReviewPresenterMock.mockReturnValue({
+      model: {
         dateLabel: "viernes, 10 abr",
         progressLabel: "1 de 4 bloques resueltos",
-        taskSection: createElement("div", null, "Cerrar tareas"),
-        walletSection: createElement("div", null, "Verificar wallet"),
-        insightsSection: createElement("div", null, "Resolver alertas"),
-        decisionsSection: createElement("div", null, "Decidir mañana"),
+        taskQueue: [],
+        wallet: { signals: [], transactions: [], summary: undefined },
+        insights: [],
+        decisions: { categories: [], note: "", summary: "Sin señal" },
+        editSheet: { transaction: null, open: false },
       },
-      editSheetProps: {
-        transaction: null,
-        open: false,
-        onClose: vi.fn(),
-      },
+      completeTask: vi.fn(),
+      carryOverTask: vi.fn(),
+      discardTask: vi.fn(),
+      isTaskBusy: () => false,
+      acknowledgeSignal: vi.fn(),
+      acknowledgeInsight: vi.fn(),
+      toggleWatchedCategory: vi.fn(),
+      setNote: vi.fn(),
+      openEdit: vi.fn(),
+      closeEdit: vi.fn(),
     });
 
     const markup = renderToStaticMarkup(createElement(ReviewPage));
