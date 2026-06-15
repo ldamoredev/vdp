@@ -9,7 +9,7 @@ Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `
 
 ## Inputs (ask if missing)
 
-- **module** (health; later review/home/tasks/wallet as they migrate).
+- **module** (health/tasks/wallet are migrated; review/home/etc. as they migrate).
 - **use case name** (`ArchiveGoal`) and whether it's a **Query** (read → returns a view/model) or **Command** (write → usually `void`; return a model only if a flow needs it immediately, like `CompleteGoal`).
 - inputs and the gateway operation it calls.
 
