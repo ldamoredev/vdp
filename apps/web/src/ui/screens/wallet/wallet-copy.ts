@@ -1,8 +1,7 @@
 /**
  * Spanish presentation copy shared by the wallet screens: section intros and
- * empty states. This is the UI-facing text that the legacy
- * wallet-polish-selectors held; it lives in ui/ because the domain layer is
- * presentation-free. Reused across the wallet presenters.
+ * empty states. It lives in ui/ because the domain layer is presentation-free.
+ * Reused across the wallet presenters.
  */
 
 export type WalletScreenKey =

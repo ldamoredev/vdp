@@ -1,10 +1,5 @@
-import { WalletProvider } from "@/features/wallet/wallet-context";
-import { DashboardScreen } from "@/features/wallet/components/dashboard-screen";
+import { DashboardScreen } from "@/ui/screens/wallet/dashboard/DashboardScreen";
 
 export default function DashboardPage() {
-  return (
-    <WalletProvider scope="dashboard">
-      <DashboardScreen />
-    </WalletProvider>
-  );
+  return <DashboardScreen />;
 }

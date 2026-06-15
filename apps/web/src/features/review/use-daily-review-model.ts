@@ -1,14 +1,18 @@
 import { createElement, useEffect, useState, type ComponentProps } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { TaskInsight, Transaction } from "@/lib/api/types";
+import type { TaskInsight } from "@/lib/api/types";
 import { useCore } from "@/CoreProvider";
 import { CarryOverTask } from "@/core/app/tasks/CarryOverTask";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { DiscardTask } from "@/core/app/tasks/DiscardTask";
 import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
 import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
+import { GetCategories } from "@/core/app/wallet/GetCategories";
+import { GetTransactions } from "@/core/app/wallet/GetTransactions";
+import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
+import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
+import type { Transaction } from "@/core/domain/wallet/Transaction";
 import { useTasksEvents } from "@/TasksEventsProvider";
-import { walletApi } from "@/features/wallet/wallet-api";
 import { formatDate, getTodayISO } from "@/lib/format";
 import { DailyReviewDecisions } from "./components/daily-review-decisions";
 import { DailyReviewInsightsQueue } from "./components/daily-review-insights-queue";
@@ -86,30 +90,30 @@ export function useDailyReviewModel(): {
   const { data: transactionsResult } = useQuery({
     queryKey: ["review", "wallet", "transactions", today],
     queryFn: () =>
-      walletApi.getTransactions({
+      core.execute(new GetTransactions({
         limit: "50",
         offset: "0",
         from: today,
         to: today,
-      }),
+      })),
   });
 
   const { data: statsSummary } = useQuery({
     queryKey: ["review", "wallet", "stats-summary", today],
     queryFn: () =>
-      walletApi.getStatsSummary({
+      core.execute(new GetWalletStatsSummary({
         from: today,
         to: today,
-      }),
+      })),
   });
 
   const { data: byCategory } = useQuery({
     queryKey: ["review", "wallet", "stats-by-category", today],
     queryFn: () =>
-      walletApi.getStatsByCategory({
+      core.execute(new GetWalletStatsByCategory({
         from: today,
         to: today,
-      }),
+      })),
   });
 
   const { data: recentInsights } = useQuery({
@@ -119,7 +123,7 @@ export function useDailyReviewModel(): {
 
   const { data: categories } = useQuery({
     queryKey: ["review", "wallet", "categories"],
-    queryFn: () => walletApi.getCategories(),
+    queryFn: () => core.execute(new GetCategories()),
   });
 
   useEffect(() => {

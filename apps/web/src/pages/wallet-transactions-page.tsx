@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router";
-import { TransactionsScreen } from "@/features/wallet/components/transactions-screen";
-import { WalletProvider } from "@/features/wallet/wallet-context";
-import { buildInitialTransactionFilters } from "@/features/wallet/wallet-selectors";
+import { buildInitialTransactionFilters } from "@/core/domain/wallet/Transaction";
+import { TransactionsScreen } from "@/ui/screens/wallet/transactions/TransactionsScreen";
 
 export default function TransactionsPage() {
   const [searchParams] = useSearchParams();
@@ -12,12 +11,5 @@ export default function TransactionsPage() {
     categoryId: searchParams.get("categoryId") ?? undefined,
   });
 
-  return (
-    <WalletProvider
-      scope="transactions"
-      initialTransactionFilters={initialTransactionFilters}
-    >
-      <TransactionsScreen />
-    </WalletProvider>
-  );
+  return <TransactionsScreen initialFilters={initialTransactionFilters} />;
 }

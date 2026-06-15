@@ -1,4 +1,20 @@
-import type { CategoryStat, Task, Transaction } from "@/lib/api/types";
+import type { Task } from "@/lib/api/types";
+import type { CategoryStat } from "@/core/domain/wallet/WalletStats";
+
+export interface ReviewWalletTransaction {
+  id: string;
+  accountId?: string;
+  categoryId: string | null;
+  categoryName?: string;
+  type: "income" | "expense" | "transfer";
+  amount: string;
+  currency?: string;
+  description?: string | null;
+  date?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface DailyReviewState {
   date: string;
@@ -34,7 +50,7 @@ export interface TaskReviewSignal {
 }
 
 export interface BuildWalletReviewSignalsArgs {
-  transactions: Transaction[];
+  transactions: ReviewWalletTransaction[];
   byCategory: CategoryStat[];
   acknowledgedSignalIds: string[];
 }

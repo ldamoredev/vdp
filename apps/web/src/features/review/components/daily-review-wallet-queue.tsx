@@ -1,7 +1,8 @@
-import { AlertTriangle, PencilLine } from "lucide-react";
-import type { Transaction } from "@/lib/api/types";
+import { AlertTriangle, ArrowDownLeft, ArrowLeftRight, ArrowUpRight, PencilLine } from "lucide-react";
+import type { ReactNode } from "react";
+import type { Transaction } from "@/core/domain/wallet/Transaction";
+import { formatDateShort, formatMoney } from "@/lib/format";
 import type { WalletReviewSignal } from "../daily-review-types";
-import { WalletTransactionRow } from "@/features/wallet/components/wallet-transaction-row";
 
 interface DailyReviewWalletQueueProps {
   signals: WalletReviewSignal[];
@@ -72,7 +73,7 @@ export function DailyReviewWalletQueue({
         {transactions.length > 0 ? (
           <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--background-secondary)] p-2">
             {transactions.map((transaction) => (
-              <WalletTransactionRow
+              <WalletReviewTransactionRow
                 key={transaction.id}
                 transaction={transaction}
                 onClick={onEditTransaction}
@@ -89,5 +90,87 @@ export function DailyReviewWalletQueue({
         ) : null}
       </div>
     </section>
+  );
+}
+
+function WalletReviewTransactionRow({
+  transaction,
+  onClick,
+  action,
+}: {
+  transaction: Transaction;
+  onClick?: (transaction: Transaction) => void;
+  action?: ReactNode;
+}) {
+  const tone =
+    transaction.type === "income"
+      ? "text-[var(--accent-green)]"
+      : transaction.type === "expense"
+        ? "text-[var(--accent-red)]"
+        : "text-[var(--accent)]";
+  const sign = transaction.type === "income" ? "+" : transaction.type === "expense" ? "-" : "";
+  const content = (
+    <>
+      <div className="flex items-center gap-3">
+        <TransactionIcon type={transaction.type} />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-[var(--foreground)]">
+            {transaction.description || transaction.type}
+          </div>
+          <div className="text-xs text-[var(--muted)]">
+            {[transaction.categoryName, formatDateShort(transaction.date)].filter(Boolean).join(" · ")}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className={`text-right text-sm font-data font-semibold tabular-nums ${tone}`}>
+          {sign}
+          {formatMoney(transaction.amount, transaction.currency)}
+        </div>
+        {action}
+      </div>
+    </>
+  );
+
+  if (onClick && !transaction.isTransfer) {
+    return (
+      <button
+        type="button"
+        onClick={() => onClick(transaction)}
+        className="flex w-full items-center justify-between gap-3 rounded-xl p-4 text-left transition-all hover:bg-[var(--hover-overlay)]"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl p-4 transition-all hover:bg-[var(--hover-overlay)]">
+      {content}
+    </div>
+  );
+}
+
+function TransactionIcon({ type }: { type: Transaction["type"] }) {
+  if (type === "income") {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-green-glow)]">
+        <ArrowDownLeft size={16} className="text-[var(--accent-green)]" />
+      </div>
+    );
+  }
+
+  if (type === "expense") {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-red-glow)]">
+        <ArrowUpRight size={16} className="text-[var(--accent-red)]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-glow)]">
+      <ArrowLeftRight size={16} className="text-[var(--accent)]" />
+    </div>
   );
 }

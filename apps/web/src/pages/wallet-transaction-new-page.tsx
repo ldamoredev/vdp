@@ -1,10 +1,5 @@
-import { TransactionFormScreen } from "@/features/wallet/components/transaction-form-screen";
-import { WalletTransactionFormProvider } from "@/features/wallet/wallet-transaction-form-context";
+import { TransactionFormScreen } from "@/ui/screens/wallet/transactions/TransactionFormScreen";
 
 export default function NewTransactionPage() {
-  return (
-    <WalletTransactionFormProvider>
-      <TransactionFormScreen />
-    </WalletTransactionFormProvider>
-  );
+  return <TransactionFormScreen />;
 }

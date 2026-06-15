@@ -8,7 +8,9 @@ import { GetTaskTrend } from "@/core/app/tasks/GetTaskTrend";
 import { GetTasksByDomain } from "@/core/app/tasks/GetTasksByDomain";
 import { GetTodayStats } from "@/core/app/tasks/GetTodayStats";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
-import { walletApi } from "@/features/wallet/wallet-api";
+import { GetTransactions } from "@/core/app/wallet/GetTransactions";
+import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
+import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
 import { getTodayISO } from "@/lib/format";
 import { homeTaskQueryKeys } from "@/features/home/home-query-keys";
 import {
@@ -20,7 +22,6 @@ import {
   createEmptyDailyReviewState,
   loadDailyReviewState,
 } from "@/features/review/daily-review-storage";
-import { walletQueryKeys } from "@/features/wallet/wallet-query-keys";
 import { TaskStatsRow } from "@/features/home/components/task-stats-row";
 import { TodayTasksCard } from "@/features/home/components/today-tasks-card";
 import { DailyRitualCard } from "@/features/home/components/daily-ritual-card";
@@ -83,34 +84,34 @@ export default function HomePage() {
   const { data: reviewWalletTransactions } = useQuery({
     queryKey: ["home", "review", "wallet", "transactions", today],
     queryFn: () =>
-      walletApi.getTransactions({
+      core.execute(new GetTransactions({
         limit: "50",
         offset: "0",
         from: today,
         to: today,
-      }),
+      })),
   });
 
   const { data: reviewWalletByCategory } = useQuery({
     queryKey: ["home", "review", "wallet", "by-category", today],
     queryFn: () =>
-      walletApi.getStatsByCategory({
+      core.execute(new GetWalletStatsByCategory({
         from: today,
         to: today,
-      }),
+      })),
   });
 
   const { data: walletStats, isLoading: isLoadingWalletStats } = useQuery({
-    queryKey: walletQueryKeys.statsSummary,
-    queryFn: () => walletApi.getStatsSummary(),
+    queryKey: ["home", "wallet", "stats-summary"],
+    queryFn: () => core.execute(new GetWalletStatsSummary()),
   });
 
   const {
     data: walletRecentTransactions,
     isLoading: isLoadingWalletRecentTransactions,
   } = useQuery({
-    queryKey: walletQueryKeys.recentTransactions,
-    queryFn: () => walletApi.getTransactions({ limit: "10" }),
+    queryKey: ["home", "wallet", "recent-transactions"],
+    queryFn: () => core.execute(new GetTransactions({ limit: "10" })),
   });
   const isLoadingWallet = isLoadingWalletStats || isLoadingWalletRecentTransactions;
 
