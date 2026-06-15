@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -13,10 +13,10 @@ import {
 
 import { ModulePage } from "@/components/primitives/module-page";
 import { StateCard } from "@/components/primitives/state-card";
+import { buildInitialTransactionFilters } from "@/core/domain/wallet/Transaction";
 import type {
   TransactionRowVM,
   TransactionTypeFilter,
-  TransactionsInitialFilters,
   TransactionsViewModel,
 } from "@/ui/models/wallet/TransactionsViewModel";
 import { SanityStrip } from "../components/sanity-strip";
@@ -24,11 +24,14 @@ import { WalletEmptyState } from "../components/wallet-empty-state";
 import { EditTransactionSheet } from "./EditTransactionSheet";
 import { useTransactionsPresenter } from "./useTransactionsPresenter";
 
-interface TransactionsScreenProps {
-  initialFilters?: Partial<TransactionsInitialFilters>;
-}
-
-export function TransactionsScreen({ initialFilters }: TransactionsScreenProps) {
+export function TransactionsScreen() {
+  const [searchParams] = useSearchParams();
+  const initialFilters = buildInitialTransactionFilters({
+    from: searchParams.get("from") ?? undefined,
+    to: searchParams.get("to") ?? undefined,
+    type: searchParams.get("type") ?? undefined,
+    categoryId: searchParams.get("categoryId") ?? undefined,
+  });
   const presenter = useTransactionsPresenter(initialFilters);
   const vm = presenter.model;
 

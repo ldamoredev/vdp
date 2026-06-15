@@ -1,30 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router";
 
-interface CalendarEvent {
-  readonly id: string;
-  readonly title: string;
-  readonly time: string;
-  readonly duration: string;
-  readonly type: "meeting" | "focus" | "break" | "deadline";
-  readonly attendees?: readonly string[];
-}
-
-interface EmailDraft {
-  readonly to: string;
-  readonly subject: string;
-  readonly body: string;
-}
-
-const todayEvents: readonly CalendarEvent[] = [
-  { id: "1", title: "Daily standup", time: "09:00", duration: "15min", type: "meeting", attendees: ["Martín", "Laura", "Nico"] },
-  { id: "2", title: "Deep work — VDP Sprint", time: "09:30", duration: "2h", type: "focus" },
-  { id: "3", title: "Review PR #247", time: "11:30", duration: "30min", type: "deadline" },
-  { id: "4", title: "Almuerzo", time: "12:30", duration: "1h", type: "break" },
-  { id: "5", title: "1:1 con Martín (CTO)", time: "14:00", duration: "30min", type: "meeting", attendees: ["Martín"] },
-  { id: "6", title: "Sprint planning", time: "15:00", duration: "1h", type: "meeting", attendees: ["Equipo completo"] },
-  { id: "7", title: "Investigación — Arquitectura de eventos", time: "16:30", duration: "1h30m", type: "focus" },
-];
+import type { CalendarEvent, EmailDraft } from "@/ui/models/work/WorkViewModel";
+import { useWorkPresenter } from "./useWorkPresenter";
 
 const eventTypeStyles: Record<string, { bg: string; text: string; border: string; label: string }> = {
   meeting: { bg: "var(--blue-soft-bg)", text: "var(--blue-soft-text)", border: "var(--blue-soft-border)", label: "Reunión" },
@@ -33,13 +11,10 @@ const eventTypeStyles: Record<string, { bg: string; text: string; border: string
   deadline: { bg: "var(--red-soft-bg)", text: "var(--red-soft-text)", border: "var(--red-soft-border)", label: "Deadline" },
 };
 
-const quickEmails: readonly EmailDraft[] = [
-  { to: "martin@startup.io", subject: "Update sprint VDP", body: "Hola Martín,\n\nTe paso un update del sprint actual:\n\n- " },
-  { to: "laura.garcia@company.com", subject: "Review PR #247", body: "Hola Laura,\n\nCuando puedas mirá el PR #247. Los cambios principales son:\n\n- " },
-  { to: "equipo@company.com", subject: "Notas del daily", body: "Equipo,\n\nResumen del daily de hoy:\n\n- " },
-];
+export function WorkScreen() {
+  const presenter = useWorkPresenter();
+  const { events: todayEvents, quickEmails, projects } = presenter.model;
 
-export default function WorkDashboard() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
@@ -267,11 +242,7 @@ export default function WorkDashboard() {
               <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--muted)]">Demo</span>
             </div>
             <div className="space-y-3 p-4">
-              {[
-                { name: "VDP — Life OS", pct: 68, accent: true },
-                { name: "Cliente Fintech", pct: 45, accent: false },
-                { name: "Curso Arquitectura", pct: 20, accent: false },
-              ].map((p) => (
+              {projects.map((p) => (
                 <div key={p.name}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-medium text-[var(--foreground)]">{p.name}</span>

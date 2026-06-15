@@ -4,31 +4,31 @@ import DomainError from "@/components/shell/domain-error";
 import DomainLayout from "@/components/shell/domain-layout";
 import NotFound from "@/components/shell/not-found";
 import RootError from "@/components/shell/root-error";
-import HealthPage from "@/pages/health-page";
-import HomePage from "@/pages/home-page";
-import LandingPage from "@/pages/landing-page";
-import LoginPage from "@/pages/login-page";
-import PeoplePage from "@/pages/people-page";
-import ReviewPage from "@/pages/review-page";
-import SettingsPage from "@/pages/settings-page";
-import StudyPage from "@/pages/study-page";
-import TasksHistoryPage from "@/pages/tasks-history-page";
-import TasksPage from "@/pages/tasks-page";
-import WalletAccountsPage from "@/pages/wallet-accounts-page";
-import WalletCategoriesPage from "@/pages/wallet-categories-page";
-import WalletInvestmentsPage from "@/pages/wallet-investments-page";
-import WalletPage from "@/pages/wallet-page";
-import WalletSavingsPage from "@/pages/wallet-savings-page";
-import WalletStatsPage from "@/pages/wallet-stats-page";
-import WalletTransactionNewPage from "@/pages/wallet-transaction-new-page";
-import WalletTransactionsPage from "@/pages/wallet-transactions-page";
-import WorkPage from "@/pages/work-page";
+import { HealthScreen } from "@/ui/screens/health/HealthScreen";
+import HomeScreen from "@/ui/screens/home/HomeScreen";
+import LandingScreen from "@/ui/screens/landing/LandingScreen";
+import LoginScreen from "@/ui/screens/login/LoginScreen";
+import { PeopleScreen } from "@/ui/screens/people/PeopleScreen";
+import ReviewScreen from "@/ui/screens/review/ReviewScreen";
+import SettingsScreen from "@/ui/screens/settings/SettingsScreen";
+import { StudyScreen } from "@/ui/screens/study/StudyScreen";
+import { HistoryScreen } from "@/ui/screens/tasks/history/HistoryScreen";
+import { TasksDashboardScreen } from "@/ui/screens/tasks/dashboard/TasksDashboardScreen";
+import { AccountsScreen } from "@/ui/screens/wallet/accounts/AccountsScreen";
+import { CategoriesScreen } from "@/ui/screens/wallet/categories/CategoriesScreen";
+import { DashboardScreen } from "@/ui/screens/wallet/dashboard/DashboardScreen";
+import { InvestmentsScreen } from "@/ui/screens/wallet/investments/InvestmentsScreen";
+import { SavingsScreen } from "@/ui/screens/wallet/savings/SavingsScreen";
+import { StatsScreen } from "@/ui/screens/wallet/stats/StatsScreen";
+import { TransactionFormScreen } from "@/ui/screens/wallet/transactions/TransactionFormScreen";
+import { TransactionsScreen } from "@/ui/screens/wallet/transactions/TransactionsScreen";
+import { WorkScreen } from "@/ui/screens/work/WorkScreen";
 
-// Mirrors the former Next.js App Router tree one-to-one: / and /login are
-// public; everything else renders inside the domain shell behind AuthGate.
+// / and /login are public; everything else renders inside the domain shell
+// behind AuthGate. Route elements are the screens under ui/screens/*.
 export const router = createBrowserRouter([
-  { path: "/", element: <LandingPage />, errorElement: <RootError /> },
-  { path: "/login", element: <LoginPage />, errorElement: <RootError /> },
+  { path: "/", element: <LandingScreen />, errorElement: <RootError /> },
+  { path: "/login", element: <LoginScreen />, errorElement: <RootError /> },
   {
     element: <DomainLayout />,
     errorElement: <RootError />,
@@ -36,23 +36,23 @@ export const router = createBrowserRouter([
       {
         errorElement: <DomainError />,
         children: [
-          { path: "/home", element: <HomePage /> },
-          { path: "/tasks", element: <TasksPage /> },
-          { path: "/tasks/history", element: <TasksHistoryPage /> },
-          { path: "/wallet", element: <WalletPage /> },
-          { path: "/wallet/accounts", element: <WalletAccountsPage /> },
-          { path: "/wallet/categories", element: <WalletCategoriesPage /> },
-          { path: "/wallet/investments", element: <WalletInvestmentsPage /> },
-          { path: "/wallet/savings", element: <WalletSavingsPage /> },
-          { path: "/wallet/stats", element: <WalletStatsPage /> },
-          { path: "/wallet/transactions", element: <WalletTransactionsPage /> },
-          { path: "/wallet/transactions/new", element: <WalletTransactionNewPage /> },
-          { path: "/health", element: <HealthPage /> },
-          { path: "/review", element: <ReviewPage /> },
-          { path: "/settings", element: <SettingsPage /> },
-          { path: "/people", element: <PeoplePage /> },
-          { path: "/work", element: <WorkPage /> },
-          { path: "/study", element: <StudyPage /> },
+          { path: "/home", element: <HomeScreen /> },
+          { path: "/tasks", element: <TasksDashboardScreen /> },
+          { path: "/tasks/history", element: <HistoryScreen /> },
+          { path: "/wallet", element: <DashboardScreen /> },
+          { path: "/wallet/accounts", element: <AccountsScreen /> },
+          { path: "/wallet/categories", element: <CategoriesScreen /> },
+          { path: "/wallet/investments", element: <InvestmentsScreen /> },
+          { path: "/wallet/savings", element: <SavingsScreen /> },
+          { path: "/wallet/stats", element: <StatsScreen /> },
+          { path: "/wallet/transactions", element: <TransactionsScreen /> },
+          { path: "/wallet/transactions/new", element: <TransactionFormScreen /> },
+          { path: "/health", element: <HealthScreen /> },
+          { path: "/review", element: <ReviewScreen /> },
+          { path: "/settings", element: <SettingsScreen /> },
+          { path: "/people", element: <PeopleScreen /> },
+          { path: "/work", element: <WorkScreen /> },
+          { path: "/study", element: <StudyScreen /> },
         ],
       },
     ],
