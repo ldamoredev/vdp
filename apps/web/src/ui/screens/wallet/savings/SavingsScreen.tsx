@@ -1,7 +1,7 @@
 import { Calendar, Check, Plus, Target } from "lucide-react";
 
-import { ModulePage } from "@/components/primitives/module-page";
-import { StateCard } from "@/components/primitives/state-card";
+import { ModulePage } from "@/ui/primitives/module-page";
+import { StateCard } from "@/ui/primitives/state-card";
 import type { SavingsFormVM, SavingsGoalVM } from "@/ui/models/wallet/SavingsViewModel";
 import { WalletEmptyState } from "../components/wallet-empty-state";
 import { useSavingsPresenter } from "./useSavingsPresenter";

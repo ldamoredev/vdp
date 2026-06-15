@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { ModulePage } from "@/components/primitives/module-page";
+import { ModulePage } from "@/ui/primitives/module-page";
 import type { TransactionFormViewModel } from "@/ui/models/wallet/TransactionsViewModel";
 import { useTransactionFormPresenter } from "./useTransactionFormPresenter";
 

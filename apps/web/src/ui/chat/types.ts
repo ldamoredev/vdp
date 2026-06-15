@@ -1,4 +1,4 @@
-import type { ToolActionView } from "@/components/chat/tool-actions";
+import type { ToolActionView } from "@/ui/chat/tool-actions";
 
 export interface Message {
   id: string;

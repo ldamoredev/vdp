@@ -29,7 +29,7 @@ import {
   updateProfile,
   useCurrentUser,
 } from "@/lib/auth";
-import { ModulePage } from "@/components/primitives/module-page";
+import { ModulePage } from "@/ui/primitives/module-page";
 
 export default function SettingsPage() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { Radar, ArrowUpRight } from "lucide-react";
-import { CollectionCard } from "@/components/primitives/collection-card";
+import { CollectionCard } from "@/ui/primitives/collection-card";
 import { getDomainConfig } from "@/lib/navigation";
 import type {
   TaskInsight,

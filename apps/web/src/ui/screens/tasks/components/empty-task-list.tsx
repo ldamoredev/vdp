@@ -1,5 +1,5 @@
 import { CheckCheck, MessageSquarePlus, Plus, Sparkles } from "lucide-react";
-import { StateCard } from "@/components/primitives/state-card";
+import { StateCard } from "@/ui/primitives/state-card";
 
 type FilterKey = "focus" | "pending" | "done" | "all";
 

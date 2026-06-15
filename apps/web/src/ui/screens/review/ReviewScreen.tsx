@@ -1,4 +1,4 @@
-import { ModulePage } from "@/components/primitives/module-page";
+import { ModulePage } from "@/ui/primitives/module-page";
 import { DailyReviewScreen } from "@/features/review/components/daily-review-screen";
 import { ReviewWalletEditSheet } from "@/features/review/components/review-wallet-edit-sheet";
 import { useDailyReviewModel } from "@/features/review/use-daily-review-model";

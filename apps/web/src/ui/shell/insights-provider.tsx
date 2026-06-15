@@ -1,4 +1,4 @@
-import { useInsightsSSE } from "@/components/shell/use-insights-sse";
+import { useInsightsSSE } from "@/ui/shell/use-insights-sse";
 import { ToastContainer } from "./toast-container";
 
 /**

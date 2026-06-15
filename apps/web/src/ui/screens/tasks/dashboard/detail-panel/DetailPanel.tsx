@@ -1,7 +1,7 @@
 import { ListTodo, Plus } from "lucide-react";
 import { type FormEvent } from "react";
 
-import { StateCard } from "@/components/primitives/state-card";
+import { StateCard } from "@/ui/primitives/state-card";
 import { TaskDomainBadge } from "@/ui/screens/tasks/components/task-domain-badge";
 import { TaskPriorityBadge } from "@/ui/screens/tasks/components/task-priority-badge";
 import type {

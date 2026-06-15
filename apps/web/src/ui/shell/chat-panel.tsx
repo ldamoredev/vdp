@@ -8,11 +8,11 @@ import { domains, getDomainConfig, getDomainFromPathname, type DomainKey } from 
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
 import { useTasksEvents } from "@/TasksEventsProvider";
-import { ChatHeader } from "@/components/chat/chat-header";
-import { ConversationList } from "@/components/chat/conversation-list";
-import { MessageBubble } from "@/components/chat/message-bubble";
-import { useChatConversations } from "@/components/chat/use-chat-conversations";
-import { useChatStream } from "@/components/chat/use-chat-stream";
+import { ChatHeader } from "@/ui/chat/chat-header";
+import { ConversationList } from "@/ui/chat/conversation-list";
+import { MessageBubble } from "@/ui/chat/message-bubble";
+import { useChatConversations } from "@/ui/chat/use-chat-conversations";
+import { useChatStream } from "@/ui/chat/use-chat-stream";
 
 function getAgentBasePath(endpoint: string) {
   return endpoint.replace(/\/chat$/, "");

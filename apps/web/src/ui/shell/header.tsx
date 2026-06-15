@@ -7,7 +7,7 @@ import { chatStore } from "@/lib/chat-store";
 import { logout, useCurrentUser } from "@/lib/auth";
 import { shellStore } from "@/lib/shell-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/ui/primitives/theme-toggle";
 
 export function Header() {
   const navigate = useNavigate();

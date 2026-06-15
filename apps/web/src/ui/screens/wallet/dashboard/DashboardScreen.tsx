@@ -10,9 +10,9 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { CollectionCard } from "@/components/primitives/collection-card";
-import { ModulePage } from "@/components/primitives/module-page";
-import { StateCard } from "@/components/primitives/state-card";
+import { CollectionCard } from "@/ui/primitives/collection-card";
+import { ModulePage } from "@/ui/primitives/module-page";
+import { StateCard } from "@/ui/primitives/state-card";
 import type {
   DashboardAccountVM,
   DashboardStatVM,

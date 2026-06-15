@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, CheckCircle2, ListChecks, Plus } from "lucide-react";
 import { useCore } from "@/CoreProvider";
-import { CollectionCard } from "@/components/primitives/collection-card";
+import { CollectionCard } from "@/ui/primitives/collection-card";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
 import type { Task } from "@/core/domain/tasks/Task";

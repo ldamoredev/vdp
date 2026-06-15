@@ -1,5 +1,5 @@
 import type { AgentMessageRecord } from "./agent-api";
-import { parseToolAction } from "@/components/chat/tool-actions";
+import { parseToolAction } from "@/ui/chat/tool-actions";
 import type { Message } from "./types";
 
 export function mapPersistedMessages(records: AgentMessageRecord[]): Message[] {

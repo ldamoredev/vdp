@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 
-import { ModulePage } from "@/components/primitives/module-page";
-import { StateCard } from "@/components/primitives/state-card";
+import { ModulePage } from "@/ui/primitives/module-page";
+import { StateCard } from "@/ui/primitives/state-card";
 import type { CategoryFormVM, CategoryGroupVM } from "@/ui/models/wallet/CategoriesViewModel";
 import { WalletEmptyState } from "../components/wallet-empty-state";
 import { useCategoriesPresenter } from "./useCategoriesPresenter";

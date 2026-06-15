@@ -2,7 +2,7 @@ import {
   getToolDisplayName,
   parseToolAction,
   type ToolActionView,
-} from "@/components/chat/tool-actions";
+} from "@/ui/chat/tool-actions";
 import type { Message } from "./types";
 
 export type ChatStreamEvent =

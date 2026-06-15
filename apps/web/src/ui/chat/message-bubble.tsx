@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { Loader2, Wrench } from "lucide-react";
-import { getToolDisplayName } from "@/components/chat/tool-actions";
+import { getToolDisplayName } from "@/ui/chat/tool-actions";
 import type { Message } from "./types";
 
 interface MessageBubbleProps {

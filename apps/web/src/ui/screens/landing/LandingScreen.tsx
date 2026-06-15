@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/ui/primitives/theme-toggle";
 
 const modules = [
   {

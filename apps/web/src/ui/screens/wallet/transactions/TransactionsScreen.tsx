@@ -11,8 +11,8 @@ import {
   X,
 } from "lucide-react";
 
-import { ModulePage } from "@/components/primitives/module-page";
-import { StateCard } from "@/components/primitives/state-card";
+import { ModulePage } from "@/ui/primitives/module-page";
+import { StateCard } from "@/ui/primitives/state-card";
 import { buildInitialTransactionFilters } from "@/core/domain/wallet/Transaction";
 import type {
   TransactionRowVM,

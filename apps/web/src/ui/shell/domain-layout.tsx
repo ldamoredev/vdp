@@ -1,11 +1,11 @@
 import { Outlet, useLocation } from "react-router";
-import { IconRail } from '@/components/shell/icon-rail';
-import { SidebarDrawer } from '@/components/shell/sidebar-drawer';
-import { Header } from '@/components/shell/header';
-import { ChatPanel } from '@/components/shell/chat-panel';
-import { AuthGate } from '@/components/auth/auth-gate';
-import { MobileTabBar } from '@/components/shell/mobile-tab-bar';
-import { InsightsProvider } from '@/components/shell/insights-provider';
+import { IconRail } from '@/ui/shell/icon-rail';
+import { SidebarDrawer } from '@/ui/shell/sidebar-drawer';
+import { Header } from '@/ui/shell/header';
+import { ChatPanel } from '@/ui/shell/chat-panel';
+import { AuthGate } from '@/ui/shell/auth-gate';
+import { MobileTabBar } from '@/ui/shell/mobile-tab-bar';
+import { InsightsProvider } from '@/ui/shell/insights-provider';
 import { getDomainFromPathname } from '@/lib/navigation';
 import React from 'react';
 

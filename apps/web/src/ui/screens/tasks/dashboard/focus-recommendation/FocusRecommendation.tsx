@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 
-import { StateCard } from "@/components/primitives/state-card";
+import { StateCard } from "@/ui/primitives/state-card";
 import { CarryOverBadge } from "@/ui/screens/tasks/components/carry-over-badge";
 import { TaskDomainBadge } from "@/ui/screens/tasks/components/task-domain-badge";
 import { TaskPriorityBadge } from "@/ui/screens/tasks/components/task-priority-badge";

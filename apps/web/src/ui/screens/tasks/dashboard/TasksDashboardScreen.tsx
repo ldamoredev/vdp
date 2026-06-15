@@ -1,4 +1,4 @@
-import { ModulePage } from "@/components/primitives/module-page";
+import { ModulePage } from "@/ui/primitives/module-page";
 import { DetailPanel } from "./detail-panel/DetailPanel";
 import { ExecutionQueue } from "./execution-queue/ExecutionQueue";
 import { FocusRecommendation } from "./focus-recommendation/FocusRecommendation";

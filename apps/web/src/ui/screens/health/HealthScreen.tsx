@@ -1,4 +1,4 @@
-import { ModulePage } from "@/components/primitives/module-page";
+import { ModulePage } from "@/ui/primitives/module-page";
 import { CountersSection } from "./counters/CountersSection";
 import { GoalsSection } from "./goals/GoalsSection";
 import { HabitsSection } from "./habits/HabitsSection";

@@ -13,8 +13,8 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { ModulePage } from "@/components/primitives/module-page";
-import { StateCard } from "@/components/primitives/state-card";
+import { ModulePage } from "@/ui/primitives/module-page";
+import { StateCard } from "@/ui/primitives/state-card";
 import { TaskDomainBadge } from "@/ui/screens/tasks/components/task-domain-badge";
 import { TaskPriorityBadge } from "@/ui/screens/tasks/components/task-priority-badge";
 import type {

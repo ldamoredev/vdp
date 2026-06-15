@@ -1,9 +1,9 @@
 import { createBrowserRouter } from "react-router";
 
-import DomainError from "@/components/shell/domain-error";
-import DomainLayout from "@/components/shell/domain-layout";
-import NotFound from "@/components/shell/not-found";
-import RootError from "@/components/shell/root-error";
+import DomainError from "@/ui/shell/domain-error";
+import DomainLayout from "@/ui/shell/domain-layout";
+import NotFound from "@/ui/shell/not-found";
+import RootError from "@/ui/shell/root-error";
 import { HealthScreen } from "@/ui/screens/health/HealthScreen";
 import HomeScreen from "@/ui/screens/home/HomeScreen";
 import LandingScreen from "@/ui/screens/landing/LandingScreen";
