@@ -1,9 +1,11 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import { Core } from '../../../Core';
 import { httpErrorHandler } from '../../../common/http/errors';
 import { TestCoreConfiguration } from './TestCoreConfiguration';
 import { getTestUser, PRIMARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
+import { MAX_FILE_BYTES } from '../../domain/medical/file-validation';
 
 export class TestApp {
     public app!: FastifyInstance;
@@ -15,6 +17,9 @@ export class TestApp {
         this.app = Fastify({ logger: false });
 
         await this.app.register(cors, { origin: true });
+        await this.app.register(multipart, {
+            limits: { fileSize: MAX_FILE_BYTES, files: 1, fields: 4 },
+        });
         this.app.setErrorHandler(httpErrorHandler);
 
         this.app.addHook('preHandler', async (request) => {

@@ -7,7 +7,8 @@ import { CreateHabit } from './CreateHabit';
 /**
  * The graduation loop: a goal is how a habit gets started; a habit is how
  * a goal stays won. Completes the goal (idempotently — it may already be
- * done when the UI offers the conversion) and creates the daily habit.
+ * done when the UI offers the conversion) and creates the habit with the
+ * chosen cadence.
  */
 export class GraduateGoal {
     constructor(
@@ -18,6 +19,8 @@ export class GraduateGoal {
     async execute(userId: string, goalId: string, data: {
         habitName: string;
         emoji?: string | null;
+        cadence?: 'daily' | 'weekly';
+        weeklyTarget?: number | null;
     }): Promise<{ goal: Goal; habit: Habit }> {
         const goal = await this.goals.getGoal(userId, goalId);
         if (!goal) throw new NotFoundHttpError('Goal not found');
@@ -31,6 +34,8 @@ export class GraduateGoal {
         const habit = await this.createHabit.execute(userId, {
             name: data.habitName,
             emoji: data.emoji ?? null,
+            cadence: data.cadence,
+            weeklyTarget: data.weeklyTarget,
         });
 
         return { goal, habit };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getShellNavState, isSettingsPath } from "../navigation";
+import { domains, getDomainConfig, getShellNavState, isSettingsPath } from "../navigation";
 
 describe("shell navigation state", () => {
   it("marks settings routes as active utility navigation", () => {
@@ -26,5 +26,24 @@ describe("shell navigation state", () => {
       activeDomain: "wallet",
       settingsActive: false,
     });
+  });
+
+  it("keeps medical records as a health section, not a domain", () => {
+    expect(domains.map((domain) => domain.key)).not.toContain("medical");
+    expect(getShellNavState("/health/medical")).toEqual({
+      homeActive: false,
+      activeDomain: "health",
+      settingsActive: false,
+    });
+    expect(getDomainConfig("medical")).toBeUndefined();
+  });
+
+  it("exposes medical records from the health sidebar", () => {
+    const health = getDomainConfig("health");
+    expect(health?.navItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ href: "/health/medical", label: "Fichas médicas" }),
+      ]),
+    );
   });
 });

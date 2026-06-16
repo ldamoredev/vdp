@@ -1,13 +1,23 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { FileStorage } from '../common/base/storage/FileStorage';
 import { CreateHabitCommand, CreateHabitCommandHandler } from './app/CreateHabitCommand';
 import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from './app/GetHabitsOverviewQuery';
+import { CreateMedicalRecordCommand, CreateMedicalRecordCommandHandler } from './app/medical/CreateMedicalRecordCommand';
+import { DeleteAttachmentCommand, DeleteAttachmentCommandHandler } from './app/medical/DeleteAttachmentCommand';
+import { DeleteMedicalRecordCommand, DeleteMedicalRecordCommandHandler } from './app/medical/DeleteMedicalRecordCommand';
+import { DownloadAttachmentQuery, DownloadAttachmentQueryHandler } from './app/medical/DownloadAttachmentQuery';
+import { GetMedicalRecordsQuery, GetMedicalRecordsQueryHandler } from './app/medical/GetMedicalRecordsQuery';
+import { UpdateMedicalRecordCommand, UpdateMedicalRecordCommandHandler } from './app/medical/UpdateMedicalRecordCommand';
+import { UploadAttachmentCommand, UploadAttachmentCommandHandler } from './app/medical/UploadAttachmentCommand';
 import { HabitRepository } from './domain/HabitRepository';
 import { CounterRepository } from './domain/CounterRepository';
 import { GoalRepository } from './domain/GoalRepository';
+import { MedicalRepository } from './domain/medical/MedicalRepository';
 import { HealthAgent } from './infrastructure/agent/HealthAgent';
 import { HealthAgentController } from './infrastructure/routes/HealthAgentController';
 import { HealthController } from './infrastructure/routes/HealthController';
+import { MedicalController } from './infrastructure/routes/MedicalController';
 import { ArchiveHabit } from './services/ArchiveHabit';
 import { CompleteHabitDay } from './services/CompleteHabitDay';
 import { CreateHabit } from './services/CreateHabit';
@@ -63,6 +73,8 @@ export class HealthModuleRuntime {
         this.deps.bus.registerHandler(CreateHabitCommand, () =>
             new CreateHabitCommandHandler(this.habitRepository())
         );
+
+        this.registerMedicalHandlers();
     }
 
     registerEventHandlers(): void {
@@ -87,8 +99,30 @@ export class HealthModuleRuntime {
     createControllers() {
         return [
             new HealthController(this.deps.bus, this.deps.services),
+            new MedicalController(this.deps.bus),
             new HealthAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
         ];
+    }
+
+    private registerMedicalHandlers(): void {
+        const repo = this.medicalRepository();
+        const storage = this.fileStorage();
+
+        this.deps.bus.registerHandler(GetMedicalRecordsQuery, () => new GetMedicalRecordsQueryHandler(repo));
+        this.deps.bus.registerHandler(CreateMedicalRecordCommand, () => new CreateMedicalRecordCommandHandler(repo));
+        this.deps.bus.registerHandler(UpdateMedicalRecordCommand, () => new UpdateMedicalRecordCommandHandler(repo));
+        this.deps.bus.registerHandler(DeleteMedicalRecordCommand, () =>
+            new DeleteMedicalRecordCommandHandler(repo, storage),
+        );
+        this.deps.bus.registerHandler(UploadAttachmentCommand, () =>
+            new UploadAttachmentCommandHandler(repo, storage),
+        );
+        this.deps.bus.registerHandler(DownloadAttachmentQuery, () =>
+            new DownloadAttachmentQueryHandler(repo, storage),
+        );
+        this.deps.bus.registerHandler(DeleteAttachmentCommand, () =>
+            new DeleteAttachmentCommandHandler(repo, storage),
+        );
     }
 
     private habitRepository(): HabitRepository {
@@ -101,6 +135,14 @@ export class HealthModuleRuntime {
 
     private goalRepository(): GoalRepository {
         return this.deps.repositories.get(GoalRepository);
+    }
+
+    private medicalRepository(): MedicalRepository {
+        return this.deps.repositories.get(MedicalRepository);
+    }
+
+    private fileStorage(): FileStorage {
+        return this.deps.repositories.get(FileStorage);
     }
 
     private agentRepository(): AgentRepository {

@@ -1,21 +1,48 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   changePassword,
+  clearCurrentUser,
+  confirmSessionAfterUnauthorized,
   fetchSecurityOverview,
   fetchCurrentUser,
   logout,
   logoutOtherSessions,
+  refreshCurrentUser,
+  setAuthenticatedUser,
   updateProfile,
 } from "../auth";
 
 describe("auth client helpers", () => {
   const fetchMock = vi.fn();
 
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  }
+
+  function meResponse(user: {
+    id: string;
+    email: string;
+    displayName: string;
+    role: "user";
+  }) {
+    return {
+      ok: true,
+      json: async () => ({ user }),
+    };
+  }
+
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
   });
 
   afterEach(() => {
+    clearCurrentUser();
     fetchMock.mockReset();
     vi.unstubAllGlobals();
   });
@@ -53,6 +80,76 @@ describe("auth client helpers", () => {
     });
 
     await expect(fetchCurrentUser()).rejects.toThrow("Not authenticated");
+  });
+
+  it("keeps the authenticated user when a domain 401 races with a valid session", async () => {
+    const user = {
+      id: "user-1",
+      email: "owner@vdp.local",
+      displayName: "Owner",
+      role: "user" as const,
+    };
+    setAuthenticatedUser(user);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ user }),
+    });
+
+    await confirmSessionAfterUnauthorized();
+
+    await expect(refreshCurrentUser()).resolves.toEqual(user);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears the authenticated user when session confirmation also fails", async () => {
+    setAuthenticatedUser({
+      id: "user-1",
+      email: "owner@vdp.local",
+      displayName: "Owner",
+      role: "user",
+    });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: "Missing session" }),
+    });
+
+    await confirmSessionAfterUnauthorized();
+
+    await expect(refreshCurrentUser()).rejects.toThrow("Not authenticated");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not keep a stale confirmation when a newer login supersedes it", async () => {
+    const userA = {
+      id: "user-1",
+      email: "owner@vdp.local",
+      displayName: "Owner",
+      role: "user" as const,
+    };
+    const userB = {
+      id: "user-2",
+      email: "next@vdp.local",
+      displayName: "Next",
+      role: "user" as const,
+    };
+    const firstConfirmation = deferred<ReturnType<typeof meResponse>>();
+    const secondConfirmation = deferred<ReturnType<typeof meResponse>>();
+    fetchMock
+      .mockReturnValueOnce(firstConfirmation.promise)
+      .mockReturnValueOnce(secondConfirmation.promise);
+
+    setAuthenticatedUser(userA);
+    const staleCheck = confirmSessionAfterUnauthorized();
+    setAuthenticatedUser(userB);
+    firstConfirmation.resolve(meResponse(userA));
+    await staleCheck;
+
+    const currentCheck = confirmSessionAfterUnauthorized();
+    secondConfirmation.resolve(meResponse(userB));
+    await currentCheck;
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await expect(refreshCurrentUser()).resolves.toEqual(userB);
   });
 
   it("updateProfile sends the payload and returns the updated user", async () => {

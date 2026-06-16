@@ -78,6 +78,18 @@ describe("FetchHttpClient", () => {
     expect(error.body).toMatchObject({ error: "NOT_FOUND", message: "nope" });
   });
 
+  it("notifies when the backend rejects the current session", async () => {
+    const onUnauthorized = vi.fn();
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ message: "Not authenticated" }, { status: 401 }));
+    const client = new FetchHttpClient({ baseUrl: "/api/v1", fetchFn, onUnauthorized });
+
+    await client.get("/medical/records").catch(() => {});
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
   it("wraps a fetch rejection in a NetworkError", async () => {
     const fetchFn = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     const client = new FetchHttpClient({ fetchFn });

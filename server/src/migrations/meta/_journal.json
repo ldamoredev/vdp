@@ -43,6 +43,13 @@
       "when": 1781547888431,
       "tag": "0005_faulty_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781646780103,
+      "tag": "0006_flat_fantastic_four",
+      "breakpoints": true
     }
   ]
 }

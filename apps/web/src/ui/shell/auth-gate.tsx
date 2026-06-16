@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useCurrentUser } from "@/lib/auth";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isLoading, isError } = useCurrentUser();
+  const { isLoading, isError, data } = useCurrentUser();
 
   useEffect(() => {
     if (!isLoading && isError) {
@@ -14,14 +14,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [isError, isLoading, pathname, navigate]);
 
-  if (isError) {
-    return null;
-  }
+  if (isError) return null;
+  if (isLoading && !data) return null;
+  if (!data) return null;
 
-  // Optimistic render while /api/auth/me resolves: the middleware already
-  // guaranteed a session cookie exists for any non-public route, so blocking
-  // the whole shell here would add a full roundtrip to every cold load. An
-  // invalid cookie still redirects via the effect above; until then the shell
-  // renders with its own loading states.
+  // Do not mount module screens until the browser session is confirmed.
+  // Otherwise their presenters can fire API requests, cache error state, and
+  // briefly boot module-local stores before the redirect to /login completes.
   return <>{children}</>;
 }

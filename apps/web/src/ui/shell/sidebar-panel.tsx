@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useLocation } from "react-router";
 import { Settings2 } from "lucide-react";
 import {
+  domainHasAgent,
   getDomainFromPathname,
   getDomainConfig,
   isSettingsPath,
@@ -69,6 +70,7 @@ export function SidebarPanel() {
   }
 
   if (!domain) return null;
+  const domainChatEnabled = agentChat.enabled && domainHasAgent(domain);
 
   return (
     <aside className="w-full md:w-48 h-full flex flex-col bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] backdrop-blur-xl">
@@ -120,15 +122,19 @@ export function SidebarPanel() {
           <div className="flex items-center gap-1.5 mb-1.5">
             <div
               className={`w-1.5 h-1.5 rounded-full ${
-                agentChat.enabled ? "bg-[var(--accent-green)] animate-pulse" : "bg-[var(--muted)]"
+                domainChatEnabled ? "bg-[var(--accent-green)] animate-pulse" : "bg-[var(--muted)]"
               }`}
             />
             <span className="text-[11px] font-medium text-[var(--foreground-muted)]">
-              {agentChat.enabled ? "AI Activo" : "AI Desactivado"}
+              {domainChatEnabled ? "AI Activo" : "AI Desactivado"}
             </span>
           </div>
           <p className="text-[11px] text-[var(--muted)] leading-relaxed">
-            {agentChat.enabled ? domain.aiDescription : "Configura un proveedor IA para habilitar el chat."}
+            {domainChatEnabled
+              ? domain.aiDescription
+              : domainHasAgent(domain)
+                ? "Configura un proveedor IA para habilitar el chat."
+                : domain.aiDescription}
           </p>
         </div>
       </div>

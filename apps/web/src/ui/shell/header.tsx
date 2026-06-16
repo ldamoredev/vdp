@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronDown, LogOut, Menu, MessageCircle, Settings2, Sparkles } from "lucide-react";
@@ -7,11 +7,17 @@ import { logout, useCurrentUser } from "@/lib/auth";
 import { shellStore } from "@/lib/shell-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
 import { ThemeToggle } from "@/ui/primitives/theme-toggle";
+import { domainHasAgent, getDomainConfig, getDomainFromPathname } from "@/lib/navigation";
 
 export function Header() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { data: currentUser } = useCurrentUser();
   const agentChat = useAgentChatStatus();
+  const routeDomainKey = getDomainFromPathname(pathname);
+  const routeDomain = routeDomainKey ? getDomainConfig(routeDomainKey) : null;
+  const routeAllowsChat = !routeDomain || domainHasAgent(routeDomain);
+  const chatAvailable = agentChat.enabled && routeAllowsChat;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -20,7 +26,7 @@ export function Header() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
-        if (agentChat.enabled) chatStore.toggle();
+        if (chatAvailable) chatStore.toggle();
       }
 
       if (e.key === "Escape") {
@@ -29,7 +35,7 @@ export function Header() {
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [agentChat.enabled]);
+  }, [chatAvailable]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -43,7 +49,9 @@ export function Header() {
   }, []);
 
   const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
-  const chatDisabledMessage = agentChatDisabledMessage(agentChat);
+  const chatDisabledMessage = routeAllowsChat
+    ? agentChatDisabledMessage(agentChat)
+    : routeDomain?.chatDescription ?? agentChatDisabledMessage(agentChat);
 
   async function handleLogout() {
     await logout();
@@ -125,9 +133,9 @@ export function Header() {
           <ThemeToggle />
         </div>
         <button
-          onClick={agentChat.enabled ? chatStore.toggle : undefined}
-          disabled={!agentChat.enabled}
-          title={agentChat.enabled ? "Abrir chat IA" : chatDisabledMessage}
+          onClick={chatAvailable ? chatStore.toggle : undefined}
+          disabled={!chatAvailable}
+          title={chatAvailable ? "Abrir chat IA" : chatDisabledMessage}
           className="header-shell-control flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3.5 py-1.5 text-sm font-medium text-[var(--foreground-muted)] transition-all cursor-pointer group hover:border-[var(--glass-border-hover)] hover:bg-[var(--hover-overlay-strong)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[var(--glass-border)] disabled:hover:bg-[var(--hover-overlay)] disabled:hover:text-[var(--foreground-muted)]"
         >
           <div className="relative">

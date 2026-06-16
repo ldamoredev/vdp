@@ -4,7 +4,7 @@ import { Bot, Send, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
 import { useIsMobile } from "@/lib/use-breakpoint";
-import { domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
+import { domainHasAgent, domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
 import { useTasksEvents } from "@/TasksEventsProvider";
@@ -18,7 +18,7 @@ function getAgentBasePath(endpoint: string) {
   return endpoint.replace(/\/chat$/, "");
 }
 
-const enabledDomains = domains.filter((d) => !d.disabled);
+const enabledDomains = domains.filter((d) => !d.disabled && domainHasAgent(d));
 
 export function ChatPanel() {
   const isOpen = useChatOpen();
@@ -32,7 +32,9 @@ export function ChatPanel() {
   const [fallbackDomainKey, setFallbackDomainKey] = useState<DomainKey>("tasks");
   const domainKey = routeDomainKey ?? fallbackDomainKey;
   const domain = getDomainConfig(domainKey) ?? null;
-  const agentBasePath = domain && agentChat.enabled ? getAgentBasePath(domain.agentEndpoint) : null;
+  const domainWithAgent = domain && domainHasAgent(domain) ? domain : null;
+  const domainChatEnabled = agentChat.enabled && !!domainWithAgent;
+  const agentBasePath = domainChatEnabled ? getAgentBasePath(domainWithAgent.agentEndpoint) : null;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +68,7 @@ export function ChatPanel() {
 
   if (!isOpen || !domain) return null;
 
-  const disabledMessage = agentChatDisabledMessage(agentChat);
+  const disabledMessage = domainWithAgent ? agentChatDisabledMessage(agentChat) : domain.chatDescription;
 
   return (
     <div
@@ -84,7 +86,7 @@ export function ChatPanel() {
         onSelectDomain={(key) => setFallbackDomainKey(key)}
       />
 
-      {agentChat.enabled && (
+      {domainChatEnabled && (
         <ConversationList
           conversations={chat.conversations}
           conversationId={chat.conversationId}
@@ -96,7 +98,7 @@ export function ChatPanel() {
       )}
 
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {!agentChat.enabled && (
+        {!domainChatEnabled && (
           <div className="text-center py-16 animate-fade-in">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -116,7 +118,7 @@ export function ChatPanel() {
           </div>
         )}
 
-        {agentChat.enabled && chat.conversationId && chat.messages.length > 0 && (() => {
+        {domainChatEnabled && chat.conversationId && chat.messages.length > 0 && (() => {
           const activeConv = chat.conversations.find((c) => c.id === chat.conversationId);
           if (!activeConv) return null;
           return (
@@ -132,7 +134,7 @@ export function ChatPanel() {
           );
         })()}
 
-        {agentChat.enabled && chat.messages.length === 0 && !chat.isLoadingHistory && (
+        {domainChatEnabled && chat.messages.length === 0 && !chat.isLoadingHistory && (
           <div className="text-center py-16 animate-fade-in">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -153,7 +155,7 @@ export function ChatPanel() {
           </div>
         )}
 
-        {agentChat.enabled && chat.messages.map((message) => (
+        {domainChatEnabled && chat.messages.map((message) => (
           <div key={message.id}>
             <MessageBubble message={message} />
           </div>
@@ -162,7 +164,13 @@ export function ChatPanel() {
       </div>
 
       <form
-        onSubmit={(e) => stream.handleSubmit(e, domain.agentEndpoint, chat.conversationId)}
+        onSubmit={(e) => {
+          if (!domainWithAgent) {
+            e.preventDefault();
+            return;
+          }
+          stream.handleSubmit(e, domainWithAgent.agentEndpoint, chat.conversationId);
+        }}
         className="p-3 border-t border-[var(--glass-border)]"
       >
         {stream.sendError && (
@@ -175,9 +183,9 @@ export function ChatPanel() {
             ref={inputRef}
             value={stream.input}
             onChange={(e) => stream.setInput(e.target.value)}
-            placeholder={agentChat.enabled ? domain.chatPlaceholder : "Chat IA desactivado"}
+            placeholder={domainChatEnabled ? domain.chatPlaceholder : "Chat IA desactivado"}
             className="glass-input flex-1 px-3.5 py-2.5 text-[13px]"
-            disabled={!agentChat.enabled || stream.isStreaming}
+            disabled={!domainChatEnabled || stream.isStreaming}
           />
           {stream.isStreaming ? (
             <button
@@ -191,7 +199,7 @@ export function ChatPanel() {
           ) : (
             <button
               type="submit"
-              disabled={!agentChat.enabled || !stream.input.trim()}
+              disabled={!domainChatEnabled || !stream.input.trim()}
               className="btn-primary p-2.5 disabled:opacity-30"
             >
               <Send size={15} />

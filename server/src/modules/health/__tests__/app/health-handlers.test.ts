@@ -1,36 +1,30 @@
+import { Identity } from '@nbottarini/cqbus';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { randomUUID } from 'crypto';
 
-import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
+import { UserIdentity } from '../../../common/app/auth/UserIdentity';
 import { Habit } from '../../domain/Habit';
-import { CreateHabit } from '../../services/CreateHabit';
-import { GetHabitsOverview } from '../../services/GetHabitsOverview';
 import { FakeHabitRepository } from '../fakes/FakeHabitRepository';
 import { CreateHabitCommand, CreateHabitCommandHandler } from '../../app/CreateHabitCommand';
 import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from '../../app/GetHabitsOverviewQuery';
 
 const userId = 'user-1';
-
-function authenticated(auth: AuthContextStorage, callback: () => Promise<unknown>): Promise<unknown> {
-    return auth.runWithContext({
-        isAuthenticated: true,
-        userId,
-        sessionId: 'session-1',
-        role: 'user',
-        email: 'test@example.com',
-        displayName: 'Test',
-    }, callback);
-}
+const identity = new UserIdentity(userId, 'test@example.com', 'Test', ['user']);
+const anonymous = {
+    isAuthenticated: false,
+    authenticationType: 'none',
+    roles: [],
+    properties: {},
+    name: 'anonymous',
+} as Identity;
 
 describe('health CQBus handlers', () => {
     let repo: FakeHabitRepository;
-    let auth: AuthContextStorage;
 
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 5, 11, 12, 0, 0));
         repo = new FakeHabitRepository();
-        auth = new AuthContextStorage();
     });
 
     afterEach(() => {
@@ -43,9 +37,9 @@ describe('health CQBus handlers', () => {
         repo.seedHabit(userId, ownHabit);
         repo.seedHabit('someone-else', otherHabit);
         repo.seedCompletions(ownHabit.id, ['2026-06-11']);
-        const handler = new GetHabitsOverviewQueryHandler(new GetHabitsOverview(repo), auth);
+        const handler = new GetHabitsOverviewQueryHandler(repo);
 
-        const overview = await authenticated(auth, () => handler.handle(new GetHabitsOverviewQuery()));
+        const overview = await handler.handle(new GetHabitsOverviewQuery(), identity);
 
         expect(overview).toMatchObject({
             date: '2026-06-11',
@@ -60,15 +54,9 @@ describe('health CQBus handlers', () => {
     });
 
     it('creates a habit for the authenticated user and returns its overview row', async () => {
-        const handler = new CreateHabitCommandHandler(
-            new CreateHabit(repo),
+        const handler = new CreateHabitCommandHandler(repo);
 
-
-        );
-
-        const row = await authenticated(auth, () =>
-            handler.handle(new CreateHabitCommand({ name: 'Meditar', emoji: '🧘' })),
-        );
+        const row = await handler.handle(new CreateHabitCommand({ name: 'Meditar', emoji: '🧘' }), identity);
 
         expect(row).toMatchObject({
             name: 'Meditar',
@@ -81,16 +69,29 @@ describe('health CQBus handlers', () => {
         await expect(repo.listHabits('someone-else')).resolves.toHaveLength(0);
     });
 
-    it('rejects unauthenticated access', async () => {
-        const getHandler = new GetHabitsOverviewQueryHandler(new GetHabitsOverview(repo), auth);
-        const createHandler = new CreateHabitCommandHandler(
-            new CreateHabit(repo),
+    it('creates weekly habits with target cadence through the CQBus handler', async () => {
+        const handler = new CreateHabitCommandHandler(repo);
 
-
+        const row = await handler.handle(
+            new CreateHabitCommand({ name: 'Gimnasio', cadence: 'weekly', weeklyTarget: 3 }),
+            identity,
         );
 
-        await expect(getHandler.handle(new GetHabitsOverviewQuery())).rejects.toMatchObject({ statusCode: 401 });
-        await expect(createHandler.handle(new CreateHabitCommand({ name: 'Leer' }))).rejects.toMatchObject({
+        expect(row).toMatchObject({
+            name: 'Gimnasio',
+            cadence: 'weekly',
+            weeklyTarget: 3,
+            periodCompletions: 0,
+            periodTarget: 3,
+        });
+    });
+
+    it('rejects unauthenticated access', async () => {
+        const getHandler = new GetHabitsOverviewQueryHandler(repo);
+        const createHandler = new CreateHabitCommandHandler(repo);
+
+        await expect(getHandler.handle(new GetHabitsOverviewQuery(), anonymous)).rejects.toMatchObject({ statusCode: 401 });
+        await expect(createHandler.handle(new CreateHabitCommand({ name: 'Leer' }), anonymous)).rejects.toMatchObject({
             statusCode: 401,
         });
     });

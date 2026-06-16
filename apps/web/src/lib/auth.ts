@@ -61,6 +61,7 @@ let currentUserSnapshot: CurrentUserSnapshot = {
   loadedAt: 0,
 };
 let currentUserRequest: Promise<CurrentUser> | null = null;
+let unauthorizedSessionCheck: Promise<void> | null = null;
 let currentUserVersion = 0;
 
 function notifyCurrentUserSubscribers(): void {
@@ -188,12 +189,46 @@ export function setAuthenticatedUser(user: CurrentUser): void {
 export function clearCurrentUser(): void {
   currentUserVersion += 1;
   currentUserRequest = null;
+  unauthorizedSessionCheck = null;
   setCurrentUserSnapshot({
     data: undefined,
     error: new Error("Not authenticated"),
     isLoading: false,
     loadedAt: 0,
   });
+}
+
+export function confirmSessionAfterUnauthorized(): Promise<void> {
+  if (unauthorizedSessionCheck) return unauthorizedSessionCheck;
+
+  const requestVersion = currentUserVersion + 1;
+  currentUserVersion = requestVersion;
+  setCurrentUserSnapshot({ isLoading: true, error: null });
+
+  const request = fetchCurrentUser()
+    .then((user) => {
+      if (requestVersion === currentUserVersion) {
+        setCurrentUserSnapshot({
+          data: user,
+          error: null,
+          isLoading: false,
+          loadedAt: Date.now(),
+        });
+      }
+    })
+    .catch(() => {
+      if (requestVersion === currentUserVersion) {
+        clearCurrentUser();
+      }
+    })
+    .finally(() => {
+      if (unauthorizedSessionCheck === request) {
+        unauthorizedSessionCheck = null;
+      }
+    });
+
+  unauthorizedSessionCheck = request;
+  return request;
 }
 
 export async function refreshCurrentUser(force = false): Promise<CurrentUser> {

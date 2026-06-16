@@ -6,6 +6,7 @@ import NotFound from "@/ui/shell/not-found";
 import RootError from "@/ui/shell/root-error";
 import { HealthScreen } from "@/ui/screens/health/HealthScreen";
 import HomeScreen from "@/ui/screens/home/HomeScreen";
+import { MedicalScreen } from "@/ui/screens/health/medical/MedicalScreen";
 import LandingScreen from "@/ui/screens/landing/LandingScreen";
 import LoginScreen from "@/ui/screens/login/LoginScreen";
 import { PeopleScreen } from "@/ui/screens/people/PeopleScreen";
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
           { path: "/wallet/transactions", element: <TransactionsScreen /> },
           { path: "/wallet/transactions/new", element: <TransactionFormScreen /> },
           { path: "/health", element: <HealthScreen /> },
+          { path: "/health/medical", element: <MedicalScreen /> },
           { path: "/review", element: <ReviewScreen /> },
           { path: "/settings", element: <SettingsScreen /> },
           { path: "/people", element: <PeopleScreen /> },

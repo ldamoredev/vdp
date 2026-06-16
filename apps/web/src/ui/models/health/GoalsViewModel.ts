@@ -1,4 +1,5 @@
 import type { GoalUrgency } from "@/core/domain/health/Goal";
+import type { HabitCadence } from "@vdp/shared";
 
 export interface GoalsViewModel {
   goals: GoalRowVM[];
@@ -23,5 +24,8 @@ export interface GoalRowVM {
 export interface GraduationVM {
   goalId: string;
   habitName: string;
+  cadence: HabitCadence;
+  weeklyTarget: number;
+  showWeeklyTarget: boolean;
   isGraduating: boolean;
 }

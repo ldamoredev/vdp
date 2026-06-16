@@ -13,10 +13,11 @@ import {
 import { users } from '../../../auth/infrastructure/db/schema';
 
 export const healthSchema = pgSchema("health");
+export const medicalSchema = pgSchema("medical");
 
 // ─── Habits ──────────────────────────────────────────────
-// Daily habits only: the v1 health slice. One row per habit; completions
-// live in habit_logs with one row per (habit, day).
+// Habits can be daily or weekly-targeted. Completions live in habit_logs with
+// one row per (habit, day); weekly cadence groups those rows by Monday-Sunday.
 export const habits = healthSchema.table(
   "habits",
   {
@@ -24,6 +25,8 @@ export const habits = healthSchema.table(
     ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     name: varchar("name", { length: 100 }).notNull(),
     emoji: varchar("emoji", { length: 8 }),
+    cadence: varchar("cadence", { length: 12 }).notNull().default("daily"),
+    weeklyTarget: integer("weekly_target"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -114,4 +117,47 @@ export const goals = healthSchema.table(
     index("goals_owner_user_idx").on(table.ownerUserId),
     index("goals_status_idx").on(table.status),
   ]
+);
+
+// ─── Medical records ─────────────────────────────────────
+// Health's private medical archive: consultas / estudios / vacunas / recetas.
+// The SQL namespace remains `medical` because migration 0005 already shipped
+// it; code ownership lives in Health.
+export const medicalRecords = medicalSchema.table(
+  "records",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 16 }).notNull(),
+    title: varchar("title", { length: 160 }).notNull(),
+    recordDate: date("record_date").notNull(),
+    professional: varchar("professional", { length: 160 }),
+    specialty: varchar("specialty", { length: 120 }),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("medical_records_owner_user_idx").on(table.ownerUserId)],
+);
+
+// File attachments: metadata only. The bytes live in core.file_blobs via the
+// FileStorage port, addressed by the opaque `storage_ref`.
+export const medicalAttachments = medicalSchema.table(
+  "attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    recordId: uuid("record_id")
+      .notNull()
+      .references(() => medicalRecords.id, { onDelete: "cascade" }),
+    filename: varchar("filename", { length: 200 }).notNull(),
+    mimeType: varchar("mime_type", { length: 100 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageRef: uuid("storage_ref").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("medical_attachments_record_idx").on(table.recordId),
+    index("medical_attachments_owner_user_idx").on(table.ownerUserId),
+  ],
 );

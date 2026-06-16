@@ -1,6 +1,8 @@
 import type { Core, CoreModule } from "../../Core";
 import type { HealthGateway } from "../../domain/health/HealthGateway";
+import type { MedicalGateway } from "../../domain/health/medical/MedicalGateway";
 import { HttpHealthGateway } from "../../infrastructure/http/HttpHealthGateway";
+import { HttpMedicalGateway } from "../../infrastructure/http/HttpMedicalGateway";
 
 import { ArchiveCounter, ArchiveCounterHandler } from "./ArchiveCounter";
 import { ArchiveHabit, ArchiveHabitHandler } from "./ArchiveHabit";
@@ -14,6 +16,12 @@ import { GetCountersOverview, GetCountersOverviewHandler } from "./GetCountersOv
 import { GetGoalsOverview, GetGoalsOverviewHandler } from "./GetGoalsOverview";
 import { GetHabitsOverview, GetHabitsOverviewHandler } from "./GetHabitsOverview";
 import { GraduateGoal, GraduateGoalHandler } from "./GraduateGoal";
+import { CreateMedicalRecord, CreateMedicalRecordHandler } from "./medical/CreateMedicalRecord";
+import { DeleteAttachment, DeleteAttachmentHandler } from "./medical/DeleteAttachment";
+import { DeleteMedicalRecord, DeleteMedicalRecordHandler } from "./medical/DeleteMedicalRecord";
+import { GetMedicalRecords, GetMedicalRecordsHandler } from "./medical/GetMedicalRecords";
+import { UpdateMedicalRecord, UpdateMedicalRecordHandler } from "./medical/UpdateMedicalRecord";
+import { UploadAttachment, UploadAttachmentHandler } from "./medical/UploadAttachment";
 import { RelapseCounter, RelapseCounterHandler } from "./RelapseCounter";
 import { UncompleteHabit, UncompleteHabitHandler } from "./UncompleteHabit";
 
@@ -24,10 +32,14 @@ import { UncompleteHabit, UncompleteHabitHandler } from "./UncompleteHabit";
  * gateway for tests.
  */
 export class HealthModule implements CoreModule {
-  constructor(private readonly gateway?: HealthGateway) {}
+  constructor(
+    private readonly gateway?: HealthGateway,
+    private readonly medicalGateway?: MedicalGateway,
+  ) {}
 
   register(core: Core): void {
     const gateway = this.gateway ?? new HttpHealthGateway(core.httpClient);
+    const medicalGateway = this.medicalGateway ?? new HttpMedicalGateway(core.httpClient);
 
     core.bus.registerHandler(GetHabitsOverview, () => new GetHabitsOverviewHandler(gateway));
     core.bus.registerHandler(CreateHabit, () => new CreateHabitHandler(gateway));
@@ -45,5 +57,12 @@ export class HealthModule implements CoreModule {
     core.bus.registerHandler(CompleteGoal, () => new CompleteGoalHandler(gateway));
     core.bus.registerHandler(DropGoal, () => new DropGoalHandler(gateway));
     core.bus.registerHandler(GraduateGoal, () => new GraduateGoalHandler(gateway));
+
+    core.bus.registerHandler(GetMedicalRecords, () => new GetMedicalRecordsHandler(medicalGateway));
+    core.bus.registerHandler(CreateMedicalRecord, () => new CreateMedicalRecordHandler(medicalGateway));
+    core.bus.registerHandler(UpdateMedicalRecord, () => new UpdateMedicalRecordHandler(medicalGateway));
+    core.bus.registerHandler(DeleteMedicalRecord, () => new DeleteMedicalRecordHandler(medicalGateway));
+    core.bus.registerHandler(UploadAttachment, () => new UploadAttachmentHandler(medicalGateway));
+    core.bus.registerHandler(DeleteAttachment, () => new DeleteAttachmentHandler(medicalGateway));
   }
 }

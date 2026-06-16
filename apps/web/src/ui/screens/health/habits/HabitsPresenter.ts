@@ -1,4 +1,5 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
+import type { HabitCadence } from "@vdp/shared";
 
 import type { Core } from "@/core/Core";
 import { sortHabitsForToday, summarizeHabits, type Habit } from "@/core/domain/health/Habit";
@@ -10,7 +11,7 @@ import { UncompleteHabit } from "@/core/app/health/UncompleteHabit";
 import type { HealthEvents } from "@/ui/events/HealthEvents";
 import type { HabitRowVM, HabitsViewModel } from "@/ui/models/health/HabitsViewModel";
 
-/** Daily habits: list, create, toggle, archive. Reloads when a goal graduates. */
+/** Habits: list, create with cadence, toggle today, archive. Reloads when a goal graduates. */
 export class HabitsPresenter extends PresenterBase<HabitsViewModel> {
   private habits: Habit[] = [];
   private busyIds = new Set<string>();
@@ -18,6 +19,8 @@ export class HabitsPresenter extends PresenterBase<HabitsViewModel> {
   private error = false;
   private isCreating = false;
   private newHabitName = "";
+  private newHabitCadence: HabitCadence = "daily";
+  private newHabitWeeklyTarget = 3;
 
   constructor(
     onChange: ChangeFunc,
@@ -45,13 +48,27 @@ export class HabitsPresenter extends PresenterBase<HabitsViewModel> {
     this.refresh();
   }
 
+  setNewHabitCadence(value: HabitCadence): void {
+    this.newHabitCadence = value;
+    this.refresh();
+  }
+
+  setNewHabitWeeklyTarget(value: number): void {
+    this.newHabitWeeklyTarget = Math.min(7, Math.max(1, Math.trunc(value)));
+    this.refresh();
+  }
+
   async createHabit(): Promise<void> {
     const name = this.newHabitName.trim();
     if (!name || this.isCreating) return;
     this.isCreating = true;
     this.refresh();
     try {
-      await this.core.execute(new CreateHabit({ name }));
+      await this.core.execute(new CreateHabit({
+        name,
+        cadence: this.newHabitCadence,
+        ...(this.newHabitCadence === "weekly" ? { weeklyTarget: this.newHabitWeeklyTarget } : {}),
+      }));
       this.newHabitName = "";
       await this.load();
     } finally {
@@ -110,12 +127,16 @@ export class HabitsPresenter extends PresenterBase<HabitsViewModel> {
     return {
       habits: this.habits.map((habit) => this.habitVM(habit)),
       completedToday: summary.completedToday,
+      inRhythm: summary.inRhythm,
       total: summary.total,
       showSummary: summary.total > 0,
       allDone: summary.allDone,
       isLoading: this.isLoading,
       error: this.error,
       newHabitName: this.newHabitName,
+      newHabitCadence: this.newHabitCadence,
+      newHabitWeeklyTarget: this.newHabitWeeklyTarget,
+      showWeeklyTarget: this.newHabitCadence === "weekly",
       isCreating: this.isCreating,
       canCreate: this.newHabitName.trim().length > 0 && !this.isCreating,
     };
@@ -128,12 +149,31 @@ export class HabitsPresenter extends PresenterBase<HabitsViewModel> {
       completedToday: habit.completedToday,
       streak: habit.streak,
       showStreakBadge: habit.streak >= 2,
+      cadenceLabel: this.cadenceLabel(habit),
+      progressLabel: this.progressLabel(habit),
       streakLabel: this.streakLabel(habit),
       busy: this.busyIds.has(habit.id),
     };
   }
 
+  private cadenceLabel(habit: Habit): string {
+    if (habit.cadence === "weekly") return `${habit.weeklyTarget ?? habit.periodTarget}/semana`;
+    return "diario";
+  }
+
+  private progressLabel(habit: Habit): string | null {
+    if (habit.cadence === "weekly") return `${habit.periodCompletions}/${habit.periodTarget} esta semana`;
+    return null;
+  }
+
   private streakLabel(habit: Habit): string | null {
+    if (habit.cadence === "weekly") {
+      if (habit.streak >= 2) return `${habit.streak} semanas seguidas`;
+      if (habit.streak === 1 && habit.periodCompletions >= habit.periodTarget) return "Semana cumplida";
+      if (habit.bestStreak >= 3 && habit.streak === 0) return `Mejor racha: ${habit.bestStreak} semanas`;
+      return null;
+    }
+
     if (habit.streak >= 2) return `${habit.streak} días seguidos`;
     if (habit.streak === 1 && habit.completedToday) return "Arrancó hoy";
     if (habit.bestStreak >= 3 && habit.streak === 0) return `Mejor racha: ${habit.bestStreak}`;

@@ -1,4 +1,4 @@
-import { Core } from "@/core/Core";
+import { Core, type CoreOptions } from "@/core/Core";
 import { HealthModule } from "@/core/app/health/HealthModule";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
@@ -8,6 +8,11 @@ import { WalletModule } from "@/core/app/wallet/WalletModule";
  * handlers on the bus. The frontend analogue of the backend's
  * DefaultCoreConfiguration — add each module here as it is migrated.
  */
-export function createAppCore(): Core {
-  return new Core().use(new HealthModule()).use(new TasksModule()).use(new WalletModule());
+type AppCoreOptions = Pick<CoreOptions, "onUnauthorized">;
+
+export function createAppCore(options: AppCoreOptions = {}): Core {
+  return new Core(options)
+    .use(new HealthModule())
+    .use(new TasksModule())
+    .use(new WalletModule());
 }

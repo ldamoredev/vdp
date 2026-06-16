@@ -42,29 +42,47 @@ export class HealthTools {
             jsonTool({
                 name: 'list_habits',
                 description:
-                    'List the user\'s active habits with today\'s completion state, current streak, ' +
-                    'and best streak. Call this before completing or discussing habits.',
+                    'List the user\'s active habits with today\'s completion state, cadence progress, ' +
+                    'current streak, and best streak. Call this before completing or discussing habits.',
                 inputSchema: { type: 'object', properties: {}, required: [] },
                 execute: async () => services.get(GetHabitsOverview).execute(userId()),
             }),
             jsonTool({
                 name: 'create_habit',
-                description: 'Create a new daily habit. Keep names short and concrete.',
+                description:
+                    'Create a new habit. cadence can be daily or weekly; weekly habits require ' +
+                    'weeklyTarget from 1 to 7. Keep names short and concrete.',
                 inputSchema: {
                     type: 'object',
                     properties: {
                         name: { type: 'string', description: 'Habit name, e.g. "Gimnasio"' },
                         emoji: { type: 'string', description: 'Optional emoji for the habit' },
+                        cadence: { type: 'string', enum: ['daily', 'weekly'], description: 'daily or weekly' },
+                        weeklyTarget: { type: 'number', description: 'Required for weekly habits: times per week, 1-7' },
                     },
                     required: ['name'],
                 },
                 execute: async (input) => {
                     const name = typeof input.name === 'string' ? input.name.trim() : '';
                     if (!name) return { error: 'Habit name is required' };
+                    const cadence = input.cadence === 'weekly' ? 'weekly' : 'daily';
+                    const weeklyTarget = input.weeklyTarget;
+                    if (input.cadence !== undefined && input.cadence !== 'daily' && input.cadence !== 'weekly') {
+                        return { error: 'cadence must be "daily" or "weekly"' };
+                    }
+                    if (cadence === 'weekly'
+                        && (typeof weeklyTarget !== 'number'
+                            || !Number.isInteger(weeklyTarget)
+                            || weeklyTarget < 1
+                            || weeklyTarget > 7)) {
+                        return { error: 'weeklyTarget must be an integer between 1 and 7' };
+                    }
 
                     const habit = await services.get(CreateHabit).execute(userId(), {
                         name,
                         emoji: typeof input.emoji === 'string' ? input.emoji : null,
+                        cadence,
+                        weeklyTarget: cadence === 'weekly' ? weeklyTarget as number : null,
                     });
                     return habit.toSnapshot();
                 },
@@ -208,7 +226,8 @@ export class HealthTools {
                 name: 'complete_goal',
                 description:
                     'Mark a goal as done. Use list_goals first to get the goalId. After completing, ' +
-                    'offer to turn the goal into a daily habit (use create_habit if the user accepts).',
+                    'offer to turn the goal into a habit (use create_habit if the user accepts; weekly ' +
+                    'cadence is often right for gym/sport habits).',
                 inputSchema: {
                     type: 'object',
                     properties: {

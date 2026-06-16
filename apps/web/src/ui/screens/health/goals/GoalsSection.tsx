@@ -20,14 +20,14 @@ function GraduationBanner({ presenter }: { presenter: GoalsPresenter }) {
   if (!graduation) return null;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] p-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 rounded-xl border border-[var(--violet-soft-border)] bg-[var(--violet-soft-bg)] p-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Sparkles size={14} className="shrink-0 text-[var(--violet-soft-text)]" />
         <span className="text-xs leading-relaxed text-[var(--foreground)]">
-          Meta cumplida. ¿La convertimos en hábito diario para que se quede ganada?
+          Meta cumplida. ¿La convertimos en hábito para que se quede ganada?
         </span>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           value={graduation.habitName}
           onChange={(event) => presenter.setGraduationHabitName(event.target.value)}
@@ -35,6 +35,47 @@ function GraduationBanner({ presenter }: { presenter: GoalsPresenter }) {
           aria-label="Nombre del hábito"
           className="glass-input w-44 px-3 py-1.5 text-xs"
         />
+        <div className="inline-flex rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-1">
+          <button
+            type="button"
+            onClick={() => presenter.setGraduationCadence("daily")}
+            disabled={graduation.isGraduating}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
+              graduation.cadence === "daily"
+                ? "bg-[var(--accent)] text-white"
+                : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            Diario
+          </button>
+          <button
+            type="button"
+            onClick={() => presenter.setGraduationCadence("weekly")}
+            disabled={graduation.isGraduating}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
+              graduation.cadence === "weekly"
+                ? "bg-[var(--accent)] text-white"
+                : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            Semanal
+          </button>
+        </div>
+        {graduation.showWeeklyTarget && (
+          <select
+            value={graduation.weeklyTarget}
+            onChange={(event) => presenter.setGraduationWeeklyTarget(Number(event.target.value))}
+            disabled={graduation.isGraduating}
+            aria-label="Veces por semana"
+            className="glass-input px-2.5 py-1.5 text-xs"
+          >
+            {[1, 2, 3, 4, 5, 6, 7].map((value) => (
+              <option key={value} value={value}>
+                {value}/sem
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="button"
           onClick={() => void presenter.graduate()}

@@ -18,6 +18,8 @@ export class DrizzleHabitRepository extends HabitRepository {
                 ownerUserId: userId,
                 name: data.name,
                 emoji: data.emoji ?? null,
+                cadence: data.cadence ?? 'daily',
+                weeklyTarget: data.weeklyTarget ?? null,
             })
             .returning();
 
@@ -53,6 +55,8 @@ export class DrizzleHabitRepository extends HabitRepository {
             .set({
                 name: snapshot.name,
                 emoji: snapshot.emoji,
+                cadence: snapshot.cadence,
+                weeklyTarget: snapshot.weeklyTarget,
                 archivedAt: snapshot.archivedAt,
                 updatedAt: snapshot.updatedAt,
             })
@@ -101,6 +105,8 @@ export class DrizzleHabitRepository extends HabitRepository {
             id: row.id,
             name: row.name,
             emoji: row.emoji,
+            cadence: row.cadence,
+            weeklyTarget: row.weeklyTarget,
             archivedAt: row.archivedAt,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,

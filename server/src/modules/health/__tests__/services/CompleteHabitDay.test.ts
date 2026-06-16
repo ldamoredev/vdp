@@ -13,6 +13,10 @@ function makeHabit(name = 'Gimnasio'): Habit {
     return new Habit(randomUUID(), name, null, null, new Date(), new Date());
 }
 
+function makeWeeklyHabit(name = 'Gimnasio', weeklyTarget = 3): Habit {
+    return new Habit(randomUUID(), name, null, null, new Date(), new Date(), 'weekly', weeklyTarget);
+}
+
 describe('CompleteHabitDay', () => {
     let repo: FakeHabitRepository;
     let eventBus: EventBus;
@@ -101,6 +105,48 @@ describe('CompleteHabitDay', () => {
         const milestone = emitted.find((e) => e.type === 'habit.milestone');
         expect(milestone).toBeDefined();
         expect(milestone!.payload).toMatchObject({ habitName: 'Meditar', streak: 7 });
+    });
+
+    it('emits a weekly milestone when a weekly habit reaches target for the 7th consecutive week', async () => {
+        const habit = makeWeeklyHabit('Gimnasio');
+        repo.seedHabit(userId, habit);
+        repo.seedCompletions(habit.id, [
+            '2026-06-10', '2026-06-09',
+            '2026-06-05', '2026-06-03', '2026-06-01',
+            '2026-05-29', '2026-05-27', '2026-05-25',
+            '2026-05-22', '2026-05-20', '2026-05-18',
+            '2026-05-15', '2026-05-13', '2026-05-11',
+            '2026-05-08', '2026-05-06', '2026-05-04',
+            '2026-05-01', '2026-04-29', '2026-04-27',
+        ]);
+
+        await service.execute(userId, habit.id);
+
+        const milestone = emitted.find((e) => e.type === 'habit.milestone');
+        expect(milestone).toBeDefined();
+        expect(milestone!.payload).toMatchObject({ habitName: 'Gimnasio', streak: 7, streakUnit: 'week' });
+    });
+
+    it('emits weekly streak_broken when resuming after a missed full week', async () => {
+        const habit = makeWeeklyHabit('Gimnasio');
+        repo.seedHabit(userId, habit);
+        repo.seedCompletions(habit.id, [
+            '2026-05-29', '2026-05-27', '2026-05-25',
+            '2026-05-22', '2026-05-20', '2026-05-18',
+            '2026-05-15', '2026-05-13', '2026-05-11',
+        ]);
+
+        await service.execute(userId, habit.id);
+
+        const broken = emitted.find((e) => e.type === 'habit.streak_broken');
+        expect(broken).toBeDefined();
+        expect(broken!.payload).toMatchObject({
+            habitName: 'Gimnasio',
+            lostStreak: 3,
+            streakUnit: 'week',
+            lastCompletedDate: '2026-05-29',
+            resumedDate: TODAY,
+        });
     });
 
     it('does not emit signals for backfilled (non-today) dates', async () => {

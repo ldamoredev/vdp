@@ -10,6 +10,7 @@ import {
   CreditCard,
   Tags,
   HeartPulse,
+  Stethoscope,
   Dumbbell,
   Users,
   Briefcase,
@@ -32,7 +33,7 @@ export interface DomainConfig {
   subtitle: string;
   icon: LucideIcon;
   iconLetter: string;
-  agentEndpoint: string;
+  agentEndpoint: string | null;
   chatPlaceholder: string;
   chatWelcome: string;
   chatDescription: string;
@@ -106,6 +107,7 @@ export const domains: DomainConfig[] = [
     aiDescription: "Usa el chat para sostener tus habitos con IA",
     navItems: [
       { href: "/health", label: "Habitos", icon: Dumbbell },
+      { href: "/health/medical", label: "Fichas médicas", icon: Stethoscope },
     ],
   },
   {
@@ -166,6 +168,10 @@ export const settingsNavItem: UtilityNavItem = {
 
 export function getDomainConfig(key: string): DomainConfig | undefined {
   return domains.find((d) => d.key === key);
+}
+
+export function domainHasAgent(domain: DomainConfig): domain is DomainConfig & { agentEndpoint: string } {
+  return domain.agentEndpoint !== null;
 }
 
 export function getDomainFromPathname(pathname: string): DomainKey | null {

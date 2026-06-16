@@ -1,9 +1,9 @@
 import {Identity, Query, RequestHandler} from '@nbottarini/cqbus';
 
-import {UserIdentity} from '../../common/app/auth/UserIdentity';
+import {requireUserIdentity} from '../../common/app/auth/UserIdentity';
 import {todayISO} from "../../common/base/time/dates";
-import {Habit} from "../domain/Habit";
-import {bestStreak, currentStreak} from "../services/habit-streaks";
+import {Habit, HabitCadence} from "../domain/Habit";
+import {bestStreak, currentStreak, periodProgress} from "../services/habit-streaks";
 import {HabitRepository} from "../domain/HabitRepository";
 
 export class GetHabitsOverviewQuery extends Query<HabitsOverview> {
@@ -14,13 +14,13 @@ export class GetHabitsOverviewQueryHandler implements RequestHandler<GetHabitsOv
     }
 
     async handle(_query: GetHabitsOverviewQuery, identity: Identity): Promise<HabitsOverview> {
-        const userIdentity = identity as UserIdentity;
+        const {userId} = requireUserIdentity(identity);
         const today = todayISO();
-        const activeHabits = await this.habits.listHabits(userIdentity.userId);
+        const activeHabits = await this.habits.listHabits(userId);
 
         const rows: HabitOverviewRow[] = [];
         for (const habit of activeHabits) {
-            rows.push(await this.buildRow(userIdentity.userId, habit, today));
+            rows.push(await this.buildRow(userId, habit, today));
         }
 
         return { habits: rows, date: today };
@@ -28,12 +28,16 @@ export class GetHabitsOverviewQueryHandler implements RequestHandler<GetHabitsOv
 
     private async buildRow(userId: string, habit: Habit, today: string = todayISO()): Promise<HabitOverviewRow> {
         const dates = await this.habits.getCompletionDates(userId, habit.id);
+        const cadence = habit.cadenceSpec();
+        const progress = periodProgress(dates, today, cadence);
 
         return {
             ...habit.toSnapshot(),
             completedToday: dates[0] === today,
-            streak: currentStreak(dates, today),
-            bestStreak: bestStreak(dates),
+            periodCompletions: progress.completions,
+            periodTarget: progress.target,
+            streak: currentStreak(dates, today, cadence),
+            bestStreak: bestStreak(dates, cadence),
             totalCompletions: dates.length,
             lastCompletedDate: dates[0] ?? null,
         };
@@ -44,10 +48,14 @@ export type HabitOverviewRow = {
     readonly id: string;
     readonly name: string;
     readonly emoji: string | null;
+    readonly cadence: HabitCadence;
+    readonly weeklyTarget: number | null;
     readonly archivedAt: Date | null;
     readonly createdAt: Date;
     readonly updatedAt: Date;
     readonly completedToday: boolean;
+    readonly periodCompletions: number;
+    readonly periodTarget: number;
     readonly streak: number;
     readonly bestStreak: number;
     readonly totalCompletions: number;

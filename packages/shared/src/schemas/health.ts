@@ -9,6 +9,16 @@ import {
 export const createHabitSchema = z.object({
   name: z.string().trim().min(1).max(100),
   emoji: z.string().trim().max(8).nullable().optional(),
+  cadence: z.enum(["daily", "weekly"]).default("daily"),
+  weeklyTarget: z.number().int().min(1).max(7).optional(),
+}).superRefine((value, ctx) => {
+  if (value.cadence === "weekly" && value.weeklyTarget === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["weeklyTarget"],
+      message: "weeklyTarget is required for weekly habits",
+    });
+  }
 });
 
 export const habitIdParamsSchema = idParamsSchema;
@@ -43,4 +53,14 @@ export const createGoalSchema = z.object({
 export const graduateGoalSchema = z.object({
   habitName: z.string().trim().min(1).max(100),
   emoji: z.string().trim().max(8).nullable().optional(),
+  cadence: z.enum(["daily", "weekly"]).default("daily"),
+  weeklyTarget: z.number().int().min(1).max(7).optional(),
+}).superRefine((value, ctx) => {
+  if (value.cadence === "weekly" && value.weeklyTarget === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["weeklyTarget"],
+      message: "weeklyTarget is required for weekly habits",
+    });
+  }
 });

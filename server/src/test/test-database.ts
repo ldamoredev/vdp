@@ -225,6 +225,8 @@ CREATE TABLE IF NOT EXISTS health.habits (
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     emoji VARCHAR(8),
+    cadence VARCHAR(12) NOT NULL DEFAULT 'daily',
+    weekly_target INTEGER,
     archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

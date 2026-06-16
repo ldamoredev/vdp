@@ -51,6 +51,31 @@ describe('GetHabitsOverview', () => {
         expect(overview.habits[0]).toMatchObject({ completedToday: false, streak: 2 });
     });
 
+    it('builds weekly cadence rows with this-week progress and week streaks', async () => {
+        const habit = new Habit(randomUUID(), 'Gimnasio', '🏋️', null, new Date(), new Date(), 'weekly', 3);
+        repo.seedHabit(userId, habit);
+        repo.seedCompletions(habit.id, [
+            '2026-06-10', '2026-06-09',
+            '2026-06-05', '2026-06-03', '2026-06-01',
+            '2026-05-29', '2026-05-27', '2026-05-25',
+        ]);
+
+        const overview = await service.execute(userId);
+
+        expect(overview.habits[0]).toMatchObject({
+            name: 'Gimnasio',
+            cadence: 'weekly',
+            weeklyTarget: 3,
+            completedToday: false,
+            periodCompletions: 2,
+            periodTarget: 3,
+            streak: 2,
+            bestStreak: 2,
+            totalCompletions: 8,
+            lastCompletedDate: '2026-06-10',
+        });
+    });
+
     it('excludes archived habits and other users\' habits', async () => {
         const archived = new Habit(randomUUID(), 'Viejo', null, new Date(), new Date(), new Date());
         const foreign = new Habit(randomUUID(), 'Ajeno', null, null, new Date(), new Date());

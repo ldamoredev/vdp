@@ -1,10 +1,13 @@
 import type { Counter } from "./Counter";
 import type { Goal } from "./Goal";
 import type { Habit } from "./Habit";
+import type { HabitCadence } from "@vdp/shared";
 
 export interface CreateHabitInput {
   name: string;
   emoji?: string | null;
+  cadence?: HabitCadence;
+  weeklyTarget?: number | null;
 }
 
 export interface CreateCounterInput {
@@ -23,6 +26,8 @@ export interface CreateGoalInput {
 export interface GraduateGoalInput {
   habitName: string;
   emoji?: string | null;
+  cadence?: HabitCadence;
+  weeklyTarget?: number | null;
 }
 
 export interface HabitsOverview {

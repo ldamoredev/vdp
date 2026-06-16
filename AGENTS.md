@@ -23,7 +23,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `auth`: first-party users, email/password login, failed-login rate limiting, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
-- `health`: active as a deliberately thin slice — daily habits (per-day completion, streaks, archive) plus "days since" abstinence counters (relapse history with best attempt, lazy milestones, money-not-spent estimate). Backend, frontend, and agent. Metrics/medications/appointments/body stay out until planned in ROADMAP Phase 4.
+- `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
 
 Inactive domains:
 
@@ -33,12 +33,12 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 (Health deepening) shipped H1 counters and H2 goals, then **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/ARCHITECTURE.md`): A1 Vite port, A2 Health pilot, A3/A4 skills, and A5 frontend migration are SHIPPED; **next is A6 (CQBus on the api)**. Phase 4 resumes with P1 afterwards. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, and P1 flexible habit cadence, then remains **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/ARCHITECTURE.md`): A1 Vite port, A2 Health pilot, A3/A4 skills, and A5 frontend migration are SHIPPED; **next is A6 (CQBus on the api)**. Phase 4 remaining proposals resume with P2 afterwards. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
 - Re-deploy production as a single Render service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
-- Production has NOT yet run migrations `0001`–`0003`; they must be applied on the next deploy before the new features work there.
+- Production has NOT yet run migrations `0001`–`0005`; they must be applied on the next deploy before the new features work there.
 
 ## Skills
 
@@ -163,6 +163,7 @@ The active migrations create these PostgreSQL schemas:
 - `tasks`: tasks, task notes, task embeddings, task insights.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
 - `health`: habits, habit logs, counters, counter attempts.
+- `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
 
 Money amounts are per-currency (ARS and USD coexist). NEVER sum amounts across currencies — `DetectSpendingSpike` groups by currency for exactly this reason. New money aggregations must filter or group by currency.
 

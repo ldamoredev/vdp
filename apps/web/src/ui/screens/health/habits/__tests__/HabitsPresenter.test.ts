@@ -12,10 +12,14 @@ function habit(overrides: Partial<HabitOverview> = {}): HabitOverview {
     id: "h1",
     name: "Leer",
     emoji: null,
+    cadence: "daily",
+    weeklyTarget: null,
     archivedAt: null,
     createdAt: "",
     updatedAt: "",
     completedToday: false,
+    periodCompletions: 0,
+    periodTarget: 1,
     streak: 0,
     bestStreak: 0,
     totalCompletions: 0,
@@ -54,8 +58,21 @@ describe("HabitsPresenter", () => {
 
     await presenter.createHabit();
 
-    expect(gateway.callsTo("createHabit")[0].args).toEqual([{ name: "Meditar" }]);
+    expect(gateway.callsTo("createHabit")[0].args).toEqual([{ name: "Meditar", cadence: "daily" }]);
     expect(presenter.model.newHabitName).toBe("");
+  });
+
+  it("creates weekly habits with a target", async () => {
+    const { presenter, gateway } = build();
+    presenter.setNewHabitName("Gimnasio");
+    presenter.setNewHabitCadence("weekly");
+    presenter.setNewHabitWeeklyTarget(3);
+
+    await presenter.createHabit();
+
+    expect(gateway.callsTo("createHabit")[0].args).toEqual([
+      { name: "Gimnasio", cadence: "weekly", weeklyTarget: 3 },
+    ]);
   });
 
   it("toggles to uncomplete when the habit is already done", async () => {
@@ -88,6 +105,31 @@ describe("HabitsPresenter", () => {
     expect(vm.displayName).toBe("📖 Leer");
     expect(vm.showStreakBadge).toBe(true);
     expect(vm.streakLabel).toBe("4 días seguidos");
+  });
+
+  it("formats weekly cadence, progress and week streak labels", async () => {
+    const gateway = new FakeHealthGateway();
+    vi.spyOn(gateway, "listHabits").mockResolvedValue({
+      habits: [
+        habit({
+          name: "Gimnasio",
+          cadence: "weekly",
+          weeklyTarget: 3,
+          periodCompletions: 2,
+          periodTarget: 3,
+          streak: 2,
+        }),
+      ],
+      date: "2026-06-13",
+    });
+    const { presenter } = build(gateway);
+    presenter.start();
+    await flush();
+
+    const [vm] = presenter.model.habits;
+    expect(vm.cadenceLabel).toBe("3/semana");
+    expect(vm.progressLabel).toBe("2/3 esta semana");
+    expect(vm.streakLabel).toBe("2 semanas seguidas");
   });
 
   it("reloads when habitsChanged fires (a goal graduated elsewhere)", async () => {

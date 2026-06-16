@@ -32,12 +32,17 @@ function daysAgo(n: number): string {
     return localDateISO(d);
 }
 
-async function createHabit(userId: string, name: string, emoji?: string) {
+async function createHabit(
+    userId: string,
+    name: string,
+    emoji?: string,
+    overrides: Record<string, unknown> = {},
+) {
     const response = await testApp.app.inject({
         method: 'POST',
         url: '/api/v1/health/habits',
         headers: asUser(userId),
-        payload: { name, ...(emoji ? { emoji } : {}) },
+        payload: { name, ...(emoji ? { emoji } : {}), ...overrides },
     });
     return { status: response.statusCode, body: response.json() };
 }
@@ -59,6 +64,19 @@ async function listHabits(userId: string) {
         headers: asUser(userId),
     });
     return { status: response.statusCode, body: response.json() };
+}
+
+function currentWeekDatesUpToToday(count: number): string[] {
+    const today = new Date();
+    const daysSinceMonday = (today.getDay() + 6) % 7;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - daysSinceMonday);
+
+    return Array.from({ length: Math.min(count, daysSinceMonday + 1) }, (_, index) => {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + index);
+        return localDateISO(date);
+    });
 }
 
 describe('Health API — E2E', () => {
@@ -127,6 +145,42 @@ describe('Health API — E2E', () => {
             bestStreak: 3,
             totalCompletions: 3,
         });
+    });
+
+    it('supports weekly cadence habits with current-week progress', async () => {
+        const currentWeekDates = currentWeekDatesUpToToday(2);
+        const weeklyTarget = currentWeekDates.length;
+        const created = await createHabit(PRIMARY_TEST_USER.id, 'Gimnasio', '🏋️', {
+            cadence: 'weekly',
+            weeklyTarget,
+        });
+        expect(created.status).toBe(201);
+        expect(created.body).toMatchObject({
+            name: 'Gimnasio',
+            cadence: 'weekly',
+            weeklyTarget,
+            periodCompletions: 0,
+            periodTarget: weeklyTarget,
+        });
+        const habitId = created.body.id;
+
+        for (const date of currentWeekDates) {
+            await completeHabit(PRIMARY_TEST_USER.id, habitId, date);
+        }
+
+        const overview = await listHabits(PRIMARY_TEST_USER.id);
+        expect(overview.body.habits[0]).toMatchObject({
+            cadence: 'weekly',
+            weeklyTarget,
+            periodCompletions: weeklyTarget,
+            periodTarget: weeklyTarget,
+            streak: 1,
+        });
+    });
+
+    it('rejects weekly habits without a weekly target', async () => {
+        const response = await createHabit(PRIMARY_TEST_USER.id, 'Gimnasio', undefined, { cadence: 'weekly' });
+        expect(response.status).toBe(400);
     });
 
     it('rejects malformed and future dates', async () => {
@@ -327,14 +381,18 @@ describe('Health API — E2E', () => {
             method: 'POST',
             url: `/api/v1/health/goals/${goalId}/graduate`,
             headers: asUser(PRIMARY_TEST_USER.id),
-            payload: { habitName: 'Gimnasio', emoji: '🏋️' },
+            payload: { habitName: 'Gimnasio', emoji: '🏋️', cadence: 'weekly', weeklyTarget: 3 },
         });
         expect(graduated.statusCode).toBe(200);
         expect(graduated.json().goal.status).toBe('done');
         expect(graduated.json().habit.name).toBe('Gimnasio');
+        expect(graduated.json().habit.cadence).toBe('weekly');
+        expect(graduated.json().habit.weeklyTarget).toBe(3);
 
         const habits = await listHabits(PRIMARY_TEST_USER.id);
-        expect(habits.body.habits.map((h: { name: string }) => h.name)).toContain('Gimnasio');
+        expect(habits.body.habits).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'Gimnasio', cadence: 'weekly', weeklyTarget: 3 })]),
+        );
     });
 
     it('runs the cross-domain flow: broken streak creates a recovery task for the right user', async () => {

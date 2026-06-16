@@ -5,6 +5,7 @@ export type HabitStreakBrokenPayload = {
     readonly habitId: string;
     readonly habitName: string;
     readonly lostStreak: number;
+    readonly streakUnit?: 'day' | 'week';
     readonly lastCompletedDate: string;
     readonly resumedDate: string;
 };

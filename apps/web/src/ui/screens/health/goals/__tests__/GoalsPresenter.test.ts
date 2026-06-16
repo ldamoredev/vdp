@@ -69,6 +69,7 @@ describe("GoalsPresenter", () => {
 
     expect(gateway.callsTo("completeGoal")[0].args).toEqual(["g1"]);
     expect(presenter.model.graduation?.habitName).toBe("Gym");
+    expect(presenter.model.graduation?.cadence).toBe("daily");
   });
 
   it("graduates and fires habitsChanged so habits reload elsewhere", async () => {
@@ -81,9 +82,25 @@ describe("GoalsPresenter", () => {
 
     await presenter.graduate();
 
-    expect(gateway.callsTo("graduateGoal")[0].args).toEqual(["g1", { habitName: "Gym" }]);
+    expect(gateway.callsTo("graduateGoal")[0].args).toEqual(["g1", { habitName: "Gym", cadence: "daily" }]);
     expect(presenter.model.graduation).toBeNull();
     expect(onHabitsChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it("graduates weekly habits with target cadence", async () => {
+    const { presenter, gateway } = build();
+    presenter.start();
+    await flush();
+    await presenter.complete("g1");
+    presenter.setGraduationCadence("weekly");
+    presenter.setGraduationWeeklyTarget(3);
+
+    await presenter.graduate();
+
+    expect(gateway.callsTo("graduateGoal")[0].args).toEqual([
+      "g1",
+      { habitName: "Gym", cadence: "weekly", weeklyTarget: 3 },
+    ]);
   });
 
   it("dismisses the graduation offer without graduating", async () => {

@@ -10,7 +10,7 @@ import fastifyStatic from '@fastify/static';
 import multipart from '@fastify/multipart';
 
 import { Core } from './modules/Core';
-import { MAX_FILE_BYTES } from './modules/medical/domain/file-validation';
+import { MAX_FILE_BYTES } from './modules/health/domain/medical/file-validation';
 import { HttpController } from './modules/common/http/HttpController';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';

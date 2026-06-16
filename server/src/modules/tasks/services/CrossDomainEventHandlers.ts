@@ -110,17 +110,19 @@ export class CrossDomainEventHandlers implements EventSubscriber {
     }
 
     private handleHabitStreakBroken(payload: HabitStreakBrokenPayload): void {
+        const unit = this.habitStreakUnit(payload.streakUnit);
         this.insightsStore.addInsight({
             userId: payload.userId,
             type: 'warning',
             title: `Se cortó tu racha de "${payload.habitName}"`,
             message:
-                `Llevabas ${payload.lostStreak} días seguidos (último: ${payload.lastCompletedDate}). ` +
+                `Llevabas ${payload.lostStreak} ${unit.plural} ${unit.following} (último: ${payload.lastCompletedDate}). ` +
                 `Retomaste hoy — el dato útil es no dejar pasar otro hueco.`,
             metadata: {
                 source: 'health.habit.streak_broken',
                 habitId: payload.habitId,
                 lostStreak: payload.lostStreak,
+                streakUnit: payload.streakUnit ?? 'day',
                 lastCompletedDate: payload.lastCompletedDate,
                 actionHref: '/health',
                 actionLabel: 'Ver hábitos',
@@ -131,7 +133,7 @@ export class CrossDomainEventHandlers implements EventSubscriber {
             .execute(payload.userId, {
                 title: `Sostener hábito: ${payload.habitName}`,
                 description:
-                    `La racha de ${payload.lostStreak} días se cortó el ${payload.lastCompletedDate}. ` +
+                    `La racha de ${payload.lostStreak} ${unit.plural} se cortó el ${payload.lastCompletedDate}. ` +
                     `Hoy se retomó; esta tarea es el recordatorio de mantenerla esta semana.`,
                 priority: 2,
                 scheduledDate: todayISO(),
@@ -145,19 +147,27 @@ export class CrossDomainEventHandlers implements EventSubscriber {
     }
 
     private handleHabitMilestone(payload: HabitMilestonePayload): void {
+        const unit = this.habitStreakUnit(payload.streakUnit);
         this.insightsStore.addInsight({
             userId: payload.userId,
             type: 'achievement',
-            title: `${payload.streak} días de "${payload.habitName}"`,
-            message: `Racha de ${payload.streak} días seguidos. Sostenido sin ruido — así se construye.`,
+            title: `${payload.streak} ${unit.plural} de "${payload.habitName}"`,
+            message: `Racha de ${payload.streak} ${unit.plural} ${unit.following}. Sostenido sin ruido — así se construye.`,
             metadata: {
                 source: 'health.habit.milestone',
                 habitId: payload.habitId,
                 streak: payload.streak,
+                streakUnit: payload.streakUnit ?? 'day',
                 actionHref: '/health',
                 actionLabel: 'Ver hábitos',
             },
         });
+    }
+
+    private habitStreakUnit(unit: 'day' | 'week' | undefined): { plural: string; following: string } {
+        return unit === 'week'
+            ? { plural: 'semanas', following: 'seguidas' }
+            : { plural: 'días', following: 'seguidos' };
     }
 
     private handleSpendingSpike(payload: SpendingSpikePayload): void {

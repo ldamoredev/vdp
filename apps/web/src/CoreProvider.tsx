@@ -2,6 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 import { Core } from "@/core/Core";
 import { createAppCore } from "@/createAppCore";
+import { confirmSessionAfterUnauthorized } from "@/lib/auth";
 
 const CoreContext = createContext<Core | null>(null);
 
@@ -11,7 +12,9 @@ const CoreContext = createContext<Core | null>(null);
  * layer stays free of React. Accepts an injected core for tests.
  */
 export function CoreProvider({ core, children }: { core?: Core; children: ReactNode }) {
-  const [instance] = useState(() => core ?? createAppCore());
+  const [instance] = useState(() =>
+    core ?? createAppCore({ onUnauthorized: () => void confirmSessionAfterUnauthorized() }),
+  );
   return <CoreContext.Provider value={instance}>{children}</CoreContext.Provider>;
 }
 

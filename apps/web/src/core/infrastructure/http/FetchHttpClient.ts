@@ -19,6 +19,8 @@ export interface FetchHttpClientOptions {
   credentials?: RequestCredentials;
   /** Injectable for tests; defaults to the global fetch. */
   fetchFn?: typeof fetch;
+  /** Called when the API rejects the current browser session. */
+  onUnauthorized?: () => void;
 }
 
 /**
@@ -31,12 +33,14 @@ export class FetchHttpClient implements HttpClient {
   private readonly baseUrl: string;
   private readonly credentials: RequestCredentials;
   private readonly fetchFn: typeof fetch;
+  private readonly onUnauthorized?: () => void;
   private readonly interceptors: HttpInterceptor[] = [];
 
   constructor(options: FetchHttpClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? "").replace(/\/$/, "");
     this.credentials = options.credentials ?? "same-origin";
     this.fetchFn = options.fetchFn ?? globalThis.fetch.bind(globalThis);
+    this.onUnauthorized = options.onUnauthorized;
   }
 
   get<T = any>(url: string, headers?: Record<string, string>, options?: RequestOptions) {
@@ -90,6 +94,7 @@ export class FetchHttpClient implements HttpClient {
     const response = await this.buildResponse<T>(request, raw);
 
     if (!raw.ok) {
+      if (raw.status === 401) this.onUnauthorized?.();
       throw this.runErrorInterceptors(new HttpError(request, response), request);
     }
 

@@ -156,10 +156,17 @@ describe('goals', () => {
             const habits = new FakeHabitRepository();
             const service = new GraduateGoal(repo, new CreateHabit(habits));
 
-            const result = await service.execute(userId, goal.id, { habitName: 'Gimnasio', emoji: '🏋️' });
+            const result = await service.execute(userId, goal.id, {
+                habitName: 'Gimnasio',
+                emoji: '🏋️',
+                cadence: 'weekly',
+                weeklyTarget: 3,
+            });
 
             expect(result.goal.status).toBe('done');
             expect(result.habit.name).toBe('Gimnasio');
+            expect(result.habit.cadence).toBe('weekly');
+            expect(result.habit.weeklyTarget).toBe(3);
             await expect(habits.listHabits(userId)).resolves.toHaveLength(1);
         });
 

@@ -4,6 +4,7 @@ import { GetHabitsOverview } from "@/core/app/health/GetHabitsOverview";
 import { CreateGoal } from "@/core/app/health/CreateGoal";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
 import { GetAccounts } from "@/core/app/wallet/GetAccounts";
+import { GetMedicalRecords } from "@/core/app/health/medical/GetMedicalRecords";
 import { createAppCore } from "@/createAppCore";
 
 /**
@@ -60,5 +61,32 @@ describe("createAppCore", () => {
     const result = await core.execute(new GetAccounts());
 
     expect(result).toEqual([]);
+  });
+
+  it("registers the health medical handlers on the bus", async () => {
+    stubFetchOk({ records: [] });
+    const core = createAppCore();
+
+    const result = await core.execute(new GetMedicalRecords());
+
+    expect(result).toEqual([]);
+  });
+
+  it("wires session invalidation from API 401 responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ message: "Not authenticated" }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+    const onUnauthorized = vi.fn();
+    const core = createAppCore({ onUnauthorized });
+
+    await core.execute(new GetMedicalRecords()).catch(() => {});
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 });

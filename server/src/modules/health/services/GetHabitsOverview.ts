@@ -1,16 +1,20 @@
 import { todayISO } from '../../common/base/time/dates';
-import { Habit } from '../domain/Habit';
+import { Habit, HabitCadence } from '../domain/Habit';
 import { HabitRepository } from '../domain/HabitRepository';
-import { bestStreak, currentStreak } from './habit-streaks';
+import { bestStreak, currentStreak, periodProgress } from './habit-streaks';
 
 export type HabitOverviewRow = {
     readonly id: string;
     readonly name: string;
     readonly emoji: string | null;
+    readonly cadence: HabitCadence;
+    readonly weeklyTarget: number | null;
     readonly archivedAt: Date | null;
     readonly createdAt: Date;
     readonly updatedAt: Date;
     readonly completedToday: boolean;
+    readonly periodCompletions: number;
+    readonly periodTarget: number;
     readonly streak: number;
     readonly bestStreak: number;
     readonly totalCompletions: number;
@@ -39,12 +43,16 @@ export class GetHabitsOverview {
 
     async buildRow(userId: string, habit: Habit, today: string = todayISO()): Promise<HabitOverviewRow> {
         const dates = await this.habits.getCompletionDates(userId, habit.id);
+        const cadence = habit.cadenceSpec();
+        const progress = periodProgress(dates, today, cadence);
 
         return {
             ...habit.toSnapshot(),
             completedToday: dates[0] === today,
-            streak: currentStreak(dates, today),
-            bestStreak: bestStreak(dates),
+            periodCompletions: progress.completions,
+            periodTarget: progress.target,
+            streak: currentStreak(dates, today, cadence),
+            bestStreak: bestStreak(dates, cadence),
             totalCompletions: dates.length,
             lastCompletedDate: dates[0] ?? null,
         };

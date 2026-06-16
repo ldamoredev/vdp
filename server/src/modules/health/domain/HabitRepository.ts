@@ -1,8 +1,10 @@
-import { Habit } from './Habit';
+import { Habit, HabitCadence } from './Habit';
 
 export type CreateHabitData = {
     readonly name: string;
     readonly emoji?: string | null;
+    readonly cadence?: HabitCadence;
+    readonly weeklyTarget?: number | null;
 };
 
 export abstract class HabitRepository {

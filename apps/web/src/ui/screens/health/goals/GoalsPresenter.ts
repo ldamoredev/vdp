@@ -1,4 +1,5 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
+import type { HabitCadence } from "@vdp/shared";
 
 import type { Core } from "@/core/Core";
 import { Goal, sortActiveGoals } from "@/core/domain/health/Goal";
@@ -12,7 +13,7 @@ import type { GoalRowVM, GoalsViewModel } from "@/ui/models/health/GoalsViewMode
 
 /**
  * Deadline goals: list, create, complete, drop, and the graduation loop
- * (a completed goal can become a daily habit). Graduating creates a habit, so
+ * (a completed goal can become a habit with cadence). Graduating creates a habit, so
  * it fires events.habitsChanged for HabitsPresenter to reload.
  */
 export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
@@ -20,6 +21,8 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
   private busyIds = new Set<string>();
   private offer: { goalId: string } | null = null;
   private graduationHabitName = "";
+  private graduationCadence: HabitCadence = "daily";
+  private graduationWeeklyTarget = 3;
   private isLoading = true;
   private error = false;
   private isCreating = false;
@@ -74,6 +77,8 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       const goal = await this.core.execute(new CompleteGoal(id));
       this.offer = { goalId: goal.id };
       this.graduationHabitName = goal.title;
+      this.graduationCadence = "daily";
+      this.graduationWeeklyTarget = 3;
       await this.load();
     });
   }
@@ -90,6 +95,16 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
     this.refresh();
   }
 
+  setGraduationCadence(value: HabitCadence): void {
+    this.graduationCadence = value;
+    this.refresh();
+  }
+
+  setGraduationWeeklyTarget(value: number): void {
+    this.graduationWeeklyTarget = Math.min(7, Math.max(1, Math.trunc(value)));
+    this.refresh();
+  }
+
   async graduate(): Promise<void> {
     const offer = this.offer;
     const habitName = this.graduationHabitName.trim();
@@ -97,7 +112,11 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
     this.isGraduating = true;
     this.refresh();
     try {
-      await this.core.execute(new GraduateGoal(offer.goalId, { habitName }));
+      await this.core.execute(new GraduateGoal(offer.goalId, {
+        habitName,
+        cadence: this.graduationCadence,
+        ...(this.graduationCadence === "weekly" ? { weeklyTarget: this.graduationWeeklyTarget } : {}),
+      }));
       this.offer = null;
       this.graduationHabitName = "";
       await this.load();
@@ -112,6 +131,8 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
   dismissGraduation(): void {
     this.offer = null;
     this.graduationHabitName = "";
+    this.graduationCadence = "daily";
+    this.graduationWeeklyTarget = 3;
     this.refresh();
   }
 
@@ -153,7 +174,14 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       isCreating: this.isCreating,
       canCreate: this.newTitle.trim().length > 0 && this.newTargetDate.length > 0 && !this.isCreating,
       graduation: this.offer
-        ? { goalId: this.offer.goalId, habitName: this.graduationHabitName, isGraduating: this.isGraduating }
+        ? {
+            goalId: this.offer.goalId,
+            habitName: this.graduationHabitName,
+            cadence: this.graduationCadence,
+            weeklyTarget: this.graduationWeeklyTarget,
+            showWeeklyTarget: this.graduationCadence === "weekly",
+            isGraduating: this.isGraduating,
+          }
         : null,
     };
   }

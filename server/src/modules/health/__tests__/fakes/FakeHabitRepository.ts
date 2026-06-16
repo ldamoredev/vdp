@@ -26,7 +26,16 @@ export class FakeHabitRepository extends HabitRepository {
     // ─── Repository ────────────────────────────────────
 
     async createHabit(userId: string, data: CreateHabitData): Promise<Habit> {
-        const habit = new Habit(randomUUID(), data.name, data.emoji ?? null, null, new Date(), new Date());
+        const habit = new Habit(
+            randomUUID(),
+            data.name,
+            data.emoji ?? null,
+            null,
+            new Date(),
+            new Date(),
+            data.cadence ?? 'daily',
+            data.weeklyTarget ?? null,
+        );
         this.habits.set(habit.id, { habit, userId });
         return habit;
     }

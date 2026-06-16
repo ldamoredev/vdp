@@ -16,6 +16,7 @@ export interface CoreModule {
 export interface CoreOptions {
   httpClient?: HttpClient;
   loggingSink?: LoggingSink;
+  onUnauthorized?: () => void;
 }
 
 /**
@@ -29,7 +30,10 @@ export class Core {
 
   constructor(options: CoreOptions = {}) {
     this.bus = new CQBus();
-    this.httpClient = options.httpClient ?? new FetchHttpClient({ baseUrl: "/api/v1" });
+    this.httpClient = options.httpClient ?? new FetchHttpClient({
+      baseUrl: "/api/v1",
+      onUnauthorized: options.onUnauthorized,
+    });
     this.bus.registerMiddleware(new LoggingMiddleware(options.loggingSink ?? consoleLoggingSink));
   }
 

@@ -8,7 +8,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 |--------|---------|----------|-------|--------|
 | Tasks | ✅ | ✅ | ✅ | Stable reference module; production-ready for personal daily use |
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
-| Health | ✅ | ✅ | ✅ | Active as a thin slice: daily habits only (streaks + cross-domain signals) |
+| Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, and private medical records section; medical has no agent by design |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -18,127 +18,16 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 1. ~~Recovery: restore local confidence, CI, and manual app verification.~~ Done.
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
-4. Expansion: Health shipped as the habits slice, deepened with H1 counters and H2 goals. **Paused after H2 (June 2026)** in favor of the Architecture Track below.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **next is A6 (CQBus on the api)**. Phase 4 resumes (P1 → H3v0 → P2 → P3) when the track completes.
-
-## Phase 0: Recovery
-
-### 1. Restore The Local Quality Baseline
-
-Goal: make the repo locally verifiable again after the long pause.
-
-Do:
-
-- Bring up whatever infrastructure is needed for database-backed tests.
-- Identify the exact local commands for shared build, web/server typecheck, unit tests, integration tests, e2e tests, and lint.
-- Add or repair lint scripts only if no standard lint command currently exists.
-- Run targeted checks before broad suites and document any remaining failures.
-
-Target verification:
-
-- `pnpm --filter @vdp/shared build`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm --filter @vdp/web test`
-- `pnpm --filter @vdp/server test:unit`
-- `pnpm --filter @vdp/server db:test:up`
-- `pnpm --filter @vdp/server test:integration`
-- `pnpm --filter @vdp/server test:e2e`
-
-Done when: the local quality baseline is either green or has a short, explicit failure list with owners/next fixes.
-
-### 2. Fix Repository CI
-
-Goal: make CI match local verification and become trustworthy again.
-
-Do:
-
-- Align CI with Node 24 and the pnpm version pinned in `package.json`.
-- Use the same commands proven in the local quality baseline.
-- Include shared build, web/server typecheck, lint when available, web tests, server unit tests, and database-backed suites.
-- Ensure test Postgres is started explicitly for integration/e2e work.
-- Keep secrets out of logs and workflows.
-- Make each CI failure reproducible locally.
-
-Done when: CI is green on the main workflow and the README or workflow names make the matching local commands obvious.
-
-### 3. Bring Up The Full App For Owner Verification
-
-Goal: let the owner verify that frontend and backend actually work locally.
-
-Do:
-
-- Start local infrastructure.
-- Run migrations or a documented local reset/migrate flow.
-- Start backend and frontend.
-- Provide local URLs and a concise manual smoke path.
-- Verify auth, backend health, frontend shell/routing, Tasks, and Wallet at minimum.
-
-Done when: the owner can open the app locally, register/login or use the agreed local auth flow, and perform a small Tasks and Wallet smoke without hidden context from this thread.
-
-## Phase 1: Tasks Production Readiness
-
-Goal: Tasks becomes safe enough for real personal task management.
-
-Backend coverage:
-
-- CRUD: create, list/filter, read, update, delete.
-- Status transitions: complete, carry over, carry over all, discard.
-- Notes and task detail behavior.
-- Stats/review/history behavior.
-- Insights/SSE behavior.
-- Agent chat and tool behavior.
-- Cross-user isolation on all user-owned task data.
-- Timezone-safe date handling.
-
-Frontend coverage:
-
-- Create task quickly.
-- Edit task.
-- Complete task.
-- Carry over and discard task.
-- Add/read notes and task detail.
-- Use today's dashboard.
-- Use history/review views.
-- Verify loading, empty, error, and busy states for normal daily use.
-
-Verification:
-
-- Server unit, integration, and e2e suites relevant to Tasks.
-- Web tests relevant to Tasks.
-- Web and server typechecks.
-- Lint once available.
-- Manual browser smoke across the core daily loop.
-
-Done when: there are no known P0/P1 Tasks bugs, no known cross-user data leaks, and any accepted lower-priority gaps are listed clearly.
-
-## Phase 2: Auth Hardening
-
-Auth V1 is complete: first-party users, email/password login, server-managed sessions, profile/security routes, and audit logs exist. The next work is hardening, not rebuilding.
-
-Do:
-
-- Validate the production session flow end to end through Vercel, Render, and Supabase.
-- Add or verify failed-login rate limiting.
-- Verify cookie/session behavior across login, logout, logout-others, expiration, and password change.
-- Review auth audit logs for useful production diagnostics.
-- Add observability for auth failures and suspicious patterns without leaking secrets.
-
-Done when: production-like auth smoke passes, session failure modes are understood, and no known P0/P1 auth bugs remain.
-
-## Phase 3: Expansion
-
-Health shipped (June 2026) as a deliberately thin slice through the full New Domain Gate: daily habits with per-day completion, streaks, archive, agent tools, and two cross-domain signals into Tasks (`health.habit.streak_broken` → recovery task + insight, `health.habit.milestone` → achievement insight). Metrics, medications, appointments, and body tracking stay out until the habits slice proves real daily use.
-
-For any further expansion (deepening Health or opening People/Work/Study), satisfy the New Domain Gate in `AGENTS.md`. At minimum: backend module registration, migration, entities, repositories, services, HTTP controllers using auth context, cross-user isolation tests, shared contracts, frontend feature module, navigation registration, and agent tooling only after the auth-context rules are satisfied.
-
-Done when: the new surface meets the Tasks reference shape and is verified through local checks, CI, and a manual owner smoke.
+4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, and P1 flexible cadence. **Paused after P1 (June 2026)** while the Architecture Track finishes; Phase 4 remaining proposals are P2 → P3.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is owner-led**: migrate the remaining old API services/controllers to the new CQBus style, then delete `ServiceProvider`.
 
 ## Architecture Track (ACTIVE — June 2026)
 
 Owner-approved in the June 2026 architecture session. Source of truth for rationale,
 decisions, and detailed plans: [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
 One phase per work session unless noted. Phase 4 below is paused until this track completes.
+A6 is owner-led: the owner will migrate the remaining old API services/controllers
+to CQBus style.
 
 Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
 Fastify, single Render service, Vercel retired); presenters (Humble Object) + CQBus +
@@ -146,71 +35,25 @@ Fastify, single Render service, Vercel retired); presenters (Humble Object) + CQ
 over `abstract-http-client`; `react-presenter` used as published (under Vite its
 optional react-navigation `require` is harmless at runtime — no custom publish).
 
-### A1. Vite SPA port (no pattern change) — SHIPPED June 2026
+### A6. CQBus on the api — OWNER-LED
 
-Mechanical port of `apps/web` from Next.js to Vite + react-router: routes 1:1, swap
-`next/link`/`next/navigation` (23 coupled files), static `index.html` with PWA manifest
-and theme script, cookie handling moves into the Fastify auth module, delete the
-Next proxy/auth routes/middleware, serve same-origin (dev: Vite proxy; prod: Fastify
-static). Done when: Playwright e2e green, manual smoke passes (login, tasks, wallet,
-health, chat, insights), Next dependencies removed.
-
-### A2. Health pilot on the full architecture (~2–3 sessions)
-
-`core/` (Core.ts + CQBus + FetchHttpClient + gateways) and `ui/` (presenters + humble
-views) built for the health module only, coexisting with the other features on the old
-pattern. Includes the SSE insights flow (not just CRUD). Done when: `features/health/`
-deleted, presenter/service/infra tests in place (no React under `core/`, lint-enforced),
-RQ gone from health, `docs/architecture/ARCHITECTURE.md` extracted, owner
-smoke. Details: analysis doc §7.
-
-### A3 + A4. Claude Code skills — SHIPPED June 2026
-
-All seven skills live in `.claude/skills/` (committed). Wave 1 (process guards +
-backend generators): `code-review` (three sections design/repo-rules/tests, single
-severity = warning that blocks commit/push, auto-trigger), `tdd-workflow` (test-first
-for non-integration tests, regression-test-first for bugfixes, auto-trigger),
-`create-service-api` (pre-CQBus form), `create-aggregate` (backend + lighter web
-variant), `create-agent-tool`. Wave 2 (web generators, built on the A2 template):
-`create-service-web`, `create-presenter-web`. Generators are manual-invoke. Design
-rationale and owner resolutions: analysis doc §10.
-
-### A5. Frontend migration by module — SHIPPED June 2026
-
-Order **reordered (June 2026)** from the original review→home→tasks→wallet: review
-and home are cross-domain aggregators that depend on tasks and wallet (they read
-`tasksApi`/`walletApi`, use `WalletProvider`/`EditTransactionSheet`/`useTaskMutations`),
-so the base domains migrate first to avoid building partial gateways or having a
-presenter call legacy APIs. New order: **tasks → wallet → review → home → shell/chat**.
-Each is multi-session (tasks ~3.8k LOC, wallet ~4.8k); per-feature gate, legacy folder
-deleted at the end of each. Coexistence rules (one-way import ratchet, RQ provider stays
-until the last consumer dies): analysis doc §8.
-
-Shipped state: Tasks, Wallet, Review, Home, and shell/auth/chat residuals now run through
-the frontend `core/`, presenters, or small local UI stores/hooks. Legacy
-`features/tasks`, `features/wallet`, and `features/home` are gone; React Query has no
-remaining source usage and was removed from `apps/web` dependencies and lockfile. The
-final residual cleanup covered auth/session reads, settings mutations, login cache
-seeding, header logout invalidation, agent chat status, and the Review wallet edit
-sheet refresh path.
-
-### A6. CQBus on the api
-
-Coexistence with `ServiceProvider`, identity middleware first (makes the auth-context
-rule structural), health converted first, then logging/OTel middlewares, then
-auth → tasks → wallet; `ServiceProvider` deleted; `create-service-api` updated to its
-final CQBus form. Open product decision for this phase: `RequestAuditLogger` as a bus
-middleware. Details: analysis doc §11.
+The owner is taking this phase. Coexistence with `ServiceProvider`, identity
+middleware first (makes the auth-context rule structural), health converted
+first, then logging/OTel middlewares, then auth → tasks → wallet;
+`ServiceProvider` deleted; `create-service-api` updated to its final CQBus form.
+Open product decision for this phase: `RequestAuditLogger` as a bus middleware.
+Details: analysis doc §11.
 
 ## Phase 4: Health Deepening
 
-**PAUSED after H2 (June 2026): the Architecture Track above runs first; resume with P1.**
+**PAUSED after P1 (June 2026): the Architecture Track above runs first; resume with P2.**
 
-Source: the owner's real prior usage in Notion (user stories H1–H3) plus researched
-proposals (P1–P3). One feature at a time, in the order below; each one ships only
-when the previous one is in real daily use. Every feature stays inside the existing
-`health` module (services + tables + frontend feature components), so the New Domain
-Gate applies as a per-feature checklist, not a new module.
+Source: the owner's real prior usage in Notion (user stories H1–H3, all shipped)
+plus researched proposals (P1–P3). One feature at a time, in the order below;
+each one ships only when the previous one is in real daily use. Every feature
+stays inside the existing `health` module (services + tables + frontend feature
+components), so the New Domain Gate applies as a per-feature checklist, not a
+new module.
 
 ### H1. Abstinence counters — "days since" (user story) — SHIPPED June 2026
 
@@ -281,33 +124,40 @@ implementation, it is the closest template):
   CrossDomainEventHandlers cases, e2e in HealthAPI.e2e.test.ts (CRUD, deadline
   signal via dedupe-column reset trick, graduation creates the habit, isolation).
 
-### H3. Medical records — fichas médicas (user story)
+### H3. Medical records — fichas médicas (user story) — SHIPPED June 2026
 
 > "Tenía documentos y fichas médicas, debe haber una sección para eso."
 
-The personal medical archive: consultas, estudios, vacunas, recetas.
+The Health medical section: consultas, estudios, vacunas, recetas.
 
-- Scope v0 (no new infra): structured records — type (consulta / estudio /
-  vacuna / receta / otro), date, professional, specialty, free notes, and
-  external links (Drive/iCloud) for the actual documents.
-- Scope v1 (separate decision): file upload. This is the first blob storage in
-  the stack — Supabase Storage is the natural candidate given production already
-  runs on Supabase. Do not start v1 until v0 proves the section gets used.
+- Shipped scope: structured records inside Health — type (consulta / estudio / vacuna /
+  receta / otro), date, professional, specialty, free notes — plus file
+  attachments. Attachments are the first blob storage in the stack, implemented
+  through a `FileStorage` port backed by Postgres `BYTEA` for the personal-scale
+  v0; the seam keeps an object-storage swap possible later.
+- Upload safety: one file per request, 10MB max, content-sniffed allowlist
+  (PDF, JPEG, PNG, WEBP, HEIC), sanitized display filenames, and no `storageRef`
+  on the API wire.
 - Privacy rule: medical records are the most sensitive data in the system. They
   are NOT exposed through agent tools by default (tool results travel to the LLM
   provider); revisit only with an explicit owner decision.
 - Cross-domain: a record marked "pendiente" (estudio a realizar, orden vigente)
   can create a task; full appointment tracking stays out of scope until needed.
 
-### P1. Flexible habit cadence — x times per week (proposal)
+### P1. Flexible habit cadence — x times per week (proposal) — SHIPPED June 2026
 
-Today's slice is daily-only. Real habits often aren't: gym 3x/week is the
-canonical case — and it is exactly what the H2 graduation loop will produce.
+Daily-only was too narrow. Real habits often aren't: gym 3x/week is the
+canonical case — and now the H2 graduation loop can produce that honestly.
 Weekly-frequency scheduling is also the most common gap between basic and
-serious habit trackers (HabitNow, Streaks). Scope: per-habit cadence `daily`
-or `x per week`; streak math generalizes to consecutive *weeks* that met the
-target. The week-met/week-missed events reuse the existing milestone and
-streak-broken signals.
+serious habit trackers (HabitNow, Streaks).
+
+Shipped scope: per-habit cadence `daily` or `x per week`; weekly target stored
+on the habit; overview exposes current-period progress (`2/3 esta semana`) and
+daily/weekly streaks; streak math generalizes to consecutive *weeks* that met
+the target. The week-met/week-missed events reuse the existing milestone and
+streak-broken signals with a day/week unit so Tasks insights and recovery tasks
+word them correctly. The Health UI supports cadence on habit creation and goal
+graduation; the Health agent can create daily or weekly habits.
 
 ### P2. Daily mood/energy check-in wired into the ritual (proposal)
 
@@ -325,10 +175,11 @@ The single most-tracked body metric and the natural companion of diet/gym goals
 sparkline trend on the habits screen, mono `font-data` rendering. Explicitly not
 a metrics platform — one metric, until proven insufficient.
 
-Suggested order: ~~H1~~ → ~~H2~~ → P1 → H3 (v0) → P2 → P3. H1 shipped first because
-it is the owner's most-lived use case with the smallest scope and the strongest
-cross-domain payoff; P1 right after H2 because graduated gym/diet goals need
-weekly cadence to become honest habits.
+Suggested order from here: ~~H1~~ → ~~H2~~ → ~~H3~~ → ~~P1~~ → P2 → P3. H1 shipped
+first because it is the owner's most-lived use case with the smallest scope and
+the strongest cross-domain payoff; H3 shipped as an owner-directed continuation;
+P1 shipped next because graduated gym/diet goals needed weekly cadence to become
+honest habits.
 
 ## Data Constraint
 

@@ -10,6 +10,7 @@ import {
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
 
+import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { sendCreated } from '../../../common/http/responses';
 import { ServiceResolver } from '../../../common/http/ServiceResolver';
@@ -159,15 +160,19 @@ export class HealthController extends HttpController {
         return reply.send(counter.toSnapshot());
     };
 
-    private readonly listHabits: RouteContextHandler<undefined, undefined, undefined> = async ({ reply }) => {
-        return reply.send(await this.bus.execute(new GetHabitsOverviewQuery()));
+    private readonly listHabits: RouteContextHandler<undefined, undefined, undefined> = async ({
+        request,
+        reply,
+    }) => {
+        return reply.send(await this.bus.execute(new GetHabitsOverviewQuery(), executionContextFromAuth(request.auth)));
     };
 
     private readonly createHabit: RouteContextHandler<undefined, undefined, CreateHabitBody> = async ({
+        request,
         body,
         reply,
     }) => {
-        const row = await this.bus.execute(new CreateHabitCommand(body!));
+        const row = await this.bus.execute(new CreateHabitCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, row);
     };
 

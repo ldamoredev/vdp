@@ -88,6 +88,7 @@ export function LoginPageClient({
     e.preventDefault();
     setError("");
     setLoading(true);
+    clearCurrentUser();
 
     try {
       const endpoint = mode === "register" ? "/api/auth/register" : "/api/auth/login";

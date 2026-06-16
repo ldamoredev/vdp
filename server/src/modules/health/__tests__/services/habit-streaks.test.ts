@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestStreak, currentStreak, runEndingAt } from '../../services/habit-streaks';
+import { bestStreak, currentStreak, periodProgress, runEndingAt } from '../../services/habit-streaks';
 
 describe('habit-streaks', () => {
     describe('runEndingAt', () => {
@@ -48,6 +48,47 @@ describe('habit-streaks', () => {
 
         it('is 0 with no history', () => {
             expect(bestStreak([])).toBe(0);
+        });
+    });
+
+    describe('weekly cadence', () => {
+        const cadence = { cadence: 'weekly' as const, weeklyTarget: 3 };
+
+        it('counts progress inside the current Monday-to-Sunday week', () => {
+            expect(periodProgress([
+                '2026-06-11',
+                '2026-06-10',
+                '2026-06-09',
+                '2026-06-05',
+            ], '2026-06-11', cadence)).toEqual({ completions: 3, target: 3 });
+        });
+
+        it('keeps a weekly streak alive while the current week is still in progress', () => {
+            expect(currentStreak([
+                '2026-06-05', '2026-06-03', '2026-06-01',
+                '2026-05-29', '2026-05-27', '2026-05-25',
+            ], '2026-06-11', cadence)).toBe(2);
+        });
+
+        it('counts consecutive met weeks when the current week reaches target', () => {
+            expect(currentStreak([
+                '2026-06-11', '2026-06-10', '2026-06-09',
+                '2026-06-05', '2026-06-03', '2026-06-01',
+            ], '2026-06-11', cadence)).toBe(2);
+        });
+
+        it('resets after a missed full week', () => {
+            expect(currentStreak([
+                '2026-05-29', '2026-05-27', '2026-05-25',
+            ], '2026-06-11', cadence)).toBe(0);
+        });
+
+        it('finds the best weekly streak across history', () => {
+            expect(bestStreak([
+                '2026-06-11', '2026-06-10', '2026-06-09',
+                '2026-06-05', '2026-06-03', '2026-06-01',
+                '2026-05-22', '2026-05-20', '2026-05-18',
+            ], cadence)).toBe(2);
         });
     });
 });

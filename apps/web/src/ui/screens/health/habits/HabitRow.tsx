@@ -37,6 +37,16 @@ export function HabitRow({ habit, onToggle, onArchive }: HabitRowProps) {
         >
           {habit.displayName}
         </span>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--muted)]">
+          <span className="rounded-lg border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-1.5 py-0.5">
+            {habit.cadenceLabel}
+          </span>
+          {habit.progressLabel && (
+            <span className="font-data rounded-lg border border-[var(--glass-border)] px-1.5 py-0.5">
+              {habit.progressLabel}
+            </span>
+          )}
+        </div>
         {habit.streakLabel && (
           <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--muted)]">
             {habit.showStreakBadge && <Flame size={11} className="text-[var(--amber-soft-text)]" />}

@@ -1,9 +1,14 @@
 // ─── Health API response types ───────────────────────────
 
+export type HabitCadence = "daily" | "weekly";
+
 export interface Habit {
   id: string;
   name: string;
   emoji: string | null;
+  cadence: HabitCadence;
+  /** Required when cadence is weekly; null for daily habits. */
+  weeklyTarget: number | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -11,7 +16,10 @@ export interface Habit {
 
 export interface HabitOverview extends Habit {
   completedToday: boolean;
-  /** Consecutive-day run that is still alive (ends today or yesterday). */
+  /** Current period progress: today for daily habits, current week for weekly habits. */
+  periodCompletions: number;
+  periodTarget: number;
+  /** Consecutive-day or consecutive-week run that is still alive. */
   streak: number;
   bestStreak: number;
   totalCompletions: number;

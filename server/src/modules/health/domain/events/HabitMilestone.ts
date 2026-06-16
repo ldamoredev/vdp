@@ -5,6 +5,7 @@ export type HabitMilestonePayload = {
     readonly habitId: string;
     readonly habitName: string;
     readonly streak: number;
+    readonly streakUnit?: 'day' | 'week';
 };
 
 export class HabitMilestone extends DomainEvent<HabitMilestonePayload> {

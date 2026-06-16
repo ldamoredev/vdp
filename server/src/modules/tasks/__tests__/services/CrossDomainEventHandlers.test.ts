@@ -193,6 +193,25 @@ describe('CrossDomainEventHandlers', () => {
         expect(createTask.execute).not.toHaveBeenCalled();
     });
 
+    it('words weekly habit milestones in weeks', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new HabitMilestone({
+            userId: 'test-user-id',
+            habitId: 'habit-1',
+            habitName: 'Gimnasio',
+            streak: 7,
+            streakUnit: 'week',
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            type: 'achievement',
+            title: '7 semanas de "Gimnasio"',
+        });
+        expect(addSpy.mock.calls[0][0].message).toContain('7 semanas seguidas');
+    });
+
     it('creates an achievement insight with money on a counter milestone', async () => {
         const addSpy = vi.spyOn(insightsStore, 'addInsight');
 
