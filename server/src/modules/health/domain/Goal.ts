@@ -14,6 +14,7 @@ export class Goal {
         public title: string,
         public notes: string | null,
         public targetDate: string,
+        public targetWeightKg: string | null,
         public status: GoalStatus,
         public deadlineNotified: DeadlineStage,
         public completedAt: Date | null,
@@ -47,6 +48,7 @@ export class Goal {
             title: this.title,
             notes: this.notes,
             targetDate: this.targetDate,
+            targetWeightKg: this.targetWeightKg,
             status: this.status,
             deadlineNotified: this.deadlineNotified,
             completedAt: this.completedAt,
@@ -83,6 +85,7 @@ export class Goal {
             s.title,
             s.notes,
             s.targetDate,
+            s.targetWeightKg,
             Goal.parseStatus(s.status),
             Goal.parseStage(s.deadlineNotified),
             s.completedAt,
@@ -97,6 +100,7 @@ export type GoalSnapshot = {
     title: string;
     notes: string | null;
     targetDate: string;
+    targetWeightKg: string | null;
     status: GoalStatus;
     deadlineNotified: DeadlineStage;
     completedAt: Date | null;

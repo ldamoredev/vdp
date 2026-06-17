@@ -9,6 +9,7 @@ export type GoalOverviewRow = {
     readonly title: string;
     readonly notes: string | null;
     readonly targetDate: string;
+    readonly targetWeightKg: string | null;
     readonly status: string;
     readonly completedAt: Date | null;
     readonly createdAt: Date;
@@ -57,6 +58,7 @@ export class GetGoalsOverview {
             title: snapshot.title,
             notes: snapshot.notes,
             targetDate: snapshot.targetDate,
+            targetWeightKg: snapshot.targetWeightKg,
             status: snapshot.status,
             completedAt: snapshot.completedAt,
             createdAt: snapshot.createdAt,

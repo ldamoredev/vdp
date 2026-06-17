@@ -4,7 +4,9 @@ import { FileStorage } from '../common/base/storage/FileStorage';
 import { CreateHabitCommand, CreateHabitCommandHandler } from './app/CreateHabitCommand';
 import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from './app/GetHabitsOverviewQuery';
 import { GetMoodCheckInsQuery, GetMoodCheckInsQueryHandler } from './app/GetMoodCheckInsQuery';
+import { GetWeightTrendQuery, GetWeightTrendQueryHandler } from './app/GetWeightTrendQuery';
 import { SaveMoodCheckInCommand, SaveMoodCheckInCommandHandler } from './app/SaveMoodCheckInCommand';
+import { SaveWeightEntryCommand, SaveWeightEntryCommandHandler } from './app/SaveWeightEntryCommand';
 import { CreateMedicalRecordCommand, CreateMedicalRecordCommandHandler } from './app/medical/CreateMedicalRecordCommand';
 import { DeleteAttachmentCommand, DeleteAttachmentCommandHandler } from './app/medical/DeleteAttachmentCommand';
 import { DeleteMedicalRecordCommand, DeleteMedicalRecordCommandHandler } from './app/medical/DeleteMedicalRecordCommand';
@@ -16,6 +18,7 @@ import { HabitRepository } from './domain/HabitRepository';
 import { CounterRepository } from './domain/CounterRepository';
 import { GoalRepository } from './domain/GoalRepository';
 import { MoodCheckInRepository } from './domain/MoodCheckInRepository';
+import { WeightRepository } from './domain/WeightRepository';
 import { MedicalRepository } from './domain/medical/MedicalRepository';
 import { HealthAgent } from './infrastructure/agent/HealthAgent';
 import { HealthAgentController } from './infrastructure/routes/HealthAgentController';
@@ -81,6 +84,12 @@ export class HealthModuleRuntime {
         );
         this.deps.bus.registerHandler(SaveMoodCheckInCommand, () =>
             new SaveMoodCheckInCommandHandler(this.moodCheckInRepository()),
+        );
+        this.deps.bus.registerHandler(GetWeightTrendQuery, () =>
+            new GetWeightTrendQueryHandler(this.weightRepository()),
+        );
+        this.deps.bus.registerHandler(SaveWeightEntryCommand, () =>
+            new SaveWeightEntryCommandHandler(this.weightRepository()),
         );
 
         this.registerMedicalHandlers();
@@ -148,6 +157,10 @@ export class HealthModuleRuntime {
 
     private moodCheckInRepository(): MoodCheckInRepository {
         return this.deps.repositories.get(MoodCheckInRepository);
+    }
+
+    private weightRepository(): WeightRepository {
+        return this.deps.repositories.get(WeightRepository);
     }
 
     private medicalRepository(): MedicalRepository {

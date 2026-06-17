@@ -6,11 +6,13 @@ import { HabitRepository } from '../../domain/HabitRepository';
 import { CounterRepository } from '../../domain/CounterRepository';
 import { GoalRepository } from '../../domain/GoalRepository';
 import { MoodCheckInRepository } from '../../domain/MoodCheckInRepository';
+import { WeightRepository } from '../../domain/WeightRepository';
 import { MedicalRepository } from '../../domain/medical/MedicalRepository';
 import { DrizzleHabitRepository } from './DrizzleHabitRepository';
 import { DrizzleCounterRepository } from './DrizzleCounterRepository';
 import { DrizzleGoalRepository } from './DrizzleGoalRepository';
 import { DrizzleMoodCheckInRepository } from './DrizzleMoodCheckInRepository';
+import { DrizzleWeightRepository } from './DrizzleWeightRepository';
 import { DrizzleMedicalRepository } from './DrizzleMedicalRepository';
 
 export function registerHealthRepositories(registry: RepositoryRegistry, db: Database): void {
@@ -18,6 +20,7 @@ export function registerHealthRepositories(registry: RepositoryRegistry, db: Dat
     registry.register(CounterRepository, () => new DrizzleCounterRepository(db));
     registry.register(GoalRepository, () => new DrizzleGoalRepository(db));
     registry.register(MoodCheckInRepository, () => new DrizzleMoodCheckInRepository(db));
+    registry.register(WeightRepository, () => new DrizzleWeightRepository(db));
     registry.register(MedicalRepository, () => new DrizzleMedicalRepository(db));
     registry.register(FileStorage, () => new PostgresFileStorage(db));
 }

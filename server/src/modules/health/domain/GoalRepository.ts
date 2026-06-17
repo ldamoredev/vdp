@@ -4,6 +4,7 @@ export type CreateGoalData = {
     readonly title: string;
     readonly notes?: string | null;
     readonly targetDate: string;
+    readonly targetWeightKg?: string | null;
 };
 
 export abstract class GoalRepository {

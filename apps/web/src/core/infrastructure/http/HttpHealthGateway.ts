@@ -6,6 +6,8 @@ import type {
   HabitsOverviewResponse,
   MoodCheckIn,
   MoodCheckInsResponse,
+  WeightEntry,
+  WeightTrendResponse,
 } from "@vdp/shared";
 
 import { Goal } from "../../domain/health/Goal";
@@ -20,6 +22,8 @@ import type {
   HealthGateway,
   MoodCheckInsOverview,
   SaveMoodCheckInInput,
+  SaveWeightEntryInput,
+  WeightTrendOverview,
 } from "../../domain/health/HealthGateway";
 
 /**
@@ -97,6 +101,17 @@ export class HttpHealthGateway implements HealthGateway {
 
   async saveMoodCheckIn(input: SaveMoodCheckInInput): Promise<MoodCheckIn> {
     const { body } = await this.http.put<MoodCheckIn>("/health/mood-check-ins", input);
+    return body;
+  }
+
+  async getWeightTrend(days?: number): Promise<WeightTrendOverview> {
+    const query = days ? `?days=${encodeURIComponent(String(days))}` : "";
+    const { body } = await this.http.get<WeightTrendResponse>(`/health/weight${query}`);
+    return body;
+  }
+
+  async saveWeightEntry(input: SaveWeightEntryInput): Promise<WeightEntry> {
+    const { body } = await this.http.put<WeightEntry>("/health/weight", input);
     return body;
   }
 }

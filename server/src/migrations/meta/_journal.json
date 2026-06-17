@@ -57,6 +57,13 @@
       "when": 1781662863547,
       "tag": "0007_clumsy_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781702605572,
+      "tag": "0008_fantastic_silhouette",
+      "breakpoints": true
     }
   ]
 }

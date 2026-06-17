@@ -1,7 +1,8 @@
 import type { Counter } from "./Counter";
 import type { Goal } from "./Goal";
 import type { Habit } from "./Habit";
-import type { HabitCadence, MoodCheckIn, MoodCheckInsResponse } from "@vdp/shared";
+import type { HabitCadence, MoodCheckIn, MoodCheckInsResponse, WeightEntry } from "@vdp/shared";
+import type { WeightTrend } from "./Weight";
 
 export interface CreateHabitInput {
   name: string;
@@ -21,6 +22,7 @@ export interface CreateGoalInput {
   title: string;
   targetDate: string;
   notes?: string | null;
+  targetWeightKg?: string | null;
 }
 
 export interface GraduateGoalInput {
@@ -34,6 +36,11 @@ export interface SaveMoodCheckInInput {
   date?: string;
   mood: number;
   energy: number;
+}
+
+export interface SaveWeightEntryInput {
+  date?: string;
+  weightKg: string;
 }
 
 export interface HabitsOverview {
@@ -52,6 +59,7 @@ export interface GoalsOverview {
 }
 
 export type MoodCheckInsOverview = MoodCheckInsResponse;
+export type WeightTrendOverview = WeightTrend;
 
 /**
  * Port for the health backend. Reads return domain models; writes the UI does
@@ -80,4 +88,7 @@ export interface HealthGateway {
 
   listMoodCheckIns(days?: number): Promise<MoodCheckInsOverview>;
   saveMoodCheckIn(input: SaveMoodCheckInInput): Promise<MoodCheckIn>;
+
+  getWeightTrend(days?: number): Promise<WeightTrendOverview>;
+  saveWeightEntry(input: SaveWeightEntryInput): Promise<WeightEntry>;
 }

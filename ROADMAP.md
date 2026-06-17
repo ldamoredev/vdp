@@ -8,7 +8,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 |--------|---------|----------|-------|--------|
 | Tasks | ✅ | ✅ | ✅ | Stable reference module; production-ready for personal daily use |
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
-| Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
+| Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -18,7 +18,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 1. ~~Recovery: restore local confidence, CI, and manual app verification.~~ Done.
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
-4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, and P2 daily mood/energy check-ins. Phase 4 remaining proposal is P3.
+4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
 5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is owner-led**: migrate the remaining old API services/controllers to the new CQBus style, then delete `ServiceProvider`.
 
 ## Architecture Track (ACTIVE — June 2026)
@@ -46,7 +46,7 @@ Details: analysis doc §11.
 
 ## Phase 4: Health Deepening
 
-Resumed after the Architecture Track pause with P2 shipped in June 2026. Remaining proposal: P3.
+Resumed after the Architecture Track pause and completed with P3 shipped in June 2026.
 
 Source: the owner's real prior usage in Notion (user stories H1–H3, all shipped)
 plus researched proposals (P1–P3). One feature at a time, in the order below;
@@ -166,19 +166,23 @@ captured inside the existing `/review` ritual — no new screen. The weekly
 summary combines check-in averages with Health habit completion, and the ritual
 UI correlates low mood with Tasks carry-over when the 7-day rate is high.
 
-### P3. Weight tracking with trend (proposal)
+### P3. Weight tracking with trend (proposal) — SHIPPED June 2026
 
 The single most-tracked body metric and the natural companion of diet/gym goals
-(H2): a goal can carry an optional target weight. Scope: one number per day max,
-sparkline trend on the habits screen, mono `font-data` rendering. Explicitly not
-a metrics platform — one metric, until proven insufficient.
+(H2): a goal can carry an optional target weight. Shipped scope: one weight
+entry per day max (upsert/correction), 30-day trend summary, sparkline on the
+Health screen, mono `font-data` rendering, and optional `targetWeightKg` on
+deadline goals. Explicitly not a metrics platform — one metric, until proven
+insufficient.
 
-Suggested order from here: ~~H1~~ → ~~H2~~ → ~~H3~~ → ~~P1~~ → ~~P2~~ → P3. H1 shipped
+Suggested order from here: ~~H1~~ → ~~H2~~ → ~~H3~~ → ~~P1~~ → ~~P2~~ → ~~P3~~. H1 shipped
 first because it is the owner's most-lived use case with the smallest scope and
 the strongest cross-domain payoff; H3 shipped as an owner-directed continuation;
 P1 shipped next because graduated gym/diet goals needed weekly cadence to become
 honest habits; P2 shipped next because it strengthens the daily review loop with
-a cheap signal that compounds across Tasks and Health.
+a cheap signal that compounds across Tasks and Health; P3 shipped last because
+it adds the smallest useful body metric without opening a broader metrics
+platform.
 
 ## Data Constraint
 

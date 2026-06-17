@@ -9,6 +9,7 @@ function goalDto(overrides: Partial<GoalOverview> = {}): GoalOverview {
     title: "Empezar el gym",
     notes: null,
     targetDate: "2026-07-01",
+    targetWeightKg: null,
     status: "active",
     completedAt: null,
     daysLeft: 10,

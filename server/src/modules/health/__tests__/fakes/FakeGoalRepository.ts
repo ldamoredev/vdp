@@ -20,6 +20,7 @@ export class FakeGoalRepository extends GoalRepository {
             data.title,
             data.notes ?? null,
             data.targetDate,
+            data.targetWeightKg ?? null,
             'active',
             'none',
             null,

@@ -107,6 +107,7 @@ export const goals = healthSchema.table(
     title: varchar("title", { length: 120 }).notNull(),
     notes: text("notes"),
     targetDate: date("target_date").notNull(),
+    targetWeightKg: decimal("target_weight_kg", { precision: 6, scale: 2 }),
     status: varchar("status", { length: 12 }).notNull().default("active"),
     deadlineNotified: varchar("deadline_notified", { length: 4 }).notNull().default("none"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -117,6 +118,25 @@ export const goals = healthSchema.table(
     index("goals_owner_user_idx").on(table.ownerUserId),
     index("goals_status_idx").on(table.status),
   ]
+);
+
+// ─── Weight trend ───────────────────────────────────────
+// One body-weight entry per user/day. The upsert command lets today's number
+// be corrected without turning this into a metrics platform.
+export const weightEntries = healthSchema.table(
+  "weight_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    date: date("date").notNull(),
+    weightKg: decimal("weight_kg", { precision: 6, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("weight_entries_owner_date_idx").on(table.ownerUserId, table.date),
+    index("weight_entries_owner_user_idx").on(table.ownerUserId),
+  ],
 );
 
 // ─── Daily mood/energy check-ins ────────────────────────

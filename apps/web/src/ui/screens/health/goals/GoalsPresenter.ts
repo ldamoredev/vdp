@@ -29,6 +29,7 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
   private isGraduating = false;
   private newTitle = "";
   private newTargetDate = "";
+  private newTargetWeight = "";
 
   constructor(
     onChange: ChangeFunc,
@@ -56,15 +57,26 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
     this.refresh();
   }
 
+  setNewTargetWeight(value: string): void {
+    this.newTargetWeight = value;
+    this.refresh();
+  }
+
   async create(): Promise<void> {
     const title = this.newTitle.trim();
     if (!title || !this.newTargetDate || this.isCreating) return;
     this.isCreating = true;
     this.refresh();
     try {
-      await this.core.execute(new CreateGoal({ title, targetDate: this.newTargetDate }));
+      const targetWeightKg = this.newTargetWeight.trim();
+      await this.core.execute(new CreateGoal({
+        title,
+        targetDate: this.newTargetDate,
+        ...(targetWeightKg ? { targetWeightKg } : {}),
+      }));
       this.newTitle = "";
       this.newTargetDate = "";
+      this.newTargetWeight = "";
       await this.load();
     } finally {
       this.isCreating = false;
@@ -171,6 +183,7 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       error: this.error,
       newTitle: this.newTitle,
       newTargetDate: this.newTargetDate,
+      newTargetWeight: this.newTargetWeight,
       isCreating: this.isCreating,
       canCreate: this.newTitle.trim().length > 0 && this.newTargetDate.length > 0 && !this.isCreating,
       graduation: this.offer
@@ -191,6 +204,7 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       id: goal.id,
       title: goal.title,
       targetDateLabel: `límite: ${goal.targetDate}`,
+      targetWeightLabel: goal.targetWeightKg ? `objetivo: ${Number(goal.targetWeightKg).toFixed(1)} kg` : null,
       deadlineLabel: this.deadlineLabel(goal),
       urgency: goal.urgency(),
       busy: this.busyIds.has(goal.id),

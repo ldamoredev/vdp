@@ -49,6 +49,11 @@ export const createGoalSchema = z.object({
   title: z.string().trim().min(1).max(120),
   notes: z.string().nullable().optional(),
   targetDate: localDateStringSchema, // YYYY-MM-DD, must be in the future
+  targetWeightKg: z
+    .string()
+    .regex(/^\d{1,3}(\.\d{1,2})?$/, "Expected a decimal kg value")
+    .nullable()
+    .optional(),
 });
 
 export const graduateGoalSchema = z.object({
@@ -74,3 +79,13 @@ export const moodCheckInSchema = z.object({
 });
 
 export const moodCheckInsQuerySchema = daysWindowSchema;
+
+// ─── Weight trend ───────────────────────────────────────
+export const weightEntrySchema = z.object({
+  date: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
+  weightKg: z
+    .string()
+    .regex(/^\d{1,3}(\.\d{1,2})?$/, "Expected a decimal kg value"),
+});
+
+export const weightTrendQuerySchema = daysWindowSchema;

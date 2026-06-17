@@ -35,6 +35,7 @@ export class UploadAttachmentCommandHandler
 
     // Validate by sniffing the real content type — never trust the client header.
     const result = validateUpload({ filename: command.filename, content: command.content });
+    // TODO: this validation seems to be a validation of http layer
     if (!result.ok) throw new ValidationHttpError(result.reason);
 
     // Persist bytes through the storage seam, then the metadata row.

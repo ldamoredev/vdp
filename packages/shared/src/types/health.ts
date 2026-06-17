@@ -69,6 +69,7 @@ export interface Goal {
   title: string;
   notes: string | null;
   targetDate: string;
+  targetWeightKg: string | null;
   status: GoalStatus;
   completedAt: string | null;
   createdAt: string;
@@ -113,4 +114,32 @@ export interface MoodCheckInsResponse {
   checkIns: MoodCheckIn[];
   date: string;
   summary: MoodCheckInSummary;
+}
+
+// ─── Weight trend ───────────────────────────────────────
+
+export interface WeightEntry {
+  id: string;
+  date: string;
+  /** Body weight in kilograms, stored as a decimal string. */
+  weightKg: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type WeightTrendDirection = "up" | "down" | "flat";
+
+export interface WeightTrendSummary {
+  days: number;
+  entryCount: number;
+  currentWeightKg: string | null;
+  previousWeightKg: string | null;
+  changeKg: string | null;
+  direction: WeightTrendDirection;
+}
+
+export interface WeightTrendResponse {
+  entries: WeightEntry[];
+  date: string;
+  summary: WeightTrendSummary;
 }

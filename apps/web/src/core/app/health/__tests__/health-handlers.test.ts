@@ -14,10 +14,12 @@ import { GetCountersOverview } from "../GetCountersOverview";
 import { GetGoalsOverview } from "../GetGoalsOverview";
 import { GetHabitsOverview } from "../GetHabitsOverview";
 import { GetMoodCheckIns } from "../GetMoodCheckIns";
+import { GetWeightTrend } from "../GetWeightTrend";
 import { GraduateGoal } from "../GraduateGoal";
 import { HealthModule } from "../HealthModule";
 import { RelapseCounter } from "../RelapseCounter";
 import { SaveMoodCheckIn } from "../SaveMoodCheckIn";
+import { SaveWeightEntry } from "../SaveWeightEntry";
 import { UncompleteHabit } from "../UncompleteHabit";
 import { FakeHealthGateway } from "./fakes/FakeHealthGateway";
 
@@ -121,6 +123,21 @@ describe("health handlers (dispatched through the bus)", () => {
       const gateway = new FakeHealthGateway();
       await coreWith(gateway).execute(new SaveMoodCheckIn({ mood: 2, energy: 4 }));
       expect(gateway.callsTo("saveMoodCheckIn")[0].args).toEqual([{ mood: 2, energy: 4 }]);
+    });
+  });
+
+  describe("weight trend", () => {
+    it("GetWeightTrend reads the weight overview", async () => {
+      const gateway = new FakeHealthGateway();
+      const result = await coreWith(gateway).execute(new GetWeightTrend(30));
+      expect(gateway.callsTo("getWeightTrend")[0].args).toEqual([30]);
+      expect(result.date).toBe("2026-06-13");
+    });
+
+    it("SaveWeightEntry forwards the input", async () => {
+      const gateway = new FakeHealthGateway();
+      await coreWith(gateway).execute(new SaveWeightEntry({ weightKg: "82.10" }));
+      expect(gateway.callsTo("saveWeightEntry")[0].args).toEqual([{ weightKg: "82.10" }]);
     });
   });
 });

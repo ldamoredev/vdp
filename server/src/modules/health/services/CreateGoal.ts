@@ -15,6 +15,7 @@ export class CreateGoal {
             title: data.title,
             notes: data.notes ?? null,
             targetDate: data.targetDate,
+            targetWeightKg: data.targetWeightKg ?? null,
         });
     }
 }

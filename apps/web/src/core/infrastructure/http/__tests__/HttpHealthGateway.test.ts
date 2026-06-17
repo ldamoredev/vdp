@@ -1,5 +1,11 @@
 import { HttpClient, HttpMethods, HttpRequest, HttpResponse } from "@nbottarini/abstract-http-client";
-import type { GoalOverview, GoalsOverviewResponse, HabitsOverviewResponse, MoodCheckInsResponse } from "@vdp/shared";
+import type {
+  GoalOverview,
+  GoalsOverviewResponse,
+  HabitsOverviewResponse,
+  MoodCheckInsResponse,
+  WeightTrendResponse,
+} from "@vdp/shared";
 import { describe, expect, it } from "vitest";
 
 import { Goal } from "../../../domain/health/Goal";
@@ -62,6 +68,7 @@ function goalDto(overrides: Partial<GoalOverview> = {}): GoalOverview {
     title: "Gym",
     notes: null,
     targetDate: "2026-07-01",
+    targetWeightKg: null,
     status: "active",
     completedAt: null,
     daysLeft: 10,
@@ -172,5 +179,42 @@ describe("HttpHealthGateway", () => {
       body: { mood: 2, energy: 4 },
     });
     expect(saved.mood).toBe(2);
+  });
+
+  it("lists and saves weight entries through the trend endpoint", async () => {
+    const body: WeightTrendResponse = {
+      entries: [],
+      date: "2026-06-13",
+      summary: {
+        days: 30,
+        entryCount: 0,
+        currentWeightKg: null,
+        previousWeightKg: null,
+        changeKg: null,
+        direction: "flat",
+      },
+    };
+    const http = new FakeHttpClient({
+      "GET /health/weight?days=30": body,
+      "PUT /health/weight": {
+        id: "w1",
+        date: "2026-06-13",
+        weightKg: "82.10",
+        createdAt: "2026-06-13T00:00:00.000Z",
+        updatedAt: "2026-06-13T00:00:00.000Z",
+      },
+    });
+    const gateway = new HttpHealthGateway(http);
+
+    await gateway.getWeightTrend(30);
+    const saved = await gateway.saveWeightEntry({ weightKg: "82.10" });
+
+    expect(http.calls[0]).toMatchObject({ method: "GET", url: "/health/weight?days=30" });
+    expect(http.calls[1]).toMatchObject({
+      method: "PUT",
+      url: "/health/weight",
+      body: { weightKg: "82.10" },
+    });
+    expect(saved.weightKg).toBe("82.10");
   });
 });

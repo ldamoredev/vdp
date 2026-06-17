@@ -17,6 +17,7 @@ export class DrizzleGoalRepository extends GoalRepository {
                 title: data.title,
                 notes: data.notes ?? null,
                 targetDate: data.targetDate,
+                targetWeightKg: data.targetWeightKg ?? null,
             })
             .returning();
 
@@ -51,6 +52,7 @@ export class DrizzleGoalRepository extends GoalRepository {
                 title: snapshot.title,
                 notes: snapshot.notes,
                 targetDate: snapshot.targetDate,
+                targetWeightKg: snapshot.targetWeightKg,
                 status: snapshot.status,
                 deadlineNotified: snapshot.deadlineNotified,
                 completedAt: snapshot.completedAt,
@@ -68,6 +70,7 @@ export class DrizzleGoalRepository extends GoalRepository {
             title: row.title,
             notes: row.notes,
             targetDate: row.targetDate,
+            targetWeightKg: row.targetWeightKg,
             status: row.status,
             deadlineNotified: row.deadlineNotified,
             completedAt: row.completedAt,

@@ -1,4 +1,4 @@
-import type { GoalOverview, MoodCheckIn } from "@vdp/shared";
+import type { GoalOverview, MoodCheckIn, WeightEntry } from "@vdp/shared";
 
 import { Goal } from "../../../../domain/health/Goal";
 import type {
@@ -12,6 +12,8 @@ import type {
   HealthGateway,
   MoodCheckInsOverview,
   SaveMoodCheckInInput,
+  SaveWeightEntryInput,
+  WeightTrendOverview,
 } from "../../../../domain/health/HealthGateway";
 
 export interface RecordedCall {
@@ -24,6 +26,7 @@ const emptyGoalDto: GoalOverview = {
   title: "Gym",
   notes: null,
   targetDate: "2026-07-01",
+  targetWeightKg: null,
   status: "done",
   completedAt: "2026-06-13T00:00:00.000Z",
   daysLeft: 3,
@@ -40,6 +43,7 @@ export class FakeHealthGateway implements HealthGateway {
   readonly calls: RecordedCall[] = [];
   completeGoalResult = Goal.from(emptyGoalDto);
   private moodCheckIns: MoodCheckIn[] = [];
+  private weightEntries: WeightEntry[] = [];
 
   private record(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
@@ -125,5 +129,34 @@ export class FakeHealthGateway implements HealthGateway {
     };
     this.moodCheckIns = [checkIn];
     return checkIn;
+  }
+
+  async getWeightTrend(days?: number): Promise<WeightTrendOverview> {
+    this.record("getWeightTrend", days);
+    return {
+      entries: this.weightEntries,
+      date: "2026-06-13",
+      summary: {
+        days: days ?? 30,
+        entryCount: this.weightEntries.length,
+        currentWeightKg: this.weightEntries.at(-1)?.weightKg ?? null,
+        previousWeightKg: this.weightEntries.length > 1 ? this.weightEntries[0].weightKg : null,
+        changeKg: null,
+        direction: "flat",
+      },
+    };
+  }
+
+  async saveWeightEntry(input: SaveWeightEntryInput): Promise<WeightEntry> {
+    this.record("saveWeightEntry", input);
+    const entry: WeightEntry = {
+      id: "w1",
+      date: input.date ?? "2026-06-13",
+      weightKg: input.weightKg,
+      createdAt: "2026-06-13T00:00:00.000Z",
+      updatedAt: "2026-06-13T00:00:00.000Z",
+    };
+    this.weightEntries = [entry];
+    return entry;
   }
 }

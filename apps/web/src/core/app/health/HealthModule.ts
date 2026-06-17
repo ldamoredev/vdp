@@ -16,8 +16,10 @@ import { GetCountersOverview, GetCountersOverviewHandler } from "./GetCountersOv
 import { GetGoalsOverview, GetGoalsOverviewHandler } from "./GetGoalsOverview";
 import { GetHabitsOverview, GetHabitsOverviewHandler } from "./GetHabitsOverview";
 import { GetMoodCheckIns, GetMoodCheckInsHandler } from "./GetMoodCheckIns";
+import { GetWeightTrend, GetWeightTrendHandler } from "./GetWeightTrend";
 import { GraduateGoal, GraduateGoalHandler } from "./GraduateGoal";
 import { SaveMoodCheckIn, SaveMoodCheckInHandler } from "./SaveMoodCheckIn";
+import { SaveWeightEntry, SaveWeightEntryHandler } from "./SaveWeightEntry";
 import { CreateMedicalRecord, CreateMedicalRecordHandler } from "./medical/CreateMedicalRecord";
 import { DeleteAttachment, DeleteAttachmentHandler } from "./medical/DeleteAttachment";
 import { DeleteMedicalRecord, DeleteMedicalRecordHandler } from "./medical/DeleteMedicalRecord";
@@ -62,6 +64,8 @@ export class HealthModule implements CoreModule {
 
     core.bus.registerHandler(GetMoodCheckIns, () => new GetMoodCheckInsHandler(gateway));
     core.bus.registerHandler(SaveMoodCheckIn, () => new SaveMoodCheckInHandler(gateway));
+    core.bus.registerHandler(GetWeightTrend, () => new GetWeightTrendHandler(gateway));
+    core.bus.registerHandler(SaveWeightEntry, () => new SaveWeightEntryHandler(gateway));
 
     core.bus.registerHandler(GetMedicalRecords, () => new GetMedicalRecordsHandler(medicalGateway));
     core.bus.registerHandler(CreateMedicalRecord, () => new CreateMedicalRecordHandler(medicalGateway));

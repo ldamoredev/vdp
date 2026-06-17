@@ -26,6 +26,7 @@ function makeGoal(overrides: Partial<{
         overrides.title ?? 'Empezar el gym',
         null,
         overrides.targetDate ?? '2026-07-01',
+        null,
         overrides.status ?? 'active',
         overrides.deadlineNotified ?? 'none',
         null,
@@ -56,9 +57,14 @@ describe('goals', () => {
         it('creates active goals and rejects non-future target dates', async () => {
             const service = new CreateGoal(repo);
 
-            const goal = await service.execute(userId, { title: 'Empezar dieta', targetDate: '2026-06-30' });
+            const goal = await service.execute(userId, {
+                title: 'Empezar dieta',
+                targetDate: '2026-06-30',
+                targetWeightKg: '78.50',
+            });
             expect(goal.status).toBe('active');
             expect(goal.deadlineNotified).toBe('none');
+            expect(goal.targetWeightKg).toBe('78.50');
 
             await expect(service.execute(userId, { title: 'Hoy', targetDate: TODAY }))
                 .rejects.toMatchObject({ statusCode: 422 });

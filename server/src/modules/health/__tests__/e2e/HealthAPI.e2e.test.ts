@@ -251,6 +251,70 @@ describe('Health API — E2E', () => {
         expect(otherList.json().checkIns).toHaveLength(0);
     });
 
+    it('captures one weight entry per day with trend summary and isolation', async () => {
+        const first = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/weight',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { date: daysAgo(2), weightKg: '83.40' },
+        });
+        expect(first.statusCode).toBe(200);
+
+        const today = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/weight',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { weightKg: '82.10' },
+        });
+        expect(today.statusCode).toBe(200);
+        expect(today.json()).toMatchObject({ weightKg: '82.10' });
+
+        const updated = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/weight',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { weightKg: '82.00' },
+        });
+        expect(updated.statusCode).toBe(200);
+
+        await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/weight',
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: { weightKg: '77.00' },
+        });
+
+        const ownTrend = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/weight?days=7',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(ownTrend.statusCode).toBe(200);
+        expect(ownTrend.json().entries.map((entry: { weightKg: string }) => entry.weightKg)).toEqual(['83.40', '82.00']);
+        expect(ownTrend.json().summary).toMatchObject({
+            currentWeightKg: '82.00',
+            previousWeightKg: '83.40',
+            changeKg: '-1.40',
+            direction: 'down',
+        });
+
+        const otherTrend = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/weight?days=7',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+        expect(otherTrend.json().entries).toHaveLength(1);
+        expect(otherTrend.json().entries[0]).toMatchObject({ weightKg: '77.00' });
+
+        const invalid = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/weight',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { weightKg: 'mucho' },
+        });
+        expect(invalid.statusCode).toBe(400);
+    });
+
     it('covers the counter loop: create with past start, relapse, isolation', async () => {
         const created = await testApp.app.inject({
             method: 'POST',
@@ -375,10 +439,10 @@ describe('Health API — E2E', () => {
             method: 'POST',
             url: '/api/v1/health/goals',
             headers: asUser(PRIMARY_TEST_USER.id),
-            payload: { title: 'Empezar el gym', targetDate: daysAhead(5) },
+            payload: { title: 'Empezar el gym', targetDate: daysAhead(5), targetWeightKg: '78.50' },
         });
         expect(created.statusCode).toBe(201);
-        expect(created.json()).toMatchObject({ status: 'active', daysLeft: 5 });
+        expect(created.json()).toMatchObject({ status: 'active', daysLeft: 5, targetWeightKg: '78.50' });
         const goalId = created.json().id;
 
         await testApp.app.inject({

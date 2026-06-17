@@ -8,6 +8,8 @@ import {
     habitLogSchema,
     moodCheckInSchema,
     moodCheckInsQuerySchema,
+    weightEntrySchema,
+    weightTrendQuerySchema,
 } from '@vdp/shared';
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
@@ -33,7 +35,9 @@ import { GraduateGoal } from '../../services/GraduateGoal';
 import { CreateHabitCommand } from '../../app/CreateHabitCommand';
 import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
 import { GetMoodCheckInsQuery } from '../../app/GetMoodCheckInsQuery';
+import { GetWeightTrendQuery } from '../../app/GetWeightTrendQuery';
 import { SaveMoodCheckInCommand } from '../../app/SaveMoodCheckInCommand';
+import { SaveWeightEntryCommand } from '../../app/SaveWeightEntryCommand';
 
 type HabitIdParams = z.infer<typeof habitIdParamsSchema>;
 type CreateHabitBody = z.input<typeof createHabitSchema>;
@@ -44,6 +48,8 @@ type CreateGoalBody = z.input<typeof createGoalSchema>;
 type GraduateGoalBody = z.input<typeof graduateGoalSchema>;
 type MoodCheckInsQuery = z.infer<typeof moodCheckInsQuerySchema>;
 type MoodCheckInBody = z.input<typeof moodCheckInSchema>;
+type WeightTrendQuery = z.infer<typeof weightTrendQuerySchema>;
+type WeightEntryBody = z.input<typeof weightEntrySchema>;
 
 export class HealthController extends HttpController {
     readonly prefix = '/api/v1/health';
@@ -72,8 +78,36 @@ export class HealthController extends HttpController {
             .post('/goals/:id/drop', { params: habitIdParamsSchema }, this.dropGoal)
             .post('/goals/:id/graduate', { params: habitIdParamsSchema, body: graduateGoalSchema }, this.graduateGoal)
             .get('/mood-check-ins', { query: moodCheckInsQuerySchema }, this.listMoodCheckIns)
-            .put('/mood-check-ins', { body: moodCheckInSchema }, this.saveMoodCheckIn);
+            .put('/mood-check-ins', { body: moodCheckInSchema }, this.saveMoodCheckIn)
+            .get('/weight', { query: weightTrendQuerySchema }, this.getWeightTrend)
+            .put('/weight', { body: weightEntrySchema }, this.saveWeightEntry);
     }
+
+    private readonly getWeightTrend: RouteContextHandler<undefined, WeightTrendQuery, undefined> = async ({
+        request,
+        query,
+        reply,
+    }) => {
+        return reply.send(
+            await this.bus.execute(
+                new GetWeightTrendQuery(query?.days),
+                executionContextFromAuth(request.auth),
+            ),
+        );
+    };
+
+    private readonly saveWeightEntry: RouteContextHandler<undefined, undefined, WeightEntryBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        return reply.send(
+            await this.bus.execute(
+                new SaveWeightEntryCommand(body!),
+                executionContextFromAuth(request.auth),
+            ),
+        );
+    };
 
     private readonly listMoodCheckIns: RouteContextHandler<undefined, MoodCheckInsQuery, undefined> = async ({
         request,

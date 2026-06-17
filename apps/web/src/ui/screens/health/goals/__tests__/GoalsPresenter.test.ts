@@ -14,6 +14,7 @@ function goal(overrides: Partial<GoalOverview> = {}): GoalOverview {
     title: "Gym",
     notes: null,
     targetDate: "2026-07-01",
+    targetWeightKg: null,
     status: "active",
     completedAt: null,
     daysLeft: 5,
@@ -49,14 +50,33 @@ describe("GoalsPresenter", () => {
     expect(presenter.model.canCreate).toBe(true);
   });
 
+  it("forwards optional target weight when creating a goal", async () => {
+    const { presenter, gateway } = build();
+    presenter.start();
+    await flush();
+
+    presenter.setNewTitle("Bajar suave");
+    presenter.setNewTargetDate("2026-08-01");
+    presenter.setNewTargetWeight("78.50");
+    await presenter.create();
+
+    expect(gateway.callsTo("createGoal")[0].args).toEqual([
+      { title: "Bajar suave", targetDate: "2026-08-01", targetWeightKg: "78.50" },
+    ]);
+  });
+
   it("formats the deadline label and urgency", async () => {
-    const { presenter } = build([goal({ daysLeft: -2 }), goal({ id: "g2", title: "Dieta", daysLeft: 1 })]);
+    const { presenter } = build([
+      goal({ daysLeft: -2, targetWeightKg: "78.50" }),
+      goal({ id: "g2", title: "Dieta", daysLeft: 1 }),
+    ]);
     presenter.start();
     await flush();
 
     const [overdue, soon] = presenter.model.goals;
     expect(overdue.urgency).toBe("overdue");
     expect(overdue.deadlineLabel).toBe("venció hace 2 días");
+    expect(overdue.targetWeightLabel).toBe("objetivo: 78.5 kg");
     expect(soon.deadlineLabel).toBe("vence mañana");
   });
 

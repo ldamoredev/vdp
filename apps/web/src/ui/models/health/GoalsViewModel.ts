@@ -7,6 +7,7 @@ export interface GoalsViewModel {
   error: boolean;
   newTitle: string;
   newTargetDate: string;
+  newTargetWeight: string;
   isCreating: boolean;
   canCreate: boolean;
   graduation: GraduationVM | null;
@@ -16,6 +17,7 @@ export interface GoalRowVM {
   id: string;
   title: string;
   targetDateLabel: string;
+  targetWeightLabel: string | null;
   deadlineLabel: string;
   urgency: GoalUrgency;
   busy: boolean;

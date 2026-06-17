@@ -277,6 +277,7 @@ CREATE TABLE IF NOT EXISTS health.goals (
     title VARCHAR(120) NOT NULL,
     notes TEXT,
     target_date DATE NOT NULL,
+    target_weight_kg NUMERIC(6, 2),
     status VARCHAR(12) NOT NULL DEFAULT 'active',
     deadline_notified VARCHAR(4) NOT NULL DEFAULT 'none',
     completed_at TIMESTAMPTZ,
@@ -286,6 +287,18 @@ CREATE TABLE IF NOT EXISTS health.goals (
 
 CREATE INDEX IF NOT EXISTS goals_owner_user_idx ON health.goals(owner_user_id);
 CREATE INDEX IF NOT EXISTS goals_status_idx ON health.goals(status);
+
+CREATE TABLE IF NOT EXISTS health.weight_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    weight_kg NUMERIC(6, 2) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS weight_entries_owner_date_idx ON health.weight_entries(owner_user_id, date);
+CREATE INDEX IF NOT EXISTS weight_entries_owner_user_idx ON health.weight_entries(owner_user_id);
 
 CREATE TABLE IF NOT EXISTS health.mood_check_ins (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -412,6 +425,7 @@ export class TestDatabase {
                     health.counter_attempts,
                     health.counters,
                     health.goals,
+                    health.weight_entries,
                     health.mood_check_ins,
                     wallet.wallet_insights,
                     wallet.savings_contributions,
