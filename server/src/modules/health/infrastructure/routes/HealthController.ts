@@ -17,27 +17,25 @@ import { z } from 'zod';
 import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { sendCreated } from '../../../common/http/responses';
-import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { RouteContextHandler } from '../../../common/http/routes';
-
-import { ArchiveHabit } from '../../services/ArchiveHabit';
-import { CompleteHabitDay } from '../../services/CompleteHabitDay';
-import { UncompleteHabitDay } from '../../services/UncompleteHabitDay';
-import { ArchiveCounter } from '../../services/ArchiveCounter';
-import { CreateCounter } from '../../services/CreateCounter';
-import { GetCountersOverview } from '../../services/GetCountersOverview';
-import { RelapseCounter } from '../../services/RelapseCounter';
-import { CompleteGoal } from '../../services/CompleteGoal';
-import { CreateGoal } from '../../services/CreateGoal';
-import { DropGoal } from '../../services/DropGoal';
-import { GetGoalsOverview } from '../../services/GetGoalsOverview';
-import { GraduateGoal } from '../../services/GraduateGoal';
+import { ArchiveCounterCommand } from '../../app/ArchiveCounterCommand';
+import { ArchiveHabitCommand } from '../../app/ArchiveHabitCommand';
+import { CompleteGoalCommand } from '../../app/CompleteGoalCommand';
+import { CompleteHabitDayCommand } from '../../app/CompleteHabitDayCommand';
+import { CreateCounterCommand } from '../../app/CreateCounterCommand';
+import { CreateGoalCommand } from '../../app/CreateGoalCommand';
 import { CreateHabitCommand } from '../../app/CreateHabitCommand';
+import { DropGoalCommand } from '../../app/DropGoalCommand';
+import { GetCountersOverviewQuery } from '../../app/GetCountersOverviewQuery';
+import { GetGoalsOverviewQuery } from '../../app/GetGoalsOverviewQuery';
 import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
 import { GetMoodCheckInsQuery } from '../../app/GetMoodCheckInsQuery';
 import { GetWeightTrendQuery } from '../../app/GetWeightTrendQuery';
+import { GraduateGoalCommand } from '../../app/GraduateGoalCommand';
+import { RelapseCounterCommand } from '../../app/RelapseCounterCommand';
 import { SaveMoodCheckInCommand } from '../../app/SaveMoodCheckInCommand';
 import { SaveWeightEntryCommand } from '../../app/SaveWeightEntryCommand';
+import { UncompleteHabitDayCommand } from '../../app/UncompleteHabitDayCommand';
 
 type HabitIdParams = z.infer<typeof habitIdParamsSchema>;
 type CreateHabitBody = z.input<typeof createHabitSchema>;
@@ -54,10 +52,7 @@ type WeightEntryBody = z.input<typeof weightEntrySchema>;
 export class HealthController extends HttpController {
     readonly prefix = '/api/v1/health';
 
-    constructor(
-        private readonly bus: CQBus,
-        private services: ServiceResolver,
-    ) {
+    constructor(private readonly bus: CQBus) {
         super();
     }
 
@@ -139,8 +134,7 @@ export class HealthController extends HttpController {
         request,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        return reply.send(await this.services.get(GetGoalsOverview).execute(userId));
+        return reply.send(await this.bus.execute(new GetGoalsOverviewQuery(), executionContextFromAuth(request.auth)));
     };
 
     private readonly createGoal: RouteContextHandler<undefined, undefined, CreateGoalBody> = async ({
@@ -148,9 +142,8 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const goal = await this.services.get(CreateGoal).execute(userId, body!);
-        return sendCreated(reply, this.services.get(GetGoalsOverview).buildRow(goal));
+        const goal = await this.bus.execute(new CreateGoalCommand(body!), executionContextFromAuth(request.auth));
+        return sendCreated(reply, goal);
     };
 
     private readonly completeGoal: RouteContextHandler<HabitIdParams, undefined, undefined> = async ({
@@ -158,9 +151,9 @@ export class HealthController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const goal = await this.services.get(CompleteGoal).execute(userId, params!.id);
-        return reply.send(this.services.get(GetGoalsOverview).buildRow(goal));
+        return reply.send(
+            await this.bus.execute(new CompleteGoalCommand(params!.id), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly dropGoal: RouteContextHandler<HabitIdParams, undefined, undefined> = async ({
@@ -168,9 +161,9 @@ export class HealthController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const goal = await this.services.get(DropGoal).execute(userId, params!.id);
-        return reply.send(this.services.get(GetGoalsOverview).buildRow(goal));
+        return reply.send(
+            await this.bus.execute(new DropGoalCommand(params!.id), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly graduateGoal: RouteContextHandler<HabitIdParams, undefined, GraduateGoalBody> = async ({
@@ -179,20 +172,16 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GraduateGoal).execute(userId, params!.id, body!);
-        return reply.send({
-            goal: this.services.get(GetGoalsOverview).buildRow(result.goal),
-            habit: result.habit.toSnapshot(),
-        });
+        return reply.send(
+            await this.bus.execute(new GraduateGoalCommand(params!.id, body!), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly listCounters: RouteContextHandler<undefined, undefined, undefined> = async ({
         request,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        return reply.send(await this.services.get(GetCountersOverview).execute(userId));
+        return reply.send(await this.bus.execute(new GetCountersOverviewQuery(), executionContextFromAuth(request.auth)));
     };
 
     private readonly createCounter: RouteContextHandler<undefined, undefined, CreateCounterBody> = async ({
@@ -200,10 +189,8 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const counter = await this.services.get(CreateCounter).execute(userId, body!);
-        const row = await this.services.get(GetCountersOverview).buildRow(userId, counter);
-        return sendCreated(reply, row);
+        const counter = await this.bus.execute(new CreateCounterCommand(body!), executionContextFromAuth(request.auth));
+        return sendCreated(reply, counter);
     };
 
     private readonly relapseCounter: RouteContextHandler<HabitIdParams, undefined, CounterRelapseBody> = async ({
@@ -212,10 +199,12 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const counter = await this.services.get(RelapseCounter).execute(userId, params!.id, body?.date);
-        const row = await this.services.get(GetCountersOverview).buildRow(userId, counter);
-        return reply.send(row);
+        return reply.send(
+            await this.bus.execute(
+                new RelapseCounterCommand(params!.id, body?.date),
+                executionContextFromAuth(request.auth),
+            ),
+        );
     };
 
     private readonly archiveCounter: RouteContextHandler<HabitIdParams, undefined, undefined> = async ({
@@ -223,9 +212,9 @@ export class HealthController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const counter = await this.services.get(ArchiveCounter).execute(userId, params!.id);
-        return reply.send(counter.toSnapshot());
+        return reply.send(
+            await this.bus.execute(new ArchiveCounterCommand(params!.id), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly listHabits: RouteContextHandler<undefined, undefined, undefined> = async ({
@@ -250,9 +239,12 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(CompleteHabitDay).execute(userId, params!.id, body?.date);
-        return reply.send(result);
+        return reply.send(
+            await this.bus.execute(
+                new CompleteHabitDayCommand(params!.id, body?.date),
+                executionContextFromAuth(request.auth),
+            ),
+        );
     };
 
     private readonly uncompleteHabit: RouteContextHandler<HabitIdParams, undefined, HabitLogBody> = async ({
@@ -261,9 +253,12 @@ export class HealthController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(UncompleteHabitDay).execute(userId, params!.id, body?.date);
-        return reply.send(result);
+        return reply.send(
+            await this.bus.execute(
+                new UncompleteHabitDayCommand(params!.id, body?.date),
+                executionContextFromAuth(request.auth),
+            ),
+        );
     };
 
     private readonly archiveHabit: RouteContextHandler<HabitIdParams, undefined, undefined> = async ({
@@ -271,8 +266,8 @@ export class HealthController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const habit = await this.services.get(ArchiveHabit).execute(userId, params!.id);
-        return reply.send(habit.toSnapshot());
+        return reply.send(
+            await this.bus.execute(new ArchiveHabitCommand(params!.id), executionContextFromAuth(request.auth)),
+        );
     };
 }

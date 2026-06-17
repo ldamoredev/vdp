@@ -1,17 +1,18 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { localDateStringSchema, type HealthAgentToolName } from '@vdp/shared';
 
 import { AgentTool } from '../../../common/base/agents/BaseAgent';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
-import { CompleteHabitDay } from '../../services/CompleteHabitDay';
-import { CreateHabit } from '../../services/CreateHabit';
-import { GetHabitsOverview } from '../../services/GetHabitsOverview';
-import { CreateCounter } from '../../services/CreateCounter';
-import { GetCountersOverview } from '../../services/GetCountersOverview';
-import { RelapseCounter } from '../../services/RelapseCounter';
-import { CompleteGoal } from '../../services/CompleteGoal';
-import { CreateGoal } from '../../services/CreateGoal';
-import { GetGoalsOverview } from '../../services/GetGoalsOverview';
+import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
+import { CompleteGoalCommand } from '../../app/CompleteGoalCommand';
+import { CompleteHabitDayCommand } from '../../app/CompleteHabitDayCommand';
+import { CreateCounterCommand } from '../../app/CreateCounterCommand';
+import { CreateGoalCommand } from '../../app/CreateGoalCommand';
+import { CreateHabitCommand } from '../../app/CreateHabitCommand';
+import { GetCountersOverviewQuery } from '../../app/GetCountersOverviewQuery';
+import { GetGoalsOverviewQuery } from '../../app/GetGoalsOverviewQuery';
+import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
+import { RelapseCounterCommand } from '../../app/RelapseCounterCommand';
 
 type ToolInput = Record<string, unknown>;
 
@@ -33,10 +34,10 @@ function jsonTool(definition: JsonToolDefinition): AgentTool {
 
 export class HealthTools {
     static createHealthTools(
-        services: ServiceProvider,
+        bus: CQBus,
         authContextStorage: AuthContextStorage,
     ): AgentTool[] {
-        const userId = () => authContextStorage.getAuthContext().userId!;
+        const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
 
         return [
             jsonTool({
@@ -45,7 +46,7 @@ export class HealthTools {
                     'List the user\'s active habits with today\'s completion state, cadence progress, ' +
                     'current streak, and best streak. Call this before completing or discussing habits.',
                 inputSchema: { type: 'object', properties: {}, required: [] },
-                execute: async () => services.get(GetHabitsOverview).execute(userId()),
+                execute: async () => bus.execute(new GetHabitsOverviewQuery(), executionContext()),
             }),
             jsonTool({
                 name: 'create_habit',
@@ -78,13 +79,12 @@ export class HealthTools {
                         return { error: 'weeklyTarget must be an integer between 1 and 7' };
                     }
 
-                    const habit = await services.get(CreateHabit).execute(userId(), {
+                    return bus.execute(new CreateHabitCommand({
                         name,
                         emoji: typeof input.emoji === 'string' ? input.emoji : null,
                         cadence,
                         weeklyTarget: cadence === 'weekly' ? weeklyTarget as number : null,
-                    });
-                    return habit.toSnapshot();
+                    }), executionContext());
                 },
             }),
             jsonTool({
@@ -107,10 +107,9 @@ export class HealthTools {
                         return { error: `Invalid date: expected YYYY-MM-DD, got ${JSON.stringify(input.date)}` };
                     }
 
-                    return services.get(CompleteHabitDay).execute(
-                        userId(),
-                        input.habitId,
-                        typeof input.date === 'string' ? input.date : undefined,
+                    return bus.execute(
+                        new CompleteHabitDayCommand(input.habitId, typeof input.date === 'string' ? input.date : undefined),
+                        executionContext(),
                     );
                 },
             }),
@@ -121,7 +120,7 @@ export class HealthTools {
                     'days, best attempt, and estimated money not spent. Call this before relapsing or ' +
                     'discussing a counter.',
                 inputSchema: { type: 'object', properties: {}, required: [] },
-                execute: async () => services.get(GetCountersOverview).execute(userId()),
+                execute: async () => bus.execute(new GetCountersOverviewQuery(), executionContext()),
             }),
             jsonTool({
                 name: 'create_counter',
@@ -147,13 +146,12 @@ export class HealthTools {
                         return { error: `Invalid startedAt: expected YYYY-MM-DD, got ${JSON.stringify(input.startedAt)}` };
                     }
 
-                    const counter = await services.get(CreateCounter).execute(userId(), {
+                    return bus.execute(new CreateCounterCommand({
                         name,
                         emoji: typeof input.emoji === 'string' ? input.emoji : null,
                         dailyCost: typeof input.dailyCost === 'string' ? input.dailyCost : null,
                         startedAt: typeof input.startedAt === 'string' ? input.startedAt : undefined,
-                    });
-                    return services.get(GetCountersOverview).buildRow(userId(), counter);
+                    }), executionContext());
                 },
             }),
             jsonTool({
@@ -177,12 +175,10 @@ export class HealthTools {
                         return { error: `Invalid date: expected YYYY-MM-DD, got ${JSON.stringify(input.date)}` };
                     }
 
-                    const counter = await services.get(RelapseCounter).execute(
-                        userId(),
-                        input.counterId,
-                        typeof input.date === 'string' ? input.date : undefined,
+                    return bus.execute(
+                        new RelapseCounterCommand(input.counterId, typeof input.date === 'string' ? input.date : undefined),
+                        executionContext(),
                     );
-                    return services.get(GetCountersOverview).buildRow(userId(), counter);
                 },
             }),
             jsonTool({
@@ -191,7 +187,7 @@ export class HealthTools {
                     'List the user\'s goals with target dates, status, and days left ' +
                     '(negative = overdue). Call this before completing or discussing goals.',
                 inputSchema: { type: 'object', properties: {}, required: [] },
-                execute: async () => services.get(GetGoalsOverview).execute(userId()),
+                execute: async () => bus.execute(new GetGoalsOverviewQuery(), executionContext()),
             }),
             jsonTool({
                 name: 'create_goal',
@@ -214,12 +210,11 @@ export class HealthTools {
                         return { error: `Invalid targetDate: expected YYYY-MM-DD, got ${JSON.stringify(input.targetDate)}` };
                     }
 
-                    const goal = await services.get(CreateGoal).execute(userId(), {
+                    return bus.execute(new CreateGoalCommand({
                         title,
                         targetDate: input.targetDate as string,
                         notes: typeof input.notes === 'string' ? input.notes : null,
-                    });
-                    return services.get(GetGoalsOverview).buildRow(goal);
+                    }), executionContext());
                 },
             }),
             jsonTool({
@@ -237,8 +232,7 @@ export class HealthTools {
                 },
                 execute: async (input) => {
                     if (typeof input.goalId !== 'string') return { error: 'goalId is required' };
-                    const goal = await services.get(CompleteGoal).execute(userId(), input.goalId);
-                    return services.get(GetGoalsOverview).buildRow(goal);
+                    return bus.execute(new CompleteGoalCommand(input.goalId), executionContext());
                 },
             }),
         ];

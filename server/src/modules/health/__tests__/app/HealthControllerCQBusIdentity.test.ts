@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import { AuthContext } from '../../../common/http/AuthContext';
 import { httpErrorHandler } from '../../../common/http/errors';
-import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { CreateHabitCommand } from '../../app/CreateHabitCommand';
 import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
 import { HealthController } from '../../infrastructure/routes/HealthController';
@@ -53,7 +52,7 @@ describe('HealthController CQBus identity forwarding', () => {
         app.addHook('preHandler', async (request) => {
             request.auth = authContext;
         });
-        new HealthController(bus, { get: () => undefined } as unknown as ServiceResolver).register(app);
+        new HealthController(bus).register(app);
 
         const list = await app.inject({ method: 'GET', url: '/api/v1/health/habits' });
         const created = await app.inject({

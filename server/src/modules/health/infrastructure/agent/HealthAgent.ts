@@ -1,5 +1,6 @@
 import { buildHealthSystemPrompt } from './system-prompt';
 import { HealthTools } from './tools';
+import { CQBus } from '@nbottarini/cqbus';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
@@ -22,6 +23,7 @@ export class HealthAgent extends BaseAgent {
     constructor(
         eventBus: EventBus,
         services: ServiceProvider,
+        bus: CQBus,
         repositories: RepositoryProvider,
         langfuse: LLMTraceService,
         openTelemetry: TraceService,
@@ -30,6 +32,6 @@ export class HealthAgent extends BaseAgent {
         authContextStorage: AuthContextStorage,
     ) {
         super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
-        this.tools = HealthTools.createHealthTools(services, authContextStorage);
+        this.tools = HealthTools.createHealthTools(bus, authContextStorage);
     }
 }
