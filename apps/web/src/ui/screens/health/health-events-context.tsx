@@ -2,7 +2,16 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 import { HealthEvents } from "@/ui/events/HealthEvents";
 
-const HealthEventsContext = createContext<HealthEvents | null>(null);
+const HEALTH_EVENTS_CONTEXT_KEY = "__vdpHealthEventsContext";
+
+const globalContextRegistry = globalThis as typeof globalThis & {
+  [HEALTH_EVENTS_CONTEXT_KEY]?: ReturnType<typeof createContext<HealthEvents | null>>;
+};
+
+const HealthEventsContext =
+  globalContextRegistry[HEALTH_EVENTS_CONTEXT_KEY] ?? createContext<HealthEvents | null>(null);
+
+globalContextRegistry[HEALTH_EVENTS_CONTEXT_KEY] = HealthEventsContext;
 
 /** Owns one HealthEvents instance shared by the health sections' presenters. */
 export function HealthEventsProvider({ children }: { children: ReactNode }) {

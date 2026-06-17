@@ -5,7 +5,17 @@ import { useTasksEvents } from "@/TasksEventsProvider";
 import { getTodayISO } from "@/lib/format";
 import { TasksDashboardStore } from "./TasksDashboardStore";
 
-const TasksDashboardContext = createContext<TasksDashboardStore | null>(null);
+const TASKS_DASHBOARD_CONTEXT_KEY = "__vdpTasksDashboardContext";
+
+const globalContextRegistry = globalThis as typeof globalThis & {
+  [TASKS_DASHBOARD_CONTEXT_KEY]?: ReturnType<typeof createContext<TasksDashboardStore | null>>;
+};
+
+const TasksDashboardContext =
+  globalContextRegistry[TASKS_DASHBOARD_CONTEXT_KEY] ??
+  createContext<TasksDashboardStore | null>(null);
+
+globalContextRegistry[TASKS_DASHBOARD_CONTEXT_KEY] = TasksDashboardContext;
 
 /**
  * Owns the shared dashboard store (today's list, filter, selection) and the

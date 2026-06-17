@@ -4,7 +4,16 @@ import { Core } from "@/core/Core";
 import { createAppCore } from "@/createAppCore";
 import { confirmSessionAfterUnauthorized } from "@/lib/auth";
 
-const CoreContext = createContext<Core | null>(null);
+const CORE_CONTEXT_KEY = "__vdpCoreContext";
+
+const globalContextRegistry = globalThis as typeof globalThis & {
+  [CORE_CONTEXT_KEY]?: ReturnType<typeof createContext<Core | null>>;
+};
+
+const CoreContext =
+  globalContextRegistry[CORE_CONTEXT_KEY] ?? createContext<Core | null>(null);
+
+globalContextRegistry[CORE_CONTEXT_KEY] = CoreContext;
 
 /**
  * Builds the app Core once (with every feature module registered) and exposes
