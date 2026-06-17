@@ -23,7 +23,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `auth`: first-party users, email/password login, failed-login rate limiting, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
-- `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
+- `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
 
 Inactive domains:
 
@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, and P1 flexible habit cadence, then remains **paused for the Architecture Track** (see `ROADMAP.md` and `docs/architecture/ARCHITECTURE.md`): A1 Vite port, A2 Health pilot, A3/A4 skills, and A5 frontend migration are SHIPPED; **next is A6 (CQBus on the api)**. Phase 4 remaining proposals resume with P2 afterwards. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, and P2 daily mood/energy check-ins. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, and A5 frontend migration; A6 (CQBus on the api) is owner-led and in progress. Phase 4 remaining proposal is P3. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
