@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  daysWindowSchema,
   idParamsSchema,
   localDateStringSchema,
   optionalLocalDateStringSchema,
@@ -64,3 +65,12 @@ export const graduateGoalSchema = z.object({
     });
   }
 });
+
+// ─── Daily mood/energy check-ins ────────────────────────
+export const moodCheckInSchema = z.object({
+  date: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
+  mood: z.number().int().min(1).max(5),
+  energy: z.number().int().min(1).max(5),
+});
+
+export const moodCheckInsQuerySchema = daysWindowSchema;

@@ -50,6 +50,13 @@
       "when": 1781646780103,
       "tag": "0006_flat_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781662863547,
+      "tag": "0007_clumsy_punisher",
+      "breakpoints": true
     }
   ]
 }

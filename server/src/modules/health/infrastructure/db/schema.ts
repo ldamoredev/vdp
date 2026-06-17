@@ -119,6 +119,26 @@ export const goals = healthSchema.table(
   ]
 );
 
+// ─── Daily mood/energy check-ins ────────────────────────
+// One row per user/day. The daily review ritual upserts this row so tapping
+// another value corrects the day instead of duplicating it.
+export const moodCheckIns = healthSchema.table(
+  "mood_check_ins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    date: date("date").notNull(),
+    mood: integer("mood").notNull(),
+    energy: integer("energy").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("mood_check_ins_owner_date_idx").on(table.ownerUserId, table.date),
+    index("mood_check_ins_owner_user_idx").on(table.ownerUserId),
+  ],
+);
+
 // ─── Medical records ─────────────────────────────────────
 // Health's private medical archive: consultas / estudios / vacunas / recetas.
 // The SQL namespace remains `medical` because migration 0005 already shipped

@@ -216,6 +216,41 @@ describe('Health API — E2E', () => {
         expect(ownList.body.habits).toHaveLength(1);
     });
 
+    it('captures one mood and energy check-in per day inside Health', async () => {
+        const first = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/mood-check-ins',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { mood: 2, energy: 4 },
+        });
+        expect(first.statusCode).toBe(200);
+        expect(first.json()).toMatchObject({ mood: 2, energy: 4 });
+
+        const updated = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/health/mood-check-ins',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { mood: 3, energy: 5 },
+        });
+        expect(updated.statusCode).toBe(200);
+
+        const ownList = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/mood-check-ins?days=7',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(ownList.statusCode).toBe(200);
+        expect(ownList.json().checkIns).toHaveLength(1);
+        expect(ownList.json().checkIns[0]).toMatchObject({ mood: 3, energy: 5 });
+
+        const otherList = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/health/mood-check-ins?days=7',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+        expect(otherList.json().checkIns).toHaveLength(0);
+    });
+
     it('covers the counter loop: create with past start, relapse, isolation', async () => {
         const created = await testApp.app.inject({
             method: 'POST',

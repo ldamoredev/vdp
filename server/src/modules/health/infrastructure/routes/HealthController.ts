@@ -6,6 +6,8 @@ import {
     graduateGoalSchema,
     habitIdParamsSchema,
     habitLogSchema,
+    moodCheckInSchema,
+    moodCheckInsQuerySchema,
 } from '@vdp/shared';
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
@@ -30,6 +32,8 @@ import { GetGoalsOverview } from '../../services/GetGoalsOverview';
 import { GraduateGoal } from '../../services/GraduateGoal';
 import { CreateHabitCommand } from '../../app/CreateHabitCommand';
 import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
+import { GetMoodCheckInsQuery } from '../../app/GetMoodCheckInsQuery';
+import { SaveMoodCheckInCommand } from '../../app/SaveMoodCheckInCommand';
 
 type HabitIdParams = z.infer<typeof habitIdParamsSchema>;
 type CreateHabitBody = z.input<typeof createHabitSchema>;
@@ -38,6 +42,8 @@ type CreateCounterBody = z.input<typeof createCounterSchema>;
 type CounterRelapseBody = z.infer<typeof counterRelapseSchema>;
 type CreateGoalBody = z.input<typeof createGoalSchema>;
 type GraduateGoalBody = z.input<typeof graduateGoalSchema>;
+type MoodCheckInsQuery = z.infer<typeof moodCheckInsQuerySchema>;
+type MoodCheckInBody = z.input<typeof moodCheckInSchema>;
 
 export class HealthController extends HttpController {
     readonly prefix = '/api/v1/health';
@@ -64,8 +70,36 @@ export class HealthController extends HttpController {
             .post('/goals', { body: createGoalSchema }, this.createGoal)
             .post('/goals/:id/complete', { params: habitIdParamsSchema }, this.completeGoal)
             .post('/goals/:id/drop', { params: habitIdParamsSchema }, this.dropGoal)
-            .post('/goals/:id/graduate', { params: habitIdParamsSchema, body: graduateGoalSchema }, this.graduateGoal);
+            .post('/goals/:id/graduate', { params: habitIdParamsSchema, body: graduateGoalSchema }, this.graduateGoal)
+            .get('/mood-check-ins', { query: moodCheckInsQuerySchema }, this.listMoodCheckIns)
+            .put('/mood-check-ins', { body: moodCheckInSchema }, this.saveMoodCheckIn);
     }
+
+    private readonly listMoodCheckIns: RouteContextHandler<undefined, MoodCheckInsQuery, undefined> = async ({
+        request,
+        query,
+        reply,
+    }) => {
+        return reply.send(
+            await this.bus.execute(
+                new GetMoodCheckInsQuery(query?.days),
+                executionContextFromAuth(request.auth),
+            ),
+        );
+    };
+
+    private readonly saveMoodCheckIn: RouteContextHandler<undefined, undefined, MoodCheckInBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        return reply.send(
+            await this.bus.execute(
+                new SaveMoodCheckInCommand(body!),
+                executionContextFromAuth(request.auth),
+            ),
+        );
+    };
 
     private readonly listGoals: RouteContextHandler<undefined, undefined, undefined> = async ({
         request,

@@ -3,6 +3,8 @@ import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { FileStorage } from '../common/base/storage/FileStorage';
 import { CreateHabitCommand, CreateHabitCommandHandler } from './app/CreateHabitCommand';
 import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from './app/GetHabitsOverviewQuery';
+import { GetMoodCheckInsQuery, GetMoodCheckInsQueryHandler } from './app/GetMoodCheckInsQuery';
+import { SaveMoodCheckInCommand, SaveMoodCheckInCommandHandler } from './app/SaveMoodCheckInCommand';
 import { CreateMedicalRecordCommand, CreateMedicalRecordCommandHandler } from './app/medical/CreateMedicalRecordCommand';
 import { DeleteAttachmentCommand, DeleteAttachmentCommandHandler } from './app/medical/DeleteAttachmentCommand';
 import { DeleteMedicalRecordCommand, DeleteMedicalRecordCommandHandler } from './app/medical/DeleteMedicalRecordCommand';
@@ -13,6 +15,7 @@ import { UploadAttachmentCommand, UploadAttachmentCommandHandler } from './app/m
 import { HabitRepository } from './domain/HabitRepository';
 import { CounterRepository } from './domain/CounterRepository';
 import { GoalRepository } from './domain/GoalRepository';
+import { MoodCheckInRepository } from './domain/MoodCheckInRepository';
 import { MedicalRepository } from './domain/medical/MedicalRepository';
 import { HealthAgent } from './infrastructure/agent/HealthAgent';
 import { HealthAgentController } from './infrastructure/routes/HealthAgentController';
@@ -72,6 +75,12 @@ export class HealthModuleRuntime {
 
         this.deps.bus.registerHandler(CreateHabitCommand, () =>
             new CreateHabitCommandHandler(this.habitRepository())
+        );
+        this.deps.bus.registerHandler(GetMoodCheckInsQuery, () =>
+            new GetMoodCheckInsQueryHandler(this.moodCheckInRepository(), this.habitRepository()),
+        );
+        this.deps.bus.registerHandler(SaveMoodCheckInCommand, () =>
+            new SaveMoodCheckInCommandHandler(this.moodCheckInRepository()),
         );
 
         this.registerMedicalHandlers();
@@ -135,6 +144,10 @@ export class HealthModuleRuntime {
 
     private goalRepository(): GoalRepository {
         return this.deps.repositories.get(GoalRepository);
+    }
+
+    private moodCheckInRepository(): MoodCheckInRepository {
+        return this.deps.repositories.get(MoodCheckInRepository);
     }
 
     private medicalRepository(): MedicalRepository {

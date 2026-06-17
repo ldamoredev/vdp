@@ -89,3 +89,28 @@ export interface GraduateGoalResponse {
   goal: Goal;
   habit: Habit;
 }
+
+// ─── Daily mood/energy check-ins ────────────────────────
+
+export interface MoodCheckIn {
+  id: string;
+  date: string;
+  mood: number;
+  energy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MoodCheckInSummary {
+  days: number;
+  checkInCount: number;
+  averageMood: number | null;
+  averageEnergy: number | null;
+  habitCompletionRate: number;
+}
+
+export interface MoodCheckInsResponse {
+  checkIns: MoodCheckIn[];
+  date: string;
+  summary: MoodCheckInSummary;
+}

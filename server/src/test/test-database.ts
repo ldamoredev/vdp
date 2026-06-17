@@ -287,6 +287,19 @@ CREATE TABLE IF NOT EXISTS health.goals (
 CREATE INDEX IF NOT EXISTS goals_owner_user_idx ON health.goals(owner_user_id);
 CREATE INDEX IF NOT EXISTS goals_status_idx ON health.goals(status);
 
+CREATE TABLE IF NOT EXISTS health.mood_check_ins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    mood INTEGER NOT NULL,
+    energy INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS mood_check_ins_owner_date_idx ON health.mood_check_ins(owner_user_id, date);
+CREATE INDEX IF NOT EXISTS mood_check_ins_owner_user_idx ON health.mood_check_ins(owner_user_id);
+
 CREATE TABLE IF NOT EXISTS wallet.wallet_insights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -399,6 +412,7 @@ export class TestDatabase {
                     health.counter_attempts,
                     health.counters,
                     health.goals,
+                    health.mood_check_ins,
                     wallet.wallet_insights,
                     wallet.savings_contributions,
                     wallet.transactions,
