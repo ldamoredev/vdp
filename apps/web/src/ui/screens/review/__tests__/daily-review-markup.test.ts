@@ -22,6 +22,7 @@ describe("DailyReviewScreen", () => {
         dateLabel: "viernes, 10 abr",
         progressLabel: "2 de 4 bloques resueltos",
         taskSection: createElement("div", null, "Cerrar tareas"),
+        moodSection: createElement("div", null, "Animo"),
         walletSection: createElement("div", null, "Verificar wallet"),
         insightsSection: createElement("div", null, "Resolver alertas"),
         decisionsSection: createElement("div", null, "Decidir mañana"),
@@ -30,6 +31,7 @@ describe("DailyReviewScreen", () => {
 
     expect(markup).toContain("Ritual diario");
     expect(markup).toContain("Cerrar tareas");
+    expect(markup).toContain("Animo");
     expect(markup).toContain("Verificar wallet");
     expect(markup).toContain("Resolver alertas");
     expect(markup).toContain("Decidir mañana");
@@ -44,6 +46,16 @@ describe("review page", () => {
         dateLabel: "viernes, 10 abr",
         progressLabel: "1 de 4 bloques resueltos",
         taskQueue: [],
+        mood: {
+          selectedMood: null,
+          selectedEnergy: null,
+          moodOptions: [],
+          energyOptions: [],
+          isSaving: false,
+          error: null,
+          weeklyInsight: "Sin dato",
+          summary: "Sin registros",
+        },
         wallet: { signals: [], transactions: [], summary: undefined },
         insights: [],
         decisions: { categories: [], note: "", summary: "Sin señal" },
@@ -57,6 +69,7 @@ describe("review page", () => {
       acknowledgeInsight: vi.fn(),
       toggleWatchedCategory: vi.fn(),
       setNote: vi.fn(),
+      saveMoodCheckIn: vi.fn(),
       openEdit: vi.fn(),
       closeEdit: vi.fn(),
     });

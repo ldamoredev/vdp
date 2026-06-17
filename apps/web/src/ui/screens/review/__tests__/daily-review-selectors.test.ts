@@ -67,6 +67,7 @@ describe("buildDailyReviewProgress", () => {
         pendingTasks: 0,
         unresolvedWalletSignals: 0,
         unresolvedInsights: 0,
+        moodCheckedIn: true,
         note: "Manana revisar supermercado",
       }),
     ).toMatchObject({

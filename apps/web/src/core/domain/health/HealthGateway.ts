@@ -1,7 +1,7 @@
 import type { Counter } from "./Counter";
 import type { Goal } from "./Goal";
 import type { Habit } from "./Habit";
-import type { HabitCadence } from "@vdp/shared";
+import type { HabitCadence, MoodCheckIn, MoodCheckInsResponse } from "@vdp/shared";
 
 export interface CreateHabitInput {
   name: string;
@@ -30,6 +30,12 @@ export interface GraduateGoalInput {
   weeklyTarget?: number | null;
 }
 
+export interface SaveMoodCheckInInput {
+  date?: string;
+  mood: number;
+  energy: number;
+}
+
 export interface HabitsOverview {
   habits: Habit[];
   date: string;
@@ -44,6 +50,8 @@ export interface GoalsOverview {
   goals: Goal[];
   date: string;
 }
+
+export type MoodCheckInsOverview = MoodCheckInsResponse;
 
 /**
  * Port for the health backend. Reads return domain models; writes the UI does
@@ -69,4 +77,7 @@ export interface HealthGateway {
   completeGoal(goalId: string): Promise<Goal>;
   dropGoal(goalId: string): Promise<void>;
   graduateGoal(goalId: string, input: GraduateGoalInput): Promise<void>;
+
+  listMoodCheckIns(days?: number): Promise<MoodCheckInsOverview>;
+  saveMoodCheckIn(input: SaveMoodCheckInInput): Promise<MoodCheckIn>;
 }

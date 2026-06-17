@@ -1,5 +1,5 @@
 import { HttpClient, HttpMethods, HttpRequest, HttpResponse } from "@nbottarini/abstract-http-client";
-import type { GoalOverview, GoalsOverviewResponse, HabitsOverviewResponse } from "@vdp/shared";
+import type { GoalOverview, GoalsOverviewResponse, HabitsOverviewResponse, MoodCheckInsResponse } from "@vdp/shared";
 import { describe, expect, it } from "vitest";
 
 import { Goal } from "../../../domain/health/Goal";
@@ -135,5 +135,42 @@ describe("HttpHealthGateway", () => {
       url: "/health/goals/g1/graduate",
       body: { habitName: "Gimnasio" },
     });
+  });
+
+  it("lists and saves mood check-ins through the upsert endpoint", async () => {
+    const body: MoodCheckInsResponse = {
+      checkIns: [],
+      date: "2026-06-13",
+      summary: {
+        days: 7,
+        checkInCount: 0,
+        averageMood: null,
+        averageEnergy: null,
+        habitCompletionRate: 0,
+      },
+    };
+    const http = new FakeHttpClient({
+      "GET /health/mood-check-ins?days=7": body,
+      "PUT /health/mood-check-ins": {
+        id: "m1",
+        date: "2026-06-13",
+        mood: 2,
+        energy: 4,
+        createdAt: "2026-06-13T00:00:00.000Z",
+        updatedAt: "2026-06-13T00:00:00.000Z",
+      },
+    });
+    const gateway = new HttpHealthGateway(http);
+
+    await gateway.listMoodCheckIns(7);
+    const saved = await gateway.saveMoodCheckIn({ mood: 2, energy: 4 });
+
+    expect(http.calls[0]).toMatchObject({ method: "GET", url: "/health/mood-check-ins?days=7" });
+    expect(http.calls[1]).toMatchObject({
+      method: "PUT",
+      url: "/health/mood-check-ins",
+      body: { mood: 2, energy: 4 },
+    });
+    expect(saved.mood).toBe(2);
   });
 });

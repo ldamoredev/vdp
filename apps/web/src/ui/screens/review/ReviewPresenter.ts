@@ -1,10 +1,14 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 import type { CategoryStat, TaskInsight, TaskReview, WalletStatsSummary } from "@/lib/api/types";
+import type { CarryOverRateResponse, MoodCheckInsResponse } from "@vdp/shared";
 
 import type { Core } from "@/core/Core";
+import { GetMoodCheckIns } from "@/core/app/health/GetMoodCheckIns";
+import { SaveMoodCheckIn } from "@/core/app/health/SaveMoodCheckIn";
 import { CarryOverTask } from "@/core/app/tasks/CarryOverTask";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { DiscardTask } from "@/core/app/tasks/DiscardTask";
+import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
 import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
 import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
 import { GetCategories } from "@/core/app/wallet/GetCategories";
@@ -58,6 +62,10 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   private byCategory: CategoryStat[] = [];
   private insights: TaskInsight[] = [];
   private categories: Category[] = [];
+  private moodOverview: MoodCheckInsResponse | null = null;
+  private carryOverRate: CarryOverRateResponse | null = null;
+  private savingMoodCheckIn = false;
+  private moodCheckInError: string | null = null;
 
   private busyTaskIds = new Set<string>();
   private editingTransaction: Transaction | null = null;
@@ -131,6 +139,33 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     this.updateState((current) => ({ ...current, note }));
   }
 
+  async saveMoodCheckIn(mood: number, energy: number): Promise<void> {
+    if (this.savingMoodCheckIn) return;
+    this.savingMoodCheckIn = true;
+    this.moodCheckInError = null;
+    this.refresh();
+    try {
+      const checkIn = await this.core.execute(new SaveMoodCheckIn({ mood, energy }));
+      const previousCheckIns = (this.moodOverview?.checkIns ?? [])
+        .filter((existing) => existing.date !== checkIn.date);
+      const checkIns = [checkIn, ...previousCheckIns];
+      this.moodOverview = {
+        ...(this.moodOverview ?? emptyMoodOverview(this.today)),
+        checkIns,
+        summary: summarizeMoodCheckIns(
+          checkIns,
+          this.moodOverview?.summary.days ?? 7,
+          this.moodOverview?.summary.habitCompletionRate ?? 0,
+        ),
+      };
+    } catch {
+      this.moodCheckInError = "No se pudo guardar el check-in. Revisá que el backend esté actualizado.";
+    } finally {
+      this.savingMoodCheckIn = false;
+      this.refresh();
+    }
+  }
+
   // ─── edit sheet ──────────────────────────────────────────
   openEdit(transaction: Transaction): void {
     this.editingTransaction = transaction;
@@ -163,7 +198,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   }
 
   private async load(): Promise<void> {
-    const [review, transactionsResult, statsSummary, byCategory, insights, categories] =
+    const [review, transactionsResult, statsSummary, byCategory, insights, categories, moodOverview, carryOverRate] =
       await Promise.all([
         this.core.execute(new GetTaskReview(this.today)),
         this.core.execute(new GetTransactions({ limit: "50", offset: "0", from: this.today, to: this.today })),
@@ -171,6 +206,8 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
         this.core.execute(new GetWalletStatsByCategory({ from: this.today, to: this.today })),
         this.core.execute(new GetRecentInsights(10)),
         this.core.execute(new GetCategories()),
+        this.core.execute(new GetMoodCheckIns(7)),
+        this.core.execute(new GetCarryOverRate(7)),
       ]);
     this.review = review;
     this.transactions = transactionsResult.transactions;
@@ -178,6 +215,8 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     this.byCategory = byCategory;
     this.insights = insights;
     this.categories = categories;
+    this.moodOverview = moodOverview;
+    this.carryOverRate = carryOverRate;
     this.refresh();
   }
 
@@ -222,6 +261,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
       pendingTasks: taskQueue.length,
       unresolvedWalletSignals: walletSignals.visibleSignals.length,
       unresolvedInsights: unresolvedInsights.length,
+      moodCheckedIn: this.todaysMoodCheckIn() !== null,
       note: this.reviewState.note,
     });
     this.syncCompletion(progress.completed);
@@ -253,6 +293,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
       dateLabel,
       progressLabel: progress.label,
       taskQueue,
+      mood: this.buildMoodModel(),
       wallet: {
         signals: walletSignals.visibleSignals,
         transactions: walletTransactions,
@@ -285,4 +326,85 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
       saveDailyReviewState(this.reviewState);
     }
   }
+
+  private buildMoodModel(): ReviewViewModel["mood"] {
+    const todayCheckIn = this.todaysMoodCheckIn();
+    const selectedMood = todayCheckIn?.mood ?? null;
+    const selectedEnergy = todayCheckIn?.energy ?? null;
+    const summary = this.moodOverview?.summary ?? emptyMoodOverview(this.today).summary;
+
+    return {
+      selectedMood,
+      selectedEnergy,
+      moodOptions: scoreOptions(selectedMood),
+      energyOptions: scoreOptions(selectedEnergy),
+      isSaving: this.savingMoodCheckIn,
+      error: this.moodCheckInError,
+      weeklyInsight: buildMoodWeeklyInsight(summary, this.carryOverRate),
+      summary: summary.checkInCount > 0
+        ? `${summary.checkInCount}/${summary.days} registros · hábitos ${summary.habitCompletionRate}%`
+        : "Sin registros esta semana",
+    };
+  }
+
+  private todaysMoodCheckIn() {
+    return this.moodOverview?.checkIns.find((checkIn) => checkIn.date === this.today) ?? null;
+  }
+}
+
+function scoreOptions(selected: number | null) {
+  return [1, 2, 3, 4, 5].map((value) => ({
+    value,
+    label: String(value),
+    selected: selected === value,
+  }));
+}
+
+function buildMoodWeeklyInsight(
+  summary: MoodCheckInsResponse["summary"],
+  carryOver: CarryOverRateResponse | null,
+): string {
+  if (summary.averageMood === null) {
+    return "Registrá ánimo y energía para empezar a ver el patrón semanal.";
+  }
+  if (summary.averageMood <= 2 && carryOver && carryOver.rate > 40) {
+    return `Ánimo bajo (${summary.averageMood}/5) y carry-over ${carryOver.rate}% esta semana. Bajá carga o cerrá pendientes chicos.`;
+  }
+  if (summary.habitCompletionRate < 50) {
+    return `Ánimo ${summary.averageMood}/5 con hábitos al ${summary.habitCompletionRate}%. Conviene mirar fricción antes de sumar tareas.`;
+  }
+  return `Ánimo ${summary.averageMood}/5 y energía ${summary.averageEnergy ?? "sin dato"}/5. La semana empieza a dejar señal.`;
+}
+
+function emptyMoodOverview(date: string): MoodCheckInsResponse {
+  return {
+    checkIns: [],
+    date,
+    summary: {
+      days: 7,
+      checkInCount: 0,
+      averageMood: null,
+      averageEnergy: null,
+      habitCompletionRate: 0,
+    },
+  };
+}
+
+function summarizeMoodCheckIns(
+  checkIns: MoodCheckInsResponse["checkIns"],
+  days: number,
+  habitCompletionRate: number,
+): MoodCheckInsResponse["summary"] {
+  if (checkIns.length === 0) {
+    return { days, checkInCount: 0, averageMood: null, averageEnergy: null, habitCompletionRate };
+  }
+  const average = (values: number[]) =>
+    Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+  return {
+    days,
+    checkInCount: checkIns.length,
+    averageMood: average(checkIns.map((checkIn) => checkIn.mood)),
+    averageEnergy: average(checkIns.map((checkIn) => checkIn.energy)),
+    habitCompletionRate,
+  };
 }

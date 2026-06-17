@@ -4,6 +4,8 @@ import type {
   GoalOverview,
   GoalsOverviewResponse,
   HabitsOverviewResponse,
+  MoodCheckIn,
+  MoodCheckInsResponse,
 } from "@vdp/shared";
 
 import { Goal } from "../../domain/health/Goal";
@@ -16,6 +18,8 @@ import type {
   GraduateGoalInput,
   HabitsOverview,
   HealthGateway,
+  MoodCheckInsOverview,
+  SaveMoodCheckInInput,
 } from "../../domain/health/HealthGateway";
 
 /**
@@ -83,5 +87,16 @@ export class HttpHealthGateway implements HealthGateway {
 
   async graduateGoal(goalId: string, input: GraduateGoalInput): Promise<void> {
     await this.http.post(`/health/goals/${goalId}/graduate`, input);
+  }
+
+  async listMoodCheckIns(days?: number): Promise<MoodCheckInsOverview> {
+    const query = days ? `?days=${encodeURIComponent(String(days))}` : "";
+    const { body } = await this.http.get<MoodCheckInsResponse>(`/health/mood-check-ins${query}`);
+    return body;
+  }
+
+  async saveMoodCheckIn(input: SaveMoodCheckInInput): Promise<MoodCheckIn> {
+    const { body } = await this.http.put<MoodCheckIn>("/health/mood-check-ins", input);
+    return body;
   }
 }

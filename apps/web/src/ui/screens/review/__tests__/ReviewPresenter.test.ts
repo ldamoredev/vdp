@@ -1,7 +1,9 @@
 import type { Task as TaskDto, TaskReview } from "@vdp/shared";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { HealthModule } from "@/core/app/health/HealthModule";
+import { FakeHealthGateway } from "@/core/app/health/__tests__/fakes/FakeHealthGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
@@ -44,6 +46,7 @@ function review(overrides: Partial<TaskReview> = {}): TaskReview {
 function build() {
   const tasks = new FakeTasksGateway();
   const wallet = new FakeWalletGateway();
+  const health = new FakeHealthGateway();
   const getReview = vi.spyOn(tasks, "getReview").mockResolvedValue(review());
   const completeTask = vi.spyOn(tasks, "completeTask");
   const core = new Core({
@@ -51,11 +54,12 @@ function build() {
     loggingSink: { debug: vi.fn(), error: vi.fn() },
   })
     .use(new TasksModule(tasks))
-    .use(new WalletModule(wallet));
+    .use(new WalletModule(wallet))
+    .use(new HealthModule(health));
   const events = new TasksEvents();
   const presenter = new ReviewPresenter(vi.fn(), core, events);
   presenter.init(undefined);
-  return { presenter, tasks, wallet, getReview, completeTask, events };
+  return { presenter, tasks, wallet, health, getReview, completeTask, events };
 }
 
 async function flush() {
@@ -63,6 +67,15 @@ async function flush() {
 }
 
 describe("ReviewPresenter", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 13, 12, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("aggregates today's review into the view model", async () => {
     const { presenter, getReview } = build();
 
@@ -103,6 +116,35 @@ describe("ReviewPresenter", () => {
     presenter.acknowledgeSignal("manual-signal");
 
     expect(presenter.model.editSheet.open).toBe(false);
+    presenter.stop();
+  });
+
+  it("saves the mood check-in and folds it into ritual progress", async () => {
+    const { presenter, health } = build();
+    presenter.start();
+    await flush();
+
+    await presenter.saveMoodCheckIn(2, 4);
+    await flush();
+
+    expect(health.callsTo("saveMoodCheckIn")[0].args).toEqual([{ mood: 2, energy: 4 }]);
+    expect(presenter.model.mood.selectedMood).toBe(2);
+    expect(presenter.model.mood.selectedEnergy).toBe(4);
+    expect(presenter.model.mood.weeklyInsight.toLowerCase()).toContain("ánimo");
+    presenter.stop();
+  });
+
+  it("shows a useful error when the mood check-in cannot be saved", async () => {
+    const { presenter, health } = build();
+    vi.spyOn(health, "saveMoodCheckIn").mockRejectedValue(new Error("not migrated"));
+    presenter.start();
+    await flush();
+
+    await presenter.saveMoodCheckIn(2, 4);
+
+    expect(presenter.model.mood.error).toContain("backend");
+    expect(presenter.model.mood.isSaving).toBe(false);
+    expect(presenter.model.mood.selectedMood).toBeNull();
     presenter.stop();
   });
 });

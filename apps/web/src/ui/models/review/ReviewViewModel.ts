@@ -15,10 +15,26 @@ export interface ReviewWatchedCategoryVM {
   watched: boolean;
 }
 
+export interface ReviewScoreOptionVM {
+  value: number;
+  label: string;
+  selected: boolean;
+}
+
 export interface ReviewViewModel {
   dateLabel: string;
   progressLabel: string;
   taskQueue: ReviewTaskItemVM[];
+  mood: {
+    selectedMood: number | null;
+    selectedEnergy: number | null;
+    moodOptions: ReviewScoreOptionVM[];
+    energyOptions: ReviewScoreOptionVM[];
+    isSaving: boolean;
+    error: string | null;
+    weeklyInsight: string;
+    summary: string;
+  };
   wallet: {
     signals: WalletReviewSignal[];
     transactions: Transaction[];

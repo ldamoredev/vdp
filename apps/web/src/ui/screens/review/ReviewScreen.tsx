@@ -2,6 +2,7 @@ import { ModulePage } from "@/ui/primitives/module-page";
 import type { TaskInsight } from "@/lib/api/types";
 import { DailyReviewDecisions } from "./components/daily-review-decisions";
 import { DailyReviewInsightsQueue } from "./components/daily-review-insights-queue";
+import { DailyReviewMood } from "./components/daily-review-mood";
 import { DailyReviewScreen } from "./components/daily-review-screen";
 import { DailyReviewTaskQueue } from "./components/daily-review-task-queue";
 import { DailyReviewWalletQueue } from "./components/daily-review-wallet-queue";
@@ -24,6 +25,12 @@ export default function ReviewPage() {
             onCarryOver={(id) => void presenter.carryOverTask(id)}
             onDiscard={(id) => void presenter.discardTask(id)}
             isTaskBusy={(id) => presenter.isTaskBusy(id)}
+          />
+        }
+        moodSection={
+          <DailyReviewMood
+            mood={vm.mood}
+            onSave={(mood, energy) => void presenter.saveMoodCheckIn(mood, energy)}
           />
         }
         walletSection={

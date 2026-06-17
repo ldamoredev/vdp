@@ -13,9 +13,11 @@ import { DropGoal } from "../DropGoal";
 import { GetCountersOverview } from "../GetCountersOverview";
 import { GetGoalsOverview } from "../GetGoalsOverview";
 import { GetHabitsOverview } from "../GetHabitsOverview";
+import { GetMoodCheckIns } from "../GetMoodCheckIns";
 import { GraduateGoal } from "../GraduateGoal";
 import { HealthModule } from "../HealthModule";
 import { RelapseCounter } from "../RelapseCounter";
+import { SaveMoodCheckIn } from "../SaveMoodCheckIn";
 import { UncompleteHabit } from "../UncompleteHabit";
 import { FakeHealthGateway } from "./fakes/FakeHealthGateway";
 
@@ -104,6 +106,21 @@ describe("health handlers (dispatched through the bus)", () => {
       await core.execute(new GraduateGoal("g3", { habitName: "Gimnasio" }));
       expect(gateway.callsTo("dropGoal")[0].args).toEqual(["g2"]);
       expect(gateway.callsTo("graduateGoal")[0].args).toEqual(["g3", { habitName: "Gimnasio" }]);
+    });
+  });
+
+  describe("mood check-ins", () => {
+    it("GetMoodCheckIns reads the weekly check-in overview", async () => {
+      const gateway = new FakeHealthGateway();
+      const result = await coreWith(gateway).execute(new GetMoodCheckIns(7));
+      expect(gateway.callsTo("listMoodCheckIns")[0].args).toEqual([7]);
+      expect(result.date).toBe("2026-06-13");
+    });
+
+    it("SaveMoodCheckIn forwards the input", async () => {
+      const gateway = new FakeHealthGateway();
+      await coreWith(gateway).execute(new SaveMoodCheckIn({ mood: 2, energy: 4 }));
+      expect(gateway.callsTo("saveMoodCheckIn")[0].args).toEqual([{ mood: 2, energy: 4 }]);
     });
   });
 });

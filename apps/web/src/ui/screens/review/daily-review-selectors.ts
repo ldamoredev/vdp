@@ -120,12 +120,14 @@ export function buildDailyReviewProgress(args: {
   pendingTasks: number;
   unresolvedWalletSignals: number;
   unresolvedInsights: number;
+  moodCheckedIn: boolean;
   note: string;
 }): DailyReviewProgress {
   const blocks = [
     args.pendingTasks === 0,
     args.unresolvedWalletSignals === 0,
     args.unresolvedInsights === 0,
+    args.moodCheckedIn,
     args.note.trim().length > 0,
   ];
   const resolvedBlocks = blocks.filter(Boolean).length;

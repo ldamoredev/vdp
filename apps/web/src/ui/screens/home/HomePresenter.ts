@@ -361,6 +361,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       pendingTasks: this.review?.pending ?? pending,
       unresolvedWalletSignals: todayWalletSignals.visibleSignals.length,
       unresolvedInsights: unresolvedInsights.length,
+      moodCheckedIn: this.reviewState.completedAt !== null,
       note: this.reviewState.note,
     });
     const ritualSummary = buildMorningReviewSummary({

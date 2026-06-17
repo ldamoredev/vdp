@@ -1,4 +1,4 @@
-import type { GoalOverview } from "@vdp/shared";
+import type { GoalOverview, MoodCheckIn } from "@vdp/shared";
 
 import { Goal } from "../../../../domain/health/Goal";
 import type {
@@ -10,6 +10,8 @@ import type {
   GraduateGoalInput,
   HabitsOverview,
   HealthGateway,
+  MoodCheckInsOverview,
+  SaveMoodCheckInInput,
 } from "../../../../domain/health/HealthGateway";
 
 export interface RecordedCall {
@@ -37,6 +39,7 @@ const emptyGoalDto: GoalOverview = {
 export class FakeHealthGateway implements HealthGateway {
   readonly calls: RecordedCall[] = [];
   completeGoalResult = Goal.from(emptyGoalDto);
+  private moodCheckIns: MoodCheckIn[] = [];
 
   private record(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
@@ -93,5 +96,34 @@ export class FakeHealthGateway implements HealthGateway {
   }
   async graduateGoal(goalId: string, input: GraduateGoalInput): Promise<void> {
     this.record("graduateGoal", goalId, input);
+  }
+
+  async listMoodCheckIns(days?: number): Promise<MoodCheckInsOverview> {
+    this.record("listMoodCheckIns", days);
+    return {
+      checkIns: this.moodCheckIns,
+      date: "2026-06-13",
+      summary: {
+        days: days ?? 7,
+        checkInCount: this.moodCheckIns.length,
+        averageMood: this.moodCheckIns.length > 0 ? this.moodCheckIns[0].mood : null,
+        averageEnergy: this.moodCheckIns.length > 0 ? this.moodCheckIns[0].energy : null,
+        habitCompletionRate: 50,
+      },
+    };
+  }
+
+  async saveMoodCheckIn(input: SaveMoodCheckInInput): Promise<MoodCheckIn> {
+    this.record("saveMoodCheckIn", input);
+    const checkIn: MoodCheckIn = {
+      id: "m1",
+      date: input.date ?? "2026-06-13",
+      mood: input.mood,
+      energy: input.energy,
+      createdAt: "2026-06-13T00:00:00.000Z",
+      updatedAt: "2026-06-13T00:00:00.000Z",
+    };
+    this.moodCheckIns = [checkIn];
+    return checkIn;
   }
 }
