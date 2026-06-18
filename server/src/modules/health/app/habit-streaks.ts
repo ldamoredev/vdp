@@ -1,18 +1,10 @@
 import { diffLocalDateISODays, localDateISO, parseLocalDateISO } from '../../common/base/time/dates';
 import { HabitCadenceSpec } from '../domain/Habit';
 
-/**
- * Pure streak math over completion dates (YYYY-MM-DD, newest first).
- * Daily cadence: a streak is a run of consecutive calendar days.
- * Weekly cadence: a streak is a run of consecutive Monday-Sunday weeks that
- * met the target.
- */
-
 type WeekCounts = Map<string, number>;
 
 const DAILY_CADENCE: HabitCadenceSpec = { cadence: 'daily', weeklyTarget: null };
 
-/** Length of the consecutive run that ends exactly at `endDate` (which must be present). */
 export function runEndingAt(
     datesDesc: readonly string[],
     endDate: string,
@@ -37,10 +29,6 @@ export function runEndingAt(
     return run;
 }
 
-/**
- * The streak that is still alive on `today`: a run ending today, or ending
- * yesterday (today is still pending, the streak is not broken yet).
- */
 export function currentStreak(
     datesDesc: readonly string[],
     today: string,
@@ -65,7 +53,6 @@ export function currentStreak(
     return runEndingAt(datesDesc, last);
 }
 
-/** Longest run anywhere in the history. */
 export function bestStreak(
     datesDesc: readonly string[],
     cadence: HabitCadenceSpec = DAILY_CADENCE,

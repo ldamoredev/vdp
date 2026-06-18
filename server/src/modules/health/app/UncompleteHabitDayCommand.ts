@@ -1,8 +1,9 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { todayISO } from '../../common/base/time/dates';
+import { NotFoundHttpError } from '../../common/http/errors';
 import { HabitRepository } from '../domain/HabitRepository';
-import { UncompleteHabitDay } from '../services/UncompleteHabitDay';
 
 export class UncompleteHabitDayCommand extends Command<{ removed: boolean }> {
     constructor(
@@ -18,6 +19,10 @@ export class UncompleteHabitDayCommandHandler implements RequestHandler<Uncomple
 
     async handle(command: UncompleteHabitDayCommand, identity: Identity): Promise<{ removed: boolean }> {
         const { userId } = requireUserIdentity(identity);
-        return new UncompleteHabitDay(this.habits).execute(userId, command.habitId, command.date);
+        const habit = await this.habits.getHabit(userId, command.habitId);
+        if (!habit) throw new NotFoundHttpError('Habit not found');
+
+        const removed = await this.habits.removeCompletion(userId, command.habitId, command.date ?? todayISO());
+        return { removed };
     }
 }

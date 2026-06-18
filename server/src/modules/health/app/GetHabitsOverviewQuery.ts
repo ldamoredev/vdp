@@ -1,20 +1,18 @@
-import {Identity, Query, RequestHandler} from '@nbottarini/cqbus';
+import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 
-import {requireUserIdentity} from '../../common/app/auth/UserIdentity';
-import {todayISO} from "../../common/base/time/dates";
-import {Habit, HabitCadence} from "../domain/Habit";
-import {bestStreak, currentStreak, periodProgress} from "../services/habit-streaks";
-import {HabitRepository} from "../domain/HabitRepository";
+import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { todayISO } from '../../common/base/time/dates';
+import { Habit, HabitCadence } from '../domain/Habit';
+import { HabitRepository } from '../domain/HabitRepository';
+import { bestStreak, currentStreak, periodProgress } from './habit-streaks';
 
-export class GetHabitsOverviewQuery extends Query<HabitsOverview> {
-}
+export class GetHabitsOverviewQuery extends Query<HabitsOverview> {}
 
 export class GetHabitsOverviewQueryHandler implements RequestHandler<GetHabitsOverviewQuery, HabitsOverview> {
-    constructor(private readonly habits: HabitRepository) {
-    }
+    constructor(private readonly habits: HabitRepository) {}
 
     async handle(_query: GetHabitsOverviewQuery, identity: Identity): Promise<HabitsOverview> {
-        const {userId} = requireUserIdentity(identity);
+        const { userId } = requireUserIdentity(identity);
         const today = todayISO();
         const activeHabits = await this.habits.listHabits(userId);
 
@@ -61,7 +59,6 @@ export type HabitOverviewRow = {
     readonly totalCompletions: number;
     readonly lastCompletedDate: string | null;
 };
-
 
 export type HabitsOverview = {
     readonly habits: HabitOverviewRow[];

@@ -2,9 +2,11 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { EventBus } from '../../common/base/event-bus/EventBus';
+import { diffLocalDateISODays, todayISO } from '../../common/base/time/dates';
+import { DomainHttpError } from '../../common/http/errors';
 import { CounterRepository } from '../domain/CounterRepository';
-import { CreateCounter } from '../services/CreateCounter';
-import { CounterOverviewRow, GetCountersOverview } from '../services/GetCountersOverview';
+import { highestMilestoneReached } from './counter-milestones';
+import { CounterOverviewRow, GetCountersOverviewQueryHandler } from './GetCountersOverviewQuery';
 
 export type CreateCounterCommandInput = {
     readonly name: string;
@@ -27,7 +29,22 @@ export class CreateCounterCommandHandler implements RequestHandler<CreateCounter
 
     async handle(command: CreateCounterCommand, identity: Identity): Promise<CounterOverviewRow> {
         const { userId } = requireUserIdentity(identity);
-        const counter = await new CreateCounter(this.counters).execute(userId, command.input);
-        return new GetCountersOverview(this.counters, this.eventBus).buildRow(userId, counter);
+        const today = todayISO();
+        const startedAt = command.input.startedAt ?? today;
+
+        if (diffLocalDateISODays(startedAt, today) < 0) {
+            throw new DomainHttpError('Counter cannot start in the future');
+        }
+
+        const currentDays = diffLocalDateISODays(startedAt, today);
+        const counter = await this.counters.createCounter(userId, {
+            name: command.input.name,
+            emoji: command.input.emoji ?? null,
+            dailyCost: command.input.dailyCost ?? null,
+            startedAt,
+            lastMilestoneNotified: highestMilestoneReached(currentDays),
+        });
+
+        return new GetCountersOverviewQueryHandler(this.counters, this.eventBus).buildRow(userId, counter);
     }
 }

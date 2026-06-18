@@ -1,12 +1,5 @@
-/**
- * Pure milestone math for "days since" counters.
- * Milestones fire at most once per attempt, detected lazily on overview
- * load and deduped against the counter's lastMilestoneNotified.
- */
-
 export const COUNTER_MILESTONES = [1, 7, 30, 100, 365] as const;
 
-/** Highest milestone at or below `days`, or 0 when none was reached. */
 export function highestMilestoneReached(days: number): number {
     let highest = 0;
     for (const milestone of COUNTER_MILESTONES) {
@@ -15,11 +8,6 @@ export function highestMilestoneReached(days: number): number {
     return highest;
 }
 
-/**
- * The milestone to notify now: the highest one reached that was not
- * notified yet. Returns null when there is nothing new — including after
- * long gaps, where intermediate milestones are skipped instead of spammed.
- */
 export function pendingMilestone(days: number, lastNotified: number): number | null {
     const highest = highestMilestoneReached(days);
     return highest > lastNotified ? highest : null;

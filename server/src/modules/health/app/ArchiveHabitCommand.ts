@@ -1,9 +1,9 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { NotFoundHttpError } from '../../common/http/errors';
 import { HabitSnapshot } from '../domain/Habit';
 import { HabitRepository } from '../domain/HabitRepository';
-import { ArchiveHabit } from '../services/ArchiveHabit';
 
 export class ArchiveHabitCommand extends Command<HabitSnapshot> {
     constructor(readonly habitId: string) {
@@ -16,7 +16,12 @@ export class ArchiveHabitCommandHandler implements RequestHandler<ArchiveHabitCo
 
     async handle(command: ArchiveHabitCommand, identity: Identity): Promise<HabitSnapshot> {
         const { userId } = requireUserIdentity(identity);
-        const habit = await new ArchiveHabit(this.habits).execute(userId, command.habitId);
+        const habit = await this.habits.getHabit(userId, command.habitId);
+        if (!habit) throw new NotFoundHttpError('Habit not found');
+        if (!habit.isArchived()) {
+            habit.archive();
+            await this.habits.save(userId, habit);
+        }
         return habit.toSnapshot();
     }
 }

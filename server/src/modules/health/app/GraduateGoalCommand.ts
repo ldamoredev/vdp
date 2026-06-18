@@ -2,12 +2,12 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { EventBus } from '../../common/base/event-bus/EventBus';
+import { DomainHttpError, NotFoundHttpError } from '../../common/http/errors';
 import { HabitSnapshot } from '../domain/Habit';
 import { HabitRepository } from '../domain/HabitRepository';
 import { GoalRepository } from '../domain/GoalRepository';
-import { CreateHabit } from '../services/CreateHabit';
-import { GetGoalsOverview, GoalOverviewRow } from '../services/GetGoalsOverview';
-import { GraduateGoal } from '../services/GraduateGoal';
+import { normalizeCreateHabitData } from './CreateHabitCommand';
+import { GetGoalsOverviewQueryHandler, GoalOverviewRow } from './GetGoalsOverviewQuery';
 
 export type GraduateGoalCommandInput = {
     readonly habitName: string;
@@ -39,11 +39,25 @@ export class GraduateGoalCommandHandler implements RequestHandler<GraduateGoalCo
 
     async handle(command: GraduateGoalCommand, identity: Identity): Promise<GraduateGoalResult> {
         const { userId } = requireUserIdentity(identity);
-        const result = await new GraduateGoal(this.goals, new CreateHabit(this.habits))
-            .execute(userId, command.goalId, command.input);
+        const goal = await this.goals.getGoal(userId, command.goalId);
+        if (!goal) throw new NotFoundHttpError('Goal not found');
+        if (goal.status === 'dropped') throw new DomainHttpError('Goal was dropped');
+
+        if (goal.status !== 'done') {
+            goal.complete();
+            await this.goals.save(userId, goal);
+        }
+
+        const habit = await this.habits.createHabit(userId, normalizeCreateHabitData({
+            name: command.input.habitName,
+            emoji: command.input.emoji ?? null,
+            cadence: command.input.cadence,
+            weeklyTarget: command.input.weeklyTarget,
+        }));
+
         return {
-            goal: new GetGoalsOverview(this.goals, this.eventBus).buildRow(result.goal),
-            habit: result.habit.toSnapshot(),
+            goal: new GetGoalsOverviewQueryHandler(this.goals, this.eventBus).buildRow(goal),
+            habit: habit.toSnapshot(),
         };
     }
 }
