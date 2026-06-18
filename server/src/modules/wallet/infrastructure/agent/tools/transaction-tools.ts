@@ -1,11 +1,15 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { todayISO } from '../../../../common/base/time/dates';
-import { GetTransactions } from '../../../services/GetTransactions';
-import { CreateTransaction } from '../../../services/CreateTransaction';
 import { CURRENCIES, TRANSACTION_TYPES, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { CreateTransactionCommand } from '../../../app/CreateTransactionCommand';
+import { GetTransactionsQuery } from '../../../app/GetTransactionsQuery';
 
-export function createTransactionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createTransactionTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'list_transactions',
@@ -26,8 +30,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetTransactions).execute(userId, {
+                return bus.execute(new GetTransactionsQuery({
                     accountId: input.accountId,
                     categoryId: input.categoryId,
                     type: input.type,
@@ -36,7 +39,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                     search: input.search,
                     limit: input.limit ?? 50,
                     offset: 0,
-                });
+                }), executionContext());
             },
         }),
         jsonTool({
@@ -60,8 +63,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                 required: ['accountId', 'type', 'amount', 'currency'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(CreateTransaction).execute(userId, {
+                return bus.execute(new CreateTransactionCommand({
                     accountId: input.accountId,
                     type: input.type,
                     amount: input.amount,
@@ -71,7 +73,7 @@ export function createTransactionTools(services: ServiceProvider, authContextSto
                     categoryId: input.categoryId ?? null,
                     transferToAccountId: input.transferToAccountId ?? null,
                     tags: input.tags ?? [],
-                });
+                }), executionContext());
             },
         }),
     ];

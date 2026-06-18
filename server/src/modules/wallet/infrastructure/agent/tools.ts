@@ -1,3 +1,4 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { createAccountTools } from './tools/account-tools';
 import { createExchangeRateTools } from './tools/exchange-rate-tools';
@@ -9,15 +10,15 @@ import { createWalletIntelligenceTools } from './tools/intelligence-tools';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 export class WalletTools {
-    static createWalletTools(services: ServiceProvider, authContext: AuthContextStorage) {
+    static createWalletTools(bus: CQBus, services: ServiceProvider, authContext: AuthContextStorage) {
         return [
-            ...createAccountTools(services, authContext),
-            ...createTransactionTools(services, authContext),
-            ...createStatsTools(services, authContext),
-            ...createWalletIntelligenceTools(services, authContext),
-            ...createSavingsTools(services, authContext),
-            ...createInvestmentTools(services, authContext),
-            ...createExchangeRateTools(services),
+            ...createAccountTools(bus, authContext),
+            ...createTransactionTools(bus, authContext),
+            ...createStatsTools(bus, authContext),
+            ...createWalletIntelligenceTools(bus, services, authContext),
+            ...createSavingsTools(bus, authContext),
+            ...createInvestmentTools(bus, authContext),
+            ...createExchangeRateTools(bus, authContext),
         ];
     }
 }

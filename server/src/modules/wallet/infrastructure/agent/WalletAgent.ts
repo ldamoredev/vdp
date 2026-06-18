@@ -1,5 +1,6 @@
 import { buildWalletSystemPrompt } from './system-prompt';
 import { WalletTools } from './tools.js';
+import { CQBus } from '@nbottarini/cqbus';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
@@ -22,6 +23,7 @@ export class WalletAgent extends BaseAgent {
     constructor(
         eventBus: EventBus,
         services: ServiceProvider,
+        bus: CQBus,
         repositories: RepositoryProvider,
         langfuse: LLMTraceService,
         openTelemetry: TraceService,
@@ -30,6 +32,6 @@ export class WalletAgent extends BaseAgent {
         authContextStorage: AuthContextStorage
     ) {
         super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
-        this.tools = WalletTools.createWalletTools(services, authContextStorage);
+        this.tools = WalletTools.createWalletTools(bus, services, authContextStorage);
     }
 }

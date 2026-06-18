@@ -1,9 +1,14 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetExchangeRates } from '../../../services/GetExchangeRates';
-import { CreateExchangeRate } from '../../../services/CreateExchangeRate';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
+import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { CreateExchangeRateCommand } from '../../../app/CreateExchangeRateCommand';
+import { GetExchangeRatesQuery } from '../../../app/GetExchangeRatesQuery';
 import { CURRENCIES, EXCHANGE_RATE_TYPES, jsonTool } from './shared';
 
-export function createExchangeRateTools(services: ServiceProvider) {
+export function createExchangeRateTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'get_exchange_rates',
@@ -19,7 +24,7 @@ export function createExchangeRateTools(services: ServiceProvider) {
                 required: [],
             },
             execute: async (input) => {
-                const rates = await services.get(GetExchangeRates).executeLatest();
+                const rates = await bus.execute(new GetExchangeRatesQuery(), executionContext());
                 return rates.filter((rate) => {
                     if (input.fromCurrency && rate.fromCurrency !== input.fromCurrency) return false;
                     if (input.toCurrency && rate.toCurrency !== input.toCurrency) return false;
@@ -44,13 +49,13 @@ export function createExchangeRateTools(services: ServiceProvider) {
                 required: ['fromCurrency', 'toCurrency', 'rate', 'type'],
             },
             execute: async (input) =>
-                services.get(CreateExchangeRate).execute({
+                bus.execute(new CreateExchangeRateCommand({
                     fromCurrency: input.fromCurrency,
                     toCurrency: input.toCurrency,
                     rate: input.rate,
                     type: input.type,
                     date: input.date,
-                }),
+                }), executionContext()),
         }),
     ];
 }

@@ -1,10 +1,14 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetAccounts } from '../../../services/GetAccounts';
-import { CreateAccount } from '../../../services/CreateAccount';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { ACCOUNT_TYPES, CURRENCIES, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { CreateAccountCommand } from '../../../app/CreateAccountCommand';
+import { GetAccountsQuery } from '../../../app/GetAccountsQuery';
 
-export function createAccountTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createAccountTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'get_accounts',
@@ -16,10 +20,7 @@ export function createAccountTools(services: ServiceProvider, authContextStorage
                 properties: {},
                 required: [],
             },
-            execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetAccounts).execute(userId);
-            },
+            execute: async () => bus.execute(new GetAccountsQuery(), executionContext()),
         }),
         jsonTool({
             name: 'create_account',
@@ -37,13 +38,12 @@ export function createAccountTools(services: ServiceProvider, authContextStorage
                 required: ['name', 'currency', 'type'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(CreateAccount).execute(userId, {
+                return bus.execute(new CreateAccountCommand({
                     name: input.name,
                     currency: input.currency,
                     type: input.type,
                     initialBalance: input.initialBalance,
-                });
+                }), executionContext());
             },
         }),
     ];

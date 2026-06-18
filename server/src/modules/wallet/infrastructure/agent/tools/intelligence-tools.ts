@@ -1,8 +1,11 @@
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
 import { GetTasksSnapshot } from '../../../../tasks/services/GetTasksSnapshot';
-import { GetCategoryTrends } from '../../../services/GetCategoryTrends';
-import { GetSpendingAnomalies } from '../../../services/GetSpendingAnomalies';
+import { GetCategoryTrendsQuery } from '../../../app/GetCategoryTrendsQuery';
+import { GetSpendingAnomaliesQuery } from '../../../app/GetSpendingAnomaliesQuery';
 import { jsonTool } from './shared';
 
 const EMPTY_OBJECT_SCHEMA = {
@@ -12,9 +15,12 @@ const EMPTY_OBJECT_SCHEMA = {
 } as const;
 
 export function createWalletIntelligenceTools(
+    bus: CQBus,
     services: ServiceProvider,
     authContextStorage: AuthContextStorage,
 ) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'get_spending_anomalies',
@@ -23,8 +29,7 @@ export function createWalletIntelligenceTools(
                 'Use this when the user asks about overspending, unusual expenses, or where to pay attention.',
             inputSchema: EMPTY_OBJECT_SCHEMA,
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const anomalies = await services.get(GetSpendingAnomalies).execute(userId);
+                const anomalies = await bus.execute(new GetSpendingAnomaliesQuery(), executionContext());
 
                 if (anomalies.length === 0) {
                     return { message: 'No spending anomalies detected this week.', anomalies: [] };
@@ -53,8 +58,7 @@ export function createWalletIntelligenceTools(
                 'Use this when the user asks how their spending is evolving.',
             inputSchema: EMPTY_OBJECT_SCHEMA,
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const trends = await services.get(GetCategoryTrends).execute(userId);
+                const trends = await bus.execute(new GetCategoryTrendsQuery(), executionContext());
 
                 if (trends.length === 0) {
                     return { message: 'No category trends available yet.', trends: [] };

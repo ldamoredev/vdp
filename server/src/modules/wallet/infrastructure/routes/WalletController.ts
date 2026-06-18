@@ -11,36 +11,38 @@ import {
     createInvestmentSchema,
     updateInvestmentSchema,
 } from '@vdp/shared';
+import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
 
 import { FastifyRequest, FastifyReply } from 'fastify';
 
+import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { paginatedCollection, sendCreated, sendMessage } from '../../../common/http/responses';
-import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { assertFound } from '../../../common/http/errors';
 import { RouteContextHandler } from '../../../common/http/routes';
-
-import { GetAccounts } from '../../services/GetAccounts';
-import { CreateAccount } from '../../services/CreateAccount';
-import { UpdateAccount } from '../../services/UpdateAccount';
-import { DeleteAccount } from '../../services/DeleteAccount';
-import { GetTransactions } from '../../services/GetTransactions';
-import { CreateTransaction } from '../../services/CreateTransaction';
-import { UpdateTransaction } from '../../services/UpdateTransaction';
-import { DeleteTransaction } from '../../services/DeleteTransaction';
-import { GetCategories } from '../../services/GetCategories';
-import { CreateCategory } from '../../services/CreateCategory';
-import { GetSpendingStats } from '../../services/GetSpendingStats';
-import { GetSavingsGoals } from '../../services/GetSavingsGoals';
-import { CreateSavingsGoal } from '../../services/CreateSavingsGoal';
-import { UpdateSavingsGoal } from '../../services/UpdateSavingsGoal';
-import { ContributeSavings } from '../../services/ContributeSavings';
-import { GetInvestments } from '../../services/GetInvestments';
-import { CreateInvestment } from '../../services/CreateInvestment';
-import { UpdateInvestment } from '../../services/UpdateInvestment';
-import { GetExchangeRates } from '../../services/GetExchangeRates';
-import { CreateExchangeRate } from '../../services/CreateExchangeRate';
+import { ContributeSavingsCommand } from '../../app/ContributeSavingsCommand';
+import { CreateAccountCommand } from '../../app/CreateAccountCommand';
+import { CreateCategoryCommand } from '../../app/CreateCategoryCommand';
+import { CreateExchangeRateCommand } from '../../app/CreateExchangeRateCommand';
+import { CreateInvestmentCommand } from '../../app/CreateInvestmentCommand';
+import { CreateSavingsGoalCommand } from '../../app/CreateSavingsGoalCommand';
+import { CreateTransactionCommand } from '../../app/CreateTransactionCommand';
+import { DeleteAccountCommand } from '../../app/DeleteAccountCommand';
+import { DeleteTransactionCommand } from '../../app/DeleteTransactionCommand';
+import { GetAccountsQuery } from '../../app/GetAccountsQuery';
+import { GetCategoriesQuery } from '../../app/GetCategoriesQuery';
+import { GetExchangeRatesQuery } from '../../app/GetExchangeRatesQuery';
+import { GetInvestmentsQuery } from '../../app/GetInvestmentsQuery';
+import { GetMonthlyTrendQuery } from '../../app/GetMonthlyTrendQuery';
+import { GetSavingsGoalsQuery } from '../../app/GetSavingsGoalsQuery';
+import { GetSpendingByCategoryQuery } from '../../app/GetSpendingByCategoryQuery';
+import { GetSpendingSummaryQuery } from '../../app/GetSpendingSummaryQuery';
+import { GetTransactionsQuery } from '../../app/GetTransactionsQuery';
+import { UpdateAccountCommand } from '../../app/UpdateAccountCommand';
+import { UpdateInvestmentCommand } from '../../app/UpdateInvestmentCommand';
+import { UpdateSavingsGoalCommand } from '../../app/UpdateSavingsGoalCommand';
+import { UpdateTransactionCommand } from '../../app/UpdateTransactionCommand';
 
 const idParamsSchema = z.object({ id: z.string().uuid() });
 const categoryQuerySchema = z.object({ type: z.string().optional() });
@@ -77,7 +79,7 @@ type CreateExchangeRateBody = z.infer<typeof createExchangeRateBodySchema>;
 export class WalletController extends HttpController {
     readonly prefix = '/api/v1/wallet';
 
-    constructor(private services: ServiceResolver) {
+    constructor(private readonly bus: CQBus) {
         super();
     }
 
@@ -144,8 +146,7 @@ export class WalletController extends HttpController {
     // ─── Accounts ────────────────────────────────────────────
 
     private readonly listAccounts = async (request: FastifyRequest, reply: FastifyReply) => {
-        const userId = request.auth.userId!;
-        const accounts = await this.services.get(GetAccounts).execute(userId);
+        const accounts = await this.bus.execute(new GetAccountsQuery(), executionContextFromAuth(request.auth));
         return reply.send(accounts);
     };
 
@@ -154,8 +155,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const account = await this.services.get(CreateAccount).execute(userId, body!);
+        const account = await this.bus.execute(new CreateAccountCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, account);
     };
 
@@ -165,9 +165,8 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateAccount).execute(userId, params!.id, body!),
+            await this.bus.execute(new UpdateAccountCommand(params!.id, body!), executionContextFromAuth(request.auth)),
             'Account not found',
         );
         return reply.send(updated);
@@ -178,8 +177,10 @@ export class WalletController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        assertFound(await this.services.get(DeleteAccount).execute(userId, params!.id), 'Account not found');
+        assertFound(
+            await this.bus.execute(new DeleteAccountCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Account not found',
+        );
         return sendMessage(reply, 'Account deleted');
     };
 
@@ -190,8 +191,10 @@ export class WalletController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const categories = await this.services.get(GetCategories).execute(userId, query?.type);
+        const categories = await this.bus.execute(
+            new GetCategoriesQuery(query?.type),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(categories);
     };
 
@@ -200,8 +203,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const category = await this.services.get(CreateCategory).execute(userId, body!);
+        const category = await this.bus.execute(new CreateCategoryCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, category);
     };
 
@@ -212,8 +214,10 @@ export class WalletController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetTransactions).execute(userId, query!);
+        const result = await this.bus.execute(
+            new GetTransactionsQuery(query!),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(paginatedCollection('transactions', result.transactions, result));
     };
 
@@ -222,8 +226,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const tx = await this.services.get(CreateTransaction).execute(userId, body!);
+        const tx = await this.bus.execute(new CreateTransactionCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, tx);
     };
 
@@ -233,9 +236,11 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateTransaction).execute(userId, params!.id, body!),
+            await this.bus.execute(
+                new UpdateTransactionCommand(params!.id, body!),
+                executionContextFromAuth(request.auth),
+            ),
             'Transaction not found',
         );
         return reply.send(updated);
@@ -246,9 +251,8 @@ export class WalletController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         assertFound(
-            await this.services.get(DeleteTransaction).execute(userId, params!.id),
+            await this.bus.execute(new DeleteTransactionCommand(params!.id), executionContextFromAuth(request.auth)),
             'Transaction not found',
         );
         return sendMessage(reply, 'Transaction deleted');
@@ -261,8 +265,10 @@ export class WalletController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetSpendingStats).executeSummary(userId, query?.from, query?.to);
+        const result = await this.bus.execute(
+            new GetSpendingSummaryQuery(query?.from, query?.to),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
@@ -271,8 +277,10 @@ export class WalletController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetSpendingStats).executeByCategory(userId, query?.from, query?.to);
+        const result = await this.bus.execute(
+            new GetSpendingByCategoryQuery(query?.from, query?.to),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
@@ -281,16 +289,17 @@ export class WalletController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetSpendingStats).executeMonthlyTrend(userId, query?.year);
+        const result = await this.bus.execute(
+            new GetMonthlyTrendQuery(query?.year),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
     // ─── Savings ───────────────────────────────────────────
 
     private readonly listSavingsGoals = async (request: FastifyRequest, reply: FastifyReply) => {
-        const userId = request.auth.userId!;
-        const goals = await this.services.get(GetSavingsGoals).execute(userId);
+        const goals = await this.bus.execute(new GetSavingsGoalsQuery(), executionContextFromAuth(request.auth));
         return reply.send(goals);
     };
 
@@ -299,8 +308,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const goal = await this.services.get(CreateSavingsGoal).execute(userId, body!);
+        const goal = await this.bus.execute(new CreateSavingsGoalCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, goal);
     };
 
@@ -310,9 +318,11 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateSavingsGoal).execute(userId, params!.id, body!),
+            await this.bus.execute(
+                new UpdateSavingsGoalCommand(params!.id, body!),
+                executionContextFromAuth(request.auth),
+            ),
             'Savings goal not found',
         );
         return reply.send(updated);
@@ -324,15 +334,14 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(ContributeSavings).execute(userId, {
+            await this.bus.execute(new ContributeSavingsCommand({
                 goalId: params!.id,
                 amount: body!.amount,
                 date: body!.date,
                 note: body!.note ?? null,
                 transactionId: body!.transactionId ?? null,
-            }),
+            }), executionContextFromAuth(request.auth)),
             'Savings goal not found',
         );
         return reply.send(updated);
@@ -341,8 +350,7 @@ export class WalletController extends HttpController {
     // ─── Investments ──────────────────────────────────────
 
     private readonly listInvestments = async (request: FastifyRequest, reply: FastifyReply) => {
-        const userId = request.auth.userId!;
-        const investments = await this.services.get(GetInvestments).execute(userId);
+        const investments = await this.bus.execute(new GetInvestmentsQuery(), executionContextFromAuth(request.auth));
         return reply.send(investments);
     };
 
@@ -351,8 +359,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const investment = await this.services.get(CreateInvestment).execute(userId, body!);
+        const investment = await this.bus.execute(new CreateInvestmentCommand(body!), executionContextFromAuth(request.auth));
         return sendCreated(reply, investment);
     };
 
@@ -362,9 +369,11 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateInvestment).execute(userId, params!.id, body!),
+            await this.bus.execute(
+                new UpdateInvestmentCommand(params!.id, body!),
+                executionContextFromAuth(request.auth),
+            ),
             'Investment not found',
         );
         return reply.send(updated);
@@ -373,7 +382,7 @@ export class WalletController extends HttpController {
     // ─── Exchange Rates ───────────────────────────────────
 
     private readonly getLatestExchangeRates = async (_request: FastifyRequest, reply: FastifyReply) => {
-        const rates = await this.services.get(GetExchangeRates).executeLatest();
+        const rates = await this.bus.execute(new GetExchangeRatesQuery());
         return reply.send(rates);
     };
 
@@ -381,7 +390,7 @@ export class WalletController extends HttpController {
         body,
         reply,
     }) => {
-        const rate = await this.services.get(CreateExchangeRate).execute(body!);
+        const rate = await this.bus.execute(new CreateExchangeRateCommand(body!));
         return sendCreated(reply, rate);
     };
 }

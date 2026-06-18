@@ -1,10 +1,14 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetAccounts } from '../../../services/GetAccounts';
-import { GetSpendingStats } from '../../../services/GetSpendingStats';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { GetSpendingSummaryQuery } from '../../../app/GetSpendingSummaryQuery';
+import { GetWalletBalanceQuery } from '../../../app/GetWalletBalanceQuery';
 
-export function createStatsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createStatsTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'get_balance',
@@ -19,25 +23,7 @@ export function createStatsTools(services: ServiceProvider, authContextStorage: 
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const accounts = await services.get(GetAccounts).execute(userId);
-                if (input.accountId) {
-                    const account = accounts.find((a) => a.id === input.accountId);
-                    return account ?? { error: 'Account not found' };
-                }
-                const totalARS = accounts
-                    .filter((a) => a.currency === 'ARS')
-                    .reduce((sum, a) => sum + parseFloat(a.currentBalance), 0);
-                const totalUSD = accounts
-                    .filter((a) => a.currency === 'USD')
-                    .reduce((sum, a) => sum + parseFloat(a.currentBalance), 0);
-                return {
-                    accounts,
-                    totals: {
-                        ARS: totalARS.toFixed(2),
-                        USD: totalUSD.toFixed(2),
-                    },
-                };
+                return bus.execute(new GetWalletBalanceQuery(input.accountId), executionContext());
             },
         }),
         jsonTool({
@@ -54,8 +40,7 @@ export function createStatsTools(services: ServiceProvider, authContextStorage: 
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetSpendingStats).executeSummary(userId, input.from, input.to);
+                return bus.execute(new GetSpendingSummaryQuery(input.from, input.to), executionContext());
             },
         }),
     ];

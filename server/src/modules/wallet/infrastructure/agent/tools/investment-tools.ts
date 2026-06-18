@@ -1,11 +1,15 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetInvestments } from '../../../services/GetInvestments';
-import { CreateInvestment } from '../../../services/CreateInvestment';
-import { UpdateInvestment } from '../../../services/UpdateInvestment';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { CURRENCIES, INVESTMENT_TYPES, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { CreateInvestmentCommand } from '../../../app/CreateInvestmentCommand';
+import { GetInvestmentsQuery } from '../../../app/GetInvestmentsQuery';
+import { UpdateInvestmentCommand } from '../../../app/UpdateInvestmentCommand';
 
-export function createInvestmentTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createInvestmentTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'list_investments',
@@ -17,8 +21,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetInvestments).execute(userId);
+                return bus.execute(new GetInvestmentsQuery(), executionContext());
             },
         }),
         jsonTool({
@@ -42,8 +45,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: ['name', 'type', 'currency', 'investedAmount', 'currentValue', 'startDate'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(CreateInvestment).execute(userId, {
+                return bus.execute(new CreateInvestmentCommand({
                     name: input.name,
                     type: input.type,
                     accountId: input.accountId ?? null,
@@ -54,7 +56,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                     endDate: input.endDate ?? null,
                     rate: input.rate ?? null,
                     notes: input.notes ?? null,
-                });
+                }), executionContext());
             },
         }),
         jsonTool({
@@ -79,8 +81,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                 required: ['investmentId'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const investment = await services.get(UpdateInvestment).execute(userId, input.investmentId, {
+                const investment = await bus.execute(new UpdateInvestmentCommand(input.investmentId, {
                     name: input.name,
                     type: input.type,
                     accountId: 'accountId' in input ? input.accountId : undefined,
@@ -91,7 +92,7 @@ export function createInvestmentTools(services: ServiceProvider, authContextStor
                     endDate: 'endDate' in input ? input.endDate : undefined,
                     rate: 'rate' in input ? input.rate : undefined,
                     notes: 'notes' in input ? input.notes : undefined,
-                });
+                }), executionContext());
                 return investment ?? { error: 'Investment not found' };
             },
         }),

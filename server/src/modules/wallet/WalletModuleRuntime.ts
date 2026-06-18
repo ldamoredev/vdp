@@ -1,5 +1,31 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { ContributeSavingsCommand, ContributeSavingsCommandHandler } from './app/ContributeSavingsCommand';
+import { CreateAccountCommand, CreateAccountCommandHandler } from './app/CreateAccountCommand';
+import { CreateCategoryCommand, CreateCategoryCommandHandler } from './app/CreateCategoryCommand';
+import { CreateExchangeRateCommand, CreateExchangeRateCommandHandler } from './app/CreateExchangeRateCommand';
+import { CreateInvestmentCommand, CreateInvestmentCommandHandler } from './app/CreateInvestmentCommand';
+import { CreateSavingsGoalCommand, CreateSavingsGoalCommandHandler } from './app/CreateSavingsGoalCommand';
+import { CreateTransactionCommand, CreateTransactionCommandHandler } from './app/CreateTransactionCommand';
+import { DeleteAccountCommand, DeleteAccountCommandHandler } from './app/DeleteAccountCommand';
+import { DeleteTransactionCommand, DeleteTransactionCommandHandler } from './app/DeleteTransactionCommand';
+import { GetAccountsQuery, GetAccountsQueryHandler } from './app/GetAccountsQuery';
+import { GetCategoriesQuery, GetCategoriesQueryHandler } from './app/GetCategoriesQuery';
+import { GetCategoryTrendsQuery, GetCategoryTrendsQueryHandler } from './app/GetCategoryTrendsQuery';
+import { GetExchangeRatesQuery, GetExchangeRatesQueryHandler } from './app/GetExchangeRatesQuery';
+import { GetInvestmentsQuery, GetInvestmentsQueryHandler } from './app/GetInvestmentsQuery';
+import { GetMonthlyTrendQuery, GetMonthlyTrendQueryHandler } from './app/GetMonthlyTrendQuery';
+import { GetSavingsGoalsQuery, GetSavingsGoalsQueryHandler } from './app/GetSavingsGoalsQuery';
+import { GetSpendingAnomaliesQuery, GetSpendingAnomaliesQueryHandler } from './app/GetSpendingAnomaliesQuery';
+import { GetSpendingByCategoryQuery, GetSpendingByCategoryQueryHandler } from './app/GetSpendingByCategoryQuery';
+import { GetSpendingSummaryQuery, GetSpendingSummaryQueryHandler } from './app/GetSpendingSummaryQuery';
+import { GetTransactionsQuery, GetTransactionsQueryHandler } from './app/GetTransactionsQuery';
+import { GetWalletBalanceQuery, GetWalletBalanceQueryHandler } from './app/GetWalletBalanceQuery';
+import { GetWalletSnapshotQuery, GetWalletSnapshotQueryHandler } from './app/GetWalletSnapshotQuery';
+import { UpdateAccountCommand, UpdateAccountCommandHandler } from './app/UpdateAccountCommand';
+import { UpdateInvestmentCommand, UpdateInvestmentCommandHandler } from './app/UpdateInvestmentCommand';
+import { UpdateSavingsGoalCommand, UpdateSavingsGoalCommandHandler } from './app/UpdateSavingsGoalCommand';
+import { UpdateTransactionCommand, UpdateTransactionCommandHandler } from './app/UpdateTransactionCommand';
 import { WalletController } from './infrastructure/routes/WalletController';
 import { WalletAgentController } from './infrastructure/routes/WalletAgentController';
 import { WalletAgent } from './infrastructure/agent/WalletAgent';
@@ -10,30 +36,7 @@ import { SavingsGoalRepository } from './domain/SavingsGoalRepository';
 import { InvestmentRepository } from './domain/InvestmentRepository';
 import { ExchangeRateRepository } from './domain/ExchangeRateRepository';
 
-import { GetAccounts } from './services/GetAccounts';
-import { CreateAccount } from './services/CreateAccount';
-import { UpdateAccount } from './services/UpdateAccount';
-import { DeleteAccount } from './services/DeleteAccount';
-import { GetTransactions } from './services/GetTransactions';
-import { CreateTransaction } from './services/CreateTransaction';
-import { UpdateTransaction } from './services/UpdateTransaction';
-import { DeleteTransaction } from './services/DeleteTransaction';
-import { GetCategories } from './services/GetCategories';
-import { CreateCategory } from './services/CreateCategory';
-import { GetSpendingStats } from './services/GetSpendingStats';
-import { GetSavingsGoals } from './services/GetSavingsGoals';
-import { CreateSavingsGoal } from './services/CreateSavingsGoal';
-import { UpdateSavingsGoal } from './services/UpdateSavingsGoal';
-import { ContributeSavings } from './services/ContributeSavings';
-import { GetInvestments } from './services/GetInvestments';
-import { CreateInvestment } from './services/CreateInvestment';
-import { UpdateInvestment } from './services/UpdateInvestment';
-import { GetExchangeRates } from './services/GetExchangeRates';
-import { CreateExchangeRate } from './services/CreateExchangeRate';
 import { DetectSpendingSpike } from './services/DetectSpendingSpike';
-import { GetWalletSnapshot } from './services/GetWalletSnapshot';
-import { GetSpendingAnomalies } from './services/GetSpendingAnomalies';
-import { GetCategoryTrends } from './services/GetCategoryTrends';
 import { WalletEventHandlers } from './services/WalletEventHandlers';
 import { WalletInsightsStore } from './services/WalletInsightsStore';
 
@@ -45,14 +48,96 @@ export class WalletModuleRuntime {
     constructor(private deps: WalletModuleRuntimeDeps) {}
 
     registerServices(): void {
-        this.registerAccountServices();
-        this.registerTransactionServices();
-        this.registerCategoryServices();
-        this.registerStatsServices();
-        this.registerIntelligenceServices();
-        this.registerSavingsServices();
-        this.registerInvestmentServices();
-        this.registerExchangeRateServices();
+    }
+
+    registerHandlers(): void {
+        this.deps.bus.registerHandler(GetAccountsQuery, () =>
+            new GetAccountsQueryHandler(this.accountRepository(), this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(CreateAccountCommand, () =>
+            new CreateAccountCommandHandler(this.accountRepository()),
+        );
+        this.deps.bus.registerHandler(UpdateAccountCommand, () =>
+            new UpdateAccountCommandHandler(this.accountRepository()),
+        );
+        this.deps.bus.registerHandler(DeleteAccountCommand, () =>
+            new DeleteAccountCommandHandler(this.accountRepository()),
+        );
+        this.deps.bus.registerHandler(GetCategoriesQuery, () =>
+            new GetCategoriesQueryHandler(this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(CreateCategoryCommand, () =>
+            new CreateCategoryCommandHandler(this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetTransactionsQuery, () =>
+            new GetTransactionsQueryHandler(this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(CreateTransactionCommand, () =>
+            new CreateTransactionCommandHandler(
+                this.transactionRepository(),
+                this.deps.eventBus,
+                this.accountRepository(),
+                this.categoryRepository(),
+            ),
+        );
+        this.deps.bus.registerHandler(UpdateTransactionCommand, () =>
+            new UpdateTransactionCommandHandler(
+                this.transactionRepository(),
+                this.accountRepository(),
+                this.categoryRepository(),
+            ),
+        );
+        this.deps.bus.registerHandler(DeleteTransactionCommand, () =>
+            new DeleteTransactionCommandHandler(this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(GetSpendingSummaryQuery, () =>
+            new GetSpendingSummaryQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetSpendingByCategoryQuery, () =>
+            new GetSpendingByCategoryQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetMonthlyTrendQuery, () =>
+            new GetMonthlyTrendQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetSavingsGoalsQuery, () =>
+            new GetSavingsGoalsQueryHandler(this.savingsGoalRepository()),
+        );
+        this.deps.bus.registerHandler(CreateSavingsGoalCommand, () =>
+            new CreateSavingsGoalCommandHandler(this.savingsGoalRepository()),
+        );
+        this.deps.bus.registerHandler(UpdateSavingsGoalCommand, () =>
+            new UpdateSavingsGoalCommandHandler(this.savingsGoalRepository()),
+        );
+        this.deps.bus.registerHandler(ContributeSavingsCommand, () =>
+            new ContributeSavingsCommandHandler(this.savingsGoalRepository(), this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(GetInvestmentsQuery, () =>
+            new GetInvestmentsQueryHandler(this.investmentRepository()),
+        );
+        this.deps.bus.registerHandler(CreateInvestmentCommand, () =>
+            new CreateInvestmentCommandHandler(this.investmentRepository(), this.accountRepository()),
+        );
+        this.deps.bus.registerHandler(UpdateInvestmentCommand, () =>
+            new UpdateInvestmentCommandHandler(this.investmentRepository(), this.accountRepository()),
+        );
+        this.deps.bus.registerHandler(GetExchangeRatesQuery, () =>
+            new GetExchangeRatesQueryHandler(this.exchangeRateRepository()),
+        );
+        this.deps.bus.registerHandler(CreateExchangeRateCommand, () =>
+            new CreateExchangeRateCommandHandler(this.exchangeRateRepository()),
+        );
+        this.deps.bus.registerHandler(GetWalletBalanceQuery, () =>
+            new GetWalletBalanceQueryHandler(this.accountRepository(), this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(GetSpendingAnomaliesQuery, () =>
+            new GetSpendingAnomaliesQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetCategoryTrendsQuery, () =>
+            new GetCategoryTrendsQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetWalletSnapshotQuery, () =>
+            new GetWalletSnapshotQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
     }
 
     registerEventHandlers(): void {
@@ -72,6 +157,7 @@ export class WalletModuleRuntime {
             new WalletAgent(
                 this.deps.eventBus,
                 this.deps.services,
+                this.deps.bus,
                 this.deps.repositories,
                 this.deps.llmTraceService,
                 this.deps.traceService,
@@ -84,7 +170,7 @@ export class WalletModuleRuntime {
 
     createControllers() {
         return [
-            new WalletController(this.deps.services),
+            new WalletController(this.deps.bus),
             new WalletAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
         ];
     }
@@ -112,131 +198,6 @@ export class WalletModuleRuntime {
 
             this.deps.sseBroadcaster.broadcastToUser(userId, 'wallet-insight', insight);
         });
-    }
-
-    private registerAccountServices(): void {
-        this.deps.services.register(
-            GetAccounts,
-            () => new GetAccounts(this.accountRepository(), this.transactionRepository()),
-        );
-        this.deps.services.register(
-            CreateAccount,
-            () => new CreateAccount(this.accountRepository()),
-        );
-        this.deps.services.register(
-            UpdateAccount,
-            () => new UpdateAccount(this.accountRepository()),
-        );
-        this.deps.services.register(
-            DeleteAccount,
-            () => new DeleteAccount(this.accountRepository()),
-        );
-    }
-
-    private registerTransactionServices(): void {
-        this.deps.services.register(
-            GetTransactions,
-            () => new GetTransactions(this.transactionRepository()),
-        );
-        this.deps.services.register(
-            CreateTransaction,
-            () => new CreateTransaction(
-                this.transactionRepository(),
-                this.deps.eventBus,
-                this.accountRepository(),
-                this.categoryRepository(),
-            ),
-        );
-        this.deps.services.register(
-            UpdateTransaction,
-            () => new UpdateTransaction(
-                this.transactionRepository(),
-                this.accountRepository(),
-                this.categoryRepository(),
-            ),
-        );
-        this.deps.services.register(
-            DeleteTransaction,
-            () => new DeleteTransaction(this.transactionRepository()),
-        );
-    }
-
-    private registerCategoryServices(): void {
-        this.deps.services.register(
-            GetCategories,
-            () => new GetCategories(this.categoryRepository()),
-        );
-        this.deps.services.register(
-            CreateCategory,
-            () => new CreateCategory(this.categoryRepository()),
-        );
-    }
-
-    private registerStatsServices(): void {
-        this.deps.services.register(
-            GetSpendingStats,
-            () => new GetSpendingStats(this.transactionRepository(), this.categoryRepository()),
-        );
-    }
-
-    private registerIntelligenceServices(): void {
-        this.deps.services.register(
-            GetWalletSnapshot,
-            () => new GetWalletSnapshot(this.transactionRepository(), this.categoryRepository()),
-        );
-        this.deps.services.register(
-            GetSpendingAnomalies,
-            () => new GetSpendingAnomalies(this.transactionRepository(), this.categoryRepository()),
-        );
-        this.deps.services.register(
-            GetCategoryTrends,
-            () => new GetCategoryTrends(this.transactionRepository(), this.categoryRepository()),
-        );
-    }
-
-    private registerSavingsServices(): void {
-        this.deps.services.register(
-            GetSavingsGoals,
-            () => new GetSavingsGoals(this.savingsGoalRepository()),
-        );
-        this.deps.services.register(
-            CreateSavingsGoal,
-            () => new CreateSavingsGoal(this.savingsGoalRepository()),
-        );
-        this.deps.services.register(
-            UpdateSavingsGoal,
-            () => new UpdateSavingsGoal(this.savingsGoalRepository()),
-        );
-        this.deps.services.register(
-            ContributeSavings,
-            () => new ContributeSavings(this.savingsGoalRepository(), this.transactionRepository()),
-        );
-    }
-
-    private registerInvestmentServices(): void {
-        this.deps.services.register(
-            GetInvestments,
-            () => new GetInvestments(this.investmentRepository()),
-        );
-        this.deps.services.register(
-            CreateInvestment,
-            () => new CreateInvestment(this.investmentRepository(), this.accountRepository()),
-        );
-        this.deps.services.register(
-            UpdateInvestment,
-            () => new UpdateInvestment(this.investmentRepository(), this.accountRepository()),
-        );
-    }
-
-    private registerExchangeRateServices(): void {
-        this.deps.services.register(
-            GetExchangeRates,
-            () => new GetExchangeRates(this.exchangeRateRepository()),
-        );
-        this.deps.services.register(
-            CreateExchangeRate,
-            () => new CreateExchangeRate(this.exchangeRateRepository()),
-        );
     }
 
     private accountRepository(): AccountRepository {

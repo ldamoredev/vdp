@@ -1,12 +1,16 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetSavingsGoals } from '../../../services/GetSavingsGoals';
-import { CreateSavingsGoal } from '../../../services/CreateSavingsGoal';
-import { UpdateSavingsGoal } from '../../../services/UpdateSavingsGoal';
-import { ContributeSavings } from '../../../services/ContributeSavings';
+import { CQBus } from '@nbottarini/cqbus';
+
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { CURRENCIES, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
+import { ContributeSavingsCommand } from '../../../app/ContributeSavingsCommand';
+import { CreateSavingsGoalCommand } from '../../../app/CreateSavingsGoalCommand';
+import { GetSavingsGoalsQuery } from '../../../app/GetSavingsGoalsQuery';
+import { UpdateSavingsGoalCommand } from '../../../app/UpdateSavingsGoalCommand';
 
-export function createSavingsTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createSavingsTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'list_savings_goals',
@@ -18,8 +22,7 @@ export function createSavingsTools(services: ServiceProvider, authContextStorage
                 required: [],
             },
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetSavingsGoals).execute(userId);
+                return bus.execute(new GetSavingsGoalsQuery(), executionContext());
             },
         }),
         jsonTool({
@@ -40,13 +43,12 @@ export function createSavingsTools(services: ServiceProvider, authContextStorage
                 required: ['name', 'targetAmount', 'currency'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(CreateSavingsGoal).execute(userId, {
+                return bus.execute(new CreateSavingsGoalCommand({
                     name: input.name,
                     targetAmount: input.targetAmount,
                     currency: input.currency,
                     deadline: input.deadline ?? null,
-                });
+                }), executionContext());
             },
         }),
         jsonTool({
@@ -68,13 +70,12 @@ export function createSavingsTools(services: ServiceProvider, authContextStorage
                 required: ['goalId'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const goal = await services.get(UpdateSavingsGoal).execute(userId, input.goalId, {
+                const goal = await bus.execute(new UpdateSavingsGoalCommand(input.goalId, {
                     name: input.name,
                     targetAmount: input.targetAmount,
                     currency: input.currency,
                     deadline: 'deadline' in input ? input.deadline : undefined,
-                });
+                }), executionContext());
                 return goal ?? { error: 'Savings goal not found' };
             },
         }),
@@ -94,14 +95,13 @@ export function createSavingsTools(services: ServiceProvider, authContextStorage
                 required: ['goalId', 'amount'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const goal = await services.get(ContributeSavings).execute(userId, {
+                const goal = await bus.execute(new ContributeSavingsCommand({
                     goalId: input.goalId,
                     amount: input.amount,
                     date: input.date,
                     note: input.note ?? null,
                     transactionId: input.transactionId ?? null,
-                });
+                }), executionContext());
                 return goal ?? { error: 'Savings goal not found' };
             },
         }),
