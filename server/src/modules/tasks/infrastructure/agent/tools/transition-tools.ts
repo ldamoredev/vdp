@@ -1,20 +1,22 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { CarryOverAllPending } from '../../../services/CarryOverAllPending';
-import { CarryOverTask } from '../../../services/CarryOverTask';
-import { CompleteTask } from '../../../services/CompleteTask';
-import { DiscardTask } from '../../../services/DiscardTask';
+import { CQBus } from '@nbottarini/cqbus';
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
+import { CarryOverAllPendingCommand } from '../../../app/CarryOverAllPendingCommand';
+import { CarryOverTaskCommand } from '../../../app/CarryOverTaskCommand';
+import { CompleteTaskCommand } from '../../../app/CompleteTaskCommand';
+import { DiscardTaskCommand } from '../../../app/DiscardTaskCommand';
 import { TASK_ID_INPUT_SCHEMA, invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
-export function createTaskTransitionTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createTaskTransitionTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'complete_task',
             description: 'Mark a task as done.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return (await services.get(CompleteTask).execute(userId, input.taskId)) || { error: 'Task not found' };
+                return (await bus.execute(new CompleteTaskCommand(input.taskId), executionContext())) || { error: 'Task not found' };
             },
         }),
         jsonTool({
@@ -33,8 +35,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 const dateError = invalidDateError(input, ['toDate']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
-                return (await services.get(CarryOverTask).execute(userId, input.taskId, input.toDate)) || { error: 'Task not found' };
+                return (await bus.execute(new CarryOverTaskCommand(input.taskId, input.toDate), executionContext())) || { error: 'Task not found' };
             },
         }),
         jsonTool({
@@ -42,8 +43,7 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
             description: "Discard a task (won't be carried over).",
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return (await services.get(DiscardTask).execute(userId, input.taskId)) || { error: 'Task not found' };
+                return (await bus.execute(new DiscardTaskCommand(input.taskId), executionContext())) || { error: 'Task not found' };
             },
         }),
         jsonTool({
@@ -62,8 +62,10 @@ export function createTaskTransitionTools(services: ServiceProvider, authContext
                 const dateError = invalidDateError(input, ['fromDate', 'toDate']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
-                const results = await services.get(CarryOverAllPending).execute(userId, input.fromDate, input.toDate);
+                const results = await bus.execute(
+                    new CarryOverAllPendingCommand(input.fromDate, input.toDate),
+                    executionContext(),
+                );
                 return { carriedOver: results.length, tasks: results };
             },
         }),

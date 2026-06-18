@@ -1,10 +1,14 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetDayStats } from '../../../services/GetDayStats';
-import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
+import { CQBus } from '@nbottarini/cqbus';
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
+import { GetEndOfDayReviewQuery } from '../../../app/GetEndOfDayReviewQuery';
+import { GetTodayStatsQuery } from '../../../app/GetTodayStatsQuery';
+import { GetTrendStatsQuery } from '../../../app/GetTrendStatsQuery';
 import { EMPTY_OBJECT_SCHEMA, invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
-export function createTaskReviewTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createTaskReviewTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'get_end_of_day_review',
@@ -22,8 +26,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 const dateError = invalidDateError(input, ['date']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetEndOfDayReview).execute(userId, input.date);
+                return bus.execute(new GetEndOfDayReviewQuery(input.date), executionContext());
             },
         }),
         jsonTool({
@@ -32,8 +35,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 "Get today's task stats: completed, pending, completion rate. Useful when helping the user plan the day or assess load.",
             inputSchema: EMPTY_OBJECT_SCHEMA,
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetDayStats).executeToday(userId);
+                return bus.execute(new GetTodayStatsQuery(), executionContext());
             },
         }),
         jsonTool({
@@ -48,8 +50,7 @@ export function createTaskReviewTools(services: ServiceProvider, authContextStor
                 required: [],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetDayStats).executeTrend(userId, input.days || 7);
+                return bus.execute(new GetTrendStatsQuery(input.days || 7), executionContext());
             },
         }),
     ];

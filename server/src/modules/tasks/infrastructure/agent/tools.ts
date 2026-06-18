@@ -1,4 +1,4 @@
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
+import { CQBus } from '@nbottarini/cqbus';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { createTaskInsightTools } from './tools/insight-tools';
 import { createTaskIntelligenceTools } from './tools/intelligence-tools';
@@ -8,12 +8,12 @@ import { createTaskTransitionTools } from './tools/transition-tools';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 
 export class TasksTools {
-    static createTasksTools(services: ServiceProvider, authContextStorage: AuthContextStorage, insightsStore?: TaskInsightsStore) {
+    static createTasksTools(bus: CQBus, authContextStorage: AuthContextStorage, insightsStore?: TaskInsightsStore) {
         return [
-            ...createTaskManagementTools(services, authContextStorage),
-            ...createTaskTransitionTools(services, authContextStorage),
-            ...createTaskReviewTools(services, authContextStorage),
-            ...createTaskIntelligenceTools(services, authContextStorage),
+            ...createTaskManagementTools(bus, authContextStorage),
+            ...createTaskTransitionTools(bus, authContextStorage),
+            ...createTaskReviewTools(bus, authContextStorage),
+            ...createTaskIntelligenceTools(bus, authContextStorage),
             ...createTaskInsightTools(authContextStorage, insightsStore),
         ];
     }

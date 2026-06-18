@@ -1,11 +1,12 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
+import { CQBus } from '@nbottarini/cqbus';
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { todayISO } from '../../../../common/base/time/dates';
-import { AddTaskNote } from '../../../services/AddTaskNote';
-import { CreateTask } from '../../../services/CreateTask';
-import { DeleteTask } from '../../../services/DeleteTask';
-import { GetTask } from '../../../services/GetTask';
-import { GetTasks } from '../../../services/GetTasks';
-import { UpdateTask } from '../../../services/UpdateTask';
+import { AddTaskNoteCommand } from '../../../app/AddTaskNoteCommand';
+import { CreateTaskCommand } from '../../../app/CreateTaskCommand';
+import { DeleteTaskCommand } from '../../../app/DeleteTaskCommand';
+import { GetTaskQuery } from '../../../app/GetTaskQuery';
+import { GetTasksQuery } from '../../../app/GetTasksQuery';
+import { UpdateTaskCommand } from '../../../app/UpdateTaskCommand';
 import {
     TASK_DOMAINS,
     TASK_ID_INPUT_SCHEMA,
@@ -18,7 +19,9 @@ import {
 } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
-export function createTaskManagementTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createTaskManagementTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'create_task',
@@ -52,7 +55,7 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
             execute: async (input) => {
                 return (
                     invalidDateError(input, ['scheduledDate']) ??
-                    (await createTaskWithSimilarityCheck(services, authContextStorage, input))
+                    (await createTaskWithSimilarityCheck(bus, authContextStorage, input))
                 );
             },
         }),
@@ -88,18 +91,17 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 const dateError = invalidDateError(input, ['scheduledDate', 'completedDate']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
                 const completedDate =
                     input.completedDate || (input.status === 'done' && !input.scheduledDate ? todayISO() : undefined);
                 const scheduledDate = input.scheduledDate || (!completedDate ? todayISO() : undefined);
 
-                return services.get(GetTasks).execute(userId, {
+                return bus.execute(new GetTasksQuery({
                     scheduledDate,
                     completedDate,
                     status: input.status,
                     domain: input.domain,
                     priority: input.priority,
-                });
+                }), executionContext());
             },
         }),
         jsonTool({
@@ -108,8 +110,7 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 'Get a task by ID with its notes. Use this before proposing a breakdown or adding clarification notes to an existing task.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return (await services.get(GetTask).executeWithNotes(userId, input.taskId)) || { error: 'Task not found' };
+                return (await bus.execute(new GetTaskQuery(input.taskId), executionContext())) || { error: 'Task not found' };
             },
         }),
         jsonTool({
@@ -135,9 +136,8 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 const dateError = invalidDateError(input, ['scheduledDate']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
                 const { taskId, ...data } = input;
-                return (await services.get(UpdateTask).execute(userId, taskId, data)) || { error: 'Task not found' };
+                return (await bus.execute(new UpdateTaskCommand(taskId, data), executionContext())) || { error: 'Task not found' };
             },
         }),
         jsonTool({
@@ -145,8 +145,7 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
             description: 'Permanently delete a task.',
             inputSchema: TASK_ID_INPUT_SCHEMA,
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return (await services.get(DeleteTask).execute(userId, input.taskId))
+                return (await bus.execute(new DeleteTaskCommand(input.taskId), executionContext()))
                     ? { message: 'Task deleted' }
                     : { error: 'Task not found' };
             },
@@ -170,26 +169,24 @@ export function createTaskManagementTools(services: ServiceProvider, authContext
                 required: ['taskId', 'content'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(AddTaskNote).execute(userId, input.taskId, input.content, input.type);
+                return bus.execute(new AddTaskNoteCommand(input.taskId, input.content, input.type), executionContext());
             },
         }),
     ];
 }
 
 async function createTaskWithSimilarityCheck(
-    services: ServiceProvider,
+    bus: CQBus,
     authContextStorage: AuthContextStorage,
     input: ToolInput,
 ): Promise<Record<string, unknown>> {
-    const userId = authContextStorage.getAuthContext().userId!;
-    const result = await services.get(CreateTask).execute(userId, {
+    const result = await bus.execute(new CreateTaskCommand({
         title: input.title,
         description: input.description,
         priority: input.priority,
         scheduledDate: input.scheduledDate,
         domain: input.domain,
-    }, true);
+    }, true), executionContextFromAuth(authContextStorage.getAuthContext()));
 
     const response: Record<string, unknown> = { ...result.task };
 

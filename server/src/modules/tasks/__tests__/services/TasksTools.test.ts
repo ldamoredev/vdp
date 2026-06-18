@@ -1,6 +1,6 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { describe, expect, it } from 'vitest';
 
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { TasksTools } from '../../infrastructure/agent/tools.js';
@@ -21,7 +21,7 @@ function authenticate(userId = 'user-a') {
 
 describe('TasksTools', () => {
     it('composes the base task tool registry without insights tools by default', () => {
-        const tools = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage);
+        const tools = TasksTools.createTasksTools(new CQBus(), authContextStorage);
 
         expect(tools.map((tool) => tool.name)).toEqual([
             'create_task',
@@ -46,7 +46,7 @@ describe('TasksTools', () => {
     });
 
     it('adds insight tools when an insights store is available', () => {
-        const tools = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, new TaskInsightsStore());
+        const tools = TasksTools.createTasksTools(new CQBus(), authContextStorage, new TaskInsightsStore());
 
         expect(tools.slice(-2).map((tool) => tool.name)).toEqual([
             'get_insights',
@@ -73,9 +73,9 @@ describe('TasksTools', () => {
     });
 
     it('rejects a malformed date from LLM input before calling the service', async () => {
-        // Empty ServiceProvider: a valid date would call into it and throw, so a
+        // Empty CQBus: a valid date would call into it and throw, so a
         // clean error result proves we short-circuit on the bad date.
-        const createTask = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage)
+        const createTask = TasksTools.createTasksTools(new CQBus(), authContextStorage)
             .find((tool) => tool.name === 'create_task');
 
         authenticate();
@@ -85,7 +85,7 @@ describe('TasksTools', () => {
     });
 
     it('rejects a malformed carry-over date before touching the service', async () => {
-        const carryOverAll = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage)
+        const carryOverAll = TasksTools.createTasksTools(new CQBus(), authContextStorage)
             .find((tool) => tool.name === 'carry_over_all_pending');
 
         authenticate();
@@ -109,7 +109,7 @@ describe('TasksTools', () => {
             message: 'Mensaje B1',
         });
 
-        const getInsightsTool = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, insightsStore)
+        const getInsightsTool = TasksTools.createTasksTools(new CQBus(), authContextStorage, insightsStore)
             .find((tool) => tool.name === 'get_insights');
 
         authContextStorage.setAuthContext({
@@ -153,7 +153,7 @@ describe('TasksTools', () => {
             message: 'Mensaje B1',
         });
 
-        const markInsightsReadTool = TasksTools.createTasksTools(new ServiceProvider(), authContextStorage, insightsStore)
+        const markInsightsReadTool = TasksTools.createTasksTools(new CQBus(), authContextStorage, insightsStore)
             .find((tool) => tool.name === 'mark_insights_read');
 
         authContextStorage.setAuthContext({

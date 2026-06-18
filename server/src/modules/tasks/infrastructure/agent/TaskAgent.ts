@@ -1,3 +1,4 @@
+import { CQBus } from '@nbottarini/cqbus';
 import { buildTasksSystemPrompt } from './system-prompt';
 import { TasksTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
@@ -23,6 +24,7 @@ export class TaskAgent extends BaseAgent {
     constructor(
         eventBus: EventBus,
         services: ServiceProvider,
+        bus: CQBus,
         repositories: RepositoryProvider,
         insightsStore: TaskInsightsStore,
         langfuse: LLMTraceService,
@@ -32,6 +34,6 @@ export class TaskAgent extends BaseAgent {
         authContextStorage: AuthContextStorage,
     ) {
         super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
-        this.tools = TasksTools.createTasksTools(services, authContextStorage, insightsStore);
+        this.tools = TasksTools.createTasksTools(bus, authContextStorage, insightsStore);
     }
 }

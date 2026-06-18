@@ -10,9 +10,11 @@ import {
     trendFiltersSchema,
     updateTaskSchema,
 } from '@vdp/shared';
+import { CQBus } from '@nbottarini/cqbus';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import {
     carryOverResponse,
@@ -20,25 +22,23 @@ import {
     sendCreated,
     sendMessage,
 } from '../../../common/http/responses';
-import { ServiceResolver } from '../../../common/http/ServiceResolver';
 import { assertFound } from '../../../common/http/errors';
 import { RouteContextHandler } from '../../../common/http/routes';
-
-// Services
-import { GetTasks } from '../../services/GetTasks';
-import { GetTask } from '../../services/GetTask';
-import { CreateTask } from '../../services/CreateTask';
-import { UpdateTask } from '../../services/UpdateTask';
-import { DeleteTask } from '../../services/DeleteTask';
-import { CompleteTask } from '../../services/CompleteTask';
-import { CarryOverTask } from '../../services/CarryOverTask';
-import { DiscardTask } from '../../services/DiscardTask';
-import { CarryOverAllPending } from '../../services/CarryOverAllPending';
-import { GetEndOfDayReview } from '../../services/GetEndOfDayReview';
-import { AddTaskNote } from '../../services/AddTaskNote';
-import { GetDayStats } from '../../services/GetDayStats';
-import { GetCompletionByDomain } from '../../services/GetCompletionByDomain';
-import { GetCarryOverRate } from '../../services/GetCarryOverRate';
+import { AddTaskNoteCommand } from '../../app/AddTaskNoteCommand';
+import { CarryOverAllPendingCommand } from '../../app/CarryOverAllPendingCommand';
+import { CarryOverTaskCommand } from '../../app/CarryOverTaskCommand';
+import { CompleteTaskCommand } from '../../app/CompleteTaskCommand';
+import { CreateTaskCommand } from '../../app/CreateTaskCommand';
+import { DeleteTaskCommand } from '../../app/DeleteTaskCommand';
+import { DiscardTaskCommand } from '../../app/DiscardTaskCommand';
+import { GetCarryOverRateQuery } from '../../app/GetCarryOverRateQuery';
+import { GetCompletionByDomainQuery } from '../../app/GetCompletionByDomainQuery';
+import { GetEndOfDayReviewQuery } from '../../app/GetEndOfDayReviewQuery';
+import { GetTaskQuery } from '../../app/GetTaskQuery';
+import { GetTasksQuery } from '../../app/GetTasksQuery';
+import { GetTodayStatsQuery } from '../../app/GetTodayStatsQuery';
+import { GetTrendStatsQuery } from '../../app/GetTrendStatsQuery';
+import { UpdateTaskCommand } from '../../app/UpdateTaskCommand';
 
 type TaskFilters = z.input<typeof taskFiltersSchema>;
 type TaskIdParams = z.infer<typeof taskIdParamsSchema>;
@@ -54,7 +54,7 @@ type DomainStatsFilters = z.infer<typeof domainStatsFiltersSchema>;
 export class TasksController extends HttpController {
     readonly prefix = '/api/v1/tasks';
 
-    constructor(private services: ServiceResolver) {
+    constructor(private readonly bus: CQBus) {
         super();
     }
 
@@ -107,8 +107,7 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetTasks).execute(userId, query!);
+        const result = await this.bus.execute(new GetTasksQuery(query!), executionContextFromAuth(request.auth));
         return reply.send(paginatedCollection('tasks', result.tasks, result));
     };
 
@@ -117,9 +116,8 @@ export class TasksController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const task = assertFound(
-            await this.services.get(GetTask).executeWithNotes(userId, params!.id),
+            await this.bus.execute(new GetTaskQuery(params!.id), executionContextFromAuth(request.auth)),
             'Task not found',
         );
         return reply.send(task);
@@ -131,8 +129,10 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(CreateTask).execute(userId, body!, query?.checkDuplicates);
+        const result = await this.bus.execute(
+            new CreateTaskCommand(body!, query?.checkDuplicates),
+            executionContextFromAuth(request.auth),
+        );
         return sendCreated(reply, result);
     };
 
@@ -142,9 +142,8 @@ export class TasksController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const updated = assertFound(
-            await this.services.get(UpdateTask).execute(userId, params!.id, body!),
+            await this.bus.execute(new UpdateTaskCommand(params!.id, body!), executionContextFromAuth(request.auth)),
             'Task not found',
         );
         return reply.send(updated);
@@ -155,8 +154,10 @@ export class TasksController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        assertFound(await this.services.get(DeleteTask).execute(userId, params!.id), 'Task not found');
+        assertFound(
+            await this.bus.execute(new DeleteTaskCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Task not found',
+        );
         return sendMessage(reply, 'Task deleted');
     };
 
@@ -165,9 +166,8 @@ export class TasksController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const completed = assertFound(
-            await this.services.get(CompleteTask).execute(userId, params!.id),
+            await this.bus.execute(new CompleteTaskCommand(params!.id), executionContextFromAuth(request.auth)),
             'Task not found',
         );
         return reply.send(completed);
@@ -179,9 +179,11 @@ export class TasksController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const carried = assertFound(
-            await this.services.get(CarryOverTask).execute(userId, params!.id, body!.toDate),
+            await this.bus.execute(
+                new CarryOverTaskCommand(params!.id, body!.toDate),
+                executionContextFromAuth(request.auth),
+            ),
             'Task not found',
         );
         return reply.send(carried);
@@ -192,9 +194,8 @@ export class TasksController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const discarded = assertFound(
-            await this.services.get(DiscardTask).execute(userId, params!.id),
+            await this.bus.execute(new DiscardTaskCommand(params!.id), executionContextFromAuth(request.auth)),
             'Task not found',
         );
         return reply.send(discarded);
@@ -205,8 +206,10 @@ export class TasksController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const results = await this.services.get(CarryOverAllPending).execute(userId, body!.fromDate, body!.toDate);
+        const results = await this.bus.execute(
+            new CarryOverAllPendingCommand(body!.fromDate, body!.toDate),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(carryOverResponse(results));
     };
 
@@ -215,9 +218,8 @@ export class TasksController extends HttpController {
         params,
         reply,
     }) => {
-        const userId = request.auth.userId!;
         const result = assertFound(
-            await this.services.get(GetTask).executeWithNotes(userId, params!.id),
+            await this.bus.execute(new GetTaskQuery(params!.id), executionContextFromAuth(request.auth)),
             'Task not found',
         );
         return reply.send(result.notes);
@@ -229,8 +231,10 @@ export class TasksController extends HttpController {
         body,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const note = await this.services.get(AddTaskNote).execute(userId, params!.id, body!.content, body!.type);
+        const note = await this.bus.execute(
+            new AddTaskNoteCommand(params!.id, body!.content, body!.type),
+            executionContextFromAuth(request.auth),
+        );
         return sendCreated(reply, note);
     };
 
@@ -239,14 +243,15 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetEndOfDayReview).execute(userId, query!.date);
+        const result = await this.bus.execute(
+            new GetEndOfDayReviewQuery(query!.date),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
     private readonly getTodayStats = async (request: FastifyRequest, reply: FastifyReply) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetDayStats).executeToday(userId);
+        const result = await this.bus.execute(new GetTodayStatsQuery(), executionContextFromAuth(request.auth));
         return reply.send(result);
     };
 
@@ -255,8 +260,10 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetDayStats).executeTrend(userId, query!.days);
+        const result = await this.bus.execute(
+            new GetTrendStatsQuery(query!.days),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
@@ -265,8 +272,10 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetCompletionByDomain).execute(userId, query!.from, query!.to);
+        const result = await this.bus.execute(
+            new GetCompletionByDomainQuery(query!.from, query!.to),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 
@@ -275,8 +284,10 @@ export class TasksController extends HttpController {
         query,
         reply,
     }) => {
-        const userId = request.auth.userId!;
-        const result = await this.services.get(GetCarryOverRate).execute(userId, query!.days);
+        const result = await this.bus.execute(
+            new GetCarryOverRateQuery(query!.days),
+            executionContextFromAuth(request.auth),
+        );
         return reply.send(result);
     };
 }

@@ -1,13 +1,16 @@
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { FindSimilarTasks } from '../../../services/FindSimilarTasks';
-import { GetPlanningContext } from '../../../services/GetPlanningContext';
-import { GetWeeklySummary } from '../../../services/GetWeeklySummary';
-import { GetEndOfDayReview } from '../../../services/GetEndOfDayReview';
-import { GetWalletSnapshot } from '../../../../wallet/services/GetWalletSnapshot';
+import { CQBus } from '@nbottarini/cqbus';
+import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
+import { GetWalletSnapshotQuery } from '../../../../wallet/app/GetWalletSnapshotQuery';
+import { FindSimilarTasksQuery } from '../../../app/FindSimilarTasksQuery';
+import { GetEndOfDayReviewQuery } from '../../../app/GetEndOfDayReviewQuery';
+import { GetPlanningContextQuery } from '../../../app/GetPlanningContextQuery';
+import { GetWeeklySummaryQuery } from '../../../app/GetWeeklySummaryQuery';
 import { invalidDateError, jsonTool } from './shared';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
 
-export function createTaskIntelligenceTools(services: ServiceProvider, authContextStorage: AuthContextStorage) {
+export function createTaskIntelligenceTools(bus: CQBus, authContextStorage: AuthContextStorage) {
+    const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
+
     return [
         jsonTool({
             name: 'find_similar_tasks',
@@ -29,8 +32,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 required: ['query'],
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                const results = await services.get(FindSimilarTasks).execute(userId, input.query, input.limit);
+                const results = await bus.execute(new FindSimilarTasksQuery(input.query, input.limit), executionContext());
 
                 if (results.length === 0) {
                     return { message: 'No similar tasks found', results: [] };
@@ -46,8 +48,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 'Use this when the user asks for planning help, a daily summary, or when starting a new day.',
             inputSchema: { type: 'object', properties: {} },
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetPlanningContext).execute(userId);
+                return bus.execute(new GetPlanningContextQuery(), executionContext());
             },
         }),
         jsonTool({
@@ -57,9 +58,8 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 'Use this when the user mentions money or when cross-domain context could help.',
             inputSchema: { type: 'object', properties: {} },
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
                 return {
-                    walletContext: await services.get(GetWalletSnapshot).execute(userId),
+                    walletContext: await bus.execute(new GetWalletSnapshotQuery(), executionContext()),
                 };
             },
         }),
@@ -75,8 +75,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 },
             },
             execute: async (input) => {
-                const userId = authContextStorage.getAuthContext().userId!;
-                return services.get(GetWeeklySummary).execute(userId, input.days);
+                return bus.execute(new GetWeeklySummaryQuery(input.days), executionContext());
             },
         }),
         jsonTool({
@@ -95,8 +94,7 @@ export function createTaskIntelligenceTools(services: ServiceProvider, authConte
                 const dateError = invalidDateError(input, ['date']);
                 if (dateError) return dateError;
 
-                const userId = authContextStorage.getAuthContext().userId!;
-                const review = await services.get(GetEndOfDayReview).execute(userId, input.date);
+                const review = await bus.execute(new GetEndOfDayReviewQuery(input.date), executionContext());
                 return {
                     date: review.date,
                     completionRate: review.completionRate,

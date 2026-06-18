@@ -1,5 +1,24 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { AddTaskNoteCommand, AddTaskNoteCommandHandler } from './app/AddTaskNoteCommand';
+import { CarryOverAllPendingCommand, CarryOverAllPendingCommandHandler } from './app/CarryOverAllPendingCommand';
+import { CarryOverTaskCommand, CarryOverTaskCommandHandler } from './app/CarryOverTaskCommand';
+import { CompleteTaskCommand, CompleteTaskCommandHandler } from './app/CompleteTaskCommand';
+import { CreateTaskCommand, CreateTaskCommandHandler } from './app/CreateTaskCommand';
+import { DeleteTaskCommand, DeleteTaskCommandHandler } from './app/DeleteTaskCommand';
+import { DiscardTaskCommand, DiscardTaskCommandHandler } from './app/DiscardTaskCommand';
+import { FindSimilarTasksQuery, FindSimilarTasksQueryHandler } from './app/FindSimilarTasksQuery';
+import { GetCarryOverRateQuery, GetCarryOverRateQueryHandler } from './app/GetCarryOverRateQuery';
+import { GetCompletionByDomainQuery, GetCompletionByDomainQueryHandler } from './app/GetCompletionByDomainQuery';
+import { GetEndOfDayReviewQuery, GetEndOfDayReviewQueryHandler } from './app/GetEndOfDayReviewQuery';
+import { GetPlanningContextQuery, GetPlanningContextQueryHandler } from './app/GetPlanningContextQuery';
+import { GetTaskQuery, GetTaskQueryHandler } from './app/GetTaskQuery';
+import { GetTasksQuery, GetTasksQueryHandler } from './app/GetTasksQuery';
+import { GetTasksSnapshotQuery, GetTasksSnapshotQueryHandler } from './app/GetTasksSnapshotQuery';
+import { GetTodayStatsQuery, GetTodayStatsQueryHandler } from './app/GetTodayStatsQuery';
+import { GetTrendStatsQuery, GetTrendStatsQueryHandler } from './app/GetTrendStatsQuery';
+import { GetWeeklySummaryQuery, GetWeeklySummaryQueryHandler } from './app/GetWeeklySummaryQuery';
+import { UpdateTaskCommand, UpdateTaskCommandHandler } from './app/UpdateTaskCommand';
 import { TaskAgent } from './infrastructure/agent/TaskAgent';
 import { TasksController } from './infrastructure/routes/TasksController';
 import { TasksAgentController } from './infrastructure/routes/TasksAgentController';
@@ -51,6 +70,82 @@ export class TaskModuleRuntime {
         this.registerTaskInsightServices();
     }
 
+    registerHandlers(): void {
+        this.deps.bus.registerHandler(GetTasksQuery, () =>
+            new GetTasksQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetTaskQuery, () =>
+            new GetTaskQueryHandler(this.taskRepository(), this.taskNoteRepository()),
+        );
+        this.deps.bus.registerHandler(CreateTaskCommand, () =>
+            new CreateTaskCommandHandler(
+                this.taskRepository(),
+                this.deps.services.get(EmbedTask),
+                this.deps.services.get(FindSimilarTasks),
+            ),
+        );
+        this.deps.bus.registerHandler(UpdateTaskCommand, () =>
+            new UpdateTaskCommandHandler(this.taskRepository(), this.deps.services.get(EmbedTask)),
+        );
+        this.deps.bus.registerHandler(DeleteTaskCommand, () =>
+            new DeleteTaskCommandHandler(this.taskRepository(), this.taskNoteRepository()),
+        );
+        this.deps.bus.registerHandler(CompleteTaskCommand, () =>
+            new CompleteTaskCommandHandler(this.taskRepository(), this.deps.eventBus),
+        );
+        this.deps.bus.registerHandler(CarryOverTaskCommand, () =>
+            new CarryOverTaskCommandHandler(
+                this.taskRepository(),
+                this.deps.eventBus,
+                this.deps.services.get(DetectRepeatPattern),
+            ),
+        );
+        this.deps.bus.registerHandler(DiscardTaskCommand, () =>
+            new DiscardTaskCommandHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(CarryOverAllPendingCommand, () =>
+            new CarryOverAllPendingCommandHandler(
+                this.taskRepository(),
+                this.deps.eventBus,
+                this.deps.services.get(DetectRepeatPattern),
+            ),
+        );
+        this.deps.bus.registerHandler(AddTaskNoteCommand, () =>
+            new AddTaskNoteCommandHandler(
+                this.taskRepository(),
+                this.taskNoteRepository(),
+                this.deps.services.get(EmbedTask),
+            ),
+        );
+        this.deps.bus.registerHandler(GetEndOfDayReviewQuery, () =>
+            new GetEndOfDayReviewQueryHandler(this.taskRepository(), this.deps.services.get(RecommendationEngine)),
+        );
+        this.deps.bus.registerHandler(GetTodayStatsQuery, () =>
+            new GetTodayStatsQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetTrendStatsQuery, () =>
+            new GetTrendStatsQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetCompletionByDomainQuery, () =>
+            new GetCompletionByDomainQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetCarryOverRateQuery, () =>
+            new GetCarryOverRateQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetTasksSnapshotQuery, () =>
+            new GetTasksSnapshotQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetWeeklySummaryQuery, () =>
+            new GetWeeklySummaryQueryHandler(this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(GetPlanningContextQuery, () =>
+            new GetPlanningContextQueryHandler(this.taskRepository(), this.deps.insightsStore),
+        );
+        this.deps.bus.registerHandler(FindSimilarTasksQuery, () =>
+            new FindSimilarTasksQueryHandler(this.taskEmbeddingRepository(), this.deps.embeddingProvider),
+        );
+    }
+
     registerEventHandlers(): void {
         this.subscribeToTaskEvents();
         this.subscribeInsightsToSSE();
@@ -61,6 +156,7 @@ export class TaskModuleRuntime {
             new TaskAgent(
                 this.deps.eventBus,
                 this.deps.services,
+                this.deps.bus,
                 this.deps.repositories,
                 this.deps.insightsStore,
                 this.deps.llmTraceService,
@@ -74,7 +170,7 @@ export class TaskModuleRuntime {
 
     createControllers() {
         return [
-            new TasksController(this.deps.services),
+            new TasksController(this.deps.bus),
             new TasksAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
             new TaskInsightsSSEController(this.deps.sseBroadcaster, this.deps.insightsStore),
         ];
