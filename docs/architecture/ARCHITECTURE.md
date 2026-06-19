@@ -34,33 +34,35 @@ Both sides share one organizing idea: **a modular monolith where each domain own
 
 ### Composition
 
-`server/src/modules/Core.ts` owns shared infrastructure: `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider`, `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
+`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (remaining compatibility for Tasks/Wallet service collaborators while A6 finishes), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
 
 ### Module shape
 
 ```text
 server/src/modules/{domain}/
-├── {Domain}Module.ts          # extends BaseModule: controllers, middlewares, service/event/agent registration
-├── {Domain}ModuleRuntime.ts   # wires repositories, services, event handlers, controllers, agents
+├── {Domain}Module.ts          # extends BaseModule: controllers, middlewares, service/handler/event/agent registration
+├── {Domain}ModuleRuntime.ts   # wires repositories, CQBus handlers, reusable services, event handlers, controllers, agents
+├── app/                       # one Command/Query + RequestHandler per exposed use case
 ├── domain/                    # {Entity}.ts + {Entity}Repository.ts (interface)
 ├── infrastructure/
 │   ├── db/                    # schema.ts, bindings.ts, Drizzle{Entity}Repository.ts
 │   ├── routes/                # thin HTTP controllers
 │   └── agent/                 # domain agent + tools
-├── services/                  # one class per use case
+├── services/                  # reusable collaborators behind handlers/events/agents
 └── __tests__/
 ```
 
-- **One service class per use case.** Services depend on repository *interfaces* and other services, never on Drizzle tables directly. Controllers are thin HTTP adapters over services.
+- **CQBus-first API use cases.** New HTTP-exposed work lives in `app/` as `Command<T>` or `Query<T>` plus `RequestHandler`, registered in `{Domain}ModuleRuntime.registerHandlers()`. Controllers validate with shared Zod schemas, construct the request, and call `bus.execute(..., executionContextFromAuth(request.auth))`. Handlers call `requireUserIdentity(identity)` before touching user-owned data. `Command`/`Query` classes never carry `userId`.
+- **Services are collaborators, not the new HTTP surface.** Keep a service class when it owns reusable orchestration or domain logic used by multiple handlers/events/agents; otherwise keep the use case in its handler. Services depend on repository *interfaces* and other services, never on Drizzle tables directly.
 - **Domain modeling — two deliberate styles.** Rich entity with behavior (`tasks/domain/Task.ts`: `complete()`, `carryOver()`, `isStuck()`) for domains with their own state transitions/invariants; plain `readonly` types + logic in services (`wallet`, `auth`) when the domain is mostly orchestration across repositories. Don't rewrite one into the other without a real reason. Entities use immutable snapshots (`fromSnapshot()`/`toSnapshot()`).
 
 ### Auth context
 
-`AuthContextStorage` propagates auth via `AsyncLocalStorage`. **`userId` always comes from `authContextStorage.getAuthContext()` / `request.auth`** — never from body, params, query, or LLM tool input. Cross-user isolation tests are required for anything touching user-owned data. Agent chat handlers wrap the loop in `authContextStorage.runWithContext(request.auth, ...)`.
+`AuthContextStorage` propagates auth via `AsyncLocalStorage`. **`userId` always comes from `authContextStorage.getAuthContext()` / `request.auth` / CQBus `Identity`** — never from body, params, query, or LLM tool input. HTTP controllers pass `executionContextFromAuth(request.auth)` to the bus; handlers call `requireUserIdentity(identity)`. Cross-user isolation tests are required for anything touching user-owned data. Agent chat handlers wrap the loop in `authContextStorage.runWithContext(request.auth, ...)`.
 
 ### Agents
 
-Domain agents extend `BaseAgent` (`domain`, `systemPrompt`, `tools`) and register through `AgentRegistry` in the module runtime (Tasks and Wallet have agents; Auth does not). Tool factories close over `ServiceProvider` + `AuthContextStorage`, execute use-case services, and derive `userId` internally. **System prompts must be builder functions evaluated per chat** (a module-level template literal freezes "today" at boot). Tools validate LLM-provided dates with `localDateStringSchema` before hitting services.
+Domain agents extend `BaseAgent` (`domain`, `systemPrompt`, `tools`) and register through `AgentRegistry` in the module runtime (Tasks, Wallet, and Health have agents; Auth does not). Tool factories close over `CQBus` + `AuthContextStorage`, execute the same commands/queries as HTTP, and derive execution context internally. `ServiceProvider` remains only as a temporary compatibility dependency for legacy Wallet intelligence helpers. **System prompts must be builder functions evaluated per chat** (a module-level template literal freezes "today" at boot). Tools validate LLM-provided dates with `localDateStringSchema` before dispatching commands/queries.
 
 ### Insights & time-based signals
 

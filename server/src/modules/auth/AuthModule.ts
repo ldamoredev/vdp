@@ -25,6 +25,10 @@ export class AuthModule extends BaseModule {
         this.runtime.registerServices();
     }
 
+    protected registerHandlers() {
+        this.runtime.registerHandlers();
+    }
+
     protected registerEventHandlers() {
     }
 

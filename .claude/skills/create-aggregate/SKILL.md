@@ -5,7 +5,7 @@ description: Scaffold a domain entity/aggregate — backend (rich entity + repos
 
 # create-aggregate
 
-Scaffolds a domain entity following the repo's dual style. **First decide rich vs. plain**: a rich entity is warranted only when it owns state transitions or invariants (Tasks `Task`, Health `Goal`); otherwise recommend plain `readonly` types with logic in services/functions and stop. Don't create anemic classes.
+Scaffolds a domain entity following the repo's dual style. **First decide rich vs. plain**: a rich entity is warranted only when it owns state transitions or invariants (Tasks `Task`, Health `Goal`); otherwise recommend plain `readonly` types with logic in services/functions and stop. Don't create anemic classes. If the aggregate needs API exposure, follow this with `create-service-api` so the surface is Command/Query + handler.
 
 ## Backend aggregate
 
@@ -18,6 +18,7 @@ Scaffolds a domain entity following the repo's dual style. **First decide rich v
 5. `server/src/modules/{domain}/infrastructure/db/bindings.ts` — bind the repo token to the Drizzle impl (`registry.register(...)`).
 6. `server/src/modules/{domain}/__tests__/fakes/Fake{Entity}Repository.ts` — fake for unit tests.
 7. `server/src/modules/{domain}/__tests__/domain/{Entity}.test.ts` — entity unit test (transitions/invariants).
+8. Optional follow-up: `server/src/modules/{domain}/app/*{Command|Query}.ts` via `create-service-api` when the new aggregate is exposed.
 
 ### The three synchronized DB changes (the known failure mode)
 

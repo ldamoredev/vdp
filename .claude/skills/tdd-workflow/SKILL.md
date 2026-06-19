@@ -22,10 +22,10 @@ Stop condition: **do not write the next layer until the current one is green.** 
 Follow the layers outward; each has a natural test style and double:
 
 - **Domain** (`core/domain`, `server/.../domain`) — pure unit tests, no doubles. Entities, value objects, collection functions. First and always.
-- **Application / use case** (`core/app`, `server/.../services`) — unit/social tests with **fakes** (fake gateway, fake repository in `__tests__/fakes/`), not mocks. Drive the handler/service through its collaborators' real interfaces.
+- **Application / use case** (`core/app`, `server/.../app`, reusable `server/.../services`) — unit/social tests with **fakes** (fake gateway, fake repository in `__tests__/fakes/`), not mocks. Web app tests dispatch through a real `Core` + module + fake gateway. Backend CQBus handler tests call `.handle(new UseCase(...), identity)` and assert identity-derived behavior; add controller identity-forwarding coverage when HTTP auth plumbing changes.
 - **Presenter** (`ui/screens/.../*Presenter`) — unit tests with no React: a fake-gateway-backed Core, assert ViewModel transitions, busy flags, lifecycle (start/stop idempotent), label formatting.
 - **Infrastructure adapter** (`Http*Gateway`, Drizzle repos) — gateway: fake `HttpClient`; Drizzle repo: real Postgres (integration), written as verification.
-- **HTTP / flow** — e2e (`__tests__/e2e`) as verification of the wired path, after the units are green.
+- **HTTP / flow** — e2e (`__tests__/e2e`) as verification of the wired path, after the units are green. For protected API routes, include cross-user isolation where user-owned data is touched.
 
 ## Mocks vs fakes (this repo's stance)
 

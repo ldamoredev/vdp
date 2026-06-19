@@ -14,17 +14,24 @@ export class UserIdentity implements Identity {
         readonly email: string | null = null,
         readonly displayName: string | null = null,
         roles: string[] = [],
+        readonly sessionId: string | null = null,
     ) {
         this.roles = roles;
         this.properties = {
             userId,
             email,
             displayName,
+            sessionId,
+            role: this.role,
         };
     }
 
     get name(): string {
         return this.displayName ?? this.email ?? this.userId;
+    }
+
+    get role(): 'user' | null {
+        return this.roles.includes('user') ? 'user' : null;
     }
 
     static fromAuthContext(auth: AuthContext): UserIdentity | null {
@@ -34,6 +41,7 @@ export class UserIdentity implements Identity {
             auth.email,
             auth.displayName,
             auth.role ? [auth.role] : [],
+            auth.sessionId,
         );
     }
 }

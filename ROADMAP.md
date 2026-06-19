@@ -19,30 +19,56 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is owner-led**: migrate the remaining old API services/controllers to the new CQBus style, then delete `ServiceProvider`.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is almost closed**: Auth/Health/Tasks/Wallet now expose HTTP through CQBus; the remaining work is moving the Tasks/Wallet service collaborators off `ServiceProvider` and deleting `ServiceProvider`.
 
 ## Architecture Track (ACTIVE — June 2026)
 
 Owner-approved in the June 2026 architecture session. Source of truth for rationale,
 decisions, and detailed plans: [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
-One phase per work session unless noted. Phase 4 below is paused until this track completes.
-A6 is owner-led: the owner will migrate the remaining old API services/controllers
-to CQBus style.
+One phase per work session unless noted. Phase 4 is complete; A6 is the only
+open architecture item.
 
 Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
-Fastify, single Render service, Vercel retired); presenters (Humble Object) + CQBus +
-`core/` composition root mirroring the backend; React Query removed; `FetchHttpClient`
-over `abstract-http-client`; `react-presenter` used as published (under Vite its
-optional react-navigation `require` is harmless at runtime — no custom publish).
+Fastify, single service, Vercel retired); presenters (Humble Object) + CQBus +
+`core/` composition root mirroring the backend; React Query removed from active
+domains; `FetchHttpClient` over `abstract-http-client`; `react-presenter` used
+as published (under Vite its optional react-navigation `require` is harmless at
+runtime — no custom publish). On the api side, new active-domain work is
+CQBus-first: `app/{UseCase}{Command|Query}.ts` + handler, runtime registration,
+thin HTTP controllers executing the bus with auth-derived `ExecutionContext`.
 
-### A6. CQBus on the api — OWNER-LED
+### A6. CQBus on the api — IN PROGRESS
 
-The owner is taking this phase. Coexistence with `ServiceProvider`, identity
-middleware first (makes the auth-context rule structural), health converted
-first, then logging/OTel middlewares, then auth → tasks → wallet;
-`ServiceProvider` deleted; `create-service-api` updated to its final CQBus form.
-Open product decision for this phase: `RequestAuditLogger` as a bus middleware.
-Details: analysis doc §11.
+Shipped so far:
+
+- `Core` owns a backend `CQBus` and registers an auth middleware that can derive
+  identity from `AuthContextStorage`.
+- Auth, Health, Tasks, and Wallet expose their active HTTP surface through
+  `Command`/`Query` classes in `server/src/modules/{domain}/app/`, handlers
+  registered in `{Domain}ModuleRuntime.registerHandlers()`, and controllers
+  that call `bus.execute(..., executionContextFromAuth(request.auth))`.
+- Auth still uses its existing service classes as reusable collaborators behind
+  CQBus handlers; the HTTP controller no longer calls those services directly.
+- Agent tools for active domains dispatch the same commands/queries from the
+  current auth context; tool input still never carries `userId`.
+- The web side remains the mirror: `core/domain` ports, `core/app`
+  commands/queries, `Http*Gateway`, presenter + ViewModel + humble view.
+
+Remaining before A6 closes:
+
+- Move the remaining Tasks service collaborators (`EmbedTask`,
+  `FindSimilarTasks`, `DetectRepeatPattern`, stats/review helpers, and insight
+  rebuilders) out of `ServiceProvider` and into explicit/lazy runtime
+  dependencies.
+- Move Wallet intelligence helpers off `ServiceProvider` by dispatching the
+  needed Tasks context through CQBus instead of `services.get(GetTasksSnapshot)`.
+- Delete `ServiceProvider` from `Core`, `ModuleContext`, `BaseModule`, agents,
+  tests, and `server/src/modules/common/base/services/ServiceProvider.ts`.
+- Delete or rewrite legacy `services/` registration tests once the bridge is
+  gone; keep pure service classes only when they are real reusable collaborators
+  behind handlers.
+- Keep `create-service-api`, `create-service-web`, `create-presenter-web`, and
+  `create-agent-tool` skills aligned with this CQBus form.
 
 ## Phase 4: Health Deepening
 
@@ -92,37 +118,11 @@ tasks (today-sized).
   a habit — "Empezar el gym" done → habit "Gimnasio" created with one tap. A goal
   is how a habit gets started; a habit is how a goal stays won.
 
-Implementation notes (blueprint for the next session — mirror the H1 counters
-implementation, it is the closest template):
-
-- Table `health.goals`: id, owner_user_id (FK users, cascade), title varchar(120),
-  notes text null, target_date date, status varchar(12) default 'active'
-  (active/done/dropped), deadline_notified varchar(4) default 'none'
-  (none/t7/t1 — the lazy-detection dedupe stage), completed_at timestamptz null,
-  created_at, updated_at. Add to drizzle schema + migration + test-database
-  SETUP_SQL + truncate list.
-- Rich `Goal` entity: `complete()`, `drop()`, `markDeadlineNotified(stage)`.
-- Services: CreateGoal (target date must be in the future), GetGoalsOverview
-  (computes daysLeft; lazy deadline detection: if active and daysLeft <= 1 and
-  stage < t1 → notify t1; else if daysLeft <= 7 and stage < t7 → notify t7;
-  persist the stage BEFORE emitting, same as counters), CompleteGoal, DropGoal,
-  and GraduateGoal (completes the goal AND creates a habit from a given name,
-  composing the existing CreateHabit service — returns both).
-- Event `health.goal.deadline_approaching` {userId, goalId, title, targetDate,
-  daysLeft}; handled in tasks `CrossDomainEventHandlers`: warning insight +
-  review task (P2 at t7, P3 at t1) scheduled today, domain 'health'.
-- Routes under `/api/v1/health/goals`: GET list, POST create, POST :id/complete,
-  POST :id/drop, POST :id/graduate {habitName, emoji?}.
-- Agent tools: list_goals, create_goal, complete_goal (offer graduation in the
-  prompt rules: when a goal completes, suggest the habit conversion).
-- Frontend: GoalsSection on /health below counters (create form: title + date;
-  rows with daysLeft in `.font-data`, overdue state, complete/drop buttons;
-  completing offers an inline "convertir en hábito" affordance that calls
-  graduate). Selectors: sortGoals (closest deadline first, overdue on top),
-  goalUrgencyLabel.
-- Tests mirror counters: entity + services unit (fake repo, fake timers),
-  CrossDomainEventHandlers cases, e2e in HealthAPI.e2e.test.ts (CRUD, deadline
-  signal via dedupe-column reset trick, graduation creates the habit, isolation).
+Implementation is now the CQBus reference for Health: `Goal` owns the deadline
+state, `GetGoalsOverviewQuery` performs lazy deadline detection and persists the
+dedupe stage before emitting, `HealthController` routes through `bus.execute`,
+and the web `GoalsPresenter` owns labels, busy state, and the goal-to-habit
+graduation flow.
 
 ### H3. Medical records — fichas médicas (user story) — SHIPPED June 2026
 
@@ -175,7 +175,7 @@ Health screen, mono `font-data` rendering, and optional `targetWeightKg` on
 deadline goals. Explicitly not a metrics platform — one metric, until proven
 insufficient.
 
-Suggested order from here: ~~H1~~ → ~~H2~~ → ~~H3~~ → ~~P1~~ → ~~P2~~ → ~~P3~~. H1 shipped
+Historical shipping order: ~~H1~~ → ~~H2~~ → ~~H3~~ → ~~P1~~ → ~~P2~~ → ~~P3~~. H1 shipped
 first because it is the owner's most-lived use case with the smallest scope and
 the strongest cross-domain payoff; H3 shipped as an owner-directed continuation;
 P1 shipped next because graduated gym/diet goals needed weekly cadence to become
@@ -186,4 +186,6 @@ platform.
 
 ## Data Constraint
 
-Production data can be discarded until the Tasks production-readiness checkpoint is complete. Once Tasks starts being used for real personal work, stop assuming task data is disposable and reassess migration/backfill discipline.
+Tasks production-readiness is complete. Do not assume production data is
+disposable without an explicit owner decision; new migrations should be
+forward-only unless the owner calls out a local disposable reset.

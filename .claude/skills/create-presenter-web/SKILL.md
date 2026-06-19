@@ -5,7 +5,7 @@ description: Scaffold a frontend presenter + ViewModel + humble view for one scr
 
 # create-presenter-web
 
-Scaffolds the UI layer for one **section** of a screen, following the A2 Health pilot. One presenter + ViewModel per sub-domain — never one God-presenter. See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 4 — UI).
+Scaffolds the UI layer for one **section** of a screen, following the migrated Health/Tasks/Wallet modules. One presenter + ViewModel per sub-domain — never one God-presenter. See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 4 — UI).
 
 ## Inputs (ask if missing)
 
@@ -27,7 +27,9 @@ Scaffolds the UI layer for one **section** of a screen, following the A2 Health 
 - **StrictMode-idempotent**: `start`/`stop`/`start` must be safe — idempotent GET loads; subscriptions key off `this`; `stop()` cleans up timers and unsubscribes.
 - **Humble views**: render VM and call presenter methods; zero logic in JSX beyond VM flags; forms `e.preventDefault()` then call the presenter.
 - **Labels and formatting live in the presenter/VM**, not the view, not `core/`.
-- **Cross-section coordination** goes through `ui/events/{Module}Events` (a shared observable via context) — only add a signal when a real cross-section dependency exists (YAGNI).
+- **Cross-section coordination** goes through `ui/events/{Module}Events` (shared observable via context) or a screen-local observable store when several presenters on the same screen share state. Only add a signal/store when a real dependency exists (YAGNI).
+- Mutations re-query through the presenter that owns the data, then emit the smallest event needed for other sections to reload. Do not reach into another presenter's state.
+- ViewModels are the view contract: flat primitives, preformatted Spanish labels, `canX`, `isLoading`, `error`, and per-item `busy`. No domain objects leak to JSX.
 
 ## Steps (TDD)
 

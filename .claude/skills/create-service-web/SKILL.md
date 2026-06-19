@@ -5,7 +5,7 @@ description: Scaffold one frontend application use case (a CQBus Command/Query +
 
 # create-service-web
 
-Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-service-api` so the api↔web use-case correspondence stays 1:1. Based on the A2 Health pilot; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
+Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-service-api` so the api↔web use-case vocabulary stays 1:1. Based on the migrated Health/Tasks/Wallet modules; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
 
 ## Inputs (ask if missing)
 
@@ -29,13 +29,15 @@ Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `
 - **No React anywhere under `core/`.**
 - The new handler must be registered in `{Module}Module`, and the module must be in `createAppCore` — otherwise `RequestHandlerNotRegisteredError` at runtime (unit tests with hand-built Cores won't catch a missing `createAppCore` registration; `createAppCore.test.ts` does).
 - Reuse `@vdp/shared` wire types in the gateway; never redefine response shapes.
+- `Http{Module}Gateway` is the anti-corruption boundary: map DTOs into domain models there, not in presenters or handlers.
+- Application tests should dispatch through a real `Core` + `{Module}Module(fakeGateway)`, not instantiate handlers directly; this catches registration drift and keeps the bus path honest.
 
 ## Steps
 
 1. Failing handler test first (`tdd-workflow`): `new Core({...}).use(new {Module}Module(fakeGateway))`, `core.execute(new UseCase(...))`, assert routing + arg forwarding (+ returned model for queries).
-2. Add the port method + HTTP impl (with a `Http{Module}Gateway` test asserting method/url/body).
+2. Add the port method + HTTP impl (with a `Http{Module}Gateway` test asserting method/url/body and DTO→domain mapping).
 3. Implement the Command/Query + handler; register in the module.
-4. Confirm the module is wired in `createAppCore`.
+4. Confirm the module is wired in `createAppCore` or add a `createAppCore.test.ts` case if the whole module is new.
 
 ## Verification
 

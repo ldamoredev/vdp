@@ -1,16 +1,18 @@
 import { z } from 'zod';
+import { CQBus } from '@nbottarini/cqbus';
 
-import { GetSetupStatus } from '../../services/GetSetupStatus';
-import { RegisterUser } from '../../services/RegisterUser';
-import { LoginUser } from '../../services/LoginUser';
-import { LogoutUser } from '../../services/LogoutUser';
-import { UpdateProfile } from '../../services/UpdateProfile';
-import { ChangePassword } from '../../services/ChangePassword';
-import { GetSecurityOverview } from '../../services/GetSecurityOverview';
-import { LogoutOtherSessions } from '../../services/LogoutOtherSessions';
+import { executionContextFromAuth } from '../../../common/app/auth/AuthExecutionContext';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { RouteContextHandler } from '../../../common/http/routes';
-import { UnauthorizedHttpError } from '../../../common/http/errors';
+import { ChangePasswordCommand } from '../../app/ChangePasswordCommand';
+import { GetCurrentUserQuery } from '../../app/GetCurrentUserQuery';
+import { GetSecurityOverviewQuery } from '../../app/GetSecurityOverviewQuery';
+import { GetSetupStatusQuery } from '../../app/GetSetupStatusQuery';
+import { LoginUserCommand } from '../../app/LoginUserCommand';
+import { LogoutOtherSessionsCommand } from '../../app/LogoutOtherSessionsCommand';
+import { LogoutUserCommand } from '../../app/LogoutUserCommand';
+import { RegisterUserCommand } from '../../app/RegisterUserCommand';
+import { UpdateProfileCommand } from '../../app/UpdateProfileCommand';
 import {
     SESSION_COOKIE_NAME,
     sessionCookieClearOptions,
@@ -45,16 +47,7 @@ type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
 export class AuthController extends HttpController {
     readonly prefix = '/api/auth';
 
-    constructor(
-        private readonly getSetupStatus: GetSetupStatus,
-        private readonly registerUser: RegisterUser,
-        private readonly loginUser: LoginUser,
-        private readonly logoutUser: LogoutUser,
-        private readonly updateProfile: UpdateProfile,
-        private readonly changePassword: ChangePassword,
-        private readonly getSecurityOverview: GetSecurityOverview,
-        private readonly logoutOtherSessions: LogoutOtherSessions,
-    ) {
+    constructor(private readonly bus: CQBus) {
         super();
     }
 
@@ -72,38 +65,27 @@ export class AuthController extends HttpController {
     }
 
     private readonly setup: RouteContextHandler<undefined, undefined, undefined> = async ({ reply }) => {
-        return reply.send(await this.getSetupStatus.execute());
+        return reply.send(await this.bus.execute(new GetSetupStatusQuery()));
     };
 
     private readonly me: RouteContextHandler<undefined, undefined, undefined> = async ({
         request,
         reply,
     }) => {
-        const auth = request.auth;
-
-        if (!auth.isAuthenticated || !auth.userId) {
-            throw new UnauthorizedHttpError('Not authenticated');
-        }
-
-        return reply.send({
-            user: {
-                id: auth.userId,
-                email: auth.email,
-                displayName: auth.displayName,
-                role: auth.role,
-            },
-        });
+        return reply.send(
+            await this.bus.execute(new GetCurrentUserQuery(), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly handleRegister: RouteContextHandler<undefined, undefined, RegisterBody> = async ({
         body,
         reply,
     }) => {
-        const result = await this.registerUser.execute({
+        const result = await this.bus.execute(new RegisterUserCommand({
             email: body!.email,
             displayName: body!.displayName,
             password: body!.password,
-        });
+        }));
 
         reply.setCookie(SESSION_COOKIE_NAME, result.sessionToken, sessionCookieOptions());
         return reply.send(result);
@@ -114,12 +96,12 @@ export class AuthController extends HttpController {
         body,
         reply,
     }) => {
-        const result = await this.loginUser.execute({
+        const result = await this.bus.execute(new LoginUserCommand({
             email: body!.email,
             password: body!.password,
             userAgent: request.headers['user-agent'] ?? null,
             ipAddress: request.ip ?? null,
-        });
+        }));
 
         reply.setCookie(SESSION_COOKIE_NAME, result.sessionToken, sessionCookieOptions());
         return reply.send(result);
@@ -129,10 +111,7 @@ export class AuthController extends HttpController {
         request,
         reply,
     }) => {
-        const token = this.extractSessionToken(request);
-        if (token) {
-            await this.logoutUser.execute(token);
-        }
+        await this.bus.execute(new LogoutUserCommand(this.extractSessionToken(request)));
 
         reply.clearCookie(SESSION_COOKIE_NAME, sessionCookieClearOptions());
         return reply.send({ ok: true });
@@ -143,17 +122,9 @@ export class AuthController extends HttpController {
         body,
         reply,
     }) => {
-        const auth = request.auth;
-
-        if (!auth.isAuthenticated || !auth.userId) {
-            throw new UnauthorizedHttpError('Not authenticated');
-        }
-
-        const user = await this.updateProfile.execute({
-            userId: auth.userId,
-            sessionId: auth.sessionId,
+        const user = await this.bus.execute(new UpdateProfileCommand({
             displayName: body!.displayName,
-        });
+        }), executionContextFromAuth(request.auth));
 
         return reply.send({ user });
     };
@@ -163,18 +134,10 @@ export class AuthController extends HttpController {
         body,
         reply,
     }) => {
-        const auth = request.auth;
-
-        if (!auth.isAuthenticated || !auth.userId) {
-            throw new UnauthorizedHttpError('Not authenticated');
-        }
-
-        await this.changePassword.execute({
-            userId: auth.userId,
-            sessionId: auth.sessionId,
+        await this.bus.execute(new ChangePasswordCommand({
             currentPassword: body!.currentPassword,
             newPassword: body!.newPassword,
-        });
+        }), executionContextFromAuth(request.auth));
 
         // Password change revokes sessions; clear the cookie so the browser re-logs.
         reply.clearCookie(SESSION_COOKIE_NAME, sessionCookieClearOptions());
@@ -185,32 +148,18 @@ export class AuthController extends HttpController {
         request,
         reply,
     }) => {
-        const auth = request.auth;
-
-        if (!auth.isAuthenticated || !auth.userId) {
-            throw new UnauthorizedHttpError('Not authenticated');
-        }
-
-        return reply.send(await this.getSecurityOverview.execute({
-            userId: auth.userId,
-            currentSessionId: auth.sessionId,
-        }));
+        return reply.send(
+            await this.bus.execute(new GetSecurityOverviewQuery(), executionContextFromAuth(request.auth)),
+        );
     };
 
     private readonly logoutOthers: RouteContextHandler<undefined, undefined, undefined> = async ({
         request,
         reply,
     }) => {
-        const auth = request.auth;
-
-        if (!auth.isAuthenticated || !auth.userId) {
-            throw new UnauthorizedHttpError('Not authenticated');
-        }
-
-        return reply.send(await this.logoutOtherSessions.execute({
-            userId: auth.userId,
-            currentSessionId: auth.sessionId,
-        }));
+        return reply.send(
+            await this.bus.execute(new LogoutOtherSessionsCommand(), executionContextFromAuth(request.auth)),
+        );
     };
 
     private extractSessionToken(request: { headers: Record<string, string | string[] | undefined> }): string | null {

@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, and A5 frontend migration; A6 (CQBus on the api) is owner-led and in progress. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth CQBus migration inside A6; A6 remains open only for the Tasks/Wallet `ServiceProvider` cleanup and final deletion. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -111,11 +111,12 @@ Backend test conventions:
 
 `server/src/modules/Core.ts` owns shared infrastructure:
 
+- `CQBus`
 - `EventBus`
 - `AgentRegistry`
 - `SSEBroadcaster`
 - `RepositoryProvider`
-- `ServiceProvider`
+- `ServiceProvider` (legacy compatibility/reusable-collaborator bridge until A6 cleanup)
 - `AuthContextStorage`
 - `ModuleContext`
 - LLM and OpenTelemetry trace services
@@ -130,6 +131,8 @@ Each real backend domain follows this module shape:
 server/src/modules/{domain}/
 ├── {Domain}Module.ts
 ├── {Domain}ModuleRuntime.ts
+├── app/
+│   └── {UseCase}{Command|Query}.ts
 ├── domain/
 │   ├── {Entity}.ts
 │   └── {Entity}Repository.ts
@@ -144,9 +147,11 @@ server/src/modules/{domain}/
 └── __tests__/
 ```
 
-`{Domain}Module.ts` extends `BaseModule` and exposes controllers, middlewares, descriptors, service registration, event handler registration, and agent registration. `{Domain}ModuleRuntime.ts` wires repositories, services, event handlers, controllers, and agents.
+`{Domain}Module.ts` extends `BaseModule` and exposes controllers, middlewares, descriptors, service/handler registration, event handler registration, and agent registration. `{Domain}ModuleRuntime.ts` wires repositories, CQBus handlers, reusable services, event handlers, controllers, and agents.
 
-Use one service class per use case. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers should be thin HTTP adapters around services.
+New HTTP-exposed backend use cases are CQBus-first: create one `Command<T>` or `Query<T>` plus `RequestHandler` under `app/`, register it in `{Domain}ModuleRuntime.registerHandlers()`, and have controllers call `bus.execute(..., executionContextFromAuth(request.auth))`. Handlers call `requireUserIdentity(identity)` before touching user-owned data. `Command`/`Query` objects carry operation data only — never `userId`.
+
+`services/` may still hold reusable domain/application collaborators (auth orchestration, embedding, duplicate detection, stats engines, cross-domain orchestration). Do not add new HTTP routes that call `ServiceProvider` directly. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers stay thin HTTP adapters around the bus.
 
 Domain modeling: two styles coexist deliberately, and both are valid.
 
@@ -177,12 +182,12 @@ Migrations are managed by Drizzle Kit in `server/src/migrations/`. Do not edit c
 
 `AuthContextStorage` uses `AsyncLocalStorage` to propagate auth context.
 
-- Always read `userId` from `authContextStorage.getAuthContext()`.
+- Always read `userId` from `authContextStorage.getAuthContext()`, `request.auth`, or CQBus `Identity` derived from those auth contexts.
 - Never read `userId` from request body, route params, query params, or LLM tool input.
-- Protected HTTP controllers should rely on `request.auth` or `authContextStorage`, not caller-supplied identity.
+- Protected HTTP controllers should rely on `request.auth` or `authContextStorage`, not caller-supplied identity. CQBus controllers pass `executionContextFromAuth(request.auth)`; handlers call `requireUserIdentity(identity)`.
 - Agent chat handlers must use `authContextStorage.runWithContext()`, not `enterWith()` or a bare `agent.chat()`.
 - Agent tool factories must accept and use `AuthContextStorage`.
-- Agent tools must derive `userId` inside the tool execution from `authContextStorage.getAuthContext()`.
+- Agent tools must build CQBus execution context inside the tool execution from `authContextStorage.getAuthContext()`.
 - Cross-user isolation tests are required for any route, repository, or agent tool that touches user-owned data.
 
 The old guidance referenced `.codex/reviewers/auth-context-reviewer.md`; that file is not present in this checkout. If it is restored later, use it when touching agent handlers, agent tools, or module runtimes. Until then, manually audit against the rules above before calling auth-sensitive work done.
@@ -197,7 +202,7 @@ Domain agents extend `BaseAgent` and declare:
 
 Agents are registered in each module runtime through `AgentRegistry`. Tasks and Wallet both register agents; Auth does not.
 
-Agent tools are factory functions that close over `ServiceProvider` and `AuthContextStorage`. They should execute use-case services and return serialized results. They must never accept or trust a `userId` from LLM input.
+Agent tools are factory functions that close over `CQBus` and `AuthContextStorage`. They should execute the same commands/queries as HTTP and return serialized results. `ServiceProvider` is only a temporary compatibility dependency for legacy Wallet intelligence helpers. Tools must never accept or trust a `userId` from LLM input.
 
 Agent chat HTTP routes use `createAgentChatHandler()` from `server/src/modules/common/http/agent-chat.ts`. The handler streams SSE, persists conversations in the `core` schema, and wraps the chat loop in `authContextStorage.runWithContext(request.auth, ...)`.
 
@@ -217,8 +222,8 @@ Hard agent rules learned in production:
 
 - System prompts MUST be builder functions evaluated per chat (`buildTasksSystemPrompt()` + a `get systemPrompt()` getter). Never a module-level const: template literals interpolate `todayISO()` at import time and the agent's "today" freezes at boot.
 - Tool names are typed against the registry in `packages/shared/src/constants/agent-tools.ts`. Adding a tool means adding it there first; server definitions and web tool handling both typecheck against it.
-- Tools must validate LLM-provided date strings with `localDateStringSchema` before passing them to services (tools bypass the HTTP Zod layer).
-- The agent must never see a `userId` — always derive it inside the tool from `authContextStorage.getAuthContext()`.
+- Tools must validate LLM-provided date strings with `localDateStringSchema` before dispatching commands/queries (tools bypass the HTTP Zod layer).
+- The agent must never see a `userId` — always derive CQBus execution context inside the tool from `authContextStorage.getAuthContext()`.
 
 ## Insights And Time-Based Signals
 
@@ -305,8 +310,8 @@ A domain is only real when it matches the Tasks template:
 2. Drizzle schema and migration applied.
 3. Domain entity with immutable `fromSnapshot()` / `toSnapshot()`.
 4. Repository interface, Drizzle implementation, and fake repository.
-5. Use-case services, one class per operation.
-6. HTTP controller using auth context for `userId`.
+5. Backend use cases exposed as CQBus `Command`/`Query` handlers under `app/`, with reusable `services/` collaborators only when they remove real duplication.
+6. HTTP controller using auth-derived CQBus `ExecutionContext` and handlers using `requireUserIdentity`.
 7. Cross-user isolation tests.
 8. Frontend module following the `core/` + presenter pattern (ARCHITECTURE.md §4): domain + gateway, app handlers + `{Module}Module` registered in `createAppCore`, presenter + ViewModel + humble screen under `ui/screens/{module}`.
 9. Shared Zod schemas and cross-package types in `@vdp/shared`.

@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review the working-tree diff before committing or pushing. Runs three passes — design (SOLID/DRY/Demeter/hexagonal/DDD…), repo rules (AGENTS.md + architecture docs), and tests. Any finding is a warning that blocks commit/push: report it to the owner and wait. Invoke automatically before any commit or push, and whenever the owner asks to review changes.
+description: "Review the working-tree diff before committing or pushing. Runs three passes — design (SOLID/DRY/Demeter/hexagonal/DDD…), repo rules (AGENTS.md + architecture docs), and tests. Any finding is a warning that blocks commit/push: report it to the owner and wait. Invoke automatically before any commit or push, and whenever the owner asks to review changes."
 ---
 
 # code-review
@@ -47,6 +47,7 @@ Reference reading (citations, not required per-review): [SOLID/CUPID/GRASP](http
 These are hard rules — a violation is a warning. Source of truth is [AGENTS.md](../../../AGENTS.md); do not restate them here, check against them. The high-frequency ones:
 
 - **Auth context**: `userId` always from `authContextStorage`/`request.auth`, never from body/params/query/LLM input; cross-user isolation tests for user-owned data.
+- **Backend CQBus**: new HTTP-exposed use cases live in `server/src/modules/{domain}/app` as `Command`/`Query` + `RequestHandler`; controllers call `bus.execute(..., executionContextFromAuth(request.auth))`; handlers call `requireUserIdentity(identity)` and Commands/Queries never carry `userId`.
 - **Currency**: never sum amounts across currencies; new money aggregations filter or group by currency.
 - **Dates**: `getTodayISO()`/`localDateISO()`, never `new Date().toISOString().slice(0,10)`.
 - **Entities**: immutable snapshots, `fromSnapshot()`/`toSnapshot()`.
