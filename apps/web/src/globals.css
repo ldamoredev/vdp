@@ -21,6 +21,30 @@
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
+  /* Type scale */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 38px;
+
+  /* Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Tracking */
+  --tracking-display: -0.02em;
+  --tracking-body: -0.011em;
+  --tracking-data: -0.04em;
+  --tracking-eyebrow: 0.15em;
+
   /* Core palette — violet-cast ink, not slate */
   --background: #07040D;
   --background-secondary: #120D1F;
@@ -55,6 +79,7 @@
   --accent-red-glow: rgba(239, 68, 68, 0.15);
   --accent-amber: #F59E0B;
   --accent-purple: #A855F7;
+  --stuck-rail: var(--accent-red);
 
   /* Muted */
   --muted: #6F6790;
@@ -84,6 +109,9 @@
   --hover-overlay-strong: rgba(235, 230, 255, 0.07);
   --active-overlay: rgba(235, 230, 255, 0.11);
   --divider: rgba(160, 150, 196, 0.1);
+  --aurora-violet: rgba(139, 92, 246, 0.1);
+  --aurora-blue: rgba(77, 141, 255, 0.07);
+  --aurora-iris: rgba(124, 106, 245, 0.08);
 
   /* Badge background opacity */
   --badge-opacity: 0.12;
@@ -94,9 +122,10 @@
   --blur-lg: 32px;
 
   /* Transitions — spring-inspired easing */
-  --transition-fast: 150ms cubic-bezier(0.22, 1, 0.36, 1);
-  --transition-base: 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  --transition-slow: 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 150ms var(--ease-spring);
+  --transition-base: 220ms var(--ease-spring);
+  --transition-slow: 350ms var(--ease-spring);
 
   /* Radius — soft, contemporary */
   --radius-sm: 10px;
@@ -104,6 +133,25 @@
   --radius-lg: 20px;
   --radius-xl: 26px;
   --radius-full: 9999px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout rails */
+  --icon-rail-width: 56px;
+  --sidebar-width: 192px;
+  --header-height: 56px;
+  --tab-bar-height: 56px;
+  --tabbar-height: var(--tab-bar-height);
+  --content-max: 1024px;
 
   /* Progress bar track */
   --progress-track: rgba(30, 23, 51, 0.7);
@@ -334,24 +382,63 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition-slow), color var(--transition-slow);
-  letter-spacing: -0.011em;
+  letter-spacing: var(--tracking-body);
 }
 
 /* Display face carries the personality; body stays operational */
 h1, h2, .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-display);
 }
 
 /* Data face: money, percentages, counters, dates */
-.font-data {
+.font-data,
+.font-mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-data);
 }
 
 kbd {
   font-family: var(--font-mono);
+}
+
+/* Aurora field utility for full-bleed module stages and isolated previews */
+.aurora-field {
+  position: relative;
+}
+
+.aurora-field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 60% 42% at 50% -12%, var(--accent-glow), transparent),
+    radial-gradient(ellipse 46% 46% at 84% 16%, var(--aurora-violet), transparent),
+    radial-gradient(ellipse 38% 38% at 12% 72%, var(--aurora-blue), transparent),
+    radial-gradient(ellipse 52% 30% at 70% 86%, var(--aurora-iris), transparent);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.8;
+}
+
+.aurora-field::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .aurora-field::before {
+  opacity: 0.18;
+}
+
+[data-theme="light"] .aurora-field::after {
+  opacity: 0.5;
 }
 
 /* Aurora field — accent-reactive iris/violet blobs */
@@ -361,9 +448,9 @@ body::before {
   inset: 0;
   background-image:
     radial-gradient(ellipse 60% 42% at 50% -12%, var(--accent-glow), transparent),
-    radial-gradient(ellipse 46% 46% at 84% 16%, rgba(139, 92, 246, 0.1), transparent),
-    radial-gradient(ellipse 38% 38% at 12% 72%, rgba(77, 141, 255, 0.07), transparent),
-    radial-gradient(ellipse 52% 30% at 70% 86%, rgba(124, 106, 245, 0.08), transparent);
+    radial-gradient(ellipse 46% 46% at 84% 16%, var(--aurora-violet), transparent),
+    radial-gradient(ellipse 38% 38% at 12% 72%, var(--aurora-blue), transparent),
+    radial-gradient(ellipse 52% 30% at 70% 86%, var(--aurora-iris), transparent);
   pointer-events: none;
   z-index: 0;
   opacity: 0.8;
@@ -558,11 +645,11 @@ body::after {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fadeInUp 0.5s var(--ease-spring) both;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fadeIn 0.4s var(--ease-spring) both;
 }
 
 .animate-slide-in-right {
@@ -603,7 +690,7 @@ body::after {
 
 /* Staggered children */
 .stagger-children > * {
-  animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fadeInUp 0.5s var(--ease-spring) both;
 }
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
 .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
