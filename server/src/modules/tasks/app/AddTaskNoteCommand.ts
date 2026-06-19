@@ -1,9 +1,9 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { NotFoundHttpError } from '../../common/http/errors';
 import { TaskNote, TaskNoteRepository, TaskNoteType } from '../domain/TaskNoteRepository';
 import { TaskRepository } from '../domain/TaskRepository';
-import { AddTaskNote } from '../services/AddTaskNote';
 import { EmbedTask } from '../services/EmbedTask';
 
 export class AddTaskNoteCommand extends Command<TaskNote> {
@@ -25,7 +25,13 @@ export class AddTaskNoteCommandHandler implements RequestHandler<AddTaskNoteComm
 
     async handle(command: AddTaskNoteCommand, identity: Identity): Promise<TaskNote> {
         const { userId } = requireUserIdentity(identity);
-        return new AddTaskNote(this.tasks, this.notes, this.embedTask)
-            .execute(userId, command.taskId, command.content, command.type);
+        const task = await this.tasks.getTask(userId, command.taskId);
+        if (!task) {
+            throw new NotFoundHttpError('Task not found');
+        }
+
+        const note = await this.notes.addNote(userId, command.taskId, command.content, command.type);
+        this.embedTask.executeInBackground(userId, command.taskId);
+        return note;
     }
 }

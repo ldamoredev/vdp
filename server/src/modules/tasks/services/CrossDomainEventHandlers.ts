@@ -1,21 +1,26 @@
+import { CQBus, ExecutionContext } from '@nbottarini/cqbus';
+
+import { UserIdentity } from '../../common/app/auth/UserIdentity';
 import { EventBus } from '../../common/base/event-bus/EventBus';
 import { EventSubscriber } from '../../common/base/event-bus/EventSubscriber';
 import { DomainEvent } from '../../common/base/event-bus/DomainEvent';
 import { todayISO } from '../../common/base/time/dates';
 import { TaskInsightsStore } from './TaskInsightsStore';
-import { CreateTask } from './CreateTask';
 import { Logger } from '../../common/base/observability/logging/Logger';
 import { SpendingSpikePayload } from '../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBrokenPayload } from '../../health/domain/events/HabitStreakBroken';
 import { HabitMilestonePayload } from '../../health/domain/events/HabitMilestone';
 import { CounterMilestonePayload } from '../../health/domain/events/CounterMilestone';
 import { GoalDeadlineApproachingPayload } from '../../health/domain/events/GoalDeadlineApproaching';
+import { CreateTaskCommand } from '../app/CreateTaskCommand';
+import { CreateTaskData } from '../domain/TaskRepository';
 
 /**
  * Cross-domain event handlers for the Tasks module.
  *
  * Listens to events from other domains (Wallet, Health) and generates
- * task insights + actionable tasks when relevant patterns are detected.
+ * task insights + actionable tasks through the Tasks CQBus surface when
+ * relevant patterns are detected.
  *
  * This is the implementation of the cross-domain thesis:
  * "It knows I overspent AND it creates a task to review it."
@@ -24,7 +29,7 @@ export class CrossDomainEventHandlers implements EventSubscriber {
     constructor(
         private readonly eventBus: EventBus,
         private readonly insightsStore: TaskInsightsStore,
-        private readonly createTask: CreateTask,
+        private readonly bus: CQBus,
         private readonly logger: Logger,
     ) {}
 
@@ -68,8 +73,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
             },
         });
 
-        this.createTask
-            .execute(payload.userId, {
+        this.createTaskFromEvent(
+            payload.userId,
+            {
                 title: `Decidir meta: ${payload.title}`,
                 description:
                     `${deadlineLine} Esta tarea existe para que la meta no venza sin una decisión: ` +
@@ -77,12 +83,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 priority: payload.daysLeft <= 1 ? 3 : 2,
                 scheduledDate: todayISO(),
                 domain: 'health',
-            })
-            .catch((err: unknown) => {
-                this.logger.error('cross-domain: failed to create goal deadline task', {
-                    error: err instanceof Error ? err.message : String(err),
-                });
-            });
+            },
+            'cross-domain: failed to create goal deadline task',
+        );
     }
 
     private handleCounterMilestone(payload: CounterMilestonePayload): void {
@@ -129,8 +132,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
             },
         });
 
-        this.createTask
-            .execute(payload.userId, {
+        this.createTaskFromEvent(
+            payload.userId,
+            {
                 title: `Sostener hábito: ${payload.habitName}`,
                 description:
                     `La racha de ${payload.lostStreak} ${unit.plural} se cortó el ${payload.lastCompletedDate}. ` +
@@ -138,12 +142,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 priority: 2,
                 scheduledDate: todayISO(),
                 domain: 'health',
-            })
-            .catch((err: unknown) => {
-                this.logger.error('cross-domain: failed to create habit recovery task', {
-                    error: err instanceof Error ? err.message : String(err),
-                });
-            });
+            },
+            'cross-domain: failed to create habit recovery task',
+        );
     }
 
     private handleHabitMilestone(payload: HabitMilestonePayload): void {
@@ -192,8 +193,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
             },
         });
 
-        this.createTask
-            .execute(payload.userId, {
+        this.createTaskFromEvent(
+            payload.userId,
+            {
                 title: `Revisar gasto semanal: subió ${payload.percentageIncrease}%`,
                 description:
                     `Gasto esta semana: $${payload.totalExpenses} ${payload.currency}. ` +
@@ -202,9 +204,16 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 priority: 3,
                 scheduledDate: todayISO(),
                 domain: 'finanzas',
-            })
+            },
+            'cross-domain: failed to create spending review task',
+        );
+    }
+
+    private createTaskFromEvent(userId: string, input: CreateTaskData, failureMessage: string): void {
+        this.bus
+            .execute(new CreateTaskCommand(input), ExecutionContext.empty().withIdentity(new UserIdentity(userId)))
             .catch((err: unknown) => {
-                this.logger.error('cross-domain: failed to create spending review task', {
+                this.logger.error(failureMessage, {
                     error: err instanceof Error ? err.message : String(err),
                 });
             });

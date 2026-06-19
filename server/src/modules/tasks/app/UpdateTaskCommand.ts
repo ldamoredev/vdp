@@ -1,10 +1,10 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { DomainHttpError } from '../../common/http/errors';
 import { Task } from '../domain/Task';
 import { TaskRepository, UpdateTaskData } from '../domain/TaskRepository';
 import { EmbedTask } from '../services/EmbedTask';
-import { UpdateTask } from '../services/UpdateTask';
 
 export class UpdateTaskCommand extends Command<Task | null> {
     constructor(
@@ -23,6 +23,22 @@ export class UpdateTaskCommandHandler implements RequestHandler<UpdateTaskComman
 
     async handle(command: UpdateTaskCommand, identity: Identity): Promise<Task | null> {
         const { userId } = requireUserIdentity(identity);
-        return new UpdateTask(this.tasks, this.embedTask).execute(userId, command.id, command.input);
+        const task = await this.tasks.getTask(userId, command.id);
+        if (!task) return null;
+
+        if (task.status !== 'pending') {
+            throw new DomainHttpError(`Cannot update a ${task.status} task`);
+        }
+
+        if (command.input.title !== undefined) task.title = command.input.title;
+        if (command.input.description !== undefined) task.description = command.input.description;
+        if (command.input.priority !== undefined) task.priority = command.input.priority;
+        if (command.input.scheduledDate !== undefined) task.scheduledDate = command.input.scheduledDate;
+        if (command.input.domain !== undefined) task.domain = command.input.domain;
+        task.updatedAt = new Date();
+
+        const saved = await this.tasks.save(userId, task);
+        this.embedTask.executeInBackground(userId, command.id);
+        return saved;
     }
 }

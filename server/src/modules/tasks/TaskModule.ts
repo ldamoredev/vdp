@@ -26,7 +26,9 @@ export class TaskModule extends BaseModule {
     }
 
     protected registerServices() {
-        this.runtime.registerServices();
+    }
+
+    protected registerHandlers() {
         this.runtime.registerHandlers();
     }
 

@@ -33,4 +33,28 @@ describe('CreateTaskCommand', () => {
         });
         expect(ctx.executeInBackground).toHaveBeenCalledWith(userId, result.task.id);
     });
+
+    it('returns similar tasks when duplicate checking is requested', async () => {
+        ctx.findSimilar.mockResolvedValueOnce([
+            {
+                taskId: 'similar-1',
+                content: 'Write report',
+                similarity: 0.82,
+                matchPercent: 82,
+            },
+        ]);
+
+        const result = await new CreateTaskCommandHandler(ctx.tasks, ctx.embedTask, ctx.findSimilarTasks)
+            .handle(new CreateTaskCommand({ title: 'Write report' }, true), identity);
+
+        expect(ctx.findSimilar).toHaveBeenCalledWith(userId, 'Write report', 3, 0.6);
+        expect(result.similarTasks).toEqual([
+            {
+                taskId: 'similar-1',
+                content: 'Write report',
+                similarity: 0.82,
+                matchPercent: 82,
+            },
+        ]);
+    });
 });

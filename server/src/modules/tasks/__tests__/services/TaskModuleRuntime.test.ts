@@ -8,7 +8,6 @@ import { AgentProviderRequest, AgentProviderResponse } from '../../../common/bas
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { ModuleContext } from '../../../common/base/modules/ModuleContext';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
@@ -104,7 +103,9 @@ function createResponse(): FakeResponse {
     };
 }
 
-function createContext(insightsStore: TaskInsightsStore): ModuleContext & { insightsStore: TaskInsightsStore } {
+function createContext(insightsStore: TaskInsightsStore): Omit<ModuleContext, 'services'> & {
+    insightsStore: TaskInsightsStore;
+} {
     const repositories = new InMemoryRepositoryProvider();
 
     repositories.register(TaskRepository, new FakeTaskRepository());
@@ -115,7 +116,6 @@ function createContext(insightsStore: TaskInsightsStore): ModuleContext & { insi
     return {
         repositories,
         bus: new CQBus(),
-        services: new ServiceProvider(),
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),
         sseBroadcaster: new SSEBroadcaster(undefined, 60_000),
@@ -137,7 +137,6 @@ describe('TaskModuleRuntime', () => {
         const userAResponse = createResponse();
         const userBResponse = createResponse();
 
-        runtime.registerServices();
         runtime.registerEventHandlers();
 
         deps.sseBroadcaster.addClient(userAResponse as never, 'user-a');

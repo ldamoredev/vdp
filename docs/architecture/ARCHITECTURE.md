@@ -34,7 +34,7 @@ Both sides share one organizing idea: **a modular monolith where each domain own
 
 ### Composition
 
-`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (remaining compatibility for Tasks service collaborators while A6 finishes), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
+`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (legacy bridge awaiting final A6 deletion; active domains should not depend on it), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
 
 ### Module shape
 
@@ -158,7 +158,7 @@ Live signals are emitted as domain events from the source module and handled by 
 - `health.habit.streak_broken` → recovery task + warning insight.
 - `health.habit.milestone` / `health.counter.milestone` → achievement insight.
 
-New signals follow the same shape: emit from the source, subscribe in the handler, run actions through services (task creation is fire-and-forget with `.catch`), tests on both sides.
+New signals follow the same shape: emit from the source, subscribe in the handler, run actions through CQBus commands/queries or reusable services (task creation is fire-and-forget with `.catch`), tests on both sides.
 
 ---
 

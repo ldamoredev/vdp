@@ -2,9 +2,10 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { EventBus } from '../../common/base/event-bus/EventBus';
+import { DomainHttpError } from '../../common/http/errors';
 import { Task } from '../domain/Task';
+import { TaskCompleted } from '../domain/events/TaskCompleted';
 import { TaskRepository } from '../domain/TaskRepository';
-import { CompleteTask } from '../services/CompleteTask';
 
 export class CompleteTaskCommand extends Command<Task | null> {
     constructor(readonly id: string) {
@@ -20,6 +21,22 @@ export class CompleteTaskCommandHandler implements RequestHandler<CompleteTaskCo
 
     async handle(command: CompleteTaskCommand, identity: Identity): Promise<Task | null> {
         const { userId } = requireUserIdentity(identity);
-        return new CompleteTask(this.tasks, this.eventBus).execute(userId, command.id);
+        const task = await this.tasks.getTask(userId, command.id);
+        if (!task) return null;
+
+        if (task.status !== 'pending') {
+            throw new DomainHttpError(`Cannot complete a ${task.status} task`);
+        }
+
+        task.complete();
+        const saved = await this.tasks.save(userId, task);
+
+        await this.eventBus.emit(new TaskCompleted({
+            userId,
+            taskId: saved.id,
+            scheduledDate: saved.scheduledDate,
+        }));
+
+        return saved;
     }
 }

@@ -1,10 +1,15 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { Task } from '../domain/Task';
 import { CreateTaskData, TaskRepository } from '../domain/TaskRepository';
-import { CreateTask, CreateTaskResult } from '../services/CreateTask';
 import { EmbedTask } from '../services/EmbedTask';
-import { FindSimilarTasks } from '../services/FindSimilarTasks';
+import { FindSimilarTasks, SimilarTaskResult } from '../services/FindSimilarTasks';
+
+export type CreateTaskResult = {
+    task: Task;
+    similarTasks?: SimilarTaskResult[];
+};
 
 export class CreateTaskCommand extends Command<CreateTaskResult> {
     constructor(
@@ -24,7 +29,15 @@ export class CreateTaskCommandHandler implements RequestHandler<CreateTaskComman
 
     async handle(command: CreateTaskCommand, identity: Identity): Promise<CreateTaskResult> {
         const { userId } = requireUserIdentity(identity);
-        return new CreateTask(this.tasks, this.embedTask, this.findSimilarTasks)
-            .execute(userId, command.input, command.checkDuplicates);
+        let similarTasks: SimilarTaskResult[] | undefined;
+
+        if (command.checkDuplicates) {
+            similarTasks = await this.findSimilarTasks.execute(userId, command.input.title, 3, 0.6);
+        }
+
+        const task = await this.tasks.createTask(userId, command.input);
+        this.embedTask.executeInBackground(userId, task.id);
+
+        return { task, similarTasks };
     }
 }

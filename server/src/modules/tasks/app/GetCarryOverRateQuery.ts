@@ -2,7 +2,7 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { TaskRepository } from '../domain/TaskRepository';
-import { CarryOverRate, GetCarryOverRate } from '../services/GetCarryOverRate';
+import { CarryOverRate, getCarryOverRate } from './task-stats';
 
 export class GetCarryOverRateQuery extends Query<CarryOverRate> {
     constructor(readonly days?: number) {
@@ -15,6 +15,6 @@ export class GetCarryOverRateQueryHandler implements RequestHandler<GetCarryOver
 
     async handle(query: GetCarryOverRateQuery, identity: Identity): Promise<CarryOverRate> {
         const { userId } = requireUserIdentity(identity);
-        return new GetCarryOverRate(this.tasks).execute(userId, query.days);
+        return getCarryOverRate(this.tasks, userId, query.days);
     }
 }

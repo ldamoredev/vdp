@@ -2,7 +2,7 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { TaskRepository } from '../domain/TaskRepository';
-import { DayStats, GetDayStats } from '../services/GetDayStats';
+import { DayStats, getTodayStats } from './task-stats';
 
 export class GetTodayStatsQuery extends Query<DayStats> {}
 
@@ -11,6 +11,6 @@ export class GetTodayStatsQueryHandler implements RequestHandler<GetTodayStatsQu
 
     async handle(_query: GetTodayStatsQuery, identity: Identity): Promise<DayStats> {
         const { userId } = requireUserIdentity(identity);
-        return new GetDayStats(this.tasks).executeToday(userId);
+        return getTodayStats(this.tasks, userId);
     }
 }

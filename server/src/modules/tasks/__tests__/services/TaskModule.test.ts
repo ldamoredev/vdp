@@ -1,4 +1,4 @@
-import { CQBus } from '@nbottarini/cqbus';
+import { CQBus, ExecutionContext } from '@nbottarini/cqbus';
 import { describe, expect, it } from 'vitest';
 
 import { AgentRepository, AgentConversationRecord, AgentMessageRecord } from '../../../common/base/agents/AgentRepository';
@@ -8,13 +8,14 @@ import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { AgentRegistry } from '../../../common/base/agents/AgentRegistry';
 import { ModuleContext } from '../../../common/base/modules/ModuleContext';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
 import { NoOpOpenTelemetryService } from '../../../common/infrastructure/observability/trace/opentelemetry/NoOpOpenTelemetryService';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
+import { UserIdentity } from '../../../common/app/auth/UserIdentity';
 import { TaskModule } from '../../TaskModule';
+import { GetTasksQuery } from '../../app/GetTasksQuery';
 import { TaskEmbeddingRepository } from '../../domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from '../../domain/TaskNoteRepository';
 import { TaskRepository } from '../../domain/TaskRepository';
@@ -24,10 +25,6 @@ import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepositor
 import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { FakeTaskInsightRepository } from '../fakes/FakeTaskInsightRepository';
-import { AddTaskNote } from '../../services/AddTaskNote';
-import { CreateTask } from '../../services/CreateTask';
-import { FindSimilarTasks } from '../../services/FindSimilarTasks';
-import { GetTasks } from '../../services/GetTasks';
 
 class FakeAgentProvider implements AgentProvider {
     readonly name = 'fake';
@@ -107,11 +104,16 @@ function createContext(): ModuleContext {
     repositories.register(TaskEmbeddingRepository, new FakeTaskEmbeddingRepository());
     repositories.register(AgentRepository, new FakeAgentRepository());
     repositories.register(TaskInsightRepository, new FakeTaskInsightRepository());
+    const unusedServices = new Proxy({}, {
+        get() {
+            throw new Error('TaskModule must not access the legacy service registry');
+        },
+    }) as ModuleContext['services'];
 
     return {
         repositories,
         bus: new CQBus(),
-        services: new ServiceProvider(),
+        services: unusedServices,
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),
         sseBroadcaster: new SSEBroadcaster(),
@@ -125,14 +127,16 @@ function createContext(): ModuleContext {
 }
 
 describe('TaskModule', () => {
-    it('registers its service graph, controllers, and agent through the runtime composer', () => {
+    it('registers handlers, controllers, and agent through the runtime composer', async () => {
         const context = createContext();
         const module = new TaskModule(context).bootstrap();
 
-        expect(context.services.get(GetTasks)).toBeInstanceOf(GetTasks);
-        expect(context.services.get(CreateTask)).toBeInstanceOf(CreateTask);
-        expect(context.services.get(AddTaskNote)).toBeInstanceOf(AddTaskNote);
-        expect(context.services.get(FindSimilarTasks)).toBeInstanceOf(FindSimilarTasks);
+        await expect(
+            context.bus.execute(
+                new GetTasksQuery(),
+                ExecutionContext.empty().withIdentity(new UserIdentity('user-1')),
+            ),
+        ).resolves.toMatchObject({ tasks: [], total: 0 });
         expect(context.agentRegistry.has('tasks')).toBe(true);
         expect(module.getControllers()).toHaveLength(3);
         expect(module.getDescriptor()).toEqual({ domain: 'tasks', label: 'Tasks' });

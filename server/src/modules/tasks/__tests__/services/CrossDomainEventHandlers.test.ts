@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { CQBus } from '@nbottarini/cqbus';
+
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { CrossDomainEventHandlers } from '../../services/CrossDomainEventHandlers';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
-import { CreateTask } from '../../services/CreateTask';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { SpendingSpike } from '../../../wallet/domain/events/SpendingSpike';
 import { HabitStreakBroken } from '../../../health/domain/events/HabitStreakBroken';
@@ -10,25 +11,30 @@ import { HabitMilestone } from '../../../health/domain/events/HabitMilestone';
 import { CounterMilestone } from '../../../health/domain/events/CounterMilestone';
 import { GoalDeadlineApproaching } from '../../../health/domain/events/GoalDeadlineApproaching';
 import { todayISO } from '../../../common/base/time/dates';
+import { CreateTaskCommand } from '../../app/CreateTaskCommand';
 
-function createMockCreateTask(): CreateTask {
+type MockBus = CQBus & {
+    execute: ReturnType<typeof vi.fn>;
+};
+
+function createMockBus(): MockBus {
     return {
         execute: vi.fn().mockResolvedValue({ task: { id: 'generated-id', title: 'test' } }),
-    } as unknown as CreateTask;
+    } as unknown as MockBus;
 }
 
 describe('CrossDomainEventHandlers', () => {
     let eventBus: EventBus;
     let insightsStore: TaskInsightsStore;
-    let createTask: ReturnType<typeof createMockCreateTask>;
+    let bus: MockBus;
     let handler: CrossDomainEventHandlers;
     const logger = new NoOpLogger();
 
     beforeEach(() => {
         eventBus = new EventBus();
         insightsStore = new TaskInsightsStore();
-        createTask = createMockCreateTask();
-        handler = new CrossDomainEventHandlers(eventBus, insightsStore, createTask, logger);
+        bus = createMockBus();
+        handler = new CrossDomainEventHandlers(eventBus, insightsStore, bus, logger);
         handler.subscribe();
     });
 
@@ -85,9 +91,10 @@ describe('CrossDomainEventHandlers', () => {
             periodTo: '2026-03-30',
         }));
 
-        expect(createTask.execute).toHaveBeenCalledOnce();
+        expect(bus.execute).toHaveBeenCalledOnce();
 
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
         expect(taskData.title).toContain('Revisar gasto semanal');
         expect(taskData.title).toContain('100%');
         expect(taskData.domain).toBe('finanzas');
@@ -106,14 +113,15 @@ describe('CrossDomainEventHandlers', () => {
             periodTo: '2026-03-30',
         }));
 
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
         expect(taskData.description).toContain('$750.00');
         expect(taskData.description).toContain('$300.00');
         expect(taskData.description).toContain('USD');
     });
 
     it('logs error but does not throw when task creation fails', async () => {
-        (createTask.execute as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('DB down'));
+        bus.execute.mockRejectedValueOnce(new Error('DB down'));
 
         await expect(
             eventBus.emit(new SpendingSpike({
@@ -129,7 +137,7 @@ describe('CrossDomainEventHandlers', () => {
     });
 
     it('still creates insight even when task creation fails', async () => {
-        (createTask.execute as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('DB down'));
+        bus.execute.mockRejectedValueOnce(new Error('DB down'));
         const addSpy = vi.spyOn(insightsStore, 'addInsight');
 
         await eventBus.emit(new SpendingSpike({
@@ -167,8 +175,9 @@ describe('CrossDomainEventHandlers', () => {
         expect(metadata.source).toBe('health.habit.streak_broken');
         expect(metadata.actionHref).toBe('/health');
 
-        expect(createTask.execute).toHaveBeenCalledOnce();
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(bus.execute).toHaveBeenCalledOnce();
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
         expect(taskData.title).toBe('Sostener hábito: Gimnasio');
         expect(taskData.domain).toBe('health');
         expect(taskData.priority).toBe(2);
@@ -190,7 +199,7 @@ describe('CrossDomainEventHandlers', () => {
             type: 'achievement',
             title: '7 días de "Leer"',
         });
-        expect(createTask.execute).not.toHaveBeenCalled();
+        expect(bus.execute).not.toHaveBeenCalled();
     });
 
     it('words weekly habit milestones in weeks', async () => {
@@ -232,7 +241,7 @@ describe('CrossDomainEventHandlers', () => {
         expect(addSpy.mock.calls[0][0].message).toContain('$153000.00');
         const metadata = addSpy.mock.calls[0][0].metadata as Record<string, unknown>;
         expect(metadata.source).toBe('health.counter.milestone');
-        expect(createTask.execute).not.toHaveBeenCalled();
+        expect(bus.execute).not.toHaveBeenCalled();
     });
 
     it('omits the money line when the counter has no daily cost', async () => {
@@ -268,8 +277,9 @@ describe('CrossDomainEventHandlers', () => {
         });
         expect(addSpy.mock.calls[0][0].message).toContain('Vence en 5 días');
 
-        expect(createTask.execute).toHaveBeenCalledOnce();
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(bus.execute).toHaveBeenCalledOnce();
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
         expect(taskData.title).toBe('Decidir meta: Empezar el gym');
         expect(taskData.priority).toBe(2);
         expect(taskData.domain).toBe('health');
@@ -284,7 +294,8 @@ describe('CrossDomainEventHandlers', () => {
             daysLeft: -2,
         }));
 
-        const taskData = (createTask.execute as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
         expect(taskData.priority).toBe(3);
         expect(taskData.description).toContain('Venció hace 2 días');
     });
@@ -301,6 +312,6 @@ describe('CrossDomainEventHandlers', () => {
         });
 
         expect(addSpy).not.toHaveBeenCalled();
-        expect(createTask.execute).not.toHaveBeenCalled();
+        expect(bus.execute).not.toHaveBeenCalled();
     });
 });

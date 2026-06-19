@@ -24,4 +24,11 @@ describe('AddTaskNoteCommand', () => {
         expect(note).toMatchObject({ taskId: 'task-1', content: 'Important context', type: 'note' });
         expect(ctx.executeInBackground).toHaveBeenCalledWith(userId, 'task-1');
     });
+
+    it('rejects notes for missing tasks', async () => {
+        await expect(
+            new AddTaskNoteCommandHandler(ctx.tasks, ctx.notes, ctx.embedTask)
+                .handle(new AddTaskNoteCommand('missing-task', 'Important context'), identity),
+        ).rejects.toThrow('Task not found');
+    });
 });

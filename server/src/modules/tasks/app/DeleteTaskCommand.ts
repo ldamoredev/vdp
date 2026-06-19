@@ -4,7 +4,6 @@ import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { Task } from '../domain/Task';
 import { TaskNoteRepository } from '../domain/TaskNoteRepository';
 import { TaskRepository } from '../domain/TaskRepository';
-import { DeleteTask } from '../services/DeleteTask';
 
 export class DeleteTaskCommand extends Command<Task | null> {
     constructor(readonly id: string) {
@@ -20,6 +19,7 @@ export class DeleteTaskCommandHandler implements RequestHandler<DeleteTaskComman
 
     async handle(command: DeleteTaskCommand, identity: Identity): Promise<Task | null> {
         const { userId } = requireUserIdentity(identity);
-        return new DeleteTask(this.tasks, this.notes).execute(userId, command.id);
+        await this.notes.deleteByTaskId(userId, command.id);
+        return this.tasks.deleteTask(userId, command.id);
     }
 }

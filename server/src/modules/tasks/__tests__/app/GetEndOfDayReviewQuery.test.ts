@@ -27,4 +27,25 @@ describe('GetEndOfDayReviewQuery', () => {
 
         expect(review).toMatchObject({ date: '2026-06-17', total: 2, completed: 1, pending: 1 });
     });
+
+    it('includes tasks completed on the review date even when scheduled earlier', async () => {
+        ctx.tasks.seed([
+            createTask({
+                id: 'completed-today',
+                scheduledDate: '2026-06-16',
+                status: 'done',
+                completedAt: new Date('2026-06-17T11:00:00.000Z'),
+            }),
+            createTask({ id: 'pending-today', scheduledDate: '2026-06-17', status: 'pending' }),
+        ]);
+
+        const review = await new GetEndOfDayReviewQueryHandler(ctx.tasks, new RecommendationEngine())
+            .handle(new GetEndOfDayReviewQuery('2026-06-17'), identity);
+
+        expect(review).toMatchObject({ total: 2, completed: 1, pending: 1 });
+        expect(review.allTasks.map((task) => task.id)).toEqual([
+            'pending-today',
+            'completed-today',
+        ]);
+    });
 });

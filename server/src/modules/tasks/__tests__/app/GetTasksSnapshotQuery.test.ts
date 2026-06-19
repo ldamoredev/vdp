@@ -32,4 +32,32 @@ describe('GetTasksSnapshotQuery', () => {
             stuckTasks: [{ title: 'Stuck', carryOverCount: 3 }],
         });
     });
+
+    it('counts tasks completed today even when they were scheduled earlier', async () => {
+        ctx.tasks.seed([
+            createTask({
+                id: 'task-completed-today',
+                title: 'Completed today',
+                scheduledDate: '2026-06-16',
+                status: 'done',
+                completedAt: new Date('2026-06-17T09:15:00.000Z'),
+            }),
+            createTask({
+                id: 'task-pending-today',
+                title: 'Pending today',
+                scheduledDate: '2026-06-17',
+                status: 'pending',
+            }),
+        ]);
+
+        const snapshot = await new GetTasksSnapshotQueryHandler(ctx.tasks)
+            .handle(new GetTasksSnapshotQuery(), identity);
+
+        expect(snapshot).toMatchObject({
+            pendingCount: 1,
+            completedCount: 1,
+            totalCount: 2,
+            completionRate: 50,
+        });
+    });
 });

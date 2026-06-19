@@ -27,47 +27,23 @@ import { TaskEmbeddingRepository } from './domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from './domain/TaskNoteRepository';
 import { TaskRepository } from './domain/TaskRepository';
 import { TaskInsightsStore } from './services/TaskInsightsStore';
-import { AddTaskNote } from './services/AddTaskNote';
-import { CarryOverAllPending } from './services/CarryOverAllPending';
-import { CarryOverTask } from './services/CarryOverTask';
 import { CheckDailyCompletion } from './services/CheckDailyCompletion';
-import { CheckTasksOverload } from './services/CheckTasksOverload';
-import { CompleteTask } from './services/CompleteTask';
-import { CreateTask } from './services/CreateTask';
-import { DeleteTask } from './services/DeleteTask';
 import { DetectRepeatPattern } from './services/DetectRepeatPattern';
-import { DiscardTask } from './services/DiscardTask';
 import { EmbedTask } from './services/EmbedTask';
 import { FindSimilarTasks } from './services/FindSimilarTasks';
-import { GetCarryOverRate } from './services/GetCarryOverRate';
-import { GetCompletionByDomain } from './services/GetCompletionByDomain';
-import { GetDayStats } from './services/GetDayStats';
-import { GetEndOfDayReview } from './services/GetEndOfDayReview';
 import { RebuildStreaks } from './services/RebuildStreaks';
 import { RecommendationEngine } from './services/RecommendationEngine';
-import { GetTask } from './services/GetTask';
-import { GetTasks } from './services/GetTasks';
-import { GetTasksSnapshot } from './services/GetTasksSnapshot';
-import { GetWeeklySummary } from './services/GetWeeklySummary';
-import { GetPlanningContext } from './services/GetPlanningContext';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
 import { CrossDomainEventHandlers } from './services/CrossDomainEventHandlers';
-import { UpdateTask } from './services/UpdateTask';
 
-export interface TaskModuleRuntimeDeps extends ModuleContext {
+export interface TaskModuleRuntimeDeps extends Omit<ModuleContext, 'services'> {
     insightsStore: TaskInsightsStore;
 }
 
 export class TaskModuleRuntime {
-    constructor(private deps: TaskModuleRuntimeDeps) {
-    }
-
+    constructor(private deps: TaskModuleRuntimeDeps) {}
 
     registerServices(): void {
-        this.registerEmbeddingServices();
-        this.registerTaskReadServices();
-        this.registerTaskMutationServices();
-        this.registerTaskInsightServices();
     }
 
     registerHandlers(): void {
@@ -80,12 +56,12 @@ export class TaskModuleRuntime {
         this.deps.bus.registerHandler(CreateTaskCommand, () =>
             new CreateTaskCommandHandler(
                 this.taskRepository(),
-                this.deps.services.get(EmbedTask),
-                this.deps.services.get(FindSimilarTasks),
+                this.embedTask(),
+                this.findSimilarTasks(),
             ),
         );
         this.deps.bus.registerHandler(UpdateTaskCommand, () =>
-            new UpdateTaskCommandHandler(this.taskRepository(), this.deps.services.get(EmbedTask)),
+            new UpdateTaskCommandHandler(this.taskRepository(), this.embedTask()),
         );
         this.deps.bus.registerHandler(DeleteTaskCommand, () =>
             new DeleteTaskCommandHandler(this.taskRepository(), this.taskNoteRepository()),
@@ -97,7 +73,7 @@ export class TaskModuleRuntime {
             new CarryOverTaskCommandHandler(
                 this.taskRepository(),
                 this.deps.eventBus,
-                this.deps.services.get(DetectRepeatPattern),
+                this.detectRepeatPattern(),
             ),
         );
         this.deps.bus.registerHandler(DiscardTaskCommand, () =>
@@ -107,18 +83,18 @@ export class TaskModuleRuntime {
             new CarryOverAllPendingCommandHandler(
                 this.taskRepository(),
                 this.deps.eventBus,
-                this.deps.services.get(DetectRepeatPattern),
+                this.detectRepeatPattern(),
             ),
         );
         this.deps.bus.registerHandler(AddTaskNoteCommand, () =>
             new AddTaskNoteCommandHandler(
                 this.taskRepository(),
                 this.taskNoteRepository(),
-                this.deps.services.get(EmbedTask),
+                this.embedTask(),
             ),
         );
         this.deps.bus.registerHandler(GetEndOfDayReviewQuery, () =>
-            new GetEndOfDayReviewQueryHandler(this.taskRepository(), this.deps.services.get(RecommendationEngine)),
+            new GetEndOfDayReviewQueryHandler(this.taskRepository(), this.recommendationEngine()),
         );
         this.deps.bus.registerHandler(GetTodayStatsQuery, () =>
             new GetTodayStatsQueryHandler(this.taskRepository()),
@@ -174,108 +150,6 @@ export class TaskModuleRuntime {
         ];
     }
 
-    private registerEmbeddingServices(): void {
-        this.deps.services.register(
-            EmbedTask,
-            () =>
-                new EmbedTask(
-                    this.taskRepository(),
-                    this.taskNoteRepository(),
-                    this.taskEmbeddingRepository(),
-                    this.deps.embeddingProvider,
-                    this.deps.logger,
-                ),
-        );
-        this.deps.services.register(
-            FindSimilarTasks,
-            () => new FindSimilarTasks(this.taskEmbeddingRepository(), this.deps.embeddingProvider),
-        );
-        this.deps.services.register(
-            DetectRepeatPattern,
-            () =>
-                new DetectRepeatPattern(
-                    this.deps.services.get(FindSimilarTasks),
-                    this.taskRepository(),
-                    this.deps.eventBus,
-                ),
-        );
-    }
-
-    private registerTaskReadServices(): void {
-        this.deps.services.register(GetTasks, () => new GetTasks(this.taskRepository()));
-        this.deps.services.register(GetTask, () => new GetTask(this.taskRepository(), this.taskNoteRepository()));
-        this.deps.services.register(GetTasksSnapshot, () => new GetTasksSnapshot(this.taskRepository()));
-        this.deps.services.register(RecommendationEngine, () => new RecommendationEngine());
-        this.deps.services.register(GetEndOfDayReview, () =>
-            new GetEndOfDayReview(this.taskRepository(), this.deps.services.get(RecommendationEngine)),
-        );
-        this.deps.services.register(GetDayStats, () => new GetDayStats(this.taskRepository()));
-        this.deps.services.register(GetCompletionByDomain, () =>
-            new GetCompletionByDomain(this.taskRepository()),
-        );
-        this.deps.services.register(GetCarryOverRate, () =>
-            new GetCarryOverRate(this.taskRepository()),
-        );
-        this.deps.services.register(GetWeeklySummary, () =>
-            new GetWeeklySummary(this.taskRepository(), this.deps.services.get(GetDayStats)),
-        );
-        this.deps.services.register(GetPlanningContext, () =>
-            new GetPlanningContext(
-                this.taskRepository(),
-                this.deps.services.get(GetDayStats),
-                this.deps.services.get(GetCarryOverRate),
-                this.deps.insightsStore,
-            ),
-        );
-    }
-
-    private registerTaskMutationServices(): void {
-        this.deps.services.register(CreateTask, () =>
-            new CreateTask(this.taskRepository(), this.deps.services.get(EmbedTask), this.deps.services.get(FindSimilarTasks)),
-        );
-        this.deps.services.register(UpdateTask, () =>
-            new UpdateTask(this.taskRepository(), this.deps.services.get(EmbedTask)),
-        );
-        this.deps.services.register(DeleteTask, () =>
-            new DeleteTask(this.taskRepository(), this.taskNoteRepository()),
-        );
-        this.deps.services.register(
-            AddTaskNote,
-            () =>
-                new AddTaskNote(
-                    this.taskRepository(),
-                    this.taskNoteRepository(),
-                    this.deps.services.get(EmbedTask),
-                ),
-        );
-        this.deps.services.register(CompleteTask, () =>
-            new CompleteTask(this.taskRepository(), this.deps.eventBus),
-        );
-        this.deps.services.register(CarryOverTask, () =>
-            new CarryOverTask(this.taskRepository(), this.deps.eventBus, this.deps.services.get(DetectRepeatPattern)),
-        );
-        this.deps.services.register(DiscardTask, () => new DiscardTask(this.taskRepository()));
-        this.deps.services.register(
-            CarryOverAllPending,
-            () =>
-                new CarryOverAllPending(
-                    this.taskRepository(),
-                    this.deps.services.get(CarryOverTask),
-                ),
-        );
-    }
-
-    private registerTaskInsightServices(): void {
-        this.deps.services.register(
-            CheckTasksOverload,
-            () => new CheckTasksOverload(this.taskRepository(), this.deps.eventBus),
-        );
-        this.deps.services.register(
-            RebuildStreaks,
-            () => new RebuildStreaks(this.taskRepository(), this.deps.insightsStore),
-        );
-    }
-
     /**
      * Called once at server start. A rehydration failure must never block
      * boot: streaks fall back to the pre-existing behavior (empty until the
@@ -283,7 +157,7 @@ export class TaskModuleRuntime {
      */
     async rehydrateStreaks(): Promise<void> {
         try {
-            await this.deps.services.get(RebuildStreaks).execute();
+            await new RebuildStreaks(this.taskRepository(), this.deps.insightsStore).execute();
         } catch (err: unknown) {
             this.deps.logger.warn('streak rehydration failed', {
                 error: err instanceof Error ? err.message : String(err),
@@ -312,7 +186,7 @@ export class TaskModuleRuntime {
             new CrossDomainEventHandlers(
                 this.deps.eventBus,
                 this.deps.insightsStore,
-                this.deps.services.get(CreateTask),
+                this.deps.bus,
                 this.deps.logger,
             ),
         ];
@@ -332,6 +206,32 @@ export class TaskModuleRuntime {
             }
             this.deps.sseBroadcaster.broadcastToUser(userId, 'insight', insight);
         });
+    }
+
+    private embedTask(): EmbedTask {
+        return new EmbedTask(
+            this.taskRepository(),
+            this.taskNoteRepository(),
+            this.taskEmbeddingRepository(),
+            this.deps.embeddingProvider,
+            this.deps.logger,
+        );
+    }
+
+    private findSimilarTasks(): FindSimilarTasks {
+        return new FindSimilarTasks(this.taskEmbeddingRepository(), this.deps.embeddingProvider);
+    }
+
+    private detectRepeatPattern(): DetectRepeatPattern {
+        return new DetectRepeatPattern(
+            this.findSimilarTasks(),
+            this.taskRepository(),
+            this.deps.eventBus,
+        );
+    }
+
+    private recommendationEngine(): RecommendationEngine {
+        return new RecommendationEngine();
     }
 
     private taskRepository(): TaskRepository {

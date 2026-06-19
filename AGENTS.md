@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth/Wallet CQBus cleanup inside A6; A6 remains open only for the Tasks `ServiceProvider` cleanup and final deletion. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth/Wallet/Tasks CQBus cleanup inside A6; A6 remains open only for final `ServiceProvider` deletion from the common core. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -116,7 +116,7 @@ Backend test conventions:
 - `AgentRegistry`
 - `SSEBroadcaster`
 - `RepositoryProvider`
-- `ServiceProvider` (legacy compatibility/reusable-collaborator bridge until A6 cleanup)
+- `ServiceProvider` (legacy bridge awaiting final A6 deletion; active domains should not depend on it)
 - `AuthContextStorage`
 - `ModuleContext`
 - LLM and OpenTelemetry trace services
@@ -298,7 +298,7 @@ Future cross-domain signals should follow the same pattern:
 
 - Emit a domain event from the source module (`{domain}/domain/events/`, payload type exported — Tasks imports payload types directly; that coupling is accepted).
 - Subscribe in `tasks/services/CrossDomainEventHandlers.ts` via `eventBus`.
-- Run actions through services, never direct DB writes. Task creation inside handlers is fire-and-forget with a `.catch` + logger (insight must land even if the task fails).
+- Run actions through CQBus commands/queries or reusable services, never direct DB writes. Task creation inside handlers is fire-and-forget with a `.catch` + logger (insight must land even if the task fails).
 - Insight metadata supports `actionHref`/`actionLabel` for deep links.
 - Tests on both sides: emission in the source module's unit tests, handling in `CrossDomainEventHandlers.test.ts`, and the full flow in the source module's e2e (note: poll briefly for the created task — handler task creation is async).
 
