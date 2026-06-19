@@ -1,9 +1,9 @@
 import { AbstractConstructor, RepositoryProvider } from './RepositoryProvider';
 
 /**
- * RepositoryProvider backed by explicit per-module bindings, mirroring the
- * ServiceProvider pattern: each module registers its repository token ->
- * factory pairs, so common never imports domain concretes.
+ * RepositoryProvider backed by explicit per-module bindings: each module
+ * registers its repository token -> factory pairs, so common never imports
+ * domain concretes.
  */
 export class RepositoryRegistry extends RepositoryProvider {
     private factories = new Map<AbstractConstructor, () => unknown>();

@@ -1,7 +1,6 @@
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { EventBus } from '../event-bus/EventBus';
 import { EventSubscriber } from '../event-bus/EventSubscriber';
-import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
 import { LLMTraceService } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
@@ -18,7 +17,6 @@ import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 
 export abstract class BaseModule implements DomainModule {
     protected readonly repositories: RepositoryProvider;
-    protected readonly services: ServiceProvider;
     protected readonly eventBus: EventBus;
     protected readonly agentRegistry: AgentRegistry;
     protected readonly sseBroadcaster: SSEBroadcaster;
@@ -31,7 +29,6 @@ export abstract class BaseModule implements DomainModule {
 
     constructor(context: ModuleContext) {
         this.repositories = context.repositories;
-        this.services = context.services;
         this.eventBus = context.eventBus;
         this.agentRegistry = context.agentRegistry;
         this.sseBroadcaster = context.sseBroadcaster;
@@ -44,14 +41,11 @@ export abstract class BaseModule implements DomainModule {
     }
 
     bootstrap(): this {
-        this.registerServices();
         this.registerHandlers();
         this.registerEventHandlers();
         this.registerAgents();
         return this;
     }
-
-    protected abstract registerServices(): void;
 
     protected registerHandlers(): void {}
 

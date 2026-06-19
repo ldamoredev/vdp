@@ -40,9 +40,6 @@ import { MedicalController } from './infrastructure/routes/MedicalController';
 export class HealthModuleRuntime {
     constructor(private deps: ModuleContext) {}
 
-    registerServices(): void {
-    }
-
     registerHandlers(): void {
         this.deps.bus.registerHandler(GetHabitsOverviewQuery, () =>
             new GetHabitsOverviewQueryHandler(this.habitRepository()),

@@ -19,14 +19,14 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is almost closed**: Auth/Health/Tasks/Wallet now expose HTTP through CQBus, and Wallet/Tasks no longer use `ServiceProvider`; the remaining work is deleting the legacy `ServiceProvider` bridge from the common core.
+5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). The A5 frontend migration shipped and A6 closed: Auth/Health/Tasks/Wallet expose HTTP through CQBus, no domain depends on `ServiceProvider`, and the legacy bridge — plus its now-dead `registerServices` lifecycle hook — was deleted from the common core.
 
-## Architecture Track (ACTIVE — June 2026)
+## Architecture Track (COMPLETE — June 2026)
 
 Owner-approved in the June 2026 architecture session. Source of truth for rationale,
 decisions, and detailed plans: [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
-One phase per work session unless noted. Phase 4 is complete; A6 is the only
-open architecture item.
+One phase per work session unless noted. Phase 4 and the full Architecture Track
+(A1 Vite port → A6 CQBus on the api) are complete; there is no open architecture item.
 
 Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
 Fastify, single service, Vercel retired); presenters (Humble Object) + CQBus +
@@ -37,9 +37,9 @@ runtime — no custom publish). On the api side, new active-domain work is
 CQBus-first: `app/{UseCase}{Command|Query}.ts` + handler, runtime registration,
 thin HTTP controllers executing the bus with auth-derived `ExecutionContext`.
 
-### A6. CQBus on the api — IN PROGRESS
+### A6. CQBus on the api — SHIPPED June 2026
 
-Shipped so far:
+Shipped:
 
 - `Core` owns a backend `CQBus` and registers an auth middleware that can derive
   identity from `AuthContextStorage`.
@@ -64,13 +64,20 @@ Shipped so far:
   `CreateTaskCommand` through CQBus.
 - The web side remains the mirror: `core/domain` ports, `core/app`
   commands/queries, `Http*Gateway`, presenter + ViewModel + humble view.
+- Final cleanup (June 2026): `ServiceProvider` and `ServiceResolver` are
+  deleted; `Core`, `ModuleContext`, and `BaseModule` no longer carry a
+  `services` registry; and the `registerServices()` lifecycle hook — dead once
+  every collaborator moved into CQBus handler wiring — was removed from
+  `BaseModule` and all module/runtime classes. `bootstrap()` now runs
+  `registerHandlers → registerEventHandlers → registerAgents`. The
+  `create-service-api`, `create-service-web`, `create-presenter-web`, and
+  `create-agent-tool` skills are aligned with this final CQBus form.
 
-Remaining before A6 closes:
-
-- Delete `ServiceProvider` from `Core`, `ModuleContext`, `BaseModule`, agents,
-  tests, and `server/src/modules/common/base/services/ServiceProvider.ts`.
-- Keep `create-service-api`, `create-service-web`, `create-presenter-web`, and
-  `create-agent-tool` skills aligned with this CQBus form.
+Lesson carried into the skills: with CQBus the handler is the single
+transport-agnostic entry point shared by HTTP controllers and agent tools, so
+cross-cutting rules that must hold for every caller (e.g. medical upload
+content-sniffing and size caps) live in the handler, not the controller. The
+controller stays a thin adapter that builds the command and executes the bus.
 
 ## Phase 4: Health Deepening
 

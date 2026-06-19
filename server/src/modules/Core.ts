@@ -3,7 +3,6 @@ import { CQBus } from '@nbottarini/cqbus';
 import { DomainModule } from './common/base/modules/DomainModule';
 import { DomainModuleFactory } from './common/base/modules/DomainModuleFactory';
 import { DomainModuleDescriptor } from './common/base/modules/DomainModuleDescriptor';
-import { ServiceProvider } from './common/base/services/ServiceProvider';
 import { HttpController } from './common/http/HttpController';
 import { ModuleContext } from './common/base/modules/ModuleContext';
 import { EventBus } from './common/base/event-bus/EventBus';
@@ -25,7 +24,6 @@ export class Core {
     public readonly agentRegistry: AgentRegistry;
     public readonly sseBroadcaster: SSEBroadcaster;
     public readonly bus: CQBus = new CQBus();
-    public readonly services: ServiceProvider = new ServiceProvider();
     private readonly llmTraceService: LLMTraceService;
     private readonly traceService: TraceService;
     private readonly modules: DomainModule[];
@@ -51,7 +49,6 @@ export class Core {
         return {
             repositories: this.repositories,
             bus: this.bus,
-            services: this.services,
             eventBus: this.eventBus,
             agentRegistry: this.agentRegistry,
             sseBroadcaster: this.sseBroadcaster,

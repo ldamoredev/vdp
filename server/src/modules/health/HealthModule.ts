@@ -18,10 +18,6 @@ export class HealthModule extends BaseModule {
         this.runtime = new HealthModuleRuntime(context);
     }
 
-    protected registerServices() {
-        this.runtime.registerServices();
-    }
-
     protected registerHandlers() {
         this.runtime.registerHandlers();
     }

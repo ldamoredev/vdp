@@ -2,7 +2,6 @@ import { CQBus } from '@nbottarini/cqbus';
 
 import { AgentRegistry } from '../agents/AgentRegistry';
 import { EventBus } from '../event-bus/EventBus';
-import { ServiceProvider } from '../services/ServiceProvider';
 import { SSEBroadcaster } from '../sse/SSEBroadcaster';
 import { LLMTraceService } from '../observability/trace/LLMTraceService';
 import { TraceService } from '../observability/trace/TraceService';
@@ -15,7 +14,6 @@ import { AuthContextStorage } from '../../http/AuthContextStorage';
 export type ModuleContext = {
     repositories: RepositoryProvider;
     bus: CQBus;
-    services: ServiceProvider;
     eventBus: EventBus;
     agentRegistry: AgentRegistry;
     sseBroadcaster: SSEBroadcaster;

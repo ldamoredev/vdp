@@ -37,9 +37,6 @@ export class AuthModuleRuntime {
         this.loginRateLimiter = new LoginRateLimiter();
     }
 
-    registerServices(): void {
-    }
-
     registerHandlers(): void {
         const { bus } = this.deps;
 

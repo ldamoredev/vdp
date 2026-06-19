@@ -5,7 +5,7 @@ description: Scaffold one LLM agent tool for an existing domain agent (typed reg
 
 # create-agent-tool
 
-Scaffolds one tool on an existing domain agent, following `HealthTools`/`tasks` reference shape. Agent tools are factory functions over `CQBus` + `AuthContextStorage` that execute the same `Command`/`Query` handlers used by HTTP and return serialized results. Do not pass `ServiceProvider` into tools; cross-domain reads go through CQBus queries.
+Scaffolds one tool on an existing domain agent, following `HealthTools`/`tasks` reference shape. Agent tools are factory functions over `CQBus` + `AuthContextStorage` that execute the same `Command`/`Query` handlers used by HTTP and return serialized results. Tools depend only on the bus and auth context; cross-domain reads go through CQBus queries, never a direct dependency on another module's services.
 
 ## Inputs (ask if missing)
 

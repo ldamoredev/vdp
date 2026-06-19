@@ -25,9 +25,6 @@ export class TaskModule extends BaseModule {
         this.runtime = new TaskModuleRuntime({ ...context, insightsStore: this.insightsStore });
     }
 
-    protected registerServices() {
-    }
-
     protected registerHandlers() {
         this.runtime.registerHandlers();
     }

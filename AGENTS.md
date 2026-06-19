@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth/Wallet/Tasks CQBus cleanup inside A6; A6 remains open only for final `ServiceProvider` deletion from the common core. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -116,7 +116,6 @@ Backend test conventions:
 - `AgentRegistry`
 - `SSEBroadcaster`
 - `RepositoryProvider`
-- `ServiceProvider` (legacy bridge awaiting final A6 deletion; active domains should not depend on it)
 - `AuthContextStorage`
 - `ModuleContext`
 - LLM and OpenTelemetry trace services
@@ -147,11 +146,11 @@ server/src/modules/{domain}/
 └── __tests__/
 ```
 
-`{Domain}Module.ts` extends `BaseModule` and exposes controllers, middlewares, descriptors, service/handler registration, event handler registration, and agent registration. `{Domain}ModuleRuntime.ts` wires repositories, CQBus handlers, reusable services, event handlers, controllers, and agents.
+`{Domain}Module.ts` extends `BaseModule` and exposes controllers, middlewares, descriptors, CQBus handler registration, event handler registration, and agent registration. `{Domain}ModuleRuntime.ts` wires repositories, CQBus handlers, reusable services, event handlers, controllers, and agents.
 
 New HTTP-exposed backend use cases are CQBus-first: create one `Command<T>` or `Query<T>` plus `RequestHandler` under `app/`, register it in `{Domain}ModuleRuntime.registerHandlers()`, and have controllers call `bus.execute(..., executionContextFromAuth(request.auth))`. Handlers call `requireUserIdentity(identity)` before touching user-owned data. `Command`/`Query` objects carry operation data only — never `userId`.
 
-`services/` may still hold reusable domain/application collaborators (auth orchestration, embedding, duplicate detection, event/insight stores, stats engines, cross-domain orchestration). Do not add new HTTP routes that call `ServiceProvider` directly. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers stay thin HTTP adapters around the bus.
+`services/` may still hold reusable domain/application collaborators (auth orchestration, embedding, duplicate detection, event/insight stores, stats engines, cross-domain orchestration) that CQBus handlers compose. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers stay thin HTTP adapters around the bus.
 
 Domain modeling: two styles coexist deliberately, and both are valid.
 

@@ -40,7 +40,7 @@ import { DetectSpendingSpike } from './services/DetectSpendingSpike';
 import { WalletEventHandlers } from './services/WalletEventHandlers';
 import { WalletInsightsStore } from './services/WalletInsightsStore';
 
-export interface WalletModuleRuntimeDeps extends Omit<ModuleContext, 'services'> {
+export interface WalletModuleRuntimeDeps extends ModuleContext {
     insightsStore: WalletInsightsStore;
 }
 

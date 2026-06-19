@@ -104,16 +104,9 @@ function createContext(): ModuleContext {
     repositories.register(TaskEmbeddingRepository, new FakeTaskEmbeddingRepository());
     repositories.register(AgentRepository, new FakeAgentRepository());
     repositories.register(TaskInsightRepository, new FakeTaskInsightRepository());
-    const unusedServices = new Proxy({}, {
-        get() {
-            throw new Error('TaskModule must not access the legacy service registry');
-        },
-    }) as ModuleContext['services'];
-
     return {
         repositories,
         bus: new CQBus(),
-        services: unusedServices,
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),
         sseBroadcaster: new SSEBroadcaster(),

@@ -34,8 +34,11 @@ export class UploadAttachmentCommandHandler
     if (!record) throw new NotFoundHttpError("Registro médico no encontrado.");
 
     // Validate by sniffing the real content type — never trust the client header.
+    // This belongs in the handler, not the controller: the content allowlist and
+    // size cap are transport-agnostic rules that must hold for every caller of the
+    // command (HTTP today, agent tools tomorrow). Size is also capped at the
+    // multipart layer as defense in depth.
     const result = validateUpload({ filename: command.filename, content: command.content });
-    // TODO: this validation seems to be a validation of http layer
     if (!result.ok) throw new ValidationHttpError(result.reason);
 
     // Persist bytes through the storage seam, then the metadata row.

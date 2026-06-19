@@ -5,7 +5,7 @@ description: Scaffold one backend API use case in an existing server module usin
 
 # create-service-api
 
-Scaffolds a single backend use case in an existing `server/src/modules/{domain}` module. The API is CQBus-first: one `Command<T>` or `Query<T>` plus one `RequestHandler`, registered by the module runtime and called by a thin controller. `services/` may still hold reusable collaborators or legacy bridge code, but do not add new HTTP routes that call `ServiceProvider` directly.
+Scaffolds a single backend use case in an existing `server/src/modules/{domain}` module. The API is CQBus-first: one `Command<T>` or `Query<T>` plus one `RequestHandler`, registered by the module runtime and called by a thin controller. `services/` may still hold reusable collaborators that handlers compose; the only HTTP surface is a thin controller that builds the request and executes the bus.
 
 ## Inputs (ask if missing)
 
@@ -34,9 +34,10 @@ Scaffolds a single backend use case in an existing `server/src/modules/{domain}`
 - HTTP controllers call `bus.execute(new UseCase(...), executionContextFromAuth(request.auth))`; route params may carry entity ids, never caller identity.
 - Agent tools call the same command/query with `executionContextFromAuth(authContextStorage.getAuthContext())`.
 - Validate HTTP inputs with shared Zod schemas at the controller; validate LLM tool dates separately in agent tools.
+- Controllers validate request *shape* (Zod); the handler enforces transport-agnostic invariants that must hold for every caller (HTTP and agent alike) — e.g. file content-sniffing and size caps live in the handler, not the controller (see `UploadAttachmentCommand`).
 - Handlers depend on repository **interfaces** and real reusable services, never Drizzle tables directly.
 - Use a reusable `services/` class only when it removes real duplication or owns domain orchestration used by multiple handlers/events/agents; otherwise keep the use case in the handler.
-- Register handlers in `{Domain}ModuleRuntime.registerHandlers()`. `registerServices()` is compatibility/reusable-collaborator plumbing, not the new API surface.
+- Register handlers in `{Domain}ModuleRuntime.registerHandlers()` — the single registration point for the API surface. Reusable `services/` collaborators are constructed as handler dependencies in the runtime, not through a separate lifecycle hook (the old `registerServices()` step no longer exists).
 - Queries read and return views/models; commands mutate and return `void` unless a caller needs the result immediately (e.g. complete-and-graduate flows).
 - Dates: validate/format with the `common/base/time` helpers; future-date and range rules live in the service (see `CreateGoal`).
 - Time-based signals follow the no-scheduler patterns (write-time detection, or lazy detection on overview load with a persisted dedupe column) — see AGENTS.md "Insights And Time-Based Signals".

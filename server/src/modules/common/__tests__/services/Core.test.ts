@@ -81,10 +81,6 @@ class RecordingModule extends BaseModule {
         super(context);
     }
 
-    protected registerServices(): void {
-        this.order.push(`${this.descriptor.domain}:services`);
-    }
-
     protected registerEventHandlers(): void {
         this.order.push(`${this.descriptor.domain}:events`);
     }
@@ -136,10 +132,8 @@ describe('Core', () => {
         const core = new Core(config);
 
         expect(order).toEqual([
-            'tasks:services',
             'tasks:events',
             'tasks:agents',
-            'health:services',
             'health:events',
             'health:agents',
         ]);

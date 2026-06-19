@@ -103,7 +103,7 @@ function createResponse(): FakeResponse {
     };
 }
 
-function createContext(insightsStore: TaskInsightsStore): Omit<ModuleContext, 'services'> & {
+function createContext(insightsStore: TaskInsightsStore): ModuleContext & {
     insightsStore: TaskInsightsStore;
 } {
     const repositories = new InMemoryRepositoryProvider();

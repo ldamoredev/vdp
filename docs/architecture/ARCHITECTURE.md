@@ -34,13 +34,13 @@ Both sides share one organizing idea: **a modular monolith where each domain own
 
 ### Composition
 
-`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (legacy bridge awaiting final A6 deletion; active domains should not depend on it), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
+`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
 
 ### Module shape
 
 ```text
 server/src/modules/{domain}/
-├── {Domain}Module.ts          # extends BaseModule: controllers, middlewares, service/handler/event/agent registration
+├── {Domain}Module.ts          # extends BaseModule: controllers, middlewares, handler/event/agent registration
 ├── {Domain}ModuleRuntime.ts   # wires repositories, CQBus handlers, reusable services, event handlers, controllers, agents
 ├── app/                       # one Command/Query + RequestHandler per exposed use case
 ├── domain/                    # {Entity}.ts + {Entity}Repository.ts (interface)

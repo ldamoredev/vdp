@@ -21,10 +21,6 @@ export class AuthModule extends BaseModule {
         return this.runtime.createControllers();
     }
 
-    protected registerServices() {
-        this.runtime.registerServices();
-    }
-
     protected registerHandlers() {
         this.runtime.registerHandlers();
     }

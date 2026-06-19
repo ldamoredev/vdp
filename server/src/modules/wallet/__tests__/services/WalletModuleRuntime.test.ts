@@ -109,7 +109,7 @@ function createResponse(): FakeResponse {
     };
 }
 
-function createContext(insightsStore: WalletInsightsStore): Omit<ModuleContext, 'services'> & {
+function createContext(insightsStore: WalletInsightsStore): ModuleContext & {
     insightsStore: WalletInsightsStore;
 } {
     const repositories = new InMemoryRepositoryProvider();

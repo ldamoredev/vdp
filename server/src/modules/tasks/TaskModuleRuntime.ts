@@ -36,15 +36,12 @@ import { RecommendationEngine } from './services/RecommendationEngine';
 import { TaskEventHandlers } from './services/TaskEventHandlers';
 import { CrossDomainEventHandlers } from './services/CrossDomainEventHandlers';
 
-export interface TaskModuleRuntimeDeps extends Omit<ModuleContext, 'services'> {
+export interface TaskModuleRuntimeDeps extends ModuleContext {
     insightsStore: TaskInsightsStore;
 }
 
 export class TaskModuleRuntime {
     constructor(private deps: TaskModuleRuntimeDeps) {}
-
-    registerServices(): void {
-    }
 
     registerHandlers(): void {
         this.deps.bus.registerHandler(GetTasksQuery, () =>

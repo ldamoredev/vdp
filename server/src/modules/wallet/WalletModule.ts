@@ -31,9 +31,6 @@ export class WalletModule extends BaseModule {
         await this.runtime.rehydrateInsights();
     }
 
-    protected registerServices() {
-    }
-
     protected registerHandlers() {
         this.runtime.registerHandlers();
     }
