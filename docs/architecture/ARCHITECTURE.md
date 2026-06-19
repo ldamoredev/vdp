@@ -34,7 +34,7 @@ Both sides share one organizing idea: **a modular monolith where each domain own
 
 ### Composition
 
-`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (remaining compatibility for Tasks/Wallet service collaborators while A6 finishes), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
+`server/src/modules/Core.ts` owns shared infrastructure: `CQBus`, `EventBus`, `AgentRegistry`, `SSEBroadcaster`, `RepositoryProvider`, `ServiceProvider` (remaining compatibility for Tasks service collaborators while A6 finishes), `AuthContextStorage`, `ModuleContext`, LLM + OpenTelemetry services. `DefaultCoreConfiguration` wires the concrete infrastructure (`Database`, repository registry, logger, agent/embedding providers, auth storage) and the **active module factories** — register modules only there. Repository wiring is per-module (`{domain}/infrastructure/db/bindings.ts`), composed in `modules/DefaultRepositories.ts`. `modules/common/` must not import from domain modules; only the root composition files enumerate domains.
 
 ### Module shape
 
@@ -54,7 +54,7 @@ server/src/modules/{domain}/
 
 - **CQBus-first API use cases.** New HTTP-exposed work lives in `app/` as `Command<T>` or `Query<T>` plus `RequestHandler`, registered in `{Domain}ModuleRuntime.registerHandlers()`. Controllers validate with shared Zod schemas, construct the request, and call `bus.execute(..., executionContextFromAuth(request.auth))`. Handlers call `requireUserIdentity(identity)` before touching user-owned data. `Command`/`Query` classes never carry `userId`.
 - **Services are collaborators, not the new HTTP surface.** Keep a service class when it owns reusable orchestration or domain logic used by multiple handlers/events/agents; otherwise keep the use case in its handler. Services depend on repository *interfaces* and other services, never on Drizzle tables directly.
-- **Domain modeling — two deliberate styles.** Rich entity with behavior (`tasks/domain/Task.ts`: `complete()`, `carryOver()`, `isStuck()`) for domains with their own state transitions/invariants; plain `readonly` types + logic in services (`wallet`, `auth`) when the domain is mostly orchestration across repositories. Don't rewrite one into the other without a real reason. Entities use immutable snapshots (`fromSnapshot()`/`toSnapshot()`).
+- **Domain modeling — two deliberate styles.** Rich entity with behavior (`tasks/domain/Task.ts`: `complete()`, `carryOver()`, `isStuck()`) for domains with their own state transitions/invariants; plain `readonly` types + orchestration in CQBus handlers or reusable services (`wallet`, `auth`) when the domain is mostly coordination across repositories. Don't rewrite one into the other without a real reason. Entities use immutable snapshots (`fromSnapshot()`/`toSnapshot()`).
 
 ### Auth context
 
@@ -62,7 +62,7 @@ server/src/modules/{domain}/
 
 ### Agents
 
-Domain agents extend `BaseAgent` (`domain`, `systemPrompt`, `tools`) and register through `AgentRegistry` in the module runtime (Tasks, Wallet, and Health have agents; Auth does not). Tool factories close over `CQBus` + `AuthContextStorage`, execute the same commands/queries as HTTP, and derive execution context internally. `ServiceProvider` remains only as a temporary compatibility dependency for legacy Wallet intelligence helpers. **System prompts must be builder functions evaluated per chat** (a module-level template literal freezes "today" at boot). Tools validate LLM-provided dates with `localDateStringSchema` before dispatching commands/queries.
+Domain agents extend `BaseAgent` (`domain`, `systemPrompt`, `tools`) and register through `AgentRegistry` in the module runtime (Tasks, Wallet, and Health have agents; Auth does not). Tool factories close over `CQBus` + `AuthContextStorage`, execute the same commands/queries as HTTP, and derive execution context internally. **System prompts must be builder functions evaluated per chat** (a module-level template literal freezes "today" at boot). Tools validate LLM-provided dates with `localDateStringSchema` before dispatching commands/queries.
 
 ### Insights & time-based signals
 

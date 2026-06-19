@@ -1,10 +1,10 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { NotFoundHttpError } from '../../common/http/errors';
 import { AccountRepository } from '../domain/AccountRepository';
 import { CreateInvestmentData, Investment } from '../domain/Investment';
 import { InvestmentRepository } from '../domain/InvestmentRepository';
-import { CreateInvestment } from '../services/CreateInvestment';
 
 export class CreateInvestmentCommand extends Command<Investment> {
     constructor(readonly input: CreateInvestmentData) {
@@ -20,6 +20,13 @@ export class CreateInvestmentCommandHandler implements RequestHandler<CreateInve
 
     async handle(command: CreateInvestmentCommand, identity: Identity): Promise<Investment> {
         const { userId } = requireUserIdentity(identity);
-        return new CreateInvestment(this.investments, this.accounts).execute(userId, command.input);
+        if (command.input.accountId) {
+            const account = await this.accounts.findById(userId, command.input.accountId);
+            if (!account) {
+                throw new NotFoundHttpError('Account not found');
+            }
+        }
+
+        return this.investments.create(userId, command.input);
     }
 }

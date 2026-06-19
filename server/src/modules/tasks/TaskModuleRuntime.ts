@@ -154,8 +154,6 @@ export class TaskModuleRuntime {
     registerAgent(): void {
         this.deps.agentRegistry.register(
             new TaskAgent(
-                this.deps.eventBus,
-                this.deps.services,
                 this.deps.bus,
                 this.deps.repositories,
                 this.deps.insightsStore,

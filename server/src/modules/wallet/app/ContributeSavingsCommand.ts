@@ -1,10 +1,11 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
+import { todayISO } from '../../common/base/time/dates';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { NotFoundHttpError } from '../../common/http/errors';
 import { SavingsGoal } from '../domain/SavingsGoal';
 import { SavingsGoalRepository } from '../domain/SavingsGoalRepository';
 import { TransactionRepository } from '../domain/TransactionRepository';
-import { ContributeSavings } from '../services/ContributeSavings';
 
 export type ContributeSavingsCommandInput = {
     readonly goalId: string;
@@ -28,6 +29,18 @@ export class ContributeSavingsCommandHandler implements RequestHandler<Contribut
 
     async handle(command: ContributeSavingsCommand, identity: Identity): Promise<SavingsGoal | null> {
         const { userId } = requireUserIdentity(identity);
-        return new ContributeSavings(this.savingsGoals, this.transactions).execute(userId, command.input);
+        if (command.input.transactionId) {
+            const transaction = await this.transactions.findById(userId, command.input.transactionId);
+            if (!transaction) {
+                throw new NotFoundHttpError('Transaction not found');
+            }
+        }
+
+        return this.savingsGoals.contribute(userId, command.input.goalId, {
+            amount: command.input.amount,
+            date: command.input.date ?? todayISO(),
+            note: command.input.note ?? null,
+            transactionId: command.input.transactionId ?? null,
+        });
     }
 }

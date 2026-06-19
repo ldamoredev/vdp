@@ -40,15 +40,12 @@ import { DetectSpendingSpike } from './services/DetectSpendingSpike';
 import { WalletEventHandlers } from './services/WalletEventHandlers';
 import { WalletInsightsStore } from './services/WalletInsightsStore';
 
-export interface WalletModuleRuntimeDeps extends ModuleContext {
+export interface WalletModuleRuntimeDeps extends Omit<ModuleContext, 'services'> {
     insightsStore: WalletInsightsStore;
 }
 
 export class WalletModuleRuntime {
     constructor(private deps: WalletModuleRuntimeDeps) {}
-
-    registerServices(): void {
-    }
 
     registerHandlers(): void {
         this.deps.bus.registerHandler(GetAccountsQuery, () =>
@@ -91,13 +88,13 @@ export class WalletModuleRuntime {
             new DeleteTransactionCommandHandler(this.transactionRepository()),
         );
         this.deps.bus.registerHandler(GetSpendingSummaryQuery, () =>
-            new GetSpendingSummaryQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetSpendingSummaryQueryHandler(this.transactionRepository()),
         );
         this.deps.bus.registerHandler(GetSpendingByCategoryQuery, () =>
             new GetSpendingByCategoryQueryHandler(this.transactionRepository(), this.categoryRepository()),
         );
         this.deps.bus.registerHandler(GetMonthlyTrendQuery, () =>
-            new GetMonthlyTrendQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetMonthlyTrendQueryHandler(this.transactionRepository()),
         );
         this.deps.bus.registerHandler(GetSavingsGoalsQuery, () =>
             new GetSavingsGoalsQueryHandler(this.savingsGoalRepository()),
@@ -155,8 +152,6 @@ export class WalletModuleRuntime {
     registerAgent(): void {
         this.deps.agentRegistry.register(
             new WalletAgent(
-                this.deps.eventBus,
-                this.deps.services,
                 this.deps.bus,
                 this.deps.repositories,
                 this.deps.llmTraceService,

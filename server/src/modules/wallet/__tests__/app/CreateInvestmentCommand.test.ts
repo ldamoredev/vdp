@@ -27,4 +27,18 @@ describe('CreateInvestmentCommand', () => {
 
         expect(investment).toMatchObject({ name: 'FCI', type: 'fci', currentValue: '1050' });
     });
+
+    it('rejects investments linked to a missing account', async () => {
+        await expect(new CreateInvestmentCommandHandler(ctx.investments, ctx.accounts)
+            .handle(new CreateInvestmentCommand({
+                name: 'FCI',
+                type: 'fci',
+                accountId: 'missing',
+                currency: 'ARS',
+                investedAmount: '1000',
+                currentValue: '1050',
+                startDate: '2026-06-01',
+            }), identity))
+            .rejects.toThrow('Account not found');
+    });
 });

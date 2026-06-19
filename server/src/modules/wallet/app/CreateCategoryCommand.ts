@@ -3,7 +3,6 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { Category, CreateCategoryData } from '../domain/Category';
 import { CategoryRepository } from '../domain/CategoryRepository';
-import { CreateCategory } from '../services/CreateCategory';
 
 export class CreateCategoryCommand extends Command<Category> {
     constructor(readonly input: CreateCategoryData) {
@@ -16,6 +15,6 @@ export class CreateCategoryCommandHandler implements RequestHandler<CreateCatego
 
     async handle(command: CreateCategoryCommand, identity: Identity): Promise<Category> {
         const { userId } = requireUserIdentity(identity);
-        return new CreateCategory(this.categories).execute(userId, command.input);
+        return this.categories.create(userId, command.input);
     }
 }

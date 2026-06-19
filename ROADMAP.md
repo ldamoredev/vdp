@@ -19,7 +19,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 2. ~~Tasks production-readiness: validate the module end to end before real daily use.~~ Done (June 2026 hardening).
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
-5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is almost closed**: Auth/Health/Tasks/Wallet now expose HTTP through CQBus; the remaining work is moving the Tasks/Wallet service collaborators off `ServiceProvider` and deleting `ServiceProvider`.
+5. **Architecture Track (ACTIVE)**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api. Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). A5 frontend migration is complete; **A6 is almost closed**: Auth/Health/Tasks/Wallet now expose HTTP through CQBus and Wallet no longer uses `ServiceProvider`; the remaining work is moving the Tasks service collaborators off `ServiceProvider` and deleting `ServiceProvider`.
 
 ## Architecture Track (ACTIVE — June 2026)
 
@@ -51,6 +51,11 @@ Shipped so far:
   CQBus handlers; the HTTP controller no longer calls those services directly.
 - Agent tools for active domains dispatch the same commands/queries from the
   current auth context; tool input still never carries `userId`.
+- Wallet intelligence tools now fetch Tasks context through
+  `GetTasksSnapshotQuery` on CQBus instead of `ServiceProvider`, and Wallet
+  CRUD/read/stat use-case logic now lives directly in its `app/`
+  Command/Query handlers. `wallet/services/` keeps only event/insight
+  collaborators.
 - The web side remains the mirror: `core/domain` ports, `core/app`
   commands/queries, `Http*Gateway`, presenter + ViewModel + humble view.
 
@@ -60,13 +65,11 @@ Remaining before A6 closes:
   `FindSimilarTasks`, `DetectRepeatPattern`, stats/review helpers, and insight
   rebuilders) out of `ServiceProvider` and into explicit/lazy runtime
   dependencies.
-- Move Wallet intelligence helpers off `ServiceProvider` by dispatching the
-  needed Tasks context through CQBus instead of `services.get(GetTasksSnapshot)`.
 - Delete `ServiceProvider` from `Core`, `ModuleContext`, `BaseModule`, agents,
   tests, and `server/src/modules/common/base/services/ServiceProvider.ts`.
-- Delete or rewrite legacy `services/` registration tests once the bridge is
-  gone; keep pure service classes only when they are real reusable collaborators
-  behind handlers.
+- Delete or rewrite the remaining legacy Tasks `services/` registration tests
+  once the bridge is gone; keep pure service classes only when they are real
+  reusable collaborators behind handlers.
 - Keep `create-service-api`, `create-service-web`, `create-presenter-web`, and
   `create-agent-tool` skills aligned with this CQBus form.
 

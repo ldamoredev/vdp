@@ -32,7 +32,6 @@ export class WalletModule extends BaseModule {
     }
 
     protected registerServices() {
-        this.runtime.registerServices();
     }
 
     protected registerHandlers() {

@@ -3,8 +3,6 @@ import { buildTasksSystemPrompt } from './system-prompt';
 import { TasksTools } from './tools.js';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
-import { EventBus } from '../../../common/base/event-bus/EventBus';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { LLMTraceService } from '../../../common/base/observability/trace/LLMTraceService';
 import { TraceService } from '../../../common/base/observability/trace/TraceService';
@@ -22,8 +20,6 @@ export class TaskAgent extends BaseAgent {
     }
 
     constructor(
-        eventBus: EventBus,
-        services: ServiceProvider,
         bus: CQBus,
         repositories: RepositoryProvider,
         insightsStore: TaskInsightsStore,
@@ -33,7 +29,7 @@ export class TaskAgent extends BaseAgent {
         logger: Logger,
         authContextStorage: AuthContextStorage,
     ) {
-        super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
+        super(repositories, agentProvider, langfuse, openTelemetry, logger);
         this.tools = TasksTools.createTasksTools(bus, authContextStorage, insightsStore);
     }
 }

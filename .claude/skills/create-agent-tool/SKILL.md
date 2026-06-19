@@ -5,7 +5,7 @@ description: Scaffold one LLM agent tool for an existing domain agent (typed reg
 
 # create-agent-tool
 
-Scaffolds one tool on an existing domain agent, following `HealthTools`/`tasks` reference shape. Agent tools are factory functions over `CQBus` + `AuthContextStorage` that execute the same `Command`/`Query` handlers used by HTTP and return serialized results. `ServiceProvider` is a compatibility parameter in some Wallet intelligence helpers; do not use it for new CRUD/read tools.
+Scaffolds one tool on an existing domain agent, following `HealthTools`/`tasks` reference shape. Agent tools are factory functions over `CQBus` + `AuthContextStorage` that execute the same `Command`/`Query` handlers used by HTTP and return serialized results. Do not pass `ServiceProvider` into tools; cross-domain reads go through CQBus queries.
 
 ## Inputs (ask if missing)
 

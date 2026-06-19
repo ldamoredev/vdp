@@ -3,7 +3,6 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { Account, UpdateAccountData } from '../domain/Account';
 import { AccountRepository } from '../domain/AccountRepository';
-import { UpdateAccount } from '../services/UpdateAccount';
 
 export class UpdateAccountCommand extends Command<Account | null> {
     constructor(
@@ -19,6 +18,6 @@ export class UpdateAccountCommandHandler implements RequestHandler<UpdateAccount
 
     async handle(command: UpdateAccountCommand, identity: Identity): Promise<Account | null> {
         const { userId } = requireUserIdentity(identity);
-        return new UpdateAccount(this.accounts).execute(userId, command.accountId, command.input);
+        return this.accounts.update(userId, command.accountId, command.input);
     }
 }

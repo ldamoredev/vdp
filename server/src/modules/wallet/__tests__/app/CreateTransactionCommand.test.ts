@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreateTransactionCommand, CreateTransactionCommandHandler } from '../../app/CreateTransactionCommand';
-import { identity, makeAccount, setupWalletCQBusTest, type WalletCQBusTestContext } from './wallet-cqbus-test-helpers';
+import {
+    identity,
+    makeAccount,
+    setupWalletCQBusTest,
+    type WalletCQBusTestContext,
+} from './wallet-cqbus-test-helpers';
 
 describe('CreateTransactionCommand', () => {
     let ctx: WalletCQBusTestContext;
@@ -39,5 +44,30 @@ describe('CreateTransactionCommand', () => {
 
         expect(tx).toMatchObject({ accountId: 'acc-1', type: 'expense', amount: '100' });
         expect(emitted).toHaveLength(1);
+        expect(emitted[0]).toMatchObject({
+            transactionId: tx.id,
+            type: 'expense',
+            amount: '100',
+            currency: 'ARS',
+            accountId: 'acc-1',
+        });
+    });
+
+    it('rejects transactions for a missing account', async () => {
+        await expect(new CreateTransactionCommandHandler(
+            ctx.transactions,
+            ctx.eventBus,
+            ctx.accounts,
+            ctx.categories,
+        ).handle(
+            new CreateTransactionCommand({
+                accountId: 'missing',
+                type: 'expense',
+                amount: '100',
+                currency: 'ARS',
+                date: '2026-06-17',
+            }),
+            identity,
+        )).rejects.toThrow('Account not found');
     });
 });

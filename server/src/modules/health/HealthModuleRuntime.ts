@@ -110,8 +110,6 @@ export class HealthModuleRuntime {
     registerAgent(): void {
         this.deps.agentRegistry.register(
             new HealthAgent(
-                this.deps.eventBus,
-                this.deps.services,
                 this.deps.bus,
                 this.deps.repositories,
                 this.deps.llmTraceService,

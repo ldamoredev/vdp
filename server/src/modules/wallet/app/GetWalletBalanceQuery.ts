@@ -3,7 +3,7 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { AccountRepository } from '../domain/AccountRepository';
 import { TransactionRepository } from '../domain/TransactionRepository';
-import { AccountWithBalance, GetAccounts } from '../services/GetAccounts';
+import { AccountWithBalance, getAccountsWithBalance } from './GetAccountsQuery';
 
 export type WalletBalance = {
     readonly accounts: AccountWithBalance[];
@@ -28,7 +28,7 @@ implements RequestHandler<GetWalletBalanceQuery, AccountWithBalance | WalletBala
 
     async handle(query: GetWalletBalanceQuery, identity: Identity): Promise<AccountWithBalance | WalletBalance | { error: string }> {
         const { userId } = requireUserIdentity(identity);
-        const accounts = await new GetAccounts(this.accounts, this.transactions).execute(userId);
+        const accounts = await getAccountsWithBalance(this.accounts, this.transactions, userId);
         if (query.accountId) {
             return accounts.find((account) => account.id === query.accountId) ?? { error: 'Account not found' };
         }

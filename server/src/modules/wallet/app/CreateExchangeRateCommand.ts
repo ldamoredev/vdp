@@ -1,8 +1,8 @@
 import { Command, RequestHandler } from '@nbottarini/cqbus';
 
+import { todayISO } from '../../common/base/time/dates';
 import { CreateExchangeRateData, ExchangeRate } from '../domain/ExchangeRate';
 import { ExchangeRateRepository } from '../domain/ExchangeRateRepository';
-import { CreateExchangeRate } from '../services/CreateExchangeRate';
 
 export class CreateExchangeRateCommand extends Command<ExchangeRate> {
     constructor(readonly input: Omit<CreateExchangeRateData, 'date'> & { date?: string }) {
@@ -14,6 +14,9 @@ export class CreateExchangeRateCommandHandler implements RequestHandler<CreateEx
     constructor(private readonly exchangeRates: ExchangeRateRepository) {}
 
     async handle(command: CreateExchangeRateCommand): Promise<ExchangeRate> {
-        return new CreateExchangeRate(this.exchangeRates).execute(command.input);
+        return this.exchangeRates.create({
+            ...command.input,
+            date: command.input.date ?? todayISO(),
+        });
     }
 }

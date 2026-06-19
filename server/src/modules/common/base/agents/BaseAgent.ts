@@ -1,6 +1,4 @@
 import { DomainEvent, DomainName } from '../event-bus/DomainEvent';
-import { EventBus } from '../event-bus/EventBus';
-import { ServiceProvider } from '../services/ServiceProvider';
 import { AgentProvider } from './providers/AgentProvider';
 import { AgentMessage, AgentToolCall, AgentToolDefinition, AgentToolResult } from './providers/types';
 import { LLMTraceService, Trace } from '../observability/trace/LLMTraceService';
@@ -23,7 +21,6 @@ export abstract class BaseAgent {
     abstract readonly tools: AgentTool[];
 
     protected repositories: RepositoryProvider;
-    protected services: ServiceProvider;
     protected provider: AgentProvider;
     protected llmTraceService: LLMTraceService;
     protected traceService: TraceService;
@@ -33,15 +30,12 @@ export abstract class BaseAgent {
     protected maxTokens = 4096;
 
     constructor(
-        eventBus: EventBus,
-        services: ServiceProvider,
         repositories: RepositoryProvider,
         provider: AgentProvider,
         llmTraceService: LLMTraceService,
         traceService: TraceService,
         logger: Logger,
     ) {
-        this.services = services;
         this.repositories = repositories;
         this.provider = provider;
         this.llmTraceService = llmTraceService;

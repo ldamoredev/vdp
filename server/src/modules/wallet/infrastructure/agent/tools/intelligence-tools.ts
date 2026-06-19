@@ -2,8 +2,7 @@ import { CQBus } from '@nbottarini/cqbus';
 
 import { executionContextFromAuth } from '../../../../common/app/auth/AuthExecutionContext';
 import { AuthContextStorage } from '../../../../common/http/AuthContextStorage';
-import { ServiceProvider } from '../../../../common/base/services/ServiceProvider';
-import { GetTasksSnapshot } from '../../../../tasks/services/GetTasksSnapshot';
+import { GetTasksSnapshotQuery } from '../../../../tasks/app/GetTasksSnapshotQuery';
 import { GetCategoryTrendsQuery } from '../../../app/GetCategoryTrendsQuery';
 import { GetSpendingAnomaliesQuery } from '../../../app/GetSpendingAnomaliesQuery';
 import { jsonTool } from './shared';
@@ -16,7 +15,6 @@ const EMPTY_OBJECT_SCHEMA = {
 
 export function createWalletIntelligenceTools(
     bus: CQBus,
-    services: ServiceProvider,
     authContextStorage: AuthContextStorage,
 ) {
     const executionContext = () => executionContextFromAuth(authContextStorage.getAuthContext());
@@ -45,9 +43,8 @@ export function createWalletIntelligenceTools(
                 'Use this when a spending pattern might connect to the user’s workload.',
             inputSchema: EMPTY_OBJECT_SCHEMA,
             execute: async () => {
-                const userId = authContextStorage.getAuthContext().userId!;
                 return {
-                    tasksContext: await services.get(GetTasksSnapshot).execute(userId),
+                    tasksContext: await bus.execute(new GetTasksSnapshotQuery(), executionContext()),
                 };
             },
         }),

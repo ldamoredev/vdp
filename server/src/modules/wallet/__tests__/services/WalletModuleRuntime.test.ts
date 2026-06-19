@@ -10,7 +10,6 @@ import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbeddingProvider';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { ModuleContext } from '../../../common/base/modules/ModuleContext';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
@@ -110,7 +109,9 @@ function createResponse(): FakeResponse {
     };
 }
 
-function createContext(insightsStore: WalletInsightsStore): ModuleContext & { insightsStore: WalletInsightsStore } {
+function createContext(insightsStore: WalletInsightsStore): Omit<ModuleContext, 'services'> & {
+    insightsStore: WalletInsightsStore;
+} {
     const repositories = new InMemoryRepositoryProvider();
 
     repositories.register(AccountRepository, new FakeAccountRepository());
@@ -124,7 +125,6 @@ function createContext(insightsStore: WalletInsightsStore): ModuleContext & { in
     return {
         repositories,
         bus: new CQBus(),
-        services: new ServiceProvider(),
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),
         sseBroadcaster: new SSEBroadcaster(undefined, 60_000),

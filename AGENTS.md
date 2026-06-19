@@ -33,7 +33,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth CQBus migration inside A6; A6 remains open only for the Tasks/Wallet `ServiceProvider` cleanup and final deletion. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track shipped A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and the Auth/Wallet CQBus cleanup inside A6; A6 remains open only for the Tasks `ServiceProvider` cleanup and final deletion. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -151,12 +151,12 @@ server/src/modules/{domain}/
 
 New HTTP-exposed backend use cases are CQBus-first: create one `Command<T>` or `Query<T>` plus `RequestHandler` under `app/`, register it in `{Domain}ModuleRuntime.registerHandlers()`, and have controllers call `bus.execute(..., executionContextFromAuth(request.auth))`. Handlers call `requireUserIdentity(identity)` before touching user-owned data. `Command`/`Query` objects carry operation data only — never `userId`.
 
-`services/` may still hold reusable domain/application collaborators (auth orchestration, embedding, duplicate detection, stats engines, cross-domain orchestration). Do not add new HTTP routes that call `ServiceProvider` directly. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers stay thin HTTP adapters around the bus.
+`services/` may still hold reusable domain/application collaborators (auth orchestration, embedding, duplicate detection, event/insight stores, stats engines, cross-domain orchestration). Do not add new HTTP routes that call `ServiceProvider` directly. Services should depend on repository interfaces and other services, not direct Drizzle tables. Controllers stay thin HTTP adapters around the bus.
 
 Domain modeling: two styles coexist deliberately, and both are valid.
 
 - Rich entity class with behavior (`tasks/domain/Task.ts`: `complete()`, `carryOver()`, `isStuck()`). Default for new domains whose entities have state transitions or invariants of their own.
-- Plain `readonly` types with logic in services (`wallet/domain/*`, `auth/domain/*`). Appropriate when the domain is mostly orchestration across repositories (transfers, stats, contributions).
+- Plain `readonly` types with orchestration in CQBus handlers or reusable services (`wallet/domain/*`, `auth/domain/*`). Appropriate when the domain is mostly coordination across repositories (transfers, stats, contributions).
 
 Do not rewrite a module from one style to the other without an explicit reason; consistency-for-its-own-sake is not one.
 
@@ -202,7 +202,7 @@ Domain agents extend `BaseAgent` and declare:
 
 Agents are registered in each module runtime through `AgentRegistry`. Tasks and Wallet both register agents; Auth does not.
 
-Agent tools are factory functions that close over `CQBus` and `AuthContextStorage`. They should execute the same commands/queries as HTTP and return serialized results. `ServiceProvider` is only a temporary compatibility dependency for legacy Wallet intelligence helpers. Tools must never accept or trust a `userId` from LLM input.
+Agent tools are factory functions that close over `CQBus` and `AuthContextStorage`. They should execute the same commands/queries as HTTP and return serialized results. Tools must never accept or trust a `userId` from LLM input.
 
 Agent chat HTTP routes use `createAgentChatHandler()` from `server/src/modules/common/http/agent-chat.ts`. The handler streams SSE, persists conversations in the `core` schema, and wraps the chat loop in `authContextStorage.runWithContext(request.auth, ...)`.
 

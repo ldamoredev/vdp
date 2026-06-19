@@ -3,8 +3,6 @@ import { HealthTools } from './tools';
 import { CQBus } from '@nbottarini/cqbus';
 import { DomainName } from '../../../common/base/event-bus/DomainEvent';
 import { AgentTool, BaseAgent } from '../../../common/base/agents/BaseAgent';
-import { EventBus } from '../../../common/base/event-bus/EventBus';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { LLMTraceService } from '../../../common/base/observability/trace/LLMTraceService';
 import { TraceService } from '../../../common/base/observability/trace/TraceService';
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
@@ -21,8 +19,6 @@ export class HealthAgent extends BaseAgent {
     }
 
     constructor(
-        eventBus: EventBus,
-        services: ServiceProvider,
         bus: CQBus,
         repositories: RepositoryProvider,
         langfuse: LLMTraceService,
@@ -31,7 +27,7 @@ export class HealthAgent extends BaseAgent {
         logger: Logger,
         authContextStorage: AuthContextStorage,
     ) {
-        super(eventBus, services, repositories, agentProvider, langfuse, openTelemetry, logger);
+        super(repositories, agentProvider, langfuse, openTelemetry, logger);
         this.tools = HealthTools.createHealthTools(bus, authContextStorage);
     }
 }

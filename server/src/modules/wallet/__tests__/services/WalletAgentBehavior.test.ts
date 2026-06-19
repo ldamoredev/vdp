@@ -10,7 +10,6 @@ import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbeddingProvider';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { ModuleContext } from '../../../common/base/modules/ModuleContext';
-import { ServiceProvider } from '../../../common/base/services/ServiceProvider';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
@@ -171,10 +170,9 @@ function createContext(provider: AgentProvider) {
     repositories.register(WalletInsightRepository, new FakeWalletInsightRepository());
     repositories.register(AgentRepository, agentRepository);
 
-    const context: ModuleContext = {
+    const context = {
         repositories,
         bus: new CQBus(),
-        services: new ServiceProvider(),
         eventBus: new EventBus(),
         agentRegistry: new AgentRegistry(),
         sseBroadcaster: new SSEBroadcaster(),
@@ -184,7 +182,7 @@ function createContext(provider: AgentProvider) {
         embeddingProvider: new NoOpEmbeddingProvider(),
         logger: new NoOpLogger(),
         authContextStorage: new AuthContextStorage(),
-    };
+    } as unknown as ModuleContext;
 
     new WalletModule(context).bootstrap();
 

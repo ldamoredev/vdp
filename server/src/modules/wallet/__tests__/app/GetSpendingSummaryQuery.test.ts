@@ -20,7 +20,7 @@ describe('GetSpendingSummaryQuery', () => {
             makeTransaction({ id: 'tx-2', type: 'expense', amount: '200', date: '2026-06-17' }),
         ]);
 
-        const summary = await new GetSpendingSummaryQueryHandler(ctx.transactions, ctx.categories)
+        const summary = await new GetSpendingSummaryQueryHandler(ctx.transactions)
             .handle(new GetSpendingSummaryQuery('2026-06-01', '2026-06-30'), identity);
 
         expect(summary).toEqual({

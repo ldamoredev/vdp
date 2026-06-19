@@ -20,7 +20,7 @@ describe('GetMonthlyTrendQuery', () => {
             makeTransaction({ id: 'tx-2', type: 'expense', amount: '200', date: '2026-06-02' }),
         ]);
 
-        const trend = await new GetMonthlyTrendQueryHandler(ctx.transactions, ctx.categories)
+        const trend = await new GetMonthlyTrendQueryHandler(ctx.transactions)
             .handle(new GetMonthlyTrendQuery(2026), identity);
 
         expect(trend).toEqual([{ month: '2026-06', income: 500, expense: 200 }]);

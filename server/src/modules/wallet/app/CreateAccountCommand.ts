@@ -3,7 +3,6 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { Account, CreateAccountData } from '../domain/Account';
 import { AccountRepository } from '../domain/AccountRepository';
-import { CreateAccount } from '../services/CreateAccount';
 
 export class CreateAccountCommand extends Command<Account> {
     constructor(readonly input: CreateAccountData) {
@@ -16,6 +15,6 @@ export class CreateAccountCommandHandler implements RequestHandler<CreateAccount
 
     async handle(command: CreateAccountCommand, identity: Identity): Promise<Account> {
         const { userId } = requireUserIdentity(identity);
-        return new CreateAccount(this.accounts).execute(userId, command.input);
+        return this.accounts.create(userId, command.input);
     }
 }
