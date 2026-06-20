@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -31,6 +31,26 @@ export function DashboardScreen() {
   const presenter = useDashboardPresenter();
   const vm = presenter.model;
   const [isQuickAddOpen, setQuickAddOpen] = useState(false);
+  const [prefillDescription, setPrefillDescription] = useState<string | undefined>(undefined);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep link from a tasks→wallet "register the expense?" suggestion:
+  // open the quick-add pre-filled with the completed task's title, then drop
+  // the param so a reload or close doesn't re-open it.
+  useEffect(() => {
+    const suggested = searchParams.get("registrar-gasto");
+    if (!suggested) return;
+    setPrefillDescription(suggested);
+    setQuickAddOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("registrar-gasto");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const closeQuickAdd = () => {
+    setQuickAddOpen(false);
+    setPrefillDescription(undefined);
+  };
 
   return (
     <ModulePage width="5xl" spacing="8">
@@ -56,8 +76,9 @@ export function DashboardScreen() {
       {isQuickAddOpen && (
         <QuickAddExpenseSheet
           open={isQuickAddOpen}
-          onClose={() => setQuickAddOpen(false)}
+          onClose={closeQuickAdd}
           onSaved={() => void presenter.reload()}
+          initialDescription={prefillDescription}
         />
       )}
 

@@ -20,6 +20,137 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). The A5 frontend migration shipped and A6 closed: Auth/Health/Tasks/Wallet expose HTTP through CQBus, no domain depends on `ServiceProvider`, and the legacy bridge — plus its now-dead `registerServices` lifecycle hook — was deleted from the common core.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) is in progress** — D1a (`tasks→wallet`) shipped; see the D1 execution section below.
+
+## Product Directions (Candidates — June 2026)
+
+Recorded for the owner to choose from; nothing here is committed or scheduled
+**except where a direction has its own execution section below** (D1 is in
+progress). The architecture is no longer "under construction" and the UI has
+identity, so these are framed as product, not infrastructure.
+
+**Framing lens — the loop, not the module list.** The product thesis is
+**capture → decide → execute → learn**. VDP today is strong at *capture* and
+*execute*, and weak at *decide* (the synthesis surface is passive) and *learn*
+(cross-domain composition — the real differentiator — barely lives: essentially
+one signal, `wallet→tasks`). The directions are ranked by which loop stage they
+repair, not by "which module to add next". A fourth siloed module competes with
+better standalone apps; deepening the loop does not.
+
+Current state these build on: three deep, stable modules (Tasks, Wallet, Health —
+Health now covers counters, deadline goals + habit graduation, weight trend,
+mood/energy check-ins, private medical records). `/review` and `/home` already
+exist. People / Work / Study exist only as disabled demo pages. The agent layer
+is the strongest part of the product but is reactive and per-domain. Medical stays
+off the LLM by design.
+
+### D1. Densify the cross-domain fabric — *learn* — NOT a new module
+
+Highest leverage-per-effort: the differentiator's infra already exists, only one
+signal lives (`wallet→tasks` spike → task). Cheap additions with current infra:
+
+- `tasks→wallet`: completing "pay the rent" → offer to register the transaction.
+- `health→wallet`: delivery/pharmacy spend ↔ a nutrition goal / treatment.
+- **Recurring transactions** in Wallet — today all entry is manual, so stats and
+  spike detection operate on incomplete data.
+
+Reframe vs a trends dashboard: the differentiator is **signal → action**, not a
+cold analytics page.
+
+**Status (June 2026): in progress.** Slice breakdown and D1a (shipped) in the
+"D1: Cross-Domain Densification" execution section below.
+
+### D2. "Today" as a real command center — *decide*
+
+`/home` and `/review` exist but separate and passive. Unify them into one daily
+surface (morning plan + evening close) and **bring the agent onto it** — today the
+chat panel returns `null` outside an active domain, so on `/home` and `/review`
+(the two synthesis surfaces) Ctrl+K is a no-op. This is the screen opened ~20x/day;
+its passivity is the biggest waste.
+
+### D3. Activate Work / Projects — *execute → direct* — new module
+
+Strongest new-module candidate because it resolves an existing tension: tasks are
+already tagged `domain: "work"` and the Tasks prompt already punts ("if it grows in
+complexity, move it to Work"). Projects with outcome + next action + weekly focus
+turn Tasks from pure execution into direction. **Gate:** define the
+daily-task ↔ project boundary first, or the two cannibalize. Passes the New Domain
+Gate; second domain, not People.
+
+### D4. Life Goals (Goals 2.0) — *decide, top layer* — strategic layer
+
+Health already has deadline goals + goal→habit graduation. Lift that primitive to a
+**cross-module layer**: quarterly/annual objectives pulling metrics from
+health/wallet/tasks — the "north" the day-to-day ladders up to. Cheap (reuses an
+existing primitive); risk is it turns decorative if not wired to real metrics.
+
+### D5. Universal inbox + triage — *capture* — enhancer
+
+Capture anything from anywhere (thought, expense, symptom, person) → triage into the
+right module. Net-new but cheap, feeds every module. A multiplier on the capture
+habit, not a headline direction.
+
+### D6. Proactive agent (not a prettier chat) — *decide + learn* — enhancer
+
+The agent layer is excellent but reactive and per-domain. Make it proactive: morning
+brief, weekly prep, "you left X pending". Pairs naturally with D2 (it is the brain of
+the command center). Respects the medical-no-LLM rule.
+
+### Recommended sequence (owner decides)
+
+> **D1 (cross-domain density) + D2 ("Today" command center with agent) as one push
+> → D3 (Work, boundary defined first) → D4 (Goals 2.0).** D5 (inbox) and D6
+> (proactive agent) slot in opportunistically.
+
+Rationale: before opening a **fourth module**, exploit the moat already in place
+(composition) and fix the decision surface (Today is passive). **People and Study are
+explicitly deferred** — low daily composition, consistent with
+[`PRODUCT_ANALYSIS.md`](./PRODUCT_ANALYSIS.md) ("CRM with little to compose daily";
+Study "last"). Pick by which loop stage is broken, not by which module is next: today
+the broken stages are *decide* and *learn*, both fixable without new modules.
+
+## D1: Cross-Domain Densification (in progress — June 2026)
+
+Owner-directed promotion of D1 from candidate to active work. Same discipline as the
+Health series: one full-stack slice at a time, each shipping before the next. The
+differentiator is **signal → action**; the gap was directionality — only
+`wallet→tasks` (spending spike) lived. Three slices, in order:
+
+### D1a. tasks→wallet — "register the expense?" — SHIPPED June 2026
+
+Completing a payment-intent task surfaces a wallet `suggestion` to register the
+expense, deep-linked to a pre-filled quick-add. Verified in the owner's session
+(both the isolated deep-link prefill and the live cross-domain toast).
+
+- **Architectural move — cross-domain is no longer Tasks-only.** The reaction (a
+  wallet insight) belongs to Wallet, so it lives in
+  `wallet/services/WalletCrossDomainEventHandlers.ts` subscribing to
+  `tasks.task.completed`. AGENTS.md "Cross-Domain Behavior" now states the general
+  rule: the module that owns the reaction's output owns the subscriber. This closes
+  the "directionality" gap flagged in `PRODUCT_ANALYSIS.md`.
+- `TaskCompleted` enriched with `title`/`domain` (the event carries its payload; the
+  subscriber does not read back). Payment intent is a conservative Spanish-verb
+  title heuristic in `wallet/services/payment-intent.ts` (infinitive, voseo
+  imperative, first-person past; whole-word so "comprobar" ≠ "comprar").
+- **Suggest, never auto-write** (same principle as H1): the amount is unknown, so
+  the wallet never creates the transaction — it offers, via
+  `?registrar-gasto=<title>` opening the quick-add pre-filled with the task title.
+- Surface (owner decision): the live SSE toast was made actionable —
+  `actionHref`/`actionLabel` now render as a button in `toast-container.tsx`. A
+  durable surface (the suggestion is a 6s toast today, no persistent list since
+  wallet insights have no GET) was **explicitly deferred** as a follow-up.
+
+### D1b. health→wallet — spend ↔ goal/treatment — NEXT
+
+Delivery/pharmacy spend ↔ a nutrition goal or treatment (wallet→health and/or
+health→wallet). Needs a category-to-intent mapping; more product nuance than D1a.
+
+### D1c. Recurring transactions — NOT STARTED
+
+Rent/subscriptions/utilities as recurring entries so stats and spike detection stop
+operating on incomplete data — the highest data-quality payoff, and the largest
+slice (new entity + lazy materialization on overview load, no scheduler, per the
+"Insights And Time-Based Signals" rule in AGENTS.md).
 
 ## Architecture Track (COMPLETE — June 2026)
 

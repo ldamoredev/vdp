@@ -286,20 +286,27 @@ Visual identity ("tinta iris" — June 2026 design pass, all tokens in `apps/web
 
 ## Cross-Domain Behavior
 
-Live cross-domain signals, all handled by Tasks through `CrossDomainEventHandlers`:
+Cross-domain signals are emitted by a source module and handled by the module that **owns the reaction's output**. Most reactions create tasks, so they live in Tasks (`tasks/services/CrossDomainEventHandlers.ts`); when the reaction's output belongs to another domain, that domain owns the subscriber (e.g. a wallet-side suggestion lives in `wallet/services/WalletCrossDomainEventHandlers.ts`). The direction is no longer Tasks-only.
+
+Live signals handled by Tasks (`CrossDomainEventHandlers`):
 
 - `wallet.spending.spike` → high-priority review task + warning insight.
 - `health.habit.streak_broken` → habit recovery task + warning insight.
 - `health.habit.milestone` → achievement insight.
 - `health.counter.milestone` → achievement insight (includes money-not-spent when the counter has a daily cost).
+- `health.goal.deadline_approaching` → decision task + warning insight.
+
+Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
+
+- `tasks.task.completed` with a payment-intent title → `suggestion` insight offering to register the expense, deep-linked to a pre-filled quick-add (`?registrar-gasto=<title>`). Detection is the title heuristic in `wallet/services/payment-intent.ts`; the wallet never auto-writes the transaction (the amount is unknown — suggest, don't write).
 
 Future cross-domain signals should follow the same pattern:
 
-- Emit a domain event from the source module (`{domain}/domain/events/`, payload type exported — Tasks imports payload types directly; that coupling is accepted).
-- Subscribe in `tasks/services/CrossDomainEventHandlers.ts` via `eventBus`.
-- Run actions through CQBus commands/queries or reusable services, never direct DB writes. Task creation inside handlers is fire-and-forget with a `.catch` + logger (insight must land even if the task fails).
+- Emit a domain event from the source module (`{domain}/domain/events/`, payload type exported and imported directly by the subscriber; that coupling is accepted). Carry enough payload for the subscriber to act without reading back.
+- Subscribe in the reaction-owning module's `*CrossDomainEventHandlers` via `eventBus`.
+- Run actions through CQBus commands/queries or reusable services, never direct DB writes. Side effects inside handlers are fire-and-forget with a `.catch`/try-catch + logger (the insight must land even if a follow-on action fails).
 - Insight metadata supports `actionHref`/`actionLabel` for deep links.
-- Tests on both sides: emission in the source module's unit tests, handling in `CrossDomainEventHandlers.test.ts`, and the full flow in the source module's e2e (note: poll briefly for the created task — handler task creation is async).
+- Tests on both sides: emission in the source module's unit tests, handling in the owning module's `*CrossDomainEventHandlers.test.ts`, and the full flow in an e2e that boots both modules (note: poll briefly — handler side effects are async).
 
 ## New Domain Gate
 

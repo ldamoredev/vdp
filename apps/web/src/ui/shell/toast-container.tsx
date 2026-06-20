@@ -1,6 +1,13 @@
+import { useNavigate } from "react-router";
+
 import { useNotifications } from "@/lib/notification-store";
 import { notificationStore, type Notification } from "@/lib/notification-store";
 import { X, Trophy, AlertTriangle, Lightbulb } from "lucide-react";
+
+function readString(metadata: Notification["metadata"], key: string): string | null {
+  const value = metadata?.[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
 
 const iconMap = {
   achievement: Trophy,
@@ -29,6 +36,10 @@ const colorMap = {
 function Toast({ notification }: { notification: Notification }) {
   const Icon = iconMap[notification.type];
   const colors = colorMap[notification.type];
+  const navigate = useNavigate();
+
+  const actionHref = readString(notification.metadata, "actionHref");
+  const actionLabel = readString(notification.metadata, "actionLabel");
 
   return (
     <div
@@ -47,6 +58,19 @@ function Toast({ notification }: { notification: Notification }) {
         <p className="text-xs text-[var(--foreground-muted)] mt-1 line-clamp-2">
           {notification.message}
         </p>
+
+        {actionHref && actionLabel && (
+          <button
+            type="button"
+            onClick={() => {
+              navigate(actionHref);
+              notificationStore.dismiss(notification.id);
+            }}
+            className="mt-2 inline-flex items-center rounded-lg bg-[var(--hover-overlay-strong)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent-glow)] hover:text-[var(--accent)]"
+          >
+            {actionLabel}
+          </button>
+        )}
       </div>
 
       <button

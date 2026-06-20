@@ -145,11 +145,15 @@ describe('TaskModuleRuntime', () => {
             userId: 'user-a',
             taskId: 'task-a',
             scheduledDate: '2026-04-06',
+            title: 'Test task',
+            domain: null,
         }));
         await deps.eventBus.emit(new TaskCompleted({
             userId: 'user-b',
             taskId: 'task-b',
             scheduledDate: '2026-04-06',
+            title: 'Test task',
+            domain: null,
         }));
 
         expect(userAResponse.write).toHaveBeenCalledWith(

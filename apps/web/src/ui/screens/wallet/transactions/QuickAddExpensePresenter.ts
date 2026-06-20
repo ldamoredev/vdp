@@ -102,6 +102,7 @@ export class QuickAddExpensePresenter extends PresenterBase<QuickAddExpenseViewM
   constructor(
     onChange: ChangeFunc,
     private readonly core: Core,
+    private readonly initialDescription: string = "",
   ) {
     super(onChange);
   }
@@ -212,7 +213,7 @@ export class QuickAddExpensePresenter extends PresenterBase<QuickAddExpenseViewM
       accountId,
       categoryId,
       currency: pickDefaultCurrency(this.accounts, accountId),
-      description: "",
+      description: this.initialDescription,
       date: getTodayISO(),
     };
   }

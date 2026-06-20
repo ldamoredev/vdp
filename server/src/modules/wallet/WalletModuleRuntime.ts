@@ -37,6 +37,7 @@ import { InvestmentRepository } from './domain/InvestmentRepository';
 import { ExchangeRateRepository } from './domain/ExchangeRateRepository';
 
 import { DetectSpendingSpike } from './services/DetectSpendingSpike';
+import { WalletCrossDomainEventHandlers } from './services/WalletCrossDomainEventHandlers';
 import { WalletEventHandlers } from './services/WalletEventHandlers';
 import { WalletInsightsStore } from './services/WalletInsightsStore';
 
@@ -146,6 +147,13 @@ export class WalletModuleRuntime {
             this.deps.logger,
         );
         handlers.subscribe();
+
+        new WalletCrossDomainEventHandlers(
+            this.deps.eventBus,
+            this.deps.insightsStore,
+            this.deps.logger,
+        ).subscribe();
+
         this.subscribeInsightsToSSE();
     }
 

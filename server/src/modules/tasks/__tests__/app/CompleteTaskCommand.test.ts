@@ -41,7 +41,12 @@ describe('CompleteTaskCommand', () => {
         ctx.eventBus.onAll((event) => {
             emittedEvents.push(event);
         });
-        ctx.tasks.seed([createTask({ id: 'task-1', scheduledDate: '2026-06-17' })]);
+        ctx.tasks.seed([createTask({
+            id: 'task-1',
+            scheduledDate: '2026-06-17',
+            title: 'Pagar el alquiler',
+            domain: 'finanzas',
+        })]);
 
         await new CompleteTaskCommandHandler(ctx.tasks, ctx.eventBus)
             .handle(new CompleteTaskCommand('task-1'), identity);
@@ -53,6 +58,8 @@ describe('CompleteTaskCommand', () => {
                 userId: 'user-1',
                 taskId: 'task-1',
                 scheduledDate: '2026-06-17',
+                title: 'Pagar el alquiler',
+                domain: 'finanzas',
             },
         });
     });

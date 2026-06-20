@@ -268,6 +268,35 @@ describe("QuickAddExpensePresenter", () => {
     }
   });
 
+  it("pre-fills the description from a deep-link suggestion and keeps it through load", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000-03:00"));
+    try {
+      const gateway = new FakeWalletGateway();
+      vi.spyOn(gateway, "getAccounts").mockResolvedValue([account({ id: "cash", name: "Caja", currency: "ARS" })]);
+      vi.spyOn(gateway, "getCategories").mockResolvedValue([category({ id: "food", name: "Comida", type: "expense" })]);
+      vi.spyOn(gateway, "getTransactions").mockResolvedValue({ transactions: [], total: 0 });
+      const createTransaction = vi.spyOn(gateway, "createTransaction");
+      const presenter = new QuickAddExpensePresenter(vi.fn(), buildCore(gateway), "Pagar el alquiler");
+      presenter.init(undefined);
+
+      presenter.start();
+      await flush();
+
+      // The async loadDefaults must not clobber the seeded description.
+      expect(presenter.model.form.description).toBe("Pagar el alquiler");
+
+      presenter.setAmount("50000");
+      await presenter.submit();
+
+      expect(createTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({ description: "Pagar el alquiler" }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("validates amount and account before quick-adding", async () => {
     const gateway = new FakeWalletGateway();
     vi.spyOn(gateway, "getAccounts").mockResolvedValue([]);

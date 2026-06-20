@@ -35,6 +35,8 @@ export class CompleteTaskCommandHandler implements RequestHandler<CompleteTaskCo
             userId,
             taskId: saved.id,
             scheduledDate: saved.scheduledDate,
+            title: saved.title,
+            domain: saved.domain,
         }));
 
         return saved;

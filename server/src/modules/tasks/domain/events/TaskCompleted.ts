@@ -4,6 +4,8 @@ export type TaskCompletedPayload = {
     readonly userId: string;
     readonly taskId: string;
     readonly scheduledDate: string;
+    readonly title: string;
+    readonly domain: string | null;
 };
 
 /**

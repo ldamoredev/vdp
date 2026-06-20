@@ -8,10 +8,11 @@ interface QuickAddExpenseSheetProps {
   open: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  initialDescription?: string;
 }
 
-export function QuickAddExpenseSheet({ open, onClose, onSaved }: QuickAddExpenseSheetProps) {
-  const presenter = useQuickAddExpensePresenter();
+export function QuickAddExpenseSheet({ open, onClose, onSaved, initialDescription }: QuickAddExpenseSheetProps) {
+  const presenter = useQuickAddExpensePresenter(initialDescription);
   const vm = presenter.model;
 
   useEffect(() => {
