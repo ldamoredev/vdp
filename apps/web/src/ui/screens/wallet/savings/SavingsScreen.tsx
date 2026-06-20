@@ -26,7 +26,12 @@ export function SavingsScreen() {
       {vm.form && <SavingsForm vm={vm.form} presenter={presenter} />}
 
       {vm.isLoading ? (
-        <StateCard size="lg" className="glass-card-static border-none" description="Cargando metas..." />
+        <StateCard
+          state="loading"
+          size="lg"
+          className="glass-card-static border-none"
+          aria-label="Cargando metas"
+        />
       ) : vm.emptyState ? (
         <div className="glass-card-static border-none">
           <WalletEmptyState {...vm.emptyState} />

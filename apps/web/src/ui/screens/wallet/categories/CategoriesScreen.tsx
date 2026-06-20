@@ -26,7 +26,12 @@ export function CategoriesScreen() {
       {vm.form && <CategoryForm vm={vm.form} presenter={presenter} />}
 
       {vm.isLoading ? (
-        <StateCard size="lg" className="glass-card-static border-none" description="Cargando categorias..." />
+        <StateCard
+          state="loading"
+          size="lg"
+          className="glass-card-static border-none"
+          aria-label="Cargando categorías"
+        />
       ) : vm.emptyState ? (
         <div className="glass-card-static border-none">
           <WalletEmptyState {...vm.emptyState} />

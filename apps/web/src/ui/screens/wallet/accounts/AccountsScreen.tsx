@@ -26,7 +26,12 @@ export function AccountsScreen() {
       {vm.form && <AccountForm vm={vm.form} presenter={presenter} />}
 
       {vm.isLoading ? (
-        <StateCard size="lg" className="glass-card-static border-none" description="Cargando cuentas..." />
+        <StateCard
+          state="loading"
+          size="lg"
+          className="glass-card-static border-none"
+          aria-label="Cargando cuentas"
+        />
       ) : vm.emptyState ? (
         <div className="glass-card-static border-none">
           <WalletEmptyState {...vm.emptyState} />

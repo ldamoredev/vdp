@@ -17,14 +17,14 @@ import type {
 import { walletScreenIntro } from "../wallet-copy";
 
 const COLORS = [
-  "#3B82F6",
-  "#22C55E",
-  "#EF4444",
-  "#F59E0B",
-  "#A855F7",
-  "#EC4899",
-  "#06B6D4",
-  "#84CC16",
+  "var(--accent)",
+  "var(--accent-green)",
+  "var(--accent-red)",
+  "var(--accent-amber)",
+  "var(--accent-purple)",
+  "var(--rose-soft-text)",
+  "var(--cyan-soft-text)",
+  "var(--green-soft-text)",
 ];
 
 /**

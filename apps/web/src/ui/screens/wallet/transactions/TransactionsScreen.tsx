@@ -133,12 +133,11 @@ function TransactionsTable({
     <div className="glass-card-static overflow-hidden">
       {vm.isLoading ? (
         <StateCard
+          state="loading"
           size="lg"
           className="border-none"
-          description="Cargando..."
-          icon={
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-          }
+          skeletonLines={4}
+          aria-label="Cargando movimientos"
         />
       ) : vm.emptyState ? (
         <WalletEmptyState {...vm.emptyState} />

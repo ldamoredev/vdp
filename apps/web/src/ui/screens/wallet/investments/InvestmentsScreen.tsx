@@ -34,7 +34,12 @@ export function InvestmentsScreen() {
       {vm.form && <InvestmentForm vm={vm.form} presenter={presenter} />}
 
       {vm.isLoading ? (
-        <StateCard size="lg" className="glass-card-static border-none" description="Cargando inversiones..." />
+        <StateCard
+          state="loading"
+          size="lg"
+          className="glass-card-static border-none"
+          aria-label="Cargando inversiones"
+        />
       ) : vm.emptyState ? (
         <div className="glass-card-static border-none">
           <WalletEmptyState {...vm.emptyState} />

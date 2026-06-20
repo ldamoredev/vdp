@@ -1,12 +1,19 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 type Tone = "default" | "soft";
 type Size = "sm" | "md" | "lg";
+type State = "empty" | "loading" | "error";
 
 const containerClassName: Record<Tone, string> = {
   default:
     "rounded-xl border border-dashed border-[var(--divider)] bg-[var(--hover-overlay)]",
   soft: "rounded-2xl border border-dashed border-[var(--divider)] bg-[var(--hover-overlay)]",
+};
+
+const stateClassName: Record<State, string> = {
+  empty: "",
+  loading: "",
+  error: "border-[var(--red-soft-border)] bg-[var(--red-soft-bg)]",
 };
 
 const paddingClassName: Record<Size, string> = {
@@ -22,7 +29,10 @@ export function StateCard({
   children,
   tone = "default",
   size = "md",
+  state = "empty",
+  skeletonLines = 2,
   className = "",
+  ...rest
 }: {
   icon?: ReactNode;
   title?: ReactNode;
@@ -30,10 +40,13 @@ export function StateCard({
   children?: ReactNode;
   tone?: Tone;
   size?: Size;
+  state?: State;
+  skeletonLines?: number;
   className?: string;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   const classes = [
     containerClassName[tone],
+    stateClassName[state],
     paddingClassName[size],
     "text-center",
     className,
@@ -42,17 +55,34 @@ export function StateCard({
     .join(" ");
 
   return (
-    <div className={classes}>
-      {icon ? <div className="mx-auto mb-4 flex w-fit">{icon}</div> : null}
-      {title ? (
+    <div
+      {...rest}
+      className={classes}
+      aria-busy={state === "loading" ? true : rest["aria-busy"]}
+      role={state === "loading" ? "status" : rest.role}
+    >
+      {state === "loading" ? (
+        <div className="mx-auto flex max-w-xs flex-col items-center gap-2" aria-hidden="true">
+          {Array.from({ length: skeletonLines }).map((_, index) => (
+            <div
+              key={index}
+              className={`skeleton h-3 ${index === 0 ? "w-40" : "w-full"}`}
+            />
+          ))}
+        </div>
+      ) : null}
+      {state !== "loading" && icon ? (
+        <div className="mx-auto mb-4 flex w-fit">{icon}</div>
+      ) : null}
+      {state !== "loading" && title ? (
         <p className="text-sm font-medium text-[var(--foreground)]">{title}</p>
       ) : null}
-      {description ? (
+      {state !== "loading" && description ? (
         <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
           {description}
         </p>
       ) : null}
-      {children}
+      {state !== "loading" ? children : null}
     </div>
   );
 }

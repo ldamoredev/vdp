@@ -25,10 +25,10 @@ import { SanityStrip } from "../components/sanity-strip";
 import { useStatsPresenter } from "./useStatsPresenter";
 
 const TOOLTIP_STYLE = {
-  background: "rgba(15, 23, 42, 0.92)",
+  background: "var(--floating-panel)",
   backdropFilter: "blur(16px)",
-  border: "1px solid rgba(148, 163, 184, 0.12)",
-  borderRadius: "12px",
+  border: "1px solid var(--floating-panel-border)",
+  borderRadius: "var(--radius-sm)",
   fontSize: "12px",
 } as const;
 
@@ -64,7 +64,7 @@ function MonthlyTrendPanel({ vm }: { vm: MonthlyTrendVM }) {
       </div>
 
       {vm.isLoading ? (
-        <ChartPlaceholder description="Cargando..." />
+        <ChartPlaceholder state="loading" description="Cargando tendencia mensual" />
       ) : vm.isEmpty ? (
         <ChartPlaceholder description="No hay datos suficientes" />
       ) : (
@@ -85,8 +85,8 @@ function MonthlyTrendPanel({ vm }: { vm: MonthlyTrendVM }) {
                 name === "income" ? "Ingresos" : "Gastos",
               ]}
             />
-            <Bar dataKey="income" fill="#22C55E" radius={[6, 6, 0, 0]} />
-            <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="income" fill="var(--accent-green)" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="expense" fill="var(--accent-red)" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}
@@ -105,7 +105,7 @@ function DollarRatesPanel({ vm }: { vm: DollarRatesVM }) {
       </div>
 
       {vm.isLoading ? (
-        <ChartPlaceholder description="Cargando..." />
+        <ChartPlaceholder state="loading" description="Cargando cotizaciones" />
       ) : vm.isEmpty ? (
         <ChartPlaceholder description="No hay cotizaciones cargadas" />
       ) : (
@@ -147,7 +147,7 @@ function ByCategoryPanel({ vm }: { vm: ByCategoryVM }) {
       </div>
 
       {vm.isLoading ? (
-        <ChartPlaceholder description="Cargando..." />
+        <ChartPlaceholder state="loading" description="Cargando gastos por categoría" />
       ) : vm.isEmpty ? (
         <ChartPlaceholder description="No hay datos suficientes" />
       ) : (
@@ -219,10 +219,21 @@ function CategoryLegendRow({ vm }: { vm: CategorySliceVM }) {
   );
 }
 
-function ChartPlaceholder({ description }: { description: string }) {
+function ChartPlaceholder({
+  description,
+  state = "empty",
+}: {
+  description: string;
+  state?: "empty" | "loading";
+}) {
   return (
     <div className="flex h-72 items-center justify-center">
-      <StateCard size="sm" description={description} />
+      <StateCard
+        state={state}
+        size="sm"
+        description={state === "loading" ? undefined : description}
+        aria-label={state === "loading" ? description : undefined}
+      />
     </div>
   );
 }

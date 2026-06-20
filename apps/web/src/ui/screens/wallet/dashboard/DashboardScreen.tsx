@@ -142,9 +142,24 @@ function AccountsGrid({ vm }: { vm: DashboardViewModel }) {
   if (vm.isLoadingAccounts) {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StateCard size="sm" className="glass-card-static border-none" description="Cargando cuentas..." />
-        <StateCard size="sm" className="glass-card-static border-none" description="Cargando cuentas..." />
-        <StateCard size="sm" className="glass-card-static border-none" description="Cargando cuentas..." />
+        <StateCard
+          state="loading"
+          size="sm"
+          className="glass-card-static border-none"
+          aria-label="Cargando cuentas"
+        />
+        <StateCard
+          state="loading"
+          size="sm"
+          className="glass-card-static border-none"
+          aria-label="Cargando cuentas"
+        />
+        <StateCard
+          state="loading"
+          size="sm"
+          className="glass-card-static border-none"
+          aria-label="Cargando cuentas"
+        />
       </div>
     );
   }
@@ -199,7 +214,12 @@ function RecentTransactions({
       }
     >
       {vm.isLoadingRecentTransactions ? (
-        <StateCard size="sm" className="border-none" description="Cargando movimientos..." />
+        <StateCard
+          state="loading"
+          size="sm"
+          className="border-none"
+          aria-label="Cargando movimientos"
+        />
       ) : vm.recentTransactions.length === 0 ? (
         <WalletEmptyState
           title="Todavía no hay movimientos"

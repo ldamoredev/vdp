@@ -30,7 +30,12 @@ export function MedicalScreen() {
       {vm.form && <RecordForm vm={vm.form} presenter={presenter} />}
 
       {vm.isLoading ? (
-        <StateCard size="lg" className="glass-card-static border-none" description="Cargando fichas..." />
+        <StateCard
+          state="loading"
+          size="lg"
+          className="glass-card-static border-none"
+          aria-label="Cargando fichas médicas"
+        />
       ) : vm.emptyState ? (
         <div className="glass-card-static border-none">
           <StateCard size="lg" title={vm.emptyState.title} description={vm.emptyState.body} />
