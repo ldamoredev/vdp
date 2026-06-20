@@ -37,7 +37,7 @@ Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks pro
 
 Owner-pending items (do not attempt from a local session):
 
-- Re-deploy production as a single Render service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
+- Re-deploy production as a single Railway service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
 - Production has NOT yet run migrations `0001`–`0005`; they must be applied on the next deploy before the new features work there.
 
 ## Skills

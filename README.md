@@ -13,8 +13,7 @@ The long-term product vision still includes `Health`, `People`, `Work`, and `Stu
 
 | Service | URL | Provider |
 |---------|-----|----------|
-| Backend | https://vdp-qr8o.onrender.com | Render (Docker, free tier) |
-| Frontend | https://vdp-web.vercel.app | Vercel |
+| App (SPA + API) | https://vdpapp.com.ar | Railway (Docker, single service) |
 | Database | PostgreSQL + pgvector | Supabase (free tier) |
 | LLM | Groq (OpenAI-compatible) | Free tier |
 

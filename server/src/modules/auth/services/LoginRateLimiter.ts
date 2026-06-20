@@ -10,7 +10,7 @@ type FailureWindow = {
  * In-memory failed-login limiter, keyed by lowercased email.
  *
  * Keying by email (not IP) protects the single real account against
- * credential stuffing from many sources; behind the Vercel/Render proxies
+ * credential stuffing from many sources; behind the Railway proxy
  * the client IP is unreliable anyway. Trade-off: a flood of failures can
  * lock the owner out for one window — acceptable for a single-user tool
  * where sessions are long-lived. State is per-process and resets on

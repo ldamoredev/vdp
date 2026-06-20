@@ -32,7 +32,7 @@ validación de fechas en tools del agente) lo dejó en estado de producción rea
 se apoya en `TaskInsightsStore`, que es **in-memory** y lo declara explícitamente
 (`server/src/modules/tasks/services/TaskInsightsStore.ts:12`, con TODO "v3: Persist to DB").
 Las rachas se reconstruyen al boot (`RebuildStreaks`, commit 3ba958f), pero los insights no:
-un deploy en Render borra toda señal pendiente. El usuario no puede confiar en que "lo que el
+un deploy en Railway borra toda señal pendiente. El usuario no puede confiar en que "lo que el
 sistema detectó" siga ahí mañana. Para una herramienta cuya tesis es *acumular* contexto sobre
 tu vida, la capa de inteligencia es amnésica.
 
@@ -227,7 +227,7 @@ Fase 2 (Auth hardening) y Fase 3 (Expansión).
    trabajo, no una fase.
 2. **Timeboxear Auth hardening.** Auth V1 está completo y validado (sesiones server-managed,
    revocación verificada en vivo, audit logs). Para single-user, la Fase 2 se reduce a: rate
-   limiting de login fallido, smoke de sesión en producción (Vercel/Render), y cerrar la decisión
+   limiting de login fallido, smoke de sesión en producción (Railway), y cerrar la decisión
    pendiente sobre `RequestAuditLogger` (está construido pero nunca se instancia —
    `server/src/modules/common/http/RequestAuditLogger.ts` — cablearlo o borrarlo, junto con
    `SkillRegistry` que está en la misma situación). No merece una fase abierta; merece una sesión.
