@@ -1,9 +1,7 @@
 import { ArrowRight, Check, ListTodo, MoreHorizontal, Trash2, X } from "lucide-react";
 
 import type { TaskRowVM } from "@/ui/models/tasks/ExecutionQueueViewModel";
-import { CarryOverBadge } from "@/ui/screens/tasks/components/carry-over-badge";
-import { TaskDomainBadge } from "@/ui/screens/tasks/components/task-domain-badge";
-import { TaskPriorityBadge } from "@/ui/screens/tasks/components/task-priority-badge";
+import { TaskBadges } from "@/ui/screens/tasks/components/task-badges";
 
 export interface TaskRowActions {
   onComplete: (id: string) => void;
@@ -16,11 +14,7 @@ export interface TaskRowActions {
 
 function Badges({ task }: { task: TaskRowVM }) {
   return (
-    <>
-      <TaskPriorityBadge priority={task.priority} />
-      <TaskDomainBadge domain={task.domain} />
-      <CarryOverBadge count={task.carryOverCount} />
-    </>
+    <TaskBadges priority={task.priority} domain={task.domain} carryOverCount={task.carryOverCount} />
   );
 }
 
