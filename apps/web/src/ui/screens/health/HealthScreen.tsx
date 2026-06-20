@@ -2,6 +2,7 @@ import { HeartPulse } from "lucide-react";
 
 import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
+import { BoardSection } from "@/ui/screens/tasks/board/BoardSection";
 import { CountersSection } from "./counters/CountersSection";
 import { GoalsSection } from "./goals/GoalsSection";
 import { HabitsSection } from "./habits/HabitsSection";
@@ -27,6 +28,7 @@ export function HealthScreen() {
         <WeightSection />
         <GoalsSection />
         <CountersSection />
+        <BoardSection domain="health" />
       </ModulePage>
     </HealthEventsProvider>
   );
