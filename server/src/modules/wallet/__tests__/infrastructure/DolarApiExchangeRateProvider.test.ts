@@ -22,7 +22,10 @@ describe('DolarApiExchangeRateProvider', () => {
 
         const rates = await provider.fetchDollarRates();
 
-        expect(fetchFn).toHaveBeenCalledWith('https://example.test/v1/dolares');
+        expect(fetchFn).toHaveBeenCalledWith(
+            'https://example.test/v1/dolares',
+            expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        );
         expect(rates).toEqual([
             { fromCurrency: 'USD', toCurrency: 'ARS', rate: '950.00', type: 'official', date: '2026-06-17' },
             { fromCurrency: 'USD', toCurrency: 'ARS', rate: '1300.00', type: 'blue', date: '2026-06-17' },
@@ -36,5 +39,12 @@ describe('DolarApiExchangeRateProvider', () => {
         const provider = new DolarApiExchangeRateProvider('https://example.test', fetchFn as never);
 
         await expect(provider.fetchDollarRates()).rejects.toThrow(/503/);
+    });
+
+    it('wraps network/timeout failures in a clear error', async () => {
+        const fetchFn = vi.fn().mockRejectedValue(new DOMException('The operation timed out', 'TimeoutError'));
+        const provider = new DolarApiExchangeRateProvider('https://example.test', fetchFn as never);
+
+        await expect(provider.fetchDollarRates()).rejects.toThrow(/dolarapi request failed/i);
     });
 });

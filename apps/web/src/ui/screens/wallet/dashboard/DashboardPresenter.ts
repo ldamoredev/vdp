@@ -124,17 +124,19 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
     void this.bootstrap();
   }
 
-  /** Pull a fresh MEP quote if stale, then load with rates ready for conversion. */
+  /** Load right away, then refresh a stale MEP quote in the background and
+   * reload only the summary — the external quote never blocks first paint. */
   private async bootstrap(): Promise<void> {
-    await this.ensureFreshRates();
     await this.reload();
+    await this.ensureFreshRates();
   }
 
   private async ensureFreshRates(): Promise<void> {
     if (this.ratesEnsured) return;
     this.ratesEnsured = true;
     try {
-      await this.core.execute(new EnsureFreshDollarRates());
+      const refreshed = await this.core.execute(new EnsureFreshDollarRates());
+      if (refreshed) await this.loadStats();
     } catch {
       // A failed refresh surfaces later as statsError when conversion can't run.
     }

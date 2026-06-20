@@ -25,12 +25,22 @@ export class DolarApiExchangeRateProvider extends ExchangeRateProvider {
         private readonly baseUrl = 'https://dolarapi.com',
         private readonly fetchFn: typeof fetch = fetch,
         private readonly today: () => string = todayISO,
+        private readonly timeoutMs = 5000,
     ) {
         super();
     }
 
     async fetchDollarRates(): Promise<FetchedExchangeRate[]> {
-        const response = await this.fetchFn(`${this.baseUrl}/v1/dolares`);
+        let response: Response;
+        try {
+            response = await this.fetchFn(`${this.baseUrl}/v1/dolares`, {
+                signal: AbortSignal.timeout(this.timeoutMs),
+            });
+        } catch (err: unknown) {
+            // Time-box the external call so a hung dolarapi never blocks the
+            // request (and, via the web lazy refresh, the wallet screens).
+            throw new Error(`dolarapi request failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
         if (!response.ok) {
             throw new Error(`dolarapi responded ${response.status}`);
         }

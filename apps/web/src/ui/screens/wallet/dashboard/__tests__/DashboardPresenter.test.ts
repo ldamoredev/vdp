@@ -5,6 +5,7 @@ import { Core } from "@/core/Core";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { Transaction } from "@/core/domain/wallet/Transaction";
+import { getTodayISO } from "@/lib/format";
 import {
   __resetPresentationCurrencyForTests,
   getPresentationCurrency,
@@ -199,6 +200,31 @@ describe("DashboardPresenter", () => {
       "-$ 150,00",
       "$ 850,00",
     ]);
+  });
+
+  it("refreshes a stale MEP rate on start and reloads the summary", async () => {
+    const { presenter, gateway, getStatsSummary } = build();
+    vi.spyOn(gateway, "getExchangeRates").mockResolvedValue([]);
+    const refresh = vi.spyOn(gateway, "refreshExchangeRates");
+
+    presenter.start();
+    await flush();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(getStatsSummary.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does not refresh when today's MEP rate is already present", async () => {
+    const { presenter, gateway } = build();
+    vi.spyOn(gateway, "getExchangeRates").mockResolvedValue([
+      { id: "mep", fromCurrency: "USD", toCurrency: "ARS", rate: "1000", type: "mep", date: getTodayISO() },
+    ]);
+    const refresh = vi.spyOn(gateway, "refreshExchangeRates");
+
+    presenter.start();
+    await flush();
+
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it("opens and saves recent transaction edits, then reloads", async () => {

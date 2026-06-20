@@ -70,17 +70,19 @@ export class StatsPresenter extends PresenterBase<StatsViewModel> {
     void this.bootstrap();
   }
 
-  /** Pull a fresh MEP quote if stale, then load with rates ready for conversion. */
+  /** Load right away, then refresh a stale MEP quote in the background and
+   * reload — the external quote never blocks first paint. */
   private async bootstrap(): Promise<void> {
-    await this.ensureFreshRates();
     await this.load();
+    await this.ensureFreshRates();
   }
 
   private async ensureFreshRates(): Promise<void> {
     if (this.ratesEnsured) return;
     this.ratesEnsured = true;
     try {
-      await this.core.execute(new EnsureFreshDollarRates());
+      const refreshed = await this.core.execute(new EnsureFreshDollarRates());
+      if (refreshed) await this.load();
     } catch {
       // A failed refresh surfaces later as the error state when conversion fails.
     }

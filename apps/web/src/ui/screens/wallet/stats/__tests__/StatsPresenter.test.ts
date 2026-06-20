@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Core } from "@/core/Core";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, getTodayISO } from "@/lib/format";
 import {
   __resetPresentationCurrencyForTests,
   getPresentationCurrency,
@@ -209,6 +209,31 @@ describe("StatsPresenter", () => {
       income: 1,
       expense: 0.4,
     });
+  });
+
+  it("refreshes a stale MEP rate on start and reloads the aggregates", async () => {
+    const { presenter, gateway } = build();
+    vi.mocked(gateway.getExchangeRates).mockResolvedValue([]);
+    const refresh = vi.spyOn(gateway, "refreshExchangeRates");
+
+    presenter.start();
+    await flush();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(gateway.getStatsByCategory).mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does not refresh when today's MEP rate is already present", async () => {
+    const { presenter, gateway } = build();
+    vi.mocked(gateway.getExchangeRates).mockResolvedValue([
+      { id: "mep", fromCurrency: "USD", toCurrency: "ARS", rate: "1000", type: "mep", date: getTodayISO() },
+    ]);
+    const refresh = vi.spyOn(gateway, "refreshExchangeRates");
+
+    presenter.start();
+    await flush();
+
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it("surfaces an error instead of stale aggregates when the conversion fails", async () => {
