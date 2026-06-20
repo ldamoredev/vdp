@@ -24,6 +24,9 @@ export default defineConfig({
             "**/__tests__/domain/**/*.test.ts",
             "**/__tests__/services/**/*.test.ts",
             "**/__tests__/observability/**/*.test.ts",
+            // Pure infrastructure adapters (e.g. external API clients with an
+            // injected fetch). DB-backed repos stay under integration/.
+            "**/__tests__/infrastructure/**/*.test.ts",
           ],
         },
       },

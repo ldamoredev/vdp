@@ -25,9 +25,19 @@ export function createWalletIntelligenceTools(
             description:
                 'Detect unusual spending categories this week compared to the user’s recent baseline. ' +
                 'Use this when the user asks about overspending, unusual expenses, or where to pay attention.',
-            inputSchema: EMPTY_OBJECT_SCHEMA,
-            execute: async () => {
-                const anomalies = await bus.execute(new GetSpendingAnomaliesQuery(), executionContext());
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    currency: {
+                        type: 'string',
+                        enum: ['ARS', 'USD'],
+                        description: 'Presentation currency for anomaly amounts. Default: ARS.',
+                    },
+                },
+                required: [],
+            },
+            execute: async (input) => {
+                const anomalies = await bus.execute(new GetSpendingAnomaliesQuery(input.currency), executionContext());
 
                 if (anomalies.length === 0) {
                     return { message: 'No spending anomalies detected this week.', anomalies: [] };
@@ -53,9 +63,19 @@ export function createWalletIntelligenceTools(
             description:
                 'Compare this week versus last week by category and label each trend as up, down, or stable. ' +
                 'Use this when the user asks how their spending is evolving.',
-            inputSchema: EMPTY_OBJECT_SCHEMA,
-            execute: async () => {
-                const trends = await bus.execute(new GetCategoryTrendsQuery(), executionContext());
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    currency: {
+                        type: 'string',
+                        enum: ['ARS', 'USD'],
+                        description: 'Presentation currency for trend amounts. Default: ARS.',
+                    },
+                },
+                required: [],
+            },
+            execute: async (input) => {
+                const trends = await bus.execute(new GetCategoryTrendsQuery(input.currency), executionContext());
 
                 if (trends.length === 0) {
                     return { message: 'No category trends available yet.', trends: [] };

@@ -3,11 +3,18 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 import { localDateISO } from '../../common/base/time/dates';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { CategoryRepository } from '../domain/CategoryRepository';
+import { ExchangeRateRepository } from '../domain/ExchangeRateRepository';
 import { TransactionRepository } from '../domain/TransactionRepository';
+import {
+    CurrencyConverter,
+    DEFAULT_EXCHANGE_RATE_TYPE,
+    DEFAULT_PRESENTATION_CURRENCY,
+} from '../services/CurrencyConverter';
 
 export type CategoryStat = {
     readonly categoryId: string | null;
     readonly categoryName: string;
+    readonly currency: string;
     readonly total: number;
     readonly count: number;
 };
@@ -16,6 +23,8 @@ export class GetSpendingByCategoryQuery extends Query<CategoryStat[]> {
     constructor(
         readonly from?: string,
         readonly to?: string,
+        readonly currency: string = DEFAULT_PRESENTATION_CURRENCY,
+        readonly rateType: string = DEFAULT_EXCHANGE_RATE_TYPE,
     ) {
         super();
     }
@@ -25,6 +34,7 @@ export class GetSpendingByCategoryQueryHandler implements RequestHandler<GetSpen
     constructor(
         private readonly transactions: TransactionRepository,
         private readonly categories: CategoryRepository,
+        private readonly exchangeRates: ExchangeRateRepository,
     ) {}
 
     async handle(query: GetSpendingByCategoryQuery, identity: Identity): Promise<CategoryStat[]> {
@@ -43,23 +53,37 @@ export class GetSpendingByCategoryQueryHandler implements RequestHandler<GetSpen
 
         const categories = await this.categories.findAll(userId, 'expense');
         const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-        const totals = new Map<string | null, { total: number; count: number }>();
+        const converter = await this.createConverter(query.currency, query.rateType);
+        const totals = new Map<string, { categoryId: string | null; total: number; count: number }>();
 
         for (const transaction of result.transactions) {
-            const key = transaction.categoryId ?? null;
-            const existing = totals.get(key) ?? { total: 0, count: 0 };
-            existing.total += Number.parseFloat(transaction.amount);
+            const categoryId = transaction.categoryId ?? null;
+            const key = categoryId ?? '';
+            const existing = totals.get(key) ?? { categoryId, total: 0, count: 0 };
+            existing.total += converter.convert(
+                Number.parseFloat(transaction.amount),
+                transaction.currency,
+                query.currency,
+            );
             existing.count += 1;
             totals.set(key, existing);
         }
 
-        return Array.from(totals.entries())
-            .map(([categoryId, summary]) => ({
-                categoryId,
-                categoryName: categoryId ? (categoryNames.get(categoryId) ?? 'Sin categoria') : 'Sin categoria',
+        return Array.from(totals.values())
+            .map((summary) => ({
+                categoryId: summary.categoryId,
+                categoryName: summary.categoryId
+                    ? (categoryNames.get(summary.categoryId) ?? 'Sin categoria')
+                    : 'Sin categoria',
+                currency: query.currency,
                 total: Number(summary.total.toFixed(2)),
                 count: summary.count,
             }))
             .sort((a, b) => b.total - a.total);
+    }
+
+    private async createConverter(targetCurrency: string, rateType: string): Promise<CurrencyConverter> {
+        const rates = await this.exchangeRates.findAll();
+        return new CurrencyConverter(targetCurrency, rateType, rates);
     }
 }

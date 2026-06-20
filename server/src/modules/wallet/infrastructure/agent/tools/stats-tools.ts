@@ -19,11 +19,16 @@ export function createStatsTools(bus: CQBus, authContextStorage: AuthContextStor
                 type: 'object',
                 properties: {
                     accountId: { type: 'string', description: 'Optional: specific account ID' },
+                    currency: {
+                        type: 'string',
+                        enum: ['ARS', 'USD'],
+                        description: 'Presentation currency for the consolidated balance. Default: ARS.',
+                    },
                 },
                 required: [],
             },
             execute: async (input) => {
-                return bus.execute(new GetWalletBalanceQuery(input.accountId), executionContext());
+                return bus.execute(new GetWalletBalanceQuery(input.accountId, input.currency), executionContext());
             },
         }),
         jsonTool({

@@ -3,31 +3,47 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 import { localDateISO } from '../../common/base/time/dates';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { CategoryRepository } from '../domain/CategoryRepository';
+import { ExchangeRateRepository } from '../domain/ExchangeRateRepository';
 import { TransactionRepository } from '../domain/TransactionRepository';
+import {
+    CurrencyConverter,
+    DEFAULT_EXCHANGE_RATE_TYPE,
+    DEFAULT_PRESENTATION_CURRENCY,
+} from '../services/CurrencyConverter';
 
 const STABLE_THRESHOLD_PERCENT = 10;
 
 export type CategoryTrend = {
     readonly category: string;
+    readonly currency: string;
     readonly thisWeek: number;
     readonly lastWeek: number;
     readonly change: number;
     readonly trend: 'up' | 'down' | 'stable';
 };
 
-export class GetCategoryTrendsQuery extends Query<CategoryTrend[]> {}
+export class GetCategoryTrendsQuery extends Query<CategoryTrend[]> {
+    constructor(
+        readonly currency: string = DEFAULT_PRESENTATION_CURRENCY,
+        readonly rateType: string = DEFAULT_EXCHANGE_RATE_TYPE,
+    ) {
+        super();
+    }
+}
 
 export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategoryTrendsQuery, CategoryTrend[]> {
     constructor(
         private readonly transactions: TransactionRepository,
         private readonly categories: CategoryRepository,
+        private readonly exchangeRates: ExchangeRateRepository,
     ) {}
 
-    async handle(_query: GetCategoryTrendsQuery, identity: Identity): Promise<CategoryTrend[]> {
+    async handle(query: GetCategoryTrendsQuery, identity: Identity): Promise<CategoryTrend[]> {
         const { userId } = requireUserIdentity(identity);
         const today = localDateISO();
+        const converter = await this.createConverter(query.currency, query.rateType);
         const thisWeekStart = this.getWeekStart(today);
-        const thisWeekTotals = await this.getCategoryTotals(userId, thisWeekStart, today);
+        const thisWeekTotals = await this.getCategoryTotals(userId, thisWeekStart, today, query.currency, converter);
 
         const lastWeekDate = new Date(`${today}T00:00:00`);
         lastWeekDate.setDate(lastWeekDate.getDate() - 7);
@@ -36,6 +52,8 @@ export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategory
             userId,
             this.getWeekStart(lastWeekAnchor),
             this.getWeekEnd(lastWeekAnchor),
+            query.currency,
+            converter,
         );
 
         const categories = await this.categories.findAll(userId, 'expense');
@@ -60,6 +78,7 @@ export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategory
 
             trends.push({
                 category: namesById.get(categoryId) ?? 'Sin categoria',
+                currency: query.currency,
                 thisWeek: Number(thisWeek.toFixed(2)),
                 lastWeek: Number(lastWeek.toFixed(2)),
                 change: Math.round(change),
@@ -70,7 +89,13 @@ export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategory
         return trends.sort((left, right) => Math.abs(right.change) - Math.abs(left.change));
     }
 
-    private async getCategoryTotals(userId: string, from: string, to: string): Promise<Map<string, number>> {
+    private async getCategoryTotals(
+        userId: string,
+        from: string,
+        to: string,
+        currency: string,
+        converter: CurrencyConverter,
+    ): Promise<Map<string, number>> {
         const result = await this.transactions.list(userId, {
             from,
             to,
@@ -86,9 +111,14 @@ export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategory
                 continue;
             }
 
+            const amount = converter.convert(
+                Number.parseFloat(transaction.amount),
+                transaction.currency,
+                currency,
+            );
             totals.set(
                 transaction.categoryId,
-                (totals.get(transaction.categoryId) ?? 0) + Number.parseFloat(transaction.amount),
+                (totals.get(transaction.categoryId) ?? 0) + amount,
             );
         }
 
@@ -103,6 +133,11 @@ export class GetCategoryTrendsQueryHandler implements RequestHandler<GetCategory
         date.setDate(date.getDate() + diff);
 
         return localDateISO(date);
+    }
+
+    private async createConverter(targetCurrency: string, rateType: string): Promise<CurrencyConverter> {
+        const rates = await this.exchangeRates.findAll();
+        return new CurrencyConverter(targetCurrency, rateType, rates);
     }
 
     private getWeekEnd(dateISO: string): string {

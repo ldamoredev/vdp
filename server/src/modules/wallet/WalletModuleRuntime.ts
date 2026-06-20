@@ -13,6 +13,7 @@ import { GetAccountsQuery, GetAccountsQueryHandler } from './app/GetAccountsQuer
 import { GetCategoriesQuery, GetCategoriesQueryHandler } from './app/GetCategoriesQuery';
 import { GetCategoryTrendsQuery, GetCategoryTrendsQueryHandler } from './app/GetCategoryTrendsQuery';
 import { GetExchangeRatesQuery, GetExchangeRatesQueryHandler } from './app/GetExchangeRatesQuery';
+import { GetFoodSpendingThisWeekQuery, GetFoodSpendingThisWeekQueryHandler } from './app/GetFoodSpendingThisWeekQuery';
 import { GetInvestmentsQuery, GetInvestmentsQueryHandler } from './app/GetInvestmentsQuery';
 import { GetMonthlyTrendQuery, GetMonthlyTrendQueryHandler } from './app/GetMonthlyTrendQuery';
 import { GetSavingsGoalsQuery, GetSavingsGoalsQueryHandler } from './app/GetSavingsGoalsQuery';
@@ -22,6 +23,7 @@ import { GetSpendingSummaryQuery, GetSpendingSummaryQueryHandler } from './app/G
 import { GetTransactionsQuery, GetTransactionsQueryHandler } from './app/GetTransactionsQuery';
 import { GetWalletBalanceQuery, GetWalletBalanceQueryHandler } from './app/GetWalletBalanceQuery';
 import { GetWalletSnapshotQuery, GetWalletSnapshotQueryHandler } from './app/GetWalletSnapshotQuery';
+import { RefreshExchangeRatesCommand, RefreshExchangeRatesCommandHandler } from './app/RefreshExchangeRatesCommand';
 import { UpdateAccountCommand, UpdateAccountCommandHandler } from './app/UpdateAccountCommand';
 import { UpdateInvestmentCommand, UpdateInvestmentCommandHandler } from './app/UpdateInvestmentCommand';
 import { UpdateSavingsGoalCommand, UpdateSavingsGoalCommandHandler } from './app/UpdateSavingsGoalCommand';
@@ -35,6 +37,8 @@ import { CategoryRepository } from './domain/CategoryRepository';
 import { SavingsGoalRepository } from './domain/SavingsGoalRepository';
 import { InvestmentRepository } from './domain/InvestmentRepository';
 import { ExchangeRateRepository } from './domain/ExchangeRateRepository';
+import { ExchangeRateProvider } from './domain/ExchangeRateProvider';
+import { DolarApiExchangeRateProvider } from './infrastructure/exchange-rates/DolarApiExchangeRateProvider';
 
 import { DetectSpendingSpike } from './services/DetectSpendingSpike';
 import { WalletCrossDomainEventHandlers } from './services/WalletCrossDomainEventHandlers';
@@ -89,13 +93,20 @@ export class WalletModuleRuntime {
             new DeleteTransactionCommandHandler(this.transactionRepository()),
         );
         this.deps.bus.registerHandler(GetSpendingSummaryQuery, () =>
-            new GetSpendingSummaryQueryHandler(this.transactionRepository()),
+            new GetSpendingSummaryQueryHandler(this.transactionRepository(), this.exchangeRateRepository()),
         );
         this.deps.bus.registerHandler(GetSpendingByCategoryQuery, () =>
-            new GetSpendingByCategoryQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetSpendingByCategoryQueryHandler(
+                this.transactionRepository(),
+                this.categoryRepository(),
+                this.exchangeRateRepository(),
+            ),
+        );
+        this.deps.bus.registerHandler(GetFoodSpendingThisWeekQuery, () =>
+            new GetFoodSpendingThisWeekQueryHandler(this.transactionRepository(), this.categoryRepository()),
         );
         this.deps.bus.registerHandler(GetMonthlyTrendQuery, () =>
-            new GetMonthlyTrendQueryHandler(this.transactionRepository()),
+            new GetMonthlyTrendQueryHandler(this.transactionRepository(), this.exchangeRateRepository()),
         );
         this.deps.bus.registerHandler(GetSavingsGoalsQuery, () =>
             new GetSavingsGoalsQueryHandler(this.savingsGoalRepository()),
@@ -124,17 +135,36 @@ export class WalletModuleRuntime {
         this.deps.bus.registerHandler(CreateExchangeRateCommand, () =>
             new CreateExchangeRateCommandHandler(this.exchangeRateRepository()),
         );
+        this.deps.bus.registerHandler(RefreshExchangeRatesCommand, () =>
+            new RefreshExchangeRatesCommandHandler(this.exchangeRateProvider(), this.exchangeRateRepository()),
+        );
         this.deps.bus.registerHandler(GetWalletBalanceQuery, () =>
-            new GetWalletBalanceQueryHandler(this.accountRepository(), this.transactionRepository()),
+            new GetWalletBalanceQueryHandler(
+                this.accountRepository(),
+                this.transactionRepository(),
+                this.exchangeRateRepository(),
+            ),
         );
         this.deps.bus.registerHandler(GetSpendingAnomaliesQuery, () =>
-            new GetSpendingAnomaliesQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetSpendingAnomaliesQueryHandler(
+                this.transactionRepository(),
+                this.categoryRepository(),
+                this.exchangeRateRepository(),
+            ),
         );
         this.deps.bus.registerHandler(GetCategoryTrendsQuery, () =>
-            new GetCategoryTrendsQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetCategoryTrendsQueryHandler(
+                this.transactionRepository(),
+                this.categoryRepository(),
+                this.exchangeRateRepository(),
+            ),
         );
         this.deps.bus.registerHandler(GetWalletSnapshotQuery, () =>
-            new GetWalletSnapshotQueryHandler(this.transactionRepository(), this.categoryRepository()),
+            new GetWalletSnapshotQueryHandler(
+                this.transactionRepository(),
+                this.categoryRepository(),
+                this.exchangeRateRepository(),
+            ),
         );
     }
 
@@ -225,6 +255,12 @@ export class WalletModuleRuntime {
 
     private exchangeRateRepository(): ExchangeRateRepository {
         return this.deps.repositories.get(ExchangeRateRepository);
+    }
+
+    private readonly exchangeRateProviderInstance: ExchangeRateProvider = new DolarApiExchangeRateProvider();
+
+    private exchangeRateProvider(): ExchangeRateProvider {
+        return this.exchangeRateProviderInstance;
     }
 
     private agentRepository(): AgentRepository {

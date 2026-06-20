@@ -33,11 +33,13 @@ import { DeleteTransactionCommand } from '../../app/DeleteTransactionCommand';
 import { GetAccountsQuery } from '../../app/GetAccountsQuery';
 import { GetCategoriesQuery } from '../../app/GetCategoriesQuery';
 import { GetExchangeRatesQuery } from '../../app/GetExchangeRatesQuery';
+import { GetFoodSpendingThisWeekQuery } from '../../app/GetFoodSpendingThisWeekQuery';
 import { GetInvestmentsQuery } from '../../app/GetInvestmentsQuery';
 import { GetMonthlyTrendQuery } from '../../app/GetMonthlyTrendQuery';
 import { GetSavingsGoalsQuery } from '../../app/GetSavingsGoalsQuery';
 import { GetSpendingByCategoryQuery } from '../../app/GetSpendingByCategoryQuery';
 import { GetSpendingSummaryQuery } from '../../app/GetSpendingSummaryQuery';
+import { RefreshExchangeRatesCommand } from '../../app/RefreshExchangeRatesCommand';
 import { GetTransactionsQuery } from '../../app/GetTransactionsQuery';
 import { UpdateAccountCommand } from '../../app/UpdateAccountCommand';
 import { UpdateInvestmentCommand } from '../../app/UpdateInvestmentCommand';
@@ -119,7 +121,8 @@ export class WalletController extends HttpController {
         routes
             .get('/stats/summary', { query: statsQuerySchema }, this.getStatsSummary)
             .get('/stats/by-category', { query: statsQuerySchema }, this.getStatsByCategory)
-            .get('/stats/monthly-trend', { query: statsQuerySchema }, this.getMonthlyTrend);
+            .get('/stats/monthly-trend', { query: statsQuerySchema }, this.getMonthlyTrend)
+            .get('/stats/food-this-week', this.getFoodSpendingThisWeek);
     }
 
     private registerSavingsRoutes(routes: RouteRegister): void {
@@ -140,7 +143,8 @@ export class WalletController extends HttpController {
     private registerExchangeRateRoutes(routes: RouteRegister): void {
         routes
             .get('/exchange-rates/latest', this.getLatestExchangeRates)
-            .post('/exchange-rates', { body: createExchangeRateBodySchema }, this.createExchangeRate);
+            .post('/exchange-rates', { body: createExchangeRateBodySchema }, this.createExchangeRate)
+            .post('/exchange-rates/refresh', this.refreshExchangeRates);
     }
 
     // ─── Accounts ────────────────────────────────────────────
@@ -266,7 +270,7 @@ export class WalletController extends HttpController {
         reply,
     }) => {
         const result = await this.bus.execute(
-            new GetSpendingSummaryQuery(query?.from, query?.to),
+            new GetSpendingSummaryQuery(query?.from, query?.to, undefined, query?.currency),
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);
@@ -278,7 +282,7 @@ export class WalletController extends HttpController {
         reply,
     }) => {
         const result = await this.bus.execute(
-            new GetSpendingByCategoryQuery(query?.from, query?.to),
+            new GetSpendingByCategoryQuery(query?.from, query?.to, query?.currency),
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);
@@ -290,7 +294,15 @@ export class WalletController extends HttpController {
         reply,
     }) => {
         const result = await this.bus.execute(
-            new GetMonthlyTrendQuery(query?.year),
+            new GetMonthlyTrendQuery(query?.year, query?.currency),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send(result);
+    };
+
+    private readonly getFoodSpendingThisWeek = async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = await this.bus.execute(
+            new GetFoodSpendingThisWeekQuery(),
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);
@@ -392,5 +404,13 @@ export class WalletController extends HttpController {
     }) => {
         const rate = await this.bus.execute(new CreateExchangeRateCommand(body!));
         return sendCreated(reply, rate);
+    };
+
+    private readonly refreshExchangeRates = async (request: FastifyRequest, reply: FastifyReply) => {
+        const rates = await this.bus.execute(
+            new RefreshExchangeRatesCommand(),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send(rates);
     };
 }

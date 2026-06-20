@@ -28,4 +28,20 @@ export class FakeExchangeRateRepository extends ExchangeRateRepository {
         this.store.set(rate.id, rate);
         return rate;
     }
+
+    async upsert(data: CreateExchangeRateData): Promise<ExchangeRate> {
+        const existing = Array.from(this.store.values()).find(
+            (rate) =>
+                rate.fromCurrency === data.fromCurrency &&
+                rate.toCurrency === data.toCurrency &&
+                rate.type === data.type &&
+                rate.date === data.date,
+        );
+        if (existing) {
+            const updated: ExchangeRate = { ...existing, rate: data.rate };
+            this.store.set(existing.id, updated);
+            return updated;
+        }
+        return this.create(data);
+    }
 }

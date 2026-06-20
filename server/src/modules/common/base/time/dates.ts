@@ -25,6 +25,14 @@ export function tomorrowISO(): string {
     return localDateISO(d);
 }
 
+/** Returns the Monday (local) of the week containing `d`, as YYYY-MM-DD. */
+export function weekStartISO(d: Date = new Date()): string {
+    const date = new Date(d);
+    const day = date.getDay(); // 0=Sun..6=Sat
+    date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
+    return localDateISO(date);
+}
+
 /** Parses a YYYY-MM-DD string in the local timezone. */
 export function parseLocalDateISO(value: string): Date {
     const [year, month, day] = value.split('-').map(Number);

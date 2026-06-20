@@ -26,4 +26,28 @@ export class DrizzleExchangeRateRepository extends ExchangeRateRepository {
 
         return row;
     }
+
+    async upsert(data: CreateExchangeRateData): Promise<ExchangeRate> {
+        const [row] = await this.db.query
+            .insert(exchangeRates)
+            .values({
+                fromCurrency: data.fromCurrency,
+                toCurrency: data.toCurrency,
+                rate: data.rate,
+                type: data.type,
+                date: data.date,
+            })
+            .onConflictDoUpdate({
+                target: [
+                    exchangeRates.fromCurrency,
+                    exchangeRates.toCurrency,
+                    exchangeRates.type,
+                    exchangeRates.date,
+                ],
+                set: { rate: data.rate },
+            })
+            .returning();
+
+        return row;
+    }
 }

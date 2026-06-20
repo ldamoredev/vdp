@@ -3,33 +3,49 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 import { localDateISO } from '../../common/base/time/dates';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { CategoryRepository } from '../domain/CategoryRepository';
+import { ExchangeRateRepository } from '../domain/ExchangeRateRepository';
 import { TransactionRepository } from '../domain/TransactionRepository';
+import {
+    CurrencyConverter,
+    DEFAULT_EXCHANGE_RATE_TYPE,
+    DEFAULT_PRESENTATION_CURRENCY,
+} from '../services/CurrencyConverter';
 
 const ANOMALY_THRESHOLD_PERCENT = 50;
 const COMPARISON_WEEKS = 4;
 
 export type SpendingAnomaly = {
     readonly category: string;
+    readonly currency: string;
     readonly currentWeek: number;
     readonly average: number;
     readonly percentageChange: number;
     readonly direction: 'up' | 'down';
 };
 
-export class GetSpendingAnomaliesQuery extends Query<SpendingAnomaly[]> {}
+export class GetSpendingAnomaliesQuery extends Query<SpendingAnomaly[]> {
+    constructor(
+        readonly currency: string = DEFAULT_PRESENTATION_CURRENCY,
+        readonly rateType: string = DEFAULT_EXCHANGE_RATE_TYPE,
+    ) {
+        super();
+    }
+}
 
 export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpendingAnomaliesQuery, SpendingAnomaly[]> {
     constructor(
         private readonly transactions: TransactionRepository,
         private readonly categories: CategoryRepository,
+        private readonly exchangeRates: ExchangeRateRepository,
     ) {}
 
-    async handle(_query: GetSpendingAnomaliesQuery, identity: Identity): Promise<SpendingAnomaly[]> {
+    async handle(query: GetSpendingAnomaliesQuery, identity: Identity): Promise<SpendingAnomaly[]> {
         const { userId } = requireUserIdentity(identity);
         const today = localDateISO();
+        const converter = await this.createConverter(query.currency, query.rateType);
         const weekStart = this.getWeekStart(today);
-        const currentWeekTotals = await this.getCategoryTotals(userId, weekStart, today);
-        const historicalAverages = await this.getHistoricalAverages(userId, today);
+        const currentWeekTotals = await this.getCategoryTotals(userId, weekStart, today, query.currency, converter);
+        const historicalAverages = await this.getHistoricalAverages(userId, today, query.currency, converter);
         const categories = await this.categories.findAll(userId, 'expense');
         const namesById = new Map(categories.map((category) => [category.id, category.name]));
         const anomalies: SpendingAnomaly[] = [];
@@ -49,6 +65,7 @@ export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpend
 
             anomalies.push({
                 category: namesById.get(categoryId) ?? 'Sin categoria',
+                currency: query.currency,
                 currentWeek: Number(currentWeek.toFixed(2)),
                 average: Number(average.toFixed(2)),
                 percentageChange: Math.round(percentageChange),
@@ -59,7 +76,13 @@ export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpend
         return anomalies.sort((left, right) => Math.abs(right.percentageChange) - Math.abs(left.percentageChange));
     }
 
-    private async getCategoryTotals(userId: string, from: string, to: string): Promise<Map<string, number>> {
+    private async getCategoryTotals(
+        userId: string,
+        from: string,
+        to: string,
+        currency: string,
+        converter: CurrencyConverter,
+    ): Promise<Map<string, number>> {
         const result = await this.transactions.list(userId, {
             from,
             to,
@@ -75,16 +98,26 @@ export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpend
                 continue;
             }
 
+            const amount = converter.convert(
+                Number.parseFloat(transaction.amount),
+                transaction.currency,
+                currency,
+            );
             totals.set(
                 transaction.categoryId,
-                (totals.get(transaction.categoryId) ?? 0) + Number.parseFloat(transaction.amount),
+                (totals.get(transaction.categoryId) ?? 0) + amount,
             );
         }
 
         return totals;
     }
 
-    private async getHistoricalAverages(userId: string, today: string): Promise<Map<string, number>> {
+    private async getHistoricalAverages(
+        userId: string,
+        today: string,
+        currency: string,
+        converter: CurrencyConverter,
+    ): Promise<Map<string, number>> {
         const weeklyTotalsByCategory = new Map<string, number[]>();
         const todayDate = new Date(`${today}T00:00:00`);
 
@@ -94,7 +127,7 @@ export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpend
 
             const weekEnd = localDateISO(weekDate);
             const weekStart = this.getWeekStart(weekEnd);
-            const totals = await this.getCategoryTotals(userId, weekStart, weekEnd);
+            const totals = await this.getCategoryTotals(userId, weekStart, weekEnd, currency, converter);
 
             for (const [categoryId, total] of totals.entries()) {
                 const history = weeklyTotalsByCategory.get(categoryId) ?? [];
@@ -111,6 +144,11 @@ export class GetSpendingAnomaliesQueryHandler implements RequestHandler<GetSpend
         }
 
         return averages;
+    }
+
+    private async createConverter(targetCurrency: string, rateType: string): Promise<CurrencyConverter> {
+        const rates = await this.exchangeRates.findAll();
+        return new CurrencyConverter(targetCurrency, rateType, rates);
     }
 
     private getWeekStart(dateISO: string): string {
