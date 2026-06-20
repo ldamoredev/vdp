@@ -85,23 +85,51 @@ export interface Investment {
 }
 
 export interface WalletStatsSummary {
+  currency: Currency;
   totalIncome: string;
   totalExpenses: string;
   netBalance: string;
   transactionCount: number;
+  conversion: WalletStatsSummaryConversion;
+}
+
+export interface WalletStatsSummaryConversion {
+  rateType: ExchangeRateType;
+  rates: WalletStatsSummaryConversionRate[];
+}
+
+export interface WalletStatsSummaryConversionRate {
+  fromCurrency: Currency;
+  toCurrency: Currency;
+  rate: string;
+  date: string;
 }
 
 export interface CategoryStat {
   categoryId: string | null;
   categoryName: string;
+  currency: Currency;
   total: number;
   count: number;
 }
 
 export interface MonthlyTrend {
   month: string;
+  currency: Currency;
   income: number;
   expense: number;
+}
+
+export interface FoodSpendingByCurrency {
+  currency: Currency;
+  total: number;
+  count: number;
+}
+
+export interface FoodSpendingThisWeek {
+  from: string;
+  to: string;
+  byCurrency: FoodSpendingByCurrency[];
 }
 
 export interface ExchangeRate {
