@@ -279,5 +279,45 @@ describe('Drizzle wallet repositories', () => {
             expect(allRates).toHaveLength(2);
             expect(allRates.map((rate) => rate.date)).toEqual(['2026-03-20', '2026-03-21']);
         });
+
+        it('upserts the same (pair, type, date) in place instead of duplicating', async () => {
+            const data = {
+                fromCurrency: 'USD' as const,
+                toCurrency: 'ARS' as const,
+                rate: '1478.2000',
+                type: 'mep',
+                date: '2026-06-20',
+            };
+
+            const inserted = await exchangeRateRepo.upsert(data);
+            const updated = await exchangeRateRepo.upsert({ ...data, rate: '1490.5000' });
+
+            const mepRates = (await exchangeRateRepo.findAll()).filter(
+                (rate) => rate.type === 'mep' && rate.date === '2026-06-20',
+            );
+            expect(mepRates).toHaveLength(1);
+            expect(mepRates[0].rate).toBe('1490.5000');
+            expect(updated.id).toBe(inserted.id);
+        });
+
+        it('upserts a different date as a new row', async () => {
+            await exchangeRateRepo.upsert({
+                fromCurrency: 'USD',
+                toCurrency: 'ARS',
+                rate: '1478.2000',
+                type: 'mep',
+                date: '2026-06-20',
+            });
+            await exchangeRateRepo.upsert({
+                fromCurrency: 'USD',
+                toCurrency: 'ARS',
+                rate: '1485.0000',
+                type: 'mep',
+                date: '2026-06-21',
+            });
+
+            const mepRates = (await exchangeRateRepo.findAll()).filter((rate) => rate.type === 'mep');
+            expect(mepRates).toHaveLength(2);
+        });
     });
 });
