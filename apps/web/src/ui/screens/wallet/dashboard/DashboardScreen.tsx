@@ -14,6 +14,7 @@ import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StatTile } from "@/ui/primitives/stat-tile";
 import { StateCard } from "@/ui/primitives/state-card";
+import { BoardSection } from "@/ui/screens/tasks/board/BoardSection";
 import type {
   DashboardAccountVM,
   DashboardStatVM,
@@ -41,6 +42,7 @@ export function DashboardScreen() {
         label={vm.sanity.label}
       />
       <RecentTransactions vm={vm} presenter={presenter} />
+      <BoardSection domain="wallet" />
 
       <button
         type="button"

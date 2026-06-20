@@ -29,3 +29,37 @@ export interface BoardTaskActions {
 
 /** Header dot tone per board column. */
 export type BoardColumnTone = "accent" | "green" | "amber" | "red" | "muted";
+
+/** Which columns the board shows: only the operable one, or all three. */
+export type BoardScope = "active" | "all";
+
+export interface BoardColumnVM {
+  id: BoardTaskState;
+  title: string;
+  tone: BoardColumnTone;
+  count: number;
+  /** Non-terminal column: shows the "+" create affordance. */
+  canCreate: boolean;
+  isDropTarget: boolean;
+  emptyText: string;
+  tasks: BoardTaskVM[];
+}
+
+export interface BoardComposerVM {
+  title: string;
+  priority: number;
+  busy: boolean;
+  canSubmit: boolean;
+}
+
+export interface BoardViewModel {
+  domainLabel: string;
+  scope: BoardScope;
+  columns: BoardColumnVM[];
+  /** Id of the card currently being dragged, so the view can fade its source. */
+  draggingId: string | null;
+  isLoading: boolean;
+  error: boolean;
+  /** Inline create composer for the pending column; null when closed. */
+  composer: BoardComposerVM | null;
+}
