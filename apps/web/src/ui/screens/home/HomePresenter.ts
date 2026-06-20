@@ -429,6 +429,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     const income = Number(this.walletStats?.totalIncome ?? 0);
     const expenses = Number(this.walletStats?.totalExpenses ?? 0);
     const netBalance = Number(this.walletStats?.netBalance ?? 0);
+    const currency = this.walletStats?.currency ?? "ARS";
     const transactionCount = this.walletStats?.transactionCount ?? this.walletRecentTransactions.length;
     const newestTransaction = this.walletRecentTransactions.reduce<Transaction | undefined>(
       (latest, transaction) => {
@@ -440,9 +441,9 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
 
     return {
       isLoading: this.loadingWalletStats || this.loadingWalletRecentTransactions,
-      netBalanceLabel: formatMoney(netBalance, "ARS"),
-      incomeLabel: `+${formatMoney(income, "ARS")}`,
-      expensesLabel: `-${formatMoney(expenses, "ARS")}`,
+      netBalanceLabel: formatMoney(netBalance, currency),
+      incomeLabel: `+${formatMoney(income, currency)}`,
+      expensesLabel: `-${formatMoney(expenses, currency)}`,
       transactionCountLabel: `${transactionCount} movimientos`,
       activityLabel: newestTransaction ? formatRelative(newestTransaction.date) : "Recientes",
       recentTransactions: this.walletRecentTransactions.slice(0, 3).map((transaction) => this.transactionVM(transaction)),

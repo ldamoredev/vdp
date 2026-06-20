@@ -1,5 +1,6 @@
 import type {
   CategoryStat as CategoryStatDto,
+  FoodSpendingThisWeek as FoodSpendingThisWeekDto,
   MonthlyTrend as MonthlyTrendDto,
   WalletStatsSummary as WalletStatsSummaryDto,
 } from "@vdp/shared";
@@ -12,3 +13,4 @@ import type {
 export type WalletStatsSummary = WalletStatsSummaryDto;
 export type CategoryStat = CategoryStatDto;
 export type MonthlyTrend = MonthlyTrendDto;
+export type FoodSpendingThisWeek = FoodSpendingThisWeekDto;

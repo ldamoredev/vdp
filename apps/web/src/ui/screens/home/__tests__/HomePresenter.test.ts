@@ -87,10 +87,12 @@ function insight(overrides: Partial<TaskInsight> = {}): TaskInsight {
 
 function walletStats(overrides: Partial<WalletStatsSummary> = {}): WalletStatsSummary {
   return {
+    currency: "ARS",
     totalIncome: "5000",
     totalExpenses: "1200",
     netBalance: "3800",
     transactionCount: 1,
+    conversion: { rateType: "mep", rates: [] },
     ...overrides,
   };
 }
@@ -99,6 +101,7 @@ function categoryStat(overrides: Partial<CategoryStat> = {}): CategoryStat {
   return {
     categoryId: "coffee",
     categoryName: "Cafe",
+    currency: "ARS",
     total: 1200,
     count: 1,
     ...overrides,

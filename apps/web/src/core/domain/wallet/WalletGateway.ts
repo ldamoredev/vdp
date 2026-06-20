@@ -6,7 +6,7 @@ import type { ExchangeRate, ExchangeRateType } from "./ExchangeRate";
 import type { Investment, InvestmentType } from "./Investment";
 import type { SavingsGoal } from "./SavingsGoal";
 import type { Transaction, WalletTransactionFilters } from "./Transaction";
-import type { CategoryStat, MonthlyTrend, WalletStatsSummary } from "./WalletStats";
+import type { CategoryStat, FoodSpendingThisWeek, MonthlyTrend, WalletStatsSummary } from "./WalletStats";
 
 export interface CreateAccountInput {
   name: string;
@@ -112,9 +112,12 @@ export interface WalletGateway {
   // stats
   getStatsSummary(params?: Record<string, string>): Promise<WalletStatsSummary>;
   getStatsByCategory(params?: Record<string, string>): Promise<CategoryStat[]>;
-  getMonthlyTrend(): Promise<MonthlyTrend[]>;
+  getMonthlyTrend(params?: Record<string, string>): Promise<MonthlyTrend[]>;
+  getFoodSpendingThisWeek(): Promise<FoodSpendingThisWeek>;
 
   // exchange rates
   getExchangeRates(): Promise<ExchangeRate[]>;
   createExchangeRate(input: CreateExchangeRateInput): Promise<ExchangeRate>;
+  /** Pull current dollar quotes from the external provider and persist them. */
+  refreshExchangeRates(): Promise<ExchangeRate[]>;
 }

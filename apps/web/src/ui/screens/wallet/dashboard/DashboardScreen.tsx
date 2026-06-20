@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import type { Currency } from "@vdp/shared";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -21,6 +22,7 @@ import type {
   DashboardTransactionRowVM,
   DashboardViewModel,
 } from "@/ui/models/wallet/DashboardViewModel";
+import { CurrencySelector } from "../components/currency-selector";
 import { SanityStrip } from "../components/sanity-strip";
 import { WalletEmptyState } from "../components/wallet-empty-state";
 import { QuickAddExpenseSheet } from "../transactions/QuickAddExpenseSheet";
@@ -54,7 +56,11 @@ export function DashboardScreen() {
 
   return (
     <ModulePage width="5xl" spacing="8">
-      <OperationalHeader vm={vm} onQuickAdd={() => setQuickAddOpen(true)} />
+      <OperationalHeader
+        vm={vm}
+        onQuickAdd={() => setQuickAddOpen(true)}
+        onCurrencySelect={(currency) => presenter.setPresentationCurrency(currency)}
+      />
       <AccountsGrid vm={vm} />
       <SanityStrip
         transactionCount={vm.sanity.transactionCount}
@@ -90,9 +96,11 @@ export function DashboardScreen() {
 function OperationalHeader({
   vm,
   onQuickAdd,
+  onCurrencySelect,
 }: {
   vm: DashboardViewModel;
   onQuickAdd: () => void;
+  onCurrencySelect: (currency: Currency) => void;
 }) {
   return (
     <div className="glass-card-static overflow-hidden">
@@ -104,6 +112,11 @@ function OperationalHeader({
           description={vm.intro}
           actions={
             <>
+              <CurrencySelector
+                options={vm.currencyOptions}
+                onSelect={onCurrencySelect}
+                className="w-full justify-center sm:w-auto"
+              />
               <button
                 type="button"
                 onClick={onQuickAdd}
@@ -124,11 +137,22 @@ function OperationalHeader({
         />
       </div>
 
-      <div className="grid gap-3 p-5 md:grid-cols-3 md:p-6">
-        {vm.stats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
-        ))}
-      </div>
+      {vm.statsError ? (
+        <div className="p-5 md:p-6">
+          <StateCard
+            state="error"
+            size="sm"
+            title="No pudimos convertir el resumen"
+            description="Falta una cotización para la moneda elegida. Cargá el tipo de cambio MEP y volvé a intentar."
+          />
+        </div>
+      ) : (
+        <div className="grid gap-3 p-5 md:grid-cols-3 md:p-6">
+          {vm.stats.map((stat) => (
+            <StatCard key={stat.label} stat={stat} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

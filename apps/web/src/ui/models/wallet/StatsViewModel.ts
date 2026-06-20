@@ -1,9 +1,22 @@
+import type { Currency } from "@vdp/shared";
+
 export interface StatsViewModel {
   title: string;
   intro: string;
+  presentationCurrency: Currency;
+  currencyOptions: CurrencyOptionVM[];
+  /** A monetary aggregate failed to load (e.g. a missing exchange rate); the
+   * panels must not render stale numbers as if they were converted. */
+  error: boolean;
   monthlyTrend: MonthlyTrendVM;
   dollarRates: DollarRatesVM;
   byCategory: ByCategoryVM;
+}
+
+export interface CurrencyOptionVM {
+  currency: Currency;
+  label: string;
+  selected: boolean;
 }
 
 export interface MonthlyTrendVM {
@@ -14,6 +27,7 @@ export interface MonthlyTrendVM {
 
 export interface MonthlyTrendBarVM {
   label: string;
+  currency: "ARS" | "USD";
   income: number;
   expense: number;
 }

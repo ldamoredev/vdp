@@ -12,6 +12,8 @@ export interface DashboardViewModel {
   newTransactionHref: string;
   statsLabel: string;
   statsHref: string;
+  presentationCurrency: Currency;
+  currencyOptions: DashboardCurrencyOptionVM[];
   stats: DashboardStatVM[];
   accounts: DashboardAccountVM[];
   recentTransactions: DashboardTransactionRowVM[];
@@ -23,7 +25,16 @@ export interface DashboardViewModel {
   isLoadingAccounts: boolean;
   isLoadingStats: boolean;
   isLoadingRecentTransactions: boolean;
+  /** A monetary aggregate failed to load (e.g. a missing exchange rate); the
+   * stat tiles must not render stale numbers as if they were converted. */
+  statsError: boolean;
   error: boolean;
+}
+
+export interface DashboardCurrencyOptionVM {
+  currency: Currency;
+  label: string;
+  selected: boolean;
 }
 
 export interface DashboardStatVM {

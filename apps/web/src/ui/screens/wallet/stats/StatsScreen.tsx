@@ -20,8 +20,10 @@ import type {
   ByCategoryVM,
   CategorySliceVM,
   DollarRatesVM,
+  MonthlyTrendBarVM,
   MonthlyTrendVM,
 } from "@/ui/models/wallet/StatsViewModel";
+import { CurrencySelector } from "../components/currency-selector";
 import { SanityStrip } from "../components/sanity-strip";
 import { useStatsPresenter } from "./useStatsPresenter";
 
@@ -46,12 +48,30 @@ export function StatsScreen() {
         description={vm.intro}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        <MonthlyTrendPanel vm={vm.monthlyTrend} />
-        <DollarRatesPanel vm={vm.dollarRates} />
+      <div className="flex justify-end">
+        <CurrencySelector
+          options={vm.currencyOptions}
+          onSelect={(currency) => presenter.setPresentationCurrency(currency)}
+        />
       </div>
 
-      <ByCategoryPanel vm={vm.byCategory} />
+      {vm.error ? (
+        <StateCard
+          state="error"
+          size="sm"
+          title="No pudimos convertir las estadísticas"
+          description="Falta una cotización para la moneda elegida. Cargá el tipo de cambio MEP y volvé a intentar."
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.8fr]">
+            <MonthlyTrendPanel vm={vm.monthlyTrend} />
+            <DollarRatesPanel vm={vm.dollarRates} />
+          </div>
+
+          <ByCategoryPanel vm={vm.byCategory} />
+        </>
+      )}
     </ModulePage>
   );
 }
@@ -83,8 +103,8 @@ function MonthlyTrendPanel({ vm }: { vm: MonthlyTrendVM }) {
             <YAxis stroke="var(--muted)" fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              formatter={(value: number, name: string) => [
-                formatMoney(value, "ARS"),
+              formatter={(value: number, name: string, item: { payload?: MonthlyTrendBarVM }) => [
+                formatMoney(value, item.payload?.currency ?? "ARS"),
                 name === "income" ? "Ingresos" : "Gastos",
               ]}
             />
@@ -172,7 +192,10 @@ function ByCategoryPanel({ vm }: { vm: ByCategoryVM }) {
                   <Cell key={slice.key} fill={slice.color} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatMoney(value, "ARS")} />
+              <Tooltip
+                contentStyle={TOOLTIP_STYLE}
+                formatter={(_value, _name, item) => (item.payload as CategorySliceVM).totalLabel}
+              />
             </PieChart>
           </ResponsiveContainer>
 

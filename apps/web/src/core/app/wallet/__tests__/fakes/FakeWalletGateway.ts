@@ -15,6 +15,7 @@ import { SavingsGoal } from "../../../../domain/wallet/SavingsGoal";
 import { Transaction, type WalletTransactionFilters } from "../../../../domain/wallet/Transaction";
 import type {
   CategoryStat,
+  FoodSpendingThisWeek,
   MonthlyTrend,
   WalletStatsSummary,
 } from "../../../../domain/wallet/WalletStats";
@@ -195,15 +196,26 @@ export class FakeWalletGateway implements WalletGateway {
   // stats
   async getStatsSummary(params?: Record<string, string>): Promise<WalletStatsSummary> {
     this.record("getStatsSummary", params);
-    return { totalIncome: "0", totalExpenses: "0", netBalance: "0", transactionCount: 0 };
+    return {
+      currency: "ARS",
+      totalIncome: "0",
+      totalExpenses: "0",
+      netBalance: "0",
+      transactionCount: 0,
+      conversion: { rateType: "mep", rates: [] },
+    };
   }
   async getStatsByCategory(params?: Record<string, string>): Promise<CategoryStat[]> {
     this.record("getStatsByCategory", params);
     return [];
   }
-  async getMonthlyTrend(): Promise<MonthlyTrend[]> {
-    this.record("getMonthlyTrend");
+  async getMonthlyTrend(params?: Record<string, string>): Promise<MonthlyTrend[]> {
+    this.record("getMonthlyTrend", params);
     return [];
+  }
+  async getFoodSpendingThisWeek(): Promise<FoodSpendingThisWeek> {
+    this.record("getFoodSpendingThisWeek");
+    return { from: "2026-06-15", to: "2026-06-17", byCurrency: [] };
   }
 
   // exchange rates
@@ -214,5 +226,9 @@ export class FakeWalletGateway implements WalletGateway {
   async createExchangeRate(input: CreateExchangeRateInput): Promise<ExchangeRate> {
     this.record("createExchangeRate", input);
     return exchangeRateDto;
+  }
+  async refreshExchangeRates(): Promise<ExchangeRate[]> {
+    this.record("refreshExchangeRates");
+    return [exchangeRateDto];
   }
 }

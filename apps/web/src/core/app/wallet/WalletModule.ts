@@ -10,6 +10,7 @@ import { CreateInvestment, CreateInvestmentHandler } from "./CreateInvestment";
 import { CreateSavingsGoal, CreateSavingsGoalHandler } from "./CreateSavingsGoal";
 import { CreateTransaction, CreateTransactionHandler } from "./CreateTransaction";
 import { DeleteAccount, DeleteAccountHandler } from "./DeleteAccount";
+import { EnsureFreshDollarRates, EnsureFreshDollarRatesHandler } from "./EnsureFreshDollarRates";
 import { DeleteTransaction, DeleteTransactionHandler } from "./DeleteTransaction";
 import { GetAccounts, GetAccountsHandler } from "./GetAccounts";
 import { GetCategories, GetCategoriesHandler } from "./GetCategories";
@@ -17,6 +18,7 @@ import { GetExchangeRates, GetExchangeRatesHandler } from "./GetExchangeRates";
 import { GetInvestments, GetInvestmentsHandler } from "./GetInvestments";
 import { GetSavings, GetSavingsHandler } from "./GetSavings";
 import { GetTransactions, GetTransactionsHandler } from "./GetTransactions";
+import { GetFoodSpendingThisWeek, GetFoodSpendingThisWeekHandler } from "./GetFoodSpendingThisWeek";
 import { GetWalletMonthlyTrend, GetWalletMonthlyTrendHandler } from "./GetWalletMonthlyTrend";
 import { GetWalletStatsByCategory, GetWalletStatsByCategoryHandler } from "./GetWalletStatsByCategory";
 import { GetWalletStatsSummary, GetWalletStatsSummaryHandler } from "./GetWalletStatsSummary";
@@ -71,9 +73,14 @@ export class WalletModule implements CoreModule {
       () => new GetWalletStatsByCategoryHandler(gateway),
     );
     core.bus.registerHandler(GetWalletMonthlyTrend, () => new GetWalletMonthlyTrendHandler(gateway));
+    core.bus.registerHandler(
+      GetFoodSpendingThisWeek,
+      () => new GetFoodSpendingThisWeekHandler(gateway),
+    );
 
     // exchange rates
     core.bus.registerHandler(GetExchangeRates, () => new GetExchangeRatesHandler(gateway));
     core.bus.registerHandler(CreateExchangeRate, () => new CreateExchangeRateHandler(gateway));
+    core.bus.registerHandler(EnsureFreshDollarRates, () => new EnsureFreshDollarRatesHandler(gateway));
   }
 }

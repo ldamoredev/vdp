@@ -5,6 +5,8 @@ import { Core } from "@/core/Core";
 import { Goal } from "@/core/domain/health/Goal";
 import { HealthModule } from "@/core/app/health/HealthModule";
 import { FakeHealthGateway } from "@/core/app/health/__tests__/fakes/FakeHealthGateway";
+import { WalletModule } from "@/core/app/wallet/WalletModule";
+import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { HealthEvents } from "@/ui/events/HealthEvents";
 import { GoalsPresenter } from "../GoalsPresenter";
 
@@ -121,6 +123,51 @@ describe("GoalsPresenter", () => {
       "g1",
       { habitName: "Gym", cadence: "weekly", weeklyTarget: 3 },
     ]);
+  });
+
+  function buildWithWallet(goals: GoalOverview[], walletGateway: FakeWalletGateway) {
+    const healthGateway = new FakeHealthGateway();
+    vi.spyOn(healthGateway, "listGoals").mockResolvedValue({ goals: goals.map(Goal.from), date: "2026-06-13" });
+    const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } })
+      .use(new HealthModule(healthGateway))
+      .use(new WalletModule(walletGateway));
+    const presenter = new GoalsPresenter(vi.fn(), core, new HealthEvents());
+    presenter.init(undefined);
+    return presenter;
+  }
+
+  it("shows this week's delivery spend on an active weight goal, grouped by currency", async () => {
+    const wallet = new FakeWalletGateway();
+    const food = vi.spyOn(wallet, "getFoodSpendingThisWeek").mockResolvedValue({
+      from: "2026-06-15",
+      to: "2026-06-17",
+      byCurrency: [
+        { currency: "ARS", total: 12500, count: 3 },
+        { currency: "USD", total: 20, count: 1 },
+      ],
+    });
+    const presenter = buildWithWallet([goal({ id: "w1", title: "Bajar 5kg", targetWeightKg: "78.00" })], wallet);
+
+    presenter.start();
+    await flush();
+
+    expect(food).toHaveBeenCalledTimes(1);
+    const row = presenter.model.goals[0];
+    expect(row.foodSpendingLabel).toContain("12.500");
+    expect(row.foodSpendingLabel).toContain("4 pedidos");
+    expect(row.foodSpendingHref).toBe("/wallet/transactions?type=expense&from=2026-06-15&to=2026-06-17");
+  });
+
+  it("does not query delivery spend when no active goal has a target weight", async () => {
+    const wallet = new FakeWalletGateway();
+    const food = vi.spyOn(wallet, "getFoodSpendingThisWeek");
+    const presenter = buildWithWallet([goal({ id: "g1", title: "Leer", targetWeightKg: null })], wallet);
+
+    presenter.start();
+    await flush();
+
+    expect(food).not.toHaveBeenCalled();
+    expect(presenter.model.goals[0].foodSpendingLabel).toBeNull();
   });
 
   it("dismisses the graduation offer without graduating", async () => {

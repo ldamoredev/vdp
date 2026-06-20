@@ -1,4 +1,5 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
+import type { Currency } from "@vdp/shared";
 
 import type { Core } from "@/core/Core";
 import { GetAccounts } from "@/core/app/wallet/GetAccounts";
@@ -11,7 +12,13 @@ import type { Transaction } from "@/core/domain/wallet/Transaction";
 import type { UpdateTransactionInput } from "@/core/domain/wallet/WalletGateway";
 import type { WalletStatsSummary } from "@/core/domain/wallet/WalletStats";
 import { GetCategories } from "@/core/app/wallet/GetCategories";
+import { EnsureFreshDollarRates } from "@/core/app/wallet/EnsureFreshDollarRates";
 import { formatDate, formatMoney } from "@/lib/format";
+import {
+  getPresentationCurrency,
+  setPresentationCurrency,
+  subscribePresentationCurrency,
+} from "@/lib/preferences/presentation-currency";
 import type {
   DashboardAccountVM,
   DashboardStatVM,
@@ -38,6 +45,8 @@ const TYPE_PRESENTATION: Record<
   expense: { label: "Gasto", sign: "-", tone: "expense" },
   transfer: { label: "Transferencia", sign: "", tone: "transfer" },
 };
+
+const PRESENTATION_CURRENCY_OPTIONS: Currency[] = ["ARS", "USD"];
 
 function editFormFrom(transaction: Transaction): EditTransactionFormState {
   return {
@@ -83,10 +92,15 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
   private categories: Category[] = [];
   private recentTransactions: Transaction[] = [];
   private statsSummary: WalletStatsSummary | null = null;
+  private presentationCurrency: Currency = getPresentationCurrency();
   private isLoadingAccounts = true;
   private isLoadingStats = true;
   private isLoadingRecentTransactions = true;
   private error = false;
+  private statsError = false;
+  private statsLoadRequestId = 0;
+  private unsubscribeCurrency: (() => void) | null = null;
+  private ratesEnsured = false;
 
   private editingId: string | null = null;
   private editForm: EditTransactionFormState | null = null;
@@ -105,13 +119,46 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
   }
 
   start(): void {
-    void this.reload();
+    this.presentationCurrency = getPresentationCurrency();
+    this.unsubscribeCurrency = subscribePresentationCurrency(() => this.syncPresentationCurrency());
+    void this.bootstrap();
   }
 
-  stop(): void {}
+  /** Pull a fresh MEP quote if stale, then load with rates ready for conversion. */
+  private async bootstrap(): Promise<void> {
+    await this.ensureFreshRates();
+    await this.reload();
+  }
+
+  private async ensureFreshRates(): Promise<void> {
+    if (this.ratesEnsured) return;
+    this.ratesEnsured = true;
+    try {
+      await this.core.execute(new EnsureFreshDollarRates());
+    } catch {
+      // A failed refresh surfaces later as statsError when conversion can't run.
+    }
+  }
+
+  stop(): void {
+    this.unsubscribeCurrency?.();
+    this.unsubscribeCurrency = null;
+  }
 
   async reload(): Promise<void> {
     await Promise.all([this.loadAccounts(), this.loadStats(), this.loadRecentTransactions(), this.loadCategories()]);
+  }
+
+  /** Writes the universal preference; the subscription reloads the summary. */
+  setPresentationCurrency(currency: Currency): void {
+    setPresentationCurrency(currency);
+  }
+
+  private syncPresentationCurrency(): void {
+    const next = getPresentationCurrency();
+    if (next === this.presentationCurrency) return;
+    this.presentationCurrency = next;
+    void this.loadStats();
   }
 
   openEdit(id: string): void {
@@ -193,17 +240,26 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
   }
 
   private async loadStats(): Promise<void> {
+    const requestId = this.statsLoadRequestId + 1;
+    this.statsLoadRequestId = requestId;
     this.isLoadingStats = true;
     this.refresh();
     try {
-      this.statsSummary = await this.core.execute(new GetWalletStatsSummary());
-      this.error = false;
+      const summary = await this.core.execute(new GetWalletStatsSummary(this.statsParams()));
+      if (requestId !== this.statsLoadRequestId) return;
+      this.statsSummary = summary;
+      this.statsError = false;
     } catch {
-      this.error = true;
-    } finally {
-      this.isLoadingStats = false;
-      this.refresh();
+      if (requestId !== this.statsLoadRequestId) return;
+      // Drop the stale summary so the tiles never show the previous currency's
+      // numbers as if they had been converted.
+      this.statsSummary = null;
+      this.statsError = true;
     }
+    // Only the latest request reaches here (stale ones returned above), so it is
+    // safe to clear the loading flag and publish the result.
+    this.isLoadingStats = false;
+    this.refresh();
   }
 
   private async loadRecentTransactions(): Promise<void> {
@@ -235,6 +291,8 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
       newTransactionHref: "/wallet/transactions/new",
       statsLabel: "Ver estadísticas",
       statsHref: "/wallet/stats",
+      presentationCurrency: this.presentationCurrency,
+      currencyOptions: this.currencyOptionsVM(),
       stats: this.statsVM(),
       accounts: this.accounts.map((account) => this.accountVM(account)),
       recentTransactions: this.recentTransactions.map((transaction) => this.transactionVM(transaction)),
@@ -246,25 +304,40 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
       isLoadingAccounts: this.isLoadingAccounts,
       isLoadingStats: this.isLoadingStats,
       isLoadingRecentTransactions: this.isLoadingRecentTransactions,
+      statsError: this.statsError,
       error: this.error,
     };
   }
 
+  private statsParams(): Record<string, string> {
+    return { currency: this.presentationCurrency };
+  }
+
+  private currencyOptionsVM(): DashboardViewModel["currencyOptions"] {
+    return PRESENTATION_CURRENCY_OPTIONS.map((currency) => ({
+      currency,
+      label: currency,
+      selected: currency === this.presentationCurrency,
+    }));
+  }
+
   private statsVM(): DashboardStatVM[] {
+    const currency = this.statsSummary?.currency ?? "ARS";
+
     return [
       {
         label: "Ingresos",
-        valueLabel: `+${formatMoney(Number(this.statsSummary?.totalIncome ?? 0), "ARS")}`,
+        valueLabel: `+${formatMoney(Number(this.statsSummary?.totalIncome ?? 0), currency)}`,
         tone: "income",
       },
       {
         label: "Gastos",
-        valueLabel: `-${formatMoney(Number(this.statsSummary?.totalExpenses ?? 0), "ARS")}`,
+        valueLabel: `-${formatMoney(Number(this.statsSummary?.totalExpenses ?? 0), currency)}`,
         tone: "expense",
       },
       {
         label: "Neto",
-        valueLabel: formatMoney(Number(this.statsSummary?.netBalance ?? 0), "ARS"),
+        valueLabel: formatMoney(Number(this.statsSummary?.netBalance ?? 0), currency),
         tone: "neutral",
       },
     ];
@@ -298,9 +371,11 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
   }
 
   private sanityVM() {
+    const currency = this.statsSummary?.currency ?? "ARS";
+
     return {
       transactionCount: this.statsSummary?.transactionCount ?? 0,
-      totalAmountLabel: formatMoney(Number(this.statsSummary?.totalExpenses ?? 0), "ARS"),
+      totalAmountLabel: formatMoney(Number(this.statsSummary?.totalExpenses ?? 0), currency),
       label: "en gastos",
     };
   }

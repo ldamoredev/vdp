@@ -17,6 +17,7 @@ import { SavingsGoal } from "../../domain/wallet/SavingsGoal";
 import { Transaction, type WalletTransactionFilters } from "../../domain/wallet/Transaction";
 import type {
   CategoryStat,
+  FoodSpendingThisWeek,
   MonthlyTrend,
   WalletStatsSummary,
 } from "../../domain/wallet/WalletStats";
@@ -160,8 +161,15 @@ export class HttpWalletGateway implements WalletGateway {
     return body;
   }
 
-  async getMonthlyTrend(): Promise<MonthlyTrend[]> {
-    const { body } = await this.http.get<MonthlyTrend[]>(`${W}/stats/monthly-trend`);
+  async getMonthlyTrend(params?: Record<string, string>): Promise<MonthlyTrend[]> {
+    const { body } = await this.http.get<MonthlyTrend[]>(
+      withQuery(`${W}/stats/monthly-trend`, params),
+    );
+    return body;
+  }
+
+  async getFoodSpendingThisWeek(): Promise<FoodSpendingThisWeek> {
+    const { body } = await this.http.get<FoodSpendingThisWeek>(`${W}/stats/food-this-week`);
     return body;
   }
 
@@ -173,6 +181,11 @@ export class HttpWalletGateway implements WalletGateway {
 
   async createExchangeRate(input: CreateExchangeRateInput): Promise<ExchangeRate> {
     const { body } = await this.http.post<ExchangeRateDto>(`${W}/exchange-rates`, input);
+    return body;
+  }
+
+  async refreshExchangeRates(): Promise<ExchangeRate[]> {
+    const { body } = await this.http.post<ExchangeRateDto[]>(`${W}/exchange-rates/refresh`, {});
     return body;
   }
 }

@@ -21,6 +21,9 @@ export interface GoalRowVM {
   deadlineLabel: string;
   urgency: GoalUrgency;
   busy: boolean;
+  /** Cross-domain (D1b): this week's eating-out / delivery spend, shown on weight goals. */
+  foodSpendingLabel: string | null;
+  foodSpendingHref: string | null;
 }
 
 export interface GraduationVM {

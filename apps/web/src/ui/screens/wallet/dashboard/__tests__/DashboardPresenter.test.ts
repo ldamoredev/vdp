@@ -1,10 +1,15 @@
 import type { Account, Transaction as TransactionDto, WalletStatsSummary } from "@vdp/shared";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { Transaction } from "@/core/domain/wallet/Transaction";
+import {
+  __resetPresentationCurrencyForTests,
+  getPresentationCurrency,
+  setPresentationCurrency,
+} from "@/lib/preferences/presentation-currency";
 import { DashboardPresenter } from "../DashboardPresenter";
 
 function account(overrides: Partial<Account> = {}): Account {
@@ -42,10 +47,12 @@ function transactionDto(overrides: Partial<TransactionDto> = {}): TransactionDto
 
 function stats(overrides: Partial<WalletStatsSummary> = {}): WalletStatsSummary {
   return {
+    currency: "ARS",
     totalIncome: "1000",
     totalExpenses: "150",
     netBalance: "850",
     transactionCount: 1,
+    conversion: { rateType: "mep", rates: [] },
     ...overrides,
   };
 }
@@ -53,7 +60,7 @@ function stats(overrides: Partial<WalletStatsSummary> = {}): WalletStatsSummary 
 function build() {
   const gateway = new FakeWalletGateway();
   vi.spyOn(gateway, "getAccounts").mockResolvedValue([account()]);
-  vi.spyOn(gateway, "getStatsSummary").mockResolvedValue(stats());
+  const getStatsSummary = vi.spyOn(gateway, "getStatsSummary").mockResolvedValue(stats());
   const getTransactions = vi.spyOn(gateway, "getTransactions").mockResolvedValue({
     transactions: [Transaction.from(transactionDto())],
     total: 1,
@@ -64,20 +71,25 @@ function build() {
   }).use(new WalletModule(gateway));
   const presenter = new DashboardPresenter(vi.fn(), core);
   presenter.init(undefined);
-  return { presenter, gateway, getTransactions };
+  return { presenter, gateway, getStatsSummary, getTransactions };
 }
 
 async function flush() {
-  for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  for (let i = 0; i < 50; i += 1) await Promise.resolve();
 }
 
 describe("DashboardPresenter", () => {
+  beforeEach(() => {
+    __resetPresentationCurrencyForTests();
+  });
+
   it("loads accounts, stats and recent transactions", async () => {
-    const { presenter, getTransactions } = build();
+    const { presenter, getStatsSummary, getTransactions } = build();
 
     presenter.start();
     await flush();
 
+    expect(getStatsSummary).toHaveBeenLastCalledWith({ currency: "ARS" });
     expect(getTransactions).toHaveBeenLastCalledWith({ limit: "10" });
     expect(presenter.model.stats.map((item) => item.valueLabel)).toEqual([
       "+$ 1.000,00",
@@ -87,6 +99,106 @@ describe("DashboardPresenter", () => {
     expect(presenter.model.accounts[0].balanceLabel).toBe("$ 850,00");
     expect(presenter.model.recentTransactions[0].descriptionLabel).toBe("Super");
     expect(presenter.model.sanity.totalAmountLabel).toBe("$ 150,00");
+  });
+
+  it("reloads the operational summary in the selected presentation currency", async () => {
+    const { presenter, getStatsSummary } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.presentationCurrency).toBe("ARS");
+    expect(presenter.model.currencyOptions).toEqual([
+      { currency: "ARS", label: "ARS", selected: true },
+      { currency: "USD", label: "USD", selected: false },
+    ]);
+
+    getStatsSummary.mockResolvedValue(stats({ currency: "USD" }));
+    presenter.setPresentationCurrency("USD");
+    await flush();
+
+    expect(presenter.model.presentationCurrency).toBe("USD");
+    expect(presenter.model.currencyOptions).toEqual([
+      { currency: "ARS", label: "ARS", selected: false },
+      { currency: "USD", label: "USD", selected: true },
+    ]);
+    expect(getStatsSummary).toHaveBeenLastCalledWith({ currency: "USD" });
+  });
+
+  it("reads the persisted presentation currency on start", async () => {
+    setPresentationCurrency("USD");
+    const { presenter, getStatsSummary } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.presentationCurrency).toBe("USD");
+    expect(getStatsSummary).toHaveBeenLastCalledWith({ currency: "USD" });
+  });
+
+  it("writes the chosen currency to the universal preference", async () => {
+    const { presenter } = build();
+    presenter.start();
+    await flush();
+
+    presenter.setPresentationCurrency("USD");
+    await flush();
+
+    expect(getPresentationCurrency()).toBe("USD");
+  });
+
+  it("reacts to a currency change made from another screen", async () => {
+    const { presenter, getStatsSummary } = build();
+    presenter.start();
+    await flush();
+
+    getStatsSummary.mockResolvedValue(stats({ currency: "USD" }));
+    setPresentationCurrency("USD");
+    await flush();
+
+    expect(presenter.model.presentationCurrency).toBe("USD");
+    expect(getStatsSummary).toHaveBeenLastCalledWith({ currency: "USD" });
+  });
+
+  it("shows the converted numbers, not the previous currency values", async () => {
+    const { presenter, getStatsSummary } = build();
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.stats.map((item) => item.valueLabel)).toEqual([
+      "+$ 1.000,00",
+      "-$ 150,00",
+      "$ 850,00",
+    ]);
+
+    getStatsSummary.mockResolvedValue(
+      stats({ currency: "USD", totalIncome: "1", totalExpenses: "0.15", netBalance: "0.85" }),
+    );
+    presenter.setPresentationCurrency("USD");
+    await flush();
+
+    expect(presenter.model.stats.map((item) => item.valueLabel)).toEqual([
+      "+US$ 1,00",
+      "-US$ 0,15",
+      "US$ 0,85",
+    ]);
+  });
+
+  it("surfaces an error instead of stale numbers when the conversion fails", async () => {
+    const { presenter, getStatsSummary } = build();
+    presenter.start();
+    await flush();
+
+    getStatsSummary.mockRejectedValue(new Error("Missing mep exchange rate"));
+    presenter.setPresentationCurrency("USD");
+    await flush();
+
+    expect(presenter.model.statsError).toBe(true);
+    expect(presenter.model.stats.map((item) => item.valueLabel)).not.toEqual([
+      "+$ 1.000,00",
+      "-$ 150,00",
+      "$ 850,00",
+    ]);
   });
 
   it("opens and saves recent transaction edits, then reloads", async () => {

@@ -36,8 +36,8 @@ export function buildWalletReviewSignals({
     });
   }
 
-  const totalExpenseAmount = expenseTransactions.reduce(
-    (sum, transaction) => sum + Number(transaction.amount),
+  const totalExpenseAmount = byCategory.reduce(
+    (sum, category) => sum + category.total,
     0,
   );
 

@@ -1,4 +1,5 @@
-import { Check, Flag, Plus, Sparkles, X } from "lucide-react";
+import { Check, Flag, Plus, Sparkles, UtensilsCrossed, X } from "lucide-react";
+import { Link } from "react-router";
 
 import type { GoalUrgency } from "@/core/domain/health/Goal";
 import type { GoalsPresenter } from "./GoalsPresenter";
@@ -183,6 +184,24 @@ export function GoalsSection() {
                 <span>{goal.targetDateLabel}</span>
                 {goal.targetWeightLabel && <span className="font-data">{goal.targetWeightLabel}</span>}
               </div>
+              {goal.foodSpendingLabel && (
+                <div className="mt-1 text-[11px]">
+                  {goal.foodSpendingHref ? (
+                    <Link
+                      to={goal.foodSpendingHref}
+                      className="inline-flex items-center gap-1 text-[var(--accent)] transition-colors hover:underline"
+                    >
+                      <UtensilsCrossed size={11} className="shrink-0" />
+                      <span className="font-data">{goal.foodSpendingLabel}</span>
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[var(--muted)]">
+                      <UtensilsCrossed size={11} className="shrink-0" />
+                      <span className="font-data">{goal.foodSpendingLabel}</span>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <span

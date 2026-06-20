@@ -8,6 +8,9 @@ import { CreateGoal } from "@/core/app/health/CreateGoal";
 import { DropGoal } from "@/core/app/health/DropGoal";
 import { GetGoalsOverview } from "@/core/app/health/GetGoalsOverview";
 import { GraduateGoal } from "@/core/app/health/GraduateGoal";
+import { GetFoodSpendingThisWeek } from "@/core/app/wallet/GetFoodSpendingThisWeek";
+import type { FoodSpendingThisWeek } from "@/core/domain/wallet/WalletStats";
+import { formatMoney } from "@/lib/format";
 import type { HealthEvents } from "@/ui/events/HealthEvents";
 import type { GoalRowVM, GoalsViewModel } from "@/ui/models/health/GoalsViewModel";
 
@@ -18,6 +21,7 @@ import type { GoalRowVM, GoalsViewModel } from "@/ui/models/health/GoalsViewMode
  */
 export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
   private goals: Goal[] = [];
+  private foodSpending: FoodSpendingThisWeek | null = null;
   private busyIds = new Set<string>();
   private offer: { goalId: string } | null = null;
   private graduationHabitName = "";
@@ -153,11 +157,30 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       const { goals } = await this.core.execute(new GetGoalsOverview());
       this.goals = sortActiveGoals(goals);
       this.error = false;
+      await this.loadFoodSpending();
     } catch {
       this.error = true;
     } finally {
       this.isLoading = false;
       this.refresh();
+    }
+  }
+
+  /**
+   * Cross-domain context (D1b): a weight/diet goal is the moment delivery
+   * spending is relevant, so pull this week's eating-out total from Wallet only
+   * then. A wallet failure must never break the goals view — it just hides the
+   * line.
+   */
+  private async loadFoodSpending(): Promise<void> {
+    if (!this.goals.some((goal) => goal.targetWeightKg)) {
+      this.foodSpending = null;
+      return;
+    }
+    try {
+      this.foodSpending = await this.core.execute(new GetFoodSpendingThisWeek());
+    } catch {
+      this.foodSpending = null;
     }
   }
 
@@ -200,6 +223,7 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
   }
 
   private goalVM(goal: Goal): GoalRowVM {
+    const isWeightGoal = Boolean(goal.targetWeightKg);
     return {
       id: goal.id,
       title: goal.title,
@@ -208,7 +232,25 @@ export class GoalsPresenter extends PresenterBase<GoalsViewModel> {
       deadlineLabel: this.deadlineLabel(goal),
       urgency: goal.urgency(),
       busy: this.busyIds.has(goal.id),
+      foodSpendingLabel: isWeightGoal ? this.foodSpendingLabel() : null,
+      foodSpendingHref: isWeightGoal ? this.foodSpendingHref() : null,
     };
+  }
+
+  private foodSpendingLabel(): string {
+    const summary = this.foodSpending;
+    if (!summary || summary.byCurrency.length === 0) {
+      return "Delivery esta semana: sin gastos";
+    }
+    const amounts = summary.byCurrency.map((entry) => formatMoney(entry.total, entry.currency)).join(", ");
+    const orders = summary.byCurrency.reduce((sum, entry) => sum + entry.count, 0);
+    return `Delivery esta semana: ${amounts} · ${orders} pedido${orders === 1 ? "" : "s"}`;
+  }
+
+  private foodSpendingHref(): string | null {
+    const summary = this.foodSpending;
+    if (!summary) return null;
+    return `/wallet/transactions?type=expense&from=${summary.from}&to=${summary.to}`;
   }
 
   private deadlineLabel(goal: Goal): string {

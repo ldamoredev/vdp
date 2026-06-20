@@ -143,14 +143,14 @@ describe("wallet handlers (dispatched through the bus)", () => {
       const core = coreWith(gateway);
       await core.execute(new GetWalletStatsSummary({ from: "2026-06-01" }));
       await core.execute(new GetWalletStatsByCategory({ type: "expense" }));
-      await core.execute(new GetWalletMonthlyTrend());
+      await core.execute(new GetWalletMonthlyTrend({ currency: "USD" }));
       await core.execute(new GetExchangeRates());
       await core.execute(
         new CreateExchangeRate({ fromCurrency: "USD", toCurrency: "ARS", rate: "1000", type: "blue" }),
       );
       expect(gateway.callsTo("getStatsSummary")[0].args).toEqual([{ from: "2026-06-01" }]);
       expect(gateway.callsTo("getStatsByCategory")[0].args).toEqual([{ type: "expense" }]);
-      expect(gateway.callsTo("getMonthlyTrend")).toHaveLength(1);
+      expect(gateway.callsTo("getMonthlyTrend")[0].args).toEqual([{ currency: "USD" }]);
       expect(gateway.callsTo("getExchangeRates")).toHaveLength(1);
       expect(gateway.callsTo("createExchangeRate")[0].args).toEqual([
         { fromCurrency: "USD", toCurrency: "ARS", rate: "1000", type: "blue" },
