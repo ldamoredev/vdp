@@ -122,16 +122,16 @@ export class CategoriesPresenter extends PresenterBase<CategoriesViewModel> {
     const hasCategories = this.categories.length > 0;
 
     return {
-      title: "Categorias",
+      title: "Categorías",
       intro: walletScreenIntro("categories"),
-      addButtonLabel: "Nueva categoria",
+      addButtonLabel: "Nueva categoría",
       form: this.showForm
         ? {
             name: this.form.name,
             type: this.form.type,
             icon: this.form.icon,
             typeOptions: TYPE_OPTIONS,
-            submitLabel: this.isCreating ? "Creando..." : "Guardar categoria",
+            submitLabel: this.isCreating ? "Creando..." : "Guardar categoría",
             isSubmitting: this.isCreating,
             canSubmit: this.canSubmit(),
           }
@@ -139,8 +139,8 @@ export class CategoriesPresenter extends PresenterBase<CategoriesViewModel> {
       groups:
         !this.isLoading && hasCategories
           ? [
-              this.groupVM("Gastos", "Categorias que ordenan salidas de dinero", grouped.expense),
-              this.groupVM("Ingresos", "Categorias que separan entradas de dinero", grouped.income),
+              this.groupVM("Gastos", "Categorías que ordenan salidas de dinero", grouped.expense),
+              this.groupVM("Ingresos", "Categorías que separan entradas de dinero", grouped.income),
             ]
           : null,
       emptyState: !this.isLoading && !hasCategories ? walletEmptyState("categories") : null,
@@ -153,7 +153,7 @@ export class CategoriesPresenter extends PresenterBase<CategoriesViewModel> {
     return {
       title,
       description,
-      emptyText: "Todavia no registraste ninguna en este grupo",
+      emptyText: "Todavía no registraste ninguna en este grupo",
       items: categories.map((category) => this.categoryVM(category)),
     };
   }

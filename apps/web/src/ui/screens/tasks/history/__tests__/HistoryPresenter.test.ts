@@ -111,7 +111,7 @@ describe("HistoryPresenter", () => {
     expect(presenter.model.header.dateLabel).toBe("domingo, 14 jun 2026");
     expect(presenter.model.header.metrics.map((metric) => metric.value)).toEqual(["3", "1", "1", "33%"]);
     expect(presenter.model.signals.map((signal) => signal.title)).toEqual([
-      "Dia sobrecargado",
+      "Día sobrecargado",
       "Hay tareas bloqueadas",
     ]);
     expect(presenter.model.closureQueue.items.map((item) => item.title)).toEqual(["Resolver cierre"]);

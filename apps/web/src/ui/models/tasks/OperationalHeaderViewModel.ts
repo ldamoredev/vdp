@@ -7,10 +7,13 @@ export interface OperationalHeaderViewModel {
   urgentCount: number;
   stuckCount: number;
   highPriorityCount: number;
+  pressureValue: number;
+  pressureSub: string;
   /** 7-day rhythm. */
   completionAverage: number;
   pendingCount: number;
   doneCount: number;
+  rhythmSub: string;
   /** Reschedule-all (carry pending to tomorrow). */
   canReschedule: boolean;
   isRescheduling: boolean;

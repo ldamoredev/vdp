@@ -161,7 +161,7 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
       this.closeEdit();
       await Promise.all([this.loadStats(), this.loadRecentTransactions(), this.loadAccounts()]);
     } catch {
-      this.editMessage = "No se pudo guardar la transaccion";
+      this.editMessage = "No se pudo guardar la transacción";
     } finally {
       this.isUpdating = false;
       this.refresh();
@@ -231,9 +231,9 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
       intro: walletScreenIntro("dashboard"),
       eyebrow: "Resumen operativo",
       quickAddLabel: "Gasto rápido",
-      newTransactionLabel: "Nueva transaccion",
+      newTransactionLabel: "Nueva transacción",
       newTransactionHref: "/wallet/transactions/new",
-      statsLabel: "Ver estadisticas",
+      statsLabel: "Ver estadísticas",
       statsHref: "/wallet/stats",
       stats: this.statsVM(),
       accounts: this.accounts.map((account) => this.accountVM(account)),
@@ -309,7 +309,7 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
     const transaction = this.editingTransaction();
     if (!transaction || !this.editForm) return null;
     return {
-      title: "Editar transaccion",
+      title: "Editar transacción",
       transactionId: transaction.id,
       amount: this.editForm.amount,
       currency: transaction.currency,

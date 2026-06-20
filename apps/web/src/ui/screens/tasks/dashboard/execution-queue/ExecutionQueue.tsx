@@ -21,7 +21,7 @@ export function ExecutionQueue() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="text-base font-semibold tracking-tight text-[var(--foreground)]">
-              Cola de ejecucion
+              Cola de ejecución
             </h3>
             <p className="mt-0.5 text-[13px] text-[var(--muted)]">Lo importante queda al frente</p>
           </div>
@@ -34,7 +34,7 @@ export function ExecutionQueue() {
                 onClick={() => presenter.setFilter(item.key)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                   vm.filter === item.key
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent)] text-[var(--accent-contrast)]"
                     : "bg-[var(--hover-overlay)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay-strong)]"
                 }`}
                 style={vm.filter === item.key ? { boxShadow: "0 2px 8px var(--accent-glow)" } : undefined}
@@ -53,14 +53,44 @@ export function ExecutionQueue() {
           </p>
         )}
 
-        {!vm.error && vm.rows.length === 0 && <EmptyTaskList filter={vm.filter} />}
+        {vm.isLoading && <ExecutionQueueSkeleton />}
 
-        <div className="stagger-children space-y-3">
-          {vm.rows.map((task) => (
-            <TaskRow key={task.id} task={task} actions={actions} />
-          ))}
-        </div>
+        {!vm.isLoading && !vm.error && vm.rows.length === 0 && <EmptyTaskList filter={vm.filter} />}
+
+        {!vm.isLoading && (
+          <div className="stagger-children space-y-3">
+            {vm.rows.map((task) => (
+              <TaskRow key={task.id} task={task} actions={actions} />
+            ))}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ExecutionQueueSkeleton() {
+  return (
+    <div className="space-y-3" role="status" aria-busy="true" aria-label="Cargando tareas">
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="skeleton h-5 w-5 shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="skeleton h-3 w-3/4" />
+              <div className="skeleton h-2.5 w-1/2 md:hidden" />
+            </div>
+            <div className="hidden shrink-0 items-center gap-2 md:flex">
+              <div className="skeleton h-5 w-14" />
+              <div className="skeleton h-5 w-16" />
+              <div className="skeleton h-8 w-24" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -84,7 +84,7 @@ describe("TransactionsPresenter", () => {
       offset: "0",
     });
     expect(presenter.model.rows.map((row) => row.descriptionLabel)).toEqual(["Sueldo", "Cafe"]);
-    expect(presenter.model.pagination.label).toBe("Pagina 1 de 3");
+    expect(presenter.model.pagination.label).toBe("Página 1 de 3");
     expect(presenter.model.sanity.totalAmountLabel).toBe("Varias monedas");
     expect(presenter.model.activeCategoryChip?.label).toBe("Filtro: Comida");
   });
@@ -126,7 +126,7 @@ describe("TransactionsPresenter", () => {
 
     await presenter.nextPage();
 
-    expect(presenter.model.pagination.label).toBe("Pagina 2 de 3");
+    expect(presenter.model.pagination.label).toBe("Página 2 de 3");
     expect(getTransactions).toHaveBeenLastCalledWith({ limit: "20", offset: "20" });
   });
 

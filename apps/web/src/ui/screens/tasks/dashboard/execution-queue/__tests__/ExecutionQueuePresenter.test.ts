@@ -72,6 +72,18 @@ describe("ExecutionQueuePresenter", () => {
     expect(counts).toMatchObject({ focus: 1, pending: 2, done: 1, all: 3 });
   });
 
+  it("marks stuck task rows explicitly for the humble view", async () => {
+    const { presenter } = await build([
+      taskDto({ id: "stuck", carryOverCount: 3 }),
+      taskDto({ id: "carried", carryOverCount: 1 }),
+    ]);
+
+    presenter.setFilter("all");
+
+    expect(presenter.model.rows.find((row) => row.id === "stuck")?.isStuck).toBe(true);
+    expect(presenter.model.rows.find((row) => row.id === "carried")?.isStuck).toBe(false);
+  });
+
   it("switching the filter re-projects the rows", async () => {
     const { presenter } = await build([
       taskDto({ id: "hot", priority: 3 }),

@@ -21,14 +21,14 @@ export interface WalletEmptyStateCopy {
 }
 
 const screenIntros: Record<WalletScreenKey, string> = {
-  dashboard: "Resumen operativo de tus cuentas, movimientos y señales del dia",
+  dashboard: "Resumen operativo de tus cuentas, movimientos y señales del día",
   transactions:
     "Movimientos listos para revisar, corregir y filtrar sin perder contexto",
-  stats: "Totales y categorias con el detalle necesario para verificar cada numero",
+  stats: "Totales y categorías con el detalle necesario para verificar cada número",
   accounts: "Cuentas activas, saldo inicial y tipo en una sola vista",
-  categories: "Categorias claras para capturar y revisar gastos sin friccion",
+  categories: "Categorías claras para capturar y revisar gastos sin fricción",
   savings: "Objetivos con progreso, contexto y acciones visibles",
-  investments: "Posiciones activas con retorno y estado faciles de leer",
+  investments: "Posiciones activas con retorno y estado fáciles de leer",
 };
 
 const emptyStates: Record<WalletScreenKey, WalletEmptyStateCopy> = {

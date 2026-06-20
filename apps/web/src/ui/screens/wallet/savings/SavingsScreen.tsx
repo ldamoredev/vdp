@@ -1,5 +1,6 @@
 import { Calendar, Check, Plus, Target } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import type { SavingsFormVM, SavingsGoalVM } from "@/ui/models/wallet/SavingsViewModel";
@@ -12,16 +13,18 @@ export function SavingsScreen() {
 
   return (
     <ModulePage width="4xl" spacing="6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{vm.title}</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{vm.intro}</p>
-        </div>
-        <button onClick={() => presenter.toggleForm()} className="btn-primary">
-          <Plus size={16} />
-          {vm.addButtonLabel}
-        </button>
-      </div>
+      <ModuleHeader
+        eyebrow="Wallet"
+        title={vm.title}
+        icon={<Target size={20} />}
+        description={vm.intro}
+        actions={
+          <button onClick={() => presenter.toggleForm()} className="btn-primary">
+            <Plus size={16} />
+            {vm.addButtonLabel}
+          </button>
+        }
+      />
 
       {vm.form && <SavingsForm vm={vm.form} presenter={presenter} />}
 

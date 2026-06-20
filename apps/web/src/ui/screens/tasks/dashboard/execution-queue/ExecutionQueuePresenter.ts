@@ -132,6 +132,7 @@ export class ExecutionQueuePresenter extends PresenterBase<ExecutionQueueViewMod
       id: task.id,
       title: task.title,
       done: task.isDone,
+      isStuck: task.isStuck,
       toneClass: this.toneClass(task),
       priority: task.priority,
       domain: task.domain,

@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import { TaskDomainBadge } from "@/ui/screens/tasks/components/task-domain-badge";
@@ -58,7 +59,7 @@ export function HistoryScreen() {
 
       {vm.error && (
         <p className="text-sm text-[var(--red-soft-text)]">
-          No se pudo cargar el historial. Proba recargar la pagina.
+          No se pudo cargar el historial. Probá recargar la página.
         </p>
       )}
     </ModulePage>
@@ -77,46 +78,39 @@ function HistoryReviewHeader({
   return (
     <section className="glass-card-static overflow-hidden">
       <div className="border-b border-[var(--glass-border)] p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
-              <History size={12} />
-              {vm.eyebrow}
-            </div>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-              {vm.title}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-              {vm.description}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-xl p-2 text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)]"
-              title="Dia anterior"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3">
-              <div className="flex items-center gap-2">
-                <CalendarDays size={14} style={{ color: "var(--violet-soft-text)" }} />
-                <span className="text-sm font-medium text-[var(--foreground)]">{vm.dateLabel}</span>
+        <ModuleHeader
+          eyebrow={vm.eyebrow}
+          title={vm.title}
+          icon={<History size={20} />}
+          description={vm.description}
+          actions={
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-xl p-2 text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)]"
+                title="Día anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={14} style={{ color: "var(--violet-soft-text)" }} />
+                  <span className="text-sm font-medium text-[var(--foreground)]">{vm.dateLabel}</span>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={onForward}
+                disabled={vm.isToday}
+                className="rounded-xl p-2 text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-30"
+                title="Día siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onForward}
-              disabled={vm.isToday}
-              className="rounded-xl p-2 text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-30"
-              title="Dia siguiente"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+          }
+        />
       </div>
 
       <div className="grid gap-4 p-6 md:grid-cols-4">

@@ -10,20 +10,20 @@ interface EmptyTaskListProps {
 const filterMessages: Record<FilterKey, { title: string; subtitle: string }> = {
   focus: {
     title: "Sin tareas urgentes",
-    subtitle: "Tu cola de foco esta limpia. Buen momento para avanzar con lo pendiente.",
+    subtitle: "Tu cola de foco está limpia. Buen momento para avanzar con lo pendiente.",
   },
   pending: {
-    title: "Todo al dia",
-    subtitle: "No quedan pendientes para hoy. Si surge algo nuevo, podes capturarlo abajo.",
+    title: "Todo al día",
+    subtitle: "No quedan pendientes para hoy. Si surge algo nuevo, podés capturarlo abajo.",
   },
   done: {
-    title: "Todavia sin tareas completadas",
-    subtitle: "Cuando completes tareas van a aparecer aca. Arranca con la mas simple.",
+    title: "Todavía sin tareas completadas",
+    subtitle: "Cuando completes tareas van a aparecer acá. Arrancá con la más simple.",
   },
   all: {
-    title: "Dia libre de tareas",
+    title: "Día libre de tareas",
     subtitle:
-      "No hay tareas cargadas para esta fecha. Usa captura rapida o conversa con el asistente para planificar tu dia.",
+      "No hay tareas cargadas para esta fecha. Usá captura rápida o conversá con el asistente para planificar tu día.",
   },
 };
 
@@ -51,7 +51,7 @@ export function EmptyTaskList({ filter }: EmptyTaskListProps) {
         <div className="mt-5 flex items-center justify-center gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5 text-[11px] text-[var(--muted)]">
             <Plus size={12} />
-            Captura rapida
+            Captura rápida
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1.5 text-[11px] text-[var(--muted)]">
             <MessageSquarePlus size={12} />

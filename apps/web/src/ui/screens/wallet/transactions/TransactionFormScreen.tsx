@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ReceiptText } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import type { TransactionFormViewModel } from "@/ui/models/wallet/TransactionsViewModel";
 import { useTransactionFormPresenter } from "./useTransactionFormPresenter";
@@ -26,8 +27,13 @@ export function TransactionFormScreen() {
       </Link>
 
       <div className="glass-card-static p-6">
-        <h2 className="mb-6 text-xl font-semibold tracking-tight">{vm.title}</h2>
-        <p className="-mt-3 mb-6 text-sm text-[var(--muted)]">{vm.intro}</p>
+        <ModuleHeader
+          eyebrow="Wallet"
+          title={vm.title}
+          icon={<ReceiptText size={20} />}
+          description={vm.intro}
+          className="mb-6"
+        />
         <TransactionForm vm={vm} presenter={presenter} />
       </div>
     </ModulePage>
@@ -62,10 +68,10 @@ function TransactionForm({
               className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
                 vm.form.type === option.value
                   ? option.tone === "expense"
-                    ? "bg-[var(--accent-red)] text-white shadow-lg shadow-red-500/20"
+                    ? "bg-[var(--accent-red)] text-[var(--accent-contrast)] shadow-[0_10px_30px_var(--accent-red-glow)]"
                     : option.tone === "income"
-                      ? "bg-[var(--accent-green)] text-white shadow-lg shadow-green-500/20"
-                      : "bg-[var(--accent)] text-white shadow-lg shadow-blue-500/20"
+                      ? "bg-[var(--accent-green)] text-[var(--accent-contrast)] shadow-[0_10px_30px_var(--accent-green-glow)]"
+                      : "bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_30px_var(--accent-glow)]"
                   : "glass-input text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
               }`}
             >
@@ -124,14 +130,14 @@ function TransactionForm({
       {vm.form.showCategory && (
         <div>
           <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--foreground-muted)]">
-            Categoria
+            Categoría
           </label>
           <select
             value={vm.form.categoryId}
             onChange={(event) => presenter.setFormField("categoryId", event.target.value)}
             className="glass-input w-full px-4 py-2.5 text-sm"
           >
-            <option value="">Sin categoria</option>
+            <option value="">Sin categoría</option>
             {vm.categories.map((category) => (
               <option key={category.value} value={category.value}>
                 {category.label}
@@ -143,7 +149,7 @@ function TransactionForm({
 
       <div>
         <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--foreground-muted)]">
-          Descripcion
+          Descripción
         </label>
         <input
           type="text"

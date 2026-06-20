@@ -33,24 +33,24 @@ const TREND_DAYS = 14;
 const SIGNAL_COPY: Record<HistoryReviewSignal["kind"], { title: string; detail: (count?: number) => string }> = {
   clean_close: {
     title: "Cierre limpio",
-    detail: () => "No quedan decisiones pendientes para este dia.",
+    detail: () => "No quedan decisiones pendientes para este día.",
   },
   overloaded_day: {
-    title: "Dia sobrecargado",
+    title: "Día sobrecargado",
     detail: () => "Conviene reprogramar solo lo rescatable y descartar el resto antes de arrastrarlo.",
   },
   recoverable_close: {
     title: "Cierre recuperable",
-    detail: () => "El dia no esta cerrado, pero la deuda es manejable si decides ahora que sigue.",
+    detail: () => "El día no está cerrado, pero la deuda es manejable si decidís ahora qué sigue.",
   },
   stuck_tasks: {
     title: "Hay tareas bloqueadas",
     detail: (count = 0) =>
-      `${count} tarea${count === 1 ? "" : "s"} arrastran demasiado carry-over y necesitan resolucion explicita.`,
+      `${count} tarea${count === 1 ? "" : "s"} arrastran demasiado carry-over y necesitan resolución explícita.`,
   },
   no_chronic_block: {
-    title: "Sin bloqueo cronico",
-    detail: () => "Las pendientes aun pueden moverse sin consolidar un patron de atasco.",
+    title: "Sin bloqueo crónico",
+    detail: () => "Las pendientes aún pueden moverse sin consolidar un patrón de atasco.",
   },
 };
 
@@ -171,10 +171,10 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
 
     return {
       header: {
-        eyebrow: "Decision review",
-        title: "Cierra el dia con decisiones, no solo con metricas",
+        eyebrow: "Revisión de decisiones",
+        title: "Cerrá el día con decisiones, no solo con métricas",
         description:
-          "Revisa que quedo pendiente, decide que se mueve y corta el arrastre antes de que se convierta en ruido operativo.",
+          "Revisá qué quedó pendiente, decidí qué se mueve y cortá el arrastre antes de que se convierta en ruido operativo.",
         dateLabel: formatDate(this.selectedDate, "EEEE, d MMM yyyy"),
         isToday: this.isToday(),
         metrics: this.headerMetrics(),
@@ -182,16 +182,16 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
       signals: this.signals(pendingTasks),
       closureQueue: {
         title: "Cola de cierre",
-        description: "Cada tarea pendiente necesita una decision: moverla o cerrarla.",
+        description: "Cada tarea pendiente necesita una decisión: moverla o cerrarla.",
         nextDateLabel: formatDate(this.nextReviewDate(), "EEE d MMM"),
         canCarryOverAll: pendingTasks.length > 0 && !this.isCarryingOverAll,
         isCarryingOverAll: this.isCarryingOverAll,
         emptyState:
           pendingTasks.length === 0
             ? {
-                title: "No quedan tareas abiertas para este dia.",
+                title: "No quedan tareas abiertas para este día.",
                 description:
-                  "El review ya esta resuelto. Solo queda observar el patron y seguir con el siguiente bloque.",
+                  "El review ya está resuelto. Solo queda observar el patrón y seguir con el siguiente bloque.",
               }
             : null,
         items: pendingTasks.map((task) => this.closureTaskVM(task)),
@@ -204,13 +204,13 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
         completed: {
           title: "Completadas",
           count: completedTasks.length,
-          emptyText: "No hubo cierres en este dia.",
+          emptyText: "No hubo cierres en este día.",
           items: completedTasks.map((task) => this.sidebarTaskVM(task)),
         },
         discarded: {
           title: "Descartadas",
           count: discardedTasks.length,
-          emptyText: "No hubo descartes en este dia.",
+          emptyText: "No hubo descartes en este día.",
           items: discardedTasks.map((task) => this.sidebarTaskVM(task)),
         },
       },
@@ -271,8 +271,8 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
       carryOverLabel: task.carryOverCount > 0 ? `${task.carryOverCount}x` : null,
       stuckLabel: task.isStuck ? "Bloqueada" : null,
       decisionText: task.isStuck
-        ? "Ya arrastra demasiada deuda. Si sigue viva, debe pasar al siguiente dia con intencion explicita."
-        : "Todavia esta abierta al final del dia. Decide ahora si merece continuar o si debe salir de la cola.",
+        ? "Ya arrastra demasiada deuda. Si sigue viva, debe pasar al siguiente día con intención explícita."
+        : "Todavía está abierta al final del día. Decidí ahora si merece continuar o si debe salir de la cola.",
       carryOverActionLabel: `Llevar a ${formatDate(this.nextReviewDate(), "EEE d MMM")}`,
       busy: this.busyIds.has(task.id),
     };
@@ -285,8 +285,8 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
   private trendVM(): HistoryTrendVM {
     const selected = this.dateISO();
     return {
-      title: "Tendencia 14 dias",
-      description: "Como viene cerrando tu ejecucion diaria",
+      title: "Tendencia 14 días",
+      description: "Cómo viene cerrando tu ejecución diaria",
       days: this.trend.slice().reverse().map((day) => ({
         date: day.date,
         dayLabel: day.date.slice(8),
@@ -300,7 +300,7 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
   private domainStatsVM(): HistoryDomainStatsVM {
     return {
       title: "Por dominio",
-      description: "Distribucion de cierres completados",
+      description: "Distribución de cierres completados",
       items: this.domainStats.map((stat) => ({
         key: stat.domain || "none",
         domain: stat.domain || null,

@@ -35,7 +35,7 @@ function Actions({
 }) {
   const close = () => actions.onToggleActions(null);
   const sizeClass = isCompact
-    ? "inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+    ? "inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
     : "inline-flex h-8 w-8 items-center justify-center rounded-xl transition-all hover:scale-105 disabled:opacity-50";
 
   return (
@@ -53,7 +53,7 @@ function Actions({
           close();
         }}
         disabled={task.busy}
-        className={`${sizeClass} bg-[var(--accent)] text-white`}
+        className={`${sizeClass} bg-[var(--accent)] text-[var(--accent-contrast)]`}
         title="Marcar como hecha"
       >
         <Check size={isCompact ? 13 : 14} />
@@ -67,10 +67,10 @@ function Actions({
         }}
         disabled={task.busy}
         className={`${sizeClass} border border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] text-[var(--amber-soft-text)]`}
-        title="Llevar a manana"
+        title="Llevar a mañana"
       >
         <ArrowRight size={isCompact ? 13 : 14} />
-        {isCompact && "Manana"}
+        {isCompact && "Mañana"}
       </button>
       <button
         type="button"
@@ -101,20 +101,43 @@ function Actions({
   );
 }
 
+function CompletionButton({
+  task,
+  actions,
+  compact = false,
+}: {
+  task: TaskRowVM;
+  actions: TaskRowActions;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => !task.done && actions.onComplete(task.id)}
+      disabled={task.done || task.busy}
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl transition-all hover:bg-[var(--hover-overlay)] disabled:cursor-not-allowed disabled:opacity-60 ${
+        compact ? "h-11 w-11" : "h-8 w-8"
+      }`}
+      aria-label={task.done ? `"${task.title}" ya está hecha` : `Marcar "${task.title}" como hecha`}
+    >
+      <span
+        className={`task-checkbox pointer-events-none inline-flex items-center justify-center ${
+          task.done ? "checked" : ""
+        }`}
+      >
+        {task.done && <Check size={14} className="text-[var(--accent-contrast)]" />}
+      </span>
+    </button>
+  );
+}
+
 export function TaskRow({ task, actions }: { task: TaskRowVM; actions: TaskRowActions }) {
   return (
-    <div className={`rounded-xl border px-4 py-3 transition-all hover:shadow-sm ${task.toneClass}`}>
+    <div className={`relative overflow-hidden rounded-xl border px-4 py-3 transition-all hover:shadow-sm ${task.toneClass}`}>
+      {task.isStuck && <div className="absolute inset-y-0 left-0 w-[3px] bg-[var(--stuck-rail)]" aria-hidden="true" />}
       {/* Desktop */}
       <div className="hidden md:flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => !task.done && actions.onComplete(task.id)}
-          disabled={task.done || task.busy}
-          className={`task-checkbox shrink-0 ${task.done ? "checked" : ""}`}
-          aria-label={task.done ? `"${task.title}" ya esta hecha` : `Marcar "${task.title}" como hecha`}
-        >
-          {task.done && <Check size={14} className="text-white" />}
-        </button>
+        <CompletionButton task={task} actions={actions} />
 
         <span
           className={`min-w-0 flex-1 truncate text-sm font-medium ${
@@ -147,15 +170,7 @@ export function TaskRow({ task, actions }: { task: TaskRowVM; actions: TaskRowAc
       {/* Mobile */}
       <div className="flex flex-col gap-3 md:hidden">
         <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={() => !task.done && actions.onComplete(task.id)}
-            disabled={task.done || task.busy}
-            className={`task-checkbox mt-0.5 shrink-0 ${task.done ? "checked" : ""}`}
-            aria-label={task.done ? `"${task.title}" ya esta hecha` : `Marcar "${task.title}" como hecha`}
-          >
-            {task.done && <Check size={14} className="text-white" />}
-          </button>
+          <CompletionButton task={task} actions={actions} compact />
 
           <div className="min-w-0 flex-1">
             <span
@@ -174,7 +189,8 @@ export function TaskRow({ task, actions }: { task: TaskRowVM; actions: TaskRowAc
             <button
               type="button"
               onClick={() => actions.onToggleActions(task.actionsOpen ? null : task.id)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)]"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)]"
+              aria-label={task.actionsOpen ? "Cerrar acciones" : "Abrir acciones"}
             >
               {task.actionsOpen ? <X size={14} /> : <MoreHorizontal size={14} />}
             </button>
@@ -183,7 +199,8 @@ export function TaskRow({ task, actions }: { task: TaskRowVM; actions: TaskRowAc
               type="button"
               onClick={() => actions.onDelete(task.id)}
               disabled={task.busy}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] disabled:opacity-50"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] text-[var(--muted)] transition-all hover:bg-[var(--hover-overlay)] disabled:opacity-50"
+              aria-label="Borrar tarea"
             >
               <Trash2 size={14} />
             </button>

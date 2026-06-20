@@ -82,11 +82,23 @@ export class OperationalHeaderPresenter extends PresenterBase<OperationalHeaderV
       urgentCount: urgent.length,
       stuckCount: stuck.length,
       highPriorityCount: highPriority.length,
+      pressureValue: stuck.length,
+      pressureSub: this.pressureSub(stuck.length, highPriority.length),
       completionAverage: this.completionAverage(),
       pendingCount: pending.length,
       doneCount: done.length,
+      rhythmSub: this.rhythmSub(pending.length, done.length),
       canReschedule: pending.length > 0 && !this.isRescheduling,
       isRescheduling: this.isRescheduling,
     };
+  }
+
+  private pressureSub(stuckCount: number, highPriorityCount: number): string {
+    if (stuckCount === 0 && highPriorityCount === 0) return "Sin tareas calientes.";
+    return `${stuckCount} trabada${stuckCount === 1 ? "" : "s"}, ${highPriorityCount} alta prioridad.`;
+  }
+
+  private rhythmSub(pendingCount: number, doneCount: number): string {
+    return `${pendingCount} pendiente${pendingCount === 1 ? "" : "s"}, ${doneCount} cerrada${doneCount === 1 ? "" : "s"}.`;
   }
 }

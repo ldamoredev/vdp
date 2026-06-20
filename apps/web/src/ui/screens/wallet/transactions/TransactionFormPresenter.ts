@@ -167,7 +167,7 @@ export class TransactionFormPresenter extends PresenterBase<TransactionFormViewM
     return {
       backHref: "/wallet/transactions",
       backLabel: "Volver a transacciones",
-      title: "Nueva transaccion",
+      title: "Nueva transacción",
       intro: walletScreenIntro("transactions"),
       form: this.formVM(),
       accounts: this.accounts.map((account) => ({

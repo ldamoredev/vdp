@@ -93,7 +93,7 @@ function QuickAddForm({
       {vm.categoryOptions.length > 0 && (
         <div>
           <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--foreground-muted)]">
-            Categoria
+            Categoría
           </label>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {vm.categoryOptions.map((category) => (
@@ -103,7 +103,7 @@ function QuickAddForm({
                 onClick={() => presenter.setCategoryId(category.value)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                   category.value === vm.form.categoryId
-                    ? "bg-[var(--accent)] text-white shadow-lg shadow-blue-500/20"
+                    ? "bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_30px_var(--accent-glow)]"
                     : "glass-input text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
                 }`}
               >

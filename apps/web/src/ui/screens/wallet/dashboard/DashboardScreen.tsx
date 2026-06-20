@@ -6,12 +6,13 @@ import {
   ArrowRight,
   ArrowUpRight,
   Plus,
-  Sparkles,
   Wallet,
 } from "lucide-react";
 
 import { CollectionCard } from "@/ui/primitives/collection-card";
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
+import { StatTile } from "@/ui/primitives/stat-tile";
 import { StateCard } from "@/ui/primitives/state-card";
 import type {
   DashboardAccountVM,
@@ -45,7 +46,7 @@ export function DashboardScreen() {
         type="button"
         onClick={() => setQuickAddOpen(true)}
         aria-label="Cargar gasto rápido"
-        className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-blue-500/30 transition-transform hover:scale-105 sm:hidden"
+        className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] shadow-[0_10px_30px_var(--accent-glow)] transition-transform hover:scale-105 sm:hidden"
       >
         <Plus size={24} />
       </button>
@@ -73,41 +74,31 @@ function OperationalHeader({
   return (
     <div className="glass-card-static overflow-hidden">
       <div className="border-b border-[var(--divider)] p-5 md:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--hover-overlay)] px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-[var(--muted)]">
-              <Sparkles size={11} />
-              {vm.eyebrow}
-            </div>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-glow)]">
-                <Wallet size={18} className="text-[var(--accent)]" />
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">{vm.title}</h2>
-            </div>
-            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-              {vm.intro}
-            </p>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-            <button
-              type="button"
-              onClick={onQuickAdd}
-              className="btn-primary w-full justify-center sm:w-auto"
-            >
-              <Plus size={16} />
-              {vm.quickAddLabel}
-            </button>
-            <Link to={vm.newTransactionHref} className="btn-secondary w-full justify-center sm:w-auto">
-              {vm.newTransactionLabel}
-            </Link>
-            <Link to={vm.statsHref} className="btn-secondary w-full justify-center sm:w-auto">
-              {vm.statsLabel}
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
+        <ModuleHeader
+          eyebrow={vm.eyebrow}
+          title={vm.title}
+          icon={<Wallet size={20} />}
+          description={vm.intro}
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={onQuickAdd}
+                className="btn-primary w-full justify-center sm:w-auto"
+              >
+                <Plus size={16} />
+                {vm.quickAddLabel}
+              </button>
+              <Link to={vm.newTransactionHref} className="btn-secondary w-full justify-center sm:w-auto">
+                {vm.newTransactionLabel}
+              </Link>
+              <Link to={vm.statsHref} className="btn-secondary w-full justify-center sm:w-auto">
+                {vm.statsLabel}
+                <ArrowRight size={14} />
+              </Link>
+            </>
+          }
+        />
       </div>
 
       <div className="grid gap-3 p-5 md:grid-cols-3 md:p-6">
@@ -120,22 +111,8 @@ function OperationalHeader({
 }
 
 function StatCard({ stat }: { stat: DashboardStatVM }) {
-  const toneClass =
-    stat.tone === "income"
-      ? "text-[var(--accent-green)]"
-      : stat.tone === "expense"
-        ? "text-[var(--accent-red)]"
-        : "text-[var(--foreground)]";
-  return (
-    <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--hover-overlay)] p-4">
-      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--muted)]">
-        {stat.label}
-      </span>
-      <div className={`mt-2 text-2xl font-data font-bold tracking-tight ${toneClass}`}>
-        {stat.valueLabel}
-      </div>
-    </div>
-  );
+  const tone = stat.tone === "income" ? "green" : stat.tone === "expense" ? "red" : "default";
+  return <StatTile label={stat.label} value={stat.valueLabel} tone={tone} />;
 }
 
 function AccountsGrid({ vm }: { vm: DashboardViewModel }) {

@@ -11,18 +11,18 @@ const iconMap = {
 const colorMap = {
   achievement: {
     icon: "text-[var(--accent-green)]",
-    border: "border-l-[var(--accent-green)]",
+    borderColor: "var(--accent-green)",
     glow: "var(--accent-green-glow)",
   },
   warning: {
     icon: "text-[var(--accent-amber)]",
-    border: "border-l-[var(--accent-amber)]",
-    glow: "rgba(245, 158, 11, 0.15)",
+    borderColor: "var(--accent-amber)",
+    glow: "var(--amber-soft-bg)",
   },
   suggestion: {
     icon: "text-[var(--accent-purple)]",
-    border: "border-l-[var(--accent-purple)]",
-    glow: "rgba(168, 85, 247, 0.15)",
+    borderColor: "var(--accent-purple)",
+    glow: "var(--purple-soft-bg)",
   },
 } as const;
 
@@ -34,7 +34,7 @@ function Toast({ notification }: { notification: Notification }) {
     <div
       className="animate-toast-in glass-card-static flex items-start gap-3 p-4 pr-3 max-w-sm border-l-2"
       style={{
-        borderLeftColor: `var(--accent-${notification.type === "achievement" ? "green" : notification.type === "warning" ? "amber" : "purple"})`,
+        borderLeftColor: colors.borderColor,
         boxShadow: `0 4px 16px ${colors.glow}`,
       }}
     >
@@ -51,7 +51,8 @@ function Toast({ notification }: { notification: Notification }) {
 
       <button
         onClick={() => notificationStore.dismiss(notification.id)}
-        className="shrink-0 p-1 rounded-md text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover-overlay-strong)] transition-all"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--foreground-muted)] transition-all hover:bg-[var(--hover-overlay-strong)] hover:text-[var(--foreground)]"
+        aria-label="Cerrar notificación"
       >
         <X size={14} />
       </button>
@@ -65,7 +66,7 @@ export function ToastContainer() {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed right-4 top-20 z-[100] flex flex-col gap-2 pointer-events-auto">
+    <div className="pointer-events-auto fixed left-4 right-4 top-20 z-[100] flex flex-col gap-2 md:left-auto md:right-6 md:top-auto md:bottom-6">
       {notifications.map((n) => (
         <Toast key={n.id} notification={n} />
       ))}

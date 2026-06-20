@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import { formatMoney } from "@/lib/format";
@@ -38,10 +39,12 @@ export function StatsScreen() {
 
   return (
     <ModulePage width="5xl" spacing="6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight">{vm.title}</h2>
-        <p className="max-w-2xl text-sm text-[var(--muted)] sm:text-right">{vm.intro}</p>
-      </div>
+      <ModuleHeader
+        eyebrow="Wallet"
+        title={vm.title}
+        icon={<BarChart3 size={20} />}
+        description={vm.intro}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <MonthlyTrendPanel vm={vm.monthlyTrend} />
@@ -101,7 +104,7 @@ function DollarRatesPanel({ vm }: { vm: DollarRatesVM }) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--blue-soft-border)] bg-[var(--blue-soft-bg)] text-[var(--blue-soft-text)]">
           <ArrowRightLeft size={15} />
         </div>
-        <h3 className="font-medium">Dolar hoy</h3>
+        <h3 className="font-medium">Dólar hoy</h3>
       </div>
 
       {vm.isLoading ? (
@@ -138,10 +141,10 @@ function ByCategoryPanel({ vm }: { vm: ByCategoryVM }) {
     <div className="glass-card-static p-5">
       <div className="mb-6 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-purple)]/15">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--purple-soft-bg)]">
             <div className="h-3 w-3 rounded-full bg-[var(--accent-purple)]" />
           </div>
-          <h3 className="font-medium">Gastos por categoria</h3>
+          <h3 className="font-medium">Gastos por categoría</h3>
         </div>
         <SanityStrip transactionCount={vm.sanity.transactionCount} totalAmount={vm.sanity.totalLabel} />
       </div>

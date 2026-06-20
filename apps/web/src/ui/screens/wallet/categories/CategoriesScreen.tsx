@@ -1,5 +1,6 @@
-import { Plus } from "lucide-react";
+import { Plus, Tags } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import type { CategoryFormVM, CategoryGroupVM } from "@/ui/models/wallet/CategoriesViewModel";
@@ -12,16 +13,18 @@ export function CategoriesScreen() {
 
   return (
     <ModulePage width="4xl" spacing="6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{vm.title}</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{vm.intro}</p>
-        </div>
-        <button onClick={() => presenter.toggleForm()} className="btn-primary">
-          <Plus size={16} />
-          {vm.addButtonLabel}
-        </button>
-      </div>
+      <ModuleHeader
+        eyebrow="Wallet"
+        title={vm.title}
+        icon={<Tags size={20} />}
+        description={vm.intro}
+        actions={
+          <button onClick={() => presenter.toggleForm()} className="btn-primary">
+            <Plus size={16} />
+            {vm.addButtonLabel}
+          </button>
+        }
+      />
 
       {vm.form && <CategoryForm vm={vm.form} presenter={presenter} />}
 
@@ -54,7 +57,7 @@ function CategoryForm({
 }) {
   return (
     <div className="glass-card-static animate-fade-in-up p-5">
-      <h3 className="mb-4 text-sm font-semibold">Crear categoria</h3>
+      <h3 className="mb-4 text-sm font-semibold">Crear categoría</h3>
       <form
         className="space-y-3"
         onSubmit={(event) => {
@@ -113,7 +116,7 @@ function CategorySection({ vm }: { vm: CategoryGroupVM }) {
       </div>
 
       {vm.items.length === 0 ? (
-        <StateCard size="sm" className="border-none" title="Sin categorias" description={vm.emptyText} />
+        <StateCard size="sm" className="border-none" title="Sin categorías" description={vm.emptyText} />
       ) : (
         <div className="flex flex-wrap gap-2">
           {vm.items.map((category) => (

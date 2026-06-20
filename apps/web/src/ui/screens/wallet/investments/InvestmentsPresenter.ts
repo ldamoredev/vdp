@@ -239,7 +239,7 @@ export class InvestmentsPresenter extends PresenterBase<InvestmentsViewModel> {
     return {
       title: "Inversiones",
       intro: walletScreenIntro("investments"),
-      addButtonLabel: "Nueva inversion",
+      addButtonLabel: "Nueva inversión",
       summaries: hasInvestments ? this.summaryVMs() : [],
       form: this.showForm ? this.formVM() : null,
       investments: this.investments.map((investment) => this.investmentVM(investment)),

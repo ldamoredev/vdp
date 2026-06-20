@@ -18,6 +18,7 @@ export interface TaskRowVM {
   id: string;
   title: string;
   done: boolean;
+  isStuck: boolean;
   toneClass: string;
   priority: number;
   domain: string | null;

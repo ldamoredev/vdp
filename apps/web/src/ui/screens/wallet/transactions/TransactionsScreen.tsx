@@ -7,10 +7,12 @@ import {
   ChevronRight,
   Filter,
   Plus,
+  ReceiptText,
   Trash2,
   X,
 } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import { buildInitialTransactionFilters } from "@/core/domain/wallet/Transaction";
@@ -53,16 +55,18 @@ export function TransactionsScreen() {
 
 function Header({ vm }: { vm: TransactionsViewModel }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">{vm.title}</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">{vm.intro}</p>
-      </div>
-      <Link to={vm.addHref} className="btn-primary w-full justify-center sm:w-auto">
-        <Plus size={16} />
-        {vm.addButtonLabel}
-      </Link>
-    </div>
+    <ModuleHeader
+      eyebrow="Wallet"
+      title={vm.title}
+      icon={<ReceiptText size={20} />}
+      description={vm.intro}
+      actions={
+        <Link to={vm.addHref} className="btn-primary w-full justify-center sm:w-auto">
+          <Plus size={16} />
+          {vm.addButtonLabel}
+        </Link>
+      }
+    />
   );
 }
 
@@ -112,7 +116,7 @@ function Filters({
             type="button"
             onClick={() => void presenter.clearCategoryFilter()}
             className="text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
-            aria-label="Quitar filtro de categoria"
+            aria-label="Quitar filtro de categoría"
           >
             <X size={14} />
           </button>
@@ -146,7 +150,7 @@ function TransactionsTable({
           <thead>
             <tr>
               <th>Fecha</th>
-              <th>Descripcion</th>
+              <th>Descripción</th>
               <th>Tipo</th>
               <th className="text-right">Monto</th>
               <th className="w-12" />
@@ -215,7 +219,7 @@ function TransactionRow({
           }}
           disabled={row.isBusy}
           className="rounded-lg p-2 text-[var(--muted)] transition-all hover:bg-[var(--accent-red-glow)] hover:text-[var(--accent-red)] disabled:opacity-40"
-          aria-label="Eliminar transaccion"
+          aria-label="Eliminar transacción"
         >
           <Trash2 size={14} />
         </button>

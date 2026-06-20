@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Download, FileText, LockKeyhole, Plus, Trash2, Upload } from "lucide-react";
 
+import { ModuleHeader } from "@/ui/primitives/module-header";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import type { MedicalFormVM, MedicalRecordVM } from "@/ui/models/health/medical/MedicalViewModel";
@@ -12,20 +13,26 @@ export function MedicalScreen() {
 
   return (
     <ModulePage width="4xl" spacing="6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{vm.title}</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{vm.intro}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--muted)]">
-            <LockKeyhole size={13} aria-hidden="true" />
-            {vm.privacyNote}
-          </p>
-        </div>
-        <button onClick={() => presenter.toggleForm()} className="btn-primary shrink-0">
-          <Plus size={16} />
-          {vm.addButtonLabel}
-        </button>
-      </div>
+      <ModuleHeader
+        eyebrow="Health privado"
+        title={vm.title}
+        icon={<FileText size={20} />}
+        description={
+          <>
+            <span className="block">{vm.intro}</span>
+            <span className="mt-1 flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              <LockKeyhole size={13} aria-hidden="true" />
+              {vm.privacyNote}
+            </span>
+          </>
+        }
+        actions={
+          <button onClick={() => presenter.toggleForm()} className="btn-primary shrink-0">
+            <Plus size={16} />
+            {vm.addButtonLabel}
+          </button>
+        }
+      />
 
       {vm.form && <RecordForm vm={vm.form} presenter={presenter} />}
 

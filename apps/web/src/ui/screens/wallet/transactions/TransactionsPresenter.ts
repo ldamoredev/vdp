@@ -213,7 +213,7 @@ export class TransactionsPresenter extends PresenterBase<TransactionsViewModel> 
       this.closeEdit();
       await this.loadTransactions();
     } catch {
-      this.editMessage = "No se pudo guardar la transaccion";
+      this.editMessage = "No se pudo guardar la transacción";
     } finally {
       this.isUpdating = false;
       this.refresh();
@@ -361,7 +361,7 @@ export class TransactionsPresenter extends PresenterBase<TransactionsViewModel> 
     const pagination = buildTransactionPagination(this.filters, this.totalTransactions);
     return {
       show: pagination.totalPages > 1,
-      label: `Pagina ${pagination.currentPage} de ${pagination.totalPages}`,
+      label: `Página ${pagination.currentPage} de ${pagination.totalPages}`,
       canGoPrevious: pagination.canGoPrevious,
       canGoNext: pagination.canGoNext,
     };
@@ -371,7 +371,7 @@ export class TransactionsPresenter extends PresenterBase<TransactionsViewModel> 
     const transaction = this.editingTransaction();
     if (!transaction || !this.editForm) return null;
     return {
-      title: "Editar transaccion",
+      title: "Editar transacción",
       transactionId: transaction.id,
       amount: this.editForm.amount,
       currency: transaction.currency,

@@ -81,6 +81,9 @@ describe("OperationalHeaderPresenter", () => {
     expect(presenter.model.highPriorityCount).toBe(1);
     expect(presenter.model.pendingCount).toBe(4);
     expect(presenter.model.doneCount).toBe(1);
+    expect(presenter.model.pressureValue).toBe(1);
+    expect(presenter.model.pressureSub).toBe("1 trabada, 1 alta prioridad.");
+    expect(presenter.model.rhythmSub).toBe("4 pendientes, 1 cerrada.");
   });
 
   it("can reschedule only when there are pending tasks", async () => {
