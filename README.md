@@ -15,7 +15,7 @@ The long-term product vision still includes `Health`, `People`, `Work`, and `Stu
 |---------|-----|----------|
 | App (SPA + API) | https://vdpapp.com.ar | Railway (Docker, single service) |
 | Database | PostgreSQL + pgvector | Supabase (free tier) |
-| LLM | Groq (OpenAI-compatible) | Free tier |
+| LLM | — (not configured) | Agent chat is disabled in prod; configure a provider locally to use it |
 
 Authentication now uses first-party users with email/password plus server-managed sessions.
 
