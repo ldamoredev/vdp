@@ -111,4 +111,22 @@ describe("tasks handlers (dispatched through the bus)", () => {
       expect(gateway.callsTo("getCarryOverRate")[0].args).toEqual([7]);
     });
   });
+
+  describe("board data contract", () => {
+    it("ListTasks filters by domain and status for a module board", async () => {
+      const gateway = new FakeTasksGateway();
+      await coreWith(gateway).execute(new ListTasks({ domain: "wallet", status: "pending" }));
+      expect(gateway.callsTo("listTasks")[0].args).toEqual([{ domain: "wallet", status: "pending" }]);
+    });
+
+    it("CreateTask tags the new task with its module domain", async () => {
+      const gateway = new FakeTasksGateway();
+      await coreWith(gateway).execute(
+        new CreateTask({ title: "Revisar gastos", priority: 2, domain: "wallet" }),
+      );
+      expect(gateway.callsTo("createTask")[0].args).toEqual([
+        { title: "Revisar gastos", priority: 2, domain: "wallet" },
+      ]);
+    });
+  });
 });
