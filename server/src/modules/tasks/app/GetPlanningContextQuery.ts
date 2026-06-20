@@ -30,7 +30,8 @@ export class GetPlanningContextQueryHandler implements RequestHandler<GetPlannin
         const carryOver = await getCarryOverRate(this.tasks, userId, 7);
         const insights = this.insightsStore.getSnapshot(userId);
 
-        const pendingTasks = await this.tasks.getTasksByDateAndStatus(userId, todayISO(), 'pending');
+        const pendingTasks = (await this.tasks.getTasksByDate(userId, todayISO()))
+            .filter((task) => task.isOpen());
         const stuckTasks = pendingTasks
             .filter((task) => task.carryOverCount >= 3)
             .map((task) => ({ id: task.id, title: task.title, carryOverCount: task.carryOverCount }));

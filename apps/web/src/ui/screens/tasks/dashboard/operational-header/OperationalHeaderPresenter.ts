@@ -54,7 +54,7 @@ export class OperationalHeaderPresenter extends PresenterBase<OperationalHeaderV
   }
 
   private pendingTasks(): Task[] {
-    return this.store.tasks$.value.filter((task) => task.isPending);
+    return this.store.tasks$.value.filter((task) => task.isOpen);
   }
 
   private completionAverage(): number {

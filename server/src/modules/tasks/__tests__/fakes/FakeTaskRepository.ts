@@ -148,7 +148,7 @@ export class FakeTaskRepository extends TaskRepository {
     async countByDate(_userId: string, date: string): Promise<DateCounts> {
         const all = Array.from(this.store.values()).filter(s => s.scheduledDate === date);
         return {
-            pending: all.filter(s => s.status === 'pending').length,
+            pending: all.filter(s => s.status === 'pending' || s.status === 'in_progress').length,
             done: all.filter(s => s.status === 'done').length,
             discarded: all.filter(s => s.status === 'discarded').length,
             total: all.length,
@@ -171,7 +171,7 @@ export class FakeTaskRepository extends TaskRepository {
             };
             existing.total++;
             if (s.status === 'done') existing.completed++;
-            if (s.status === 'pending') existing.pending++;
+            if (s.status === 'pending' || s.status === 'in_progress') existing.pending++;
             if (s.status === 'discarded') existing.discarded++;
             if (s.carryOverCount > 0) existing.carriedOver++;
             byDate.set(s.scheduledDate, existing);

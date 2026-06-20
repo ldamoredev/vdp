@@ -36,7 +36,7 @@ export async function getDayStats(tasks: TaskRepository, userId: string, date: s
         date,
         total,
         completed,
-        pending: dayTasks.filter((task) => task.status === 'pending').length,
+        pending: dayTasks.filter((task) => task.isOpen()).length,
         carriedOver,
         discarded: dayTasks.filter((task) => task.status === 'discarded').length,
         completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,

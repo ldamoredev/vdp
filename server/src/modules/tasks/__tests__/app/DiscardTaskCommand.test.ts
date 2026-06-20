@@ -23,4 +23,13 @@ describe('DiscardTaskCommand', () => {
 
         expect(task).toMatchObject({ id: 'task-1', status: 'discarded' });
     });
+
+    it('discards an in-progress task for the authenticated user', async () => {
+        ctx.tasks.seed([createTask({ id: 'task-1', status: 'in_progress' })]);
+
+        const task = await new DiscardTaskCommandHandler(ctx.tasks)
+            .handle(new DiscardTaskCommand('task-1'), identity);
+
+        expect(task).toMatchObject({ id: 'task-1', status: 'discarded' });
+    });
 });

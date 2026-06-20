@@ -8,7 +8,7 @@ import {
 } from "./common";
 
 // ─── Enums ───────────────────────────────────────────────
-export const taskStatusEnum = z.enum(["pending", "done", "discarded"]);
+export const taskStatusEnum = z.enum(["pending", "in_progress", "done", "discarded"]);
 export const taskPriorityEnum = z.coerce.number().int().min(1).max(3);
 export const taskDomainEnum = z.enum(["wallet", "health", "work", "people", "study"]);
 

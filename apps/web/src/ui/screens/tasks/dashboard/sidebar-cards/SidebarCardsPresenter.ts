@@ -67,7 +67,7 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
   private nextBestActionTaskVM(): NextBestActionTaskVM | null {
     const tasks = this.store.tasks$.value;
     const visibleTasks = filterTasks(tasks, this.store.filter$.value);
-    const pendingTasks = tasks.filter((task) => task.isPending);
+    const pendingTasks = tasks.filter((task) => task.isOpen);
     const task = visibleTasks[0] ?? pendingTasks[0];
     if (!task) return null;
     return {
@@ -89,7 +89,7 @@ export class SidebarCardsPresenter extends PresenterBase<SidebarCardsViewModel> 
   }
 
   private recoveryMetrics(): RecoveryMetricVM[] {
-    const pendingTasks = this.store.tasks$.value.filter((task) => task.isPending);
+    const pendingTasks = this.store.tasks$.value.filter((task) => task.isOpen);
     const pendingCount = this.store.todayStats$.value?.pending ?? pendingTasks.length;
     const carryOverCount = pendingTasks.filter((task) => task.carryOverCount > 0).length;
     const stuckCount = pendingTasks.filter((task) => task.isStuck).length;

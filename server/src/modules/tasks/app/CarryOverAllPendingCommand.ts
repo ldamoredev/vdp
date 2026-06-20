@@ -25,7 +25,8 @@ export class CarryOverAllPendingCommandHandler implements RequestHandler<CarryOv
 
     async handle(command: CarryOverAllPendingCommand, identity: Identity): Promise<Task[]> {
         const { userId } = requireUserIdentity(identity);
-        const pendingTasks = await this.tasks.getTasksByDateAndStatus(userId, command.fromDate, 'pending');
+        const pendingTasks = (await this.tasks.getTasksByDate(userId, command.fromDate))
+            .filter((task) => task.isOpen());
         const results: Task[] = [];
 
         for (const task of pendingTasks) {

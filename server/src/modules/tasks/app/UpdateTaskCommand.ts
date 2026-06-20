@@ -26,7 +26,7 @@ export class UpdateTaskCommandHandler implements RequestHandler<UpdateTaskComman
         const task = await this.tasks.getTask(userId, command.id);
         if (!task) return null;
 
-        if (task.status !== 'pending') {
+        if (!task.isOpen()) {
             throw new DomainHttpError(`Cannot update a ${task.status} task`);
         }
 

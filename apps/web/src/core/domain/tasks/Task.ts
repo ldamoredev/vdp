@@ -46,6 +46,14 @@ export class Task {
     return this.status === "pending";
   }
 
+  get isInProgress(): boolean {
+    return this.status === "in_progress";
+  }
+
+  get isOpen(): boolean {
+    return this.isPending || this.isInProgress;
+  }
+
   get isDone(): boolean {
     return this.status === "done";
   }
@@ -55,17 +63,17 @@ export class Task {
     return this.carryOverCount >= STUCK_CARRY_OVER;
   }
 
-  /** A pending task that deserves focus today: high priority or already carried over. */
+  /** An open task that deserves focus today: high priority or already carried over. */
   get isHot(): boolean {
-    return this.isPending && (this.priority >= 2 || this.carryOverCount > 0);
+    return this.isOpen && (this.priority >= 2 || this.carryOverCount > 0);
   }
 }
 
-/** Execution order: pending before done, most carried-over first, then priority, then age. */
+/** Execution order: open before terminal, most carried-over first, then priority, then age. */
 export function sortExecutionQueue(tasks: readonly Task[]): Task[] {
   return [...tasks].sort((left, right) => {
-    if (left.status !== right.status) {
-      return left.status === "pending" ? -1 : 1;
+    if (left.isOpen !== right.isOpen) {
+      return left.isOpen ? -1 : 1;
     }
     if (left.carryOverCount !== right.carryOverCount) {
       return right.carryOverCount - left.carryOverCount;
@@ -78,7 +86,7 @@ export function sortExecutionQueue(tasks: readonly Task[]): Task[] {
 }
 
 export function filterTasks(tasks: readonly Task[], filter: TaskFilter): Task[] {
-  if (filter === "pending") return tasks.filter((task) => task.isPending);
+  if (filter === "pending") return tasks.filter((task) => task.isOpen);
   if (filter === "done") return tasks.filter((task) => task.isDone);
   if (filter === "focus") return tasks.filter((task) => task.isHot);
   return [...tasks];

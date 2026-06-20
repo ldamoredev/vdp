@@ -81,6 +81,10 @@ export class FakeTasksGateway implements TasksGateway {
   async deleteTask(id: string): Promise<void> {
     this.record("deleteTask", id);
   }
+  async startTask(id: string): Promise<Task> {
+    this.record("startTask", id);
+    return Task.from({ ...sampleDto, status: "in_progress" });
+  }
   async completeTask(id: string): Promise<Task> {
     this.record("completeTask", id);
     return Task.from({ ...sampleDto, status: "done" });

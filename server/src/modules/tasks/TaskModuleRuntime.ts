@@ -18,6 +18,7 @@ import { GetTasksSnapshotQuery, GetTasksSnapshotQueryHandler } from './app/GetTa
 import { GetTodayStatsQuery, GetTodayStatsQueryHandler } from './app/GetTodayStatsQuery';
 import { GetTrendStatsQuery, GetTrendStatsQueryHandler } from './app/GetTrendStatsQuery';
 import { GetWeeklySummaryQuery, GetWeeklySummaryQueryHandler } from './app/GetWeeklySummaryQuery';
+import { StartTaskCommand, StartTaskCommandHandler } from './app/StartTaskCommand';
 import { UpdateTaskCommand, UpdateTaskCommandHandler } from './app/UpdateTaskCommand';
 import { TaskAgent } from './infrastructure/agent/TaskAgent';
 import { TasksController } from './infrastructure/routes/TasksController';
@@ -65,6 +66,9 @@ export class TaskModuleRuntime {
         );
         this.deps.bus.registerHandler(CompleteTaskCommand, () =>
             new CompleteTaskCommandHandler(this.taskRepository(), this.deps.eventBus),
+        );
+        this.deps.bus.registerHandler(StartTaskCommand, () =>
+            new StartTaskCommandHandler(this.taskRepository()),
         );
         this.deps.bus.registerHandler(CarryOverTaskCommand, () =>
             new CarryOverTaskCommandHandler(

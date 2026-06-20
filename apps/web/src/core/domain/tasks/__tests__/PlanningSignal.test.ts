@@ -31,8 +31,8 @@ describe("buildPlanningSignal", () => {
     expect(signal.focusTasks).toEqual([]);
   });
 
-  it("classifies normal pending work as info", () => {
-    const signal = buildPlanningSignal({ tasks: [task(), task({ id: "t2" })] });
+  it("classifies normal open work as info", () => {
+    const signal = buildPlanningSignal({ tasks: [task(), task({ id: "t2", status: "in_progress" })] });
 
     expect(signal.tone).toBe("info");
     expect(signal.pendingCount).toBe(2);
@@ -57,11 +57,12 @@ describe("buildPlanningSignal", () => {
     ).toBe("error");
   });
 
-  it("selects up to three focus tasks from pending hot work", () => {
+  it("selects up to three focus tasks from open hot work", () => {
     const signal = buildPlanningSignal({
       tasks: [
         task({ id: "low", priority: 1 }),
         task({ id: "done", status: "done", priority: 3 }),
+        task({ id: "progress", status: "in_progress", priority: 3 }),
         task({ id: "high", priority: 3 }),
         task({ id: "medium", priority: 2 }),
         task({ id: "carried", priority: 1, carryOverCount: 1 }),
@@ -69,6 +70,6 @@ describe("buildPlanningSignal", () => {
       ],
     });
 
-    expect(signal.focusTasks.map((item) => item.id)).toEqual(["high", "medium", "carried"]);
+    expect(signal.focusTasks.map((item) => item.id)).toEqual(["progress", "high", "medium"]);
   });
 });

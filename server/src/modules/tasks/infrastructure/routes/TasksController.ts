@@ -38,6 +38,7 @@ import { GetTaskQuery } from '../../app/GetTaskQuery';
 import { GetTasksQuery } from '../../app/GetTasksQuery';
 import { GetTodayStatsQuery } from '../../app/GetTodayStatsQuery';
 import { GetTrendStatsQuery } from '../../app/GetTrendStatsQuery';
+import { StartTaskCommand } from '../../app/StartTaskCommand';
 import { UpdateTaskCommand } from '../../app/UpdateTaskCommand';
 
 type TaskFilters = z.input<typeof taskFiltersSchema>;
@@ -77,6 +78,7 @@ export class TasksController extends HttpController {
 
     private registerStatusRoutes(routes: RouteRegister): void {
         routes
+            .post('/:id/start', { params: taskIdParamsSchema }, this.startTask)
             .post('/:id/complete', { params: taskIdParamsSchema }, this.completeTask)
             // body defaults to {} because carry-over accepts an empty POST
             .post('/:id/carry-over', { params: taskIdParamsSchema, body: carryOverSchema.default({}) }, this.carryOverTask)
@@ -171,6 +173,18 @@ export class TasksController extends HttpController {
             'Task not found',
         );
         return reply.send(completed);
+    };
+
+    private readonly startTask: RouteContextHandler<TaskIdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const started = assertFound(
+            await this.bus.execute(new StartTaskCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Task not found',
+        );
+        return reply.send(started);
     };
 
     private readonly carryOverTask: RouteContextHandler<TaskIdParams, undefined, CarryOverBody> = async ({

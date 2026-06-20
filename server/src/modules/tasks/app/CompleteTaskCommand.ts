@@ -24,7 +24,7 @@ export class CompleteTaskCommandHandler implements RequestHandler<CompleteTaskCo
         const task = await this.tasks.getTask(userId, command.id);
         if (!task) return null;
 
-        if (task.status !== 'pending') {
+        if (!task.isOpen()) {
             throw new DomainHttpError(`Cannot complete a ${task.status} task`);
         }
 

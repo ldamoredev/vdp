@@ -1,4 +1,4 @@
-export type TaskStatus = 'pending' | 'done' | 'discarded';
+export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'discarded';
 type TaskSnapshotLike = Omit<TaskSnapshot, 'status'> & { status: string };
 
 
@@ -16,6 +16,12 @@ export class Task {
         public domain: string | null,
         public carryOverCount: number,
     ) {}
+
+    start() {
+        this.status = "in_progress";
+        this.completedAt = null;
+        this.updatedAt = new Date();
+    }
 
     complete() {
         this.status = "done";
@@ -39,6 +45,10 @@ export class Task {
         return this.carryOverCount >= 3;
     }
 
+    isOpen(): boolean {
+        return this.status === 'pending' || this.status === 'in_progress';
+    }
+
     toSnapshot(): TaskSnapshot {
         return {
             id: this.id,
@@ -58,6 +68,7 @@ export class Task {
     private static parseTaskStatus(status: string): TaskStatus {
         switch (status) {
             case 'pending':
+            case 'in_progress':
             case 'done':
             case 'discarded':
                 return status;

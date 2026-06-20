@@ -123,6 +123,26 @@ describe('Tasks API — Cross-user isolation', () => {
         expect(ownerView.json().task.status).toBe('pending');
     });
 
+    it('does not let another user start a task', async () => {
+        const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Private task');
+
+        const response = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/tasks/${task.id}/start`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Task not found' });
+
+        const ownerView = await testApp.app.inject({
+            method: 'GET',
+            url: `/api/v1/tasks/${task.id}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(ownerView.json().task.status).toBe('pending');
+    });
+
     it('does not let another user carry over a task', async () => {
         const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Private task');
 
@@ -278,4 +298,3 @@ describe('Tasks API — Cross-user isolation', () => {
         expect(messagesRes.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Conversation not found' });
     });
 });
-

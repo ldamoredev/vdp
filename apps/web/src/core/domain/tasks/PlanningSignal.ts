@@ -16,7 +16,7 @@ export function buildPlanningSignal(args: {
   carryOverRate?: number;
 }): PlanningSignal {
   const carryOverRate = args.carryOverRate ?? 0;
-  const pendingTasks = args.tasks.filter((task) => task.isPending);
+  const pendingTasks = args.tasks.filter((task) => task.isOpen);
   const urgentTasks = pendingTasks.filter((task) => task.isHot);
   const stuckTasks = pendingTasks.filter((task) => task.isStuck);
   const focusTasks = urgentTasks.slice(0, 3);

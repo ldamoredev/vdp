@@ -24,7 +24,7 @@ export const tasks = tasksSchema.table(
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description"),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
-    // Status: pending, done, discarded
+    // Status: pending, in_progress, done, discarded
     priority: integer("priority").notNull().default(2),
     // Priority: 1=low, 2=medium, 3=high
     scheduledDate: date("scheduled_date").notNull(),

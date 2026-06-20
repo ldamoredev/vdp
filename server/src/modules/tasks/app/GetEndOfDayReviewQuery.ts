@@ -43,7 +43,7 @@ export class GetEndOfDayReviewQueryHandler implements RequestHandler<GetEndOfDay
             scheduledTasks.filter((task) => task.status === 'done'),
             completedToday,
         );
-        const pending = dayTasks.filter((task) => task.status === 'pending');
+        const pending = dayTasks.filter((task) => task.isOpen());
         const carriedOver = dayTasks.filter((task) => task.carryOverCount > 0);
         const discarded = dayTasks.filter((task) => task.status === 'discarded');
 

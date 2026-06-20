@@ -44,17 +44,18 @@ async function build(tasks: TaskDto[]) {
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("BoardPresenter", () => {
-  it("groups the domain tasks into pending/done/discarded columns (all scope by default)", async () => {
+  it("groups the domain tasks into pending/in-progress/done/discarded columns (all scope by default)", async () => {
     const { presenter } = await build([
       taskDto({ id: "p", status: "pending" }),
+      taskDto({ id: "i", status: "in_progress" }),
       taskDto({ id: "d", status: "done" }),
       taskDto({ id: "x", status: "discarded" }),
     ]);
 
     expect(presenter.model.scope).toBe("all");
-    expect(presenter.model.columns.map((c) => c.id)).toEqual(["pending", "done", "discarded"]);
+    expect(presenter.model.columns.map((c) => c.id)).toEqual(["pending", "in_progress", "done", "discarded"]);
     const counts = Object.fromEntries(presenter.model.columns.map((c) => [c.id, c.count]));
-    expect(counts).toEqual({ pending: 1, done: 1, discarded: 1 });
+    expect(counts).toEqual({ pending: 1, in_progress: 1, done: 1, discarded: 1 });
   });
 
   it("reads the domain from the query so the board is module-scoped", async () => {
@@ -62,24 +63,55 @@ describe("BoardPresenter", () => {
     expect((gateway.listTasks as ReturnType<typeof vi.fn>).mock.calls[0][0]).toEqual({ domain: "wallet" });
   });
 
-  it("active scope collapses to the pending column only", async () => {
-    const { presenter } = await build([taskDto({ id: "p" }), taskDto({ id: "d", status: "done" })]);
+  it("active scope collapses to pending and in-progress columns only", async () => {
+    const { presenter } = await build([
+      taskDto({ id: "p" }),
+      taskDto({ id: "i", status: "in_progress" }),
+      taskDto({ id: "d", status: "done" }),
+    ]);
 
     presenter.setScope("active");
 
-    expect(presenter.model.columns.map((c) => c.id)).toEqual(["pending"]);
+    expect(presenter.model.columns.map((c) => c.id)).toEqual(["pending", "in_progress"]);
   });
 
-  it("marks a stuck pending task but never a terminal one", async () => {
+  it("marks a stuck open task but never a terminal one", async () => {
     const { presenter } = await build([
       taskDto({ id: "stuck", status: "pending", carryOverCount: 3 }),
+      taskDto({ id: "progress", status: "in_progress", carryOverCount: 4 }),
       taskDto({ id: "olddone", status: "done", carryOverCount: 5 }),
     ]);
 
     const pending = presenter.model.columns.find((c) => c.id === "pending")!;
+    const inProgress = presenter.model.columns.find((c) => c.id === "in_progress")!;
     const done = presenter.model.columns.find((c) => c.id === "done")!;
     expect(pending.tasks[0].isStuck).toBe(true);
+    expect(inProgress.tasks[0].isStuck).toBe(true);
     expect(done.tasks[0].isStuck).toBe(false);
+  });
+
+  it("marks pending cards as startable and in-progress cards as already started", async () => {
+    const { presenter } = await build([
+      taskDto({ id: "p", status: "pending" }),
+      taskDto({ id: "i", status: "in_progress" }),
+    ]);
+
+    const pending = presenter.model.columns.find((c) => c.id === "pending")!.tasks[0];
+    const inProgress = presenter.model.columns.find((c) => c.id === "in_progress")!.tasks[0];
+    expect(pending.canStart).toBe(true);
+    expect(inProgress.canStart).toBe(false);
+  });
+
+  it("dropping a pending card on En progreso starts it and reloads", async () => {
+    const { presenter, gateway } = await build([taskDto({ id: "p", status: "pending" })]);
+    const listBefore = (gateway.listTasks as ReturnType<typeof vi.fn>).mock.calls.length;
+
+    presenter.startDrag("p");
+    presenter.drop("in_progress");
+    await flush();
+
+    expect(gateway.callsTo("startTask")[0].args).toEqual(["p"]);
+    expect((gateway.listTasks as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listBefore + 1);
   });
 
   it("dropping a pending card on Hechas completes it and reloads", async () => {
@@ -112,6 +144,7 @@ describe("BoardPresenter", () => {
     await flush();
 
     expect(gateway.callsTo("completeTask")).toHaveLength(0);
+    expect(gateway.callsTo("startTask")).toHaveLength(0);
     expect(gateway.callsTo("carryOverTask")).toHaveLength(0);
     expect(gateway.callsTo("discardTask")).toHaveLength(0);
   });

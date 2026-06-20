@@ -7,6 +7,7 @@ import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
 import { DiscardTask } from "@/core/app/tasks/DiscardTask";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
+import { StartTask } from "@/core/app/tasks/StartTask";
 import { sortExecutionQueue, type Task } from "@/core/domain/tasks/Task";
 import { domainLabel, formatTaskDate } from "@/lib/format";
 import type { TasksEvents } from "@/ui/events/TasksEvents";
@@ -19,10 +20,11 @@ import type {
   BoardViewModel,
 } from "@/ui/models/tasks/BoardViewModel";
 
-const COLUMN_ORDER: readonly BoardTaskState[] = ["pending", "done", "discarded"];
+const COLUMN_ORDER: readonly BoardTaskState[] = ["pending", "in_progress", "done", "discarded"];
 
 const COLUMN_META: Record<BoardTaskState, { title: string; tone: BoardColumnTone; empty: string }> = {
   pending: { title: "Pendientes", tone: "accent", empty: "Nada pendiente acá." },
+  in_progress: { title: "En progreso", tone: "amber", empty: "Nada en progreso." },
   done: { title: "Hechas", tone: "green", empty: "Sin tareas cerradas todavía." },
   discarded: { title: "Descartadas", tone: "muted", empty: "Nada descartado." },
 };
@@ -37,7 +39,7 @@ interface ComposerState {
 
 /**
  * The per-module task board: the tasks whose `domain` is this module, grouped
- * into pending/done/discarded columns. Reads through `ListTasks({ domain })`,
+ * into pending/in-progress/done/discarded columns. Reads through `ListTasks({ domain })`,
  * dispatches the existing transition/create commands, and reloads after each
  * mutation. The column → status mapping (incl. drag-drop) and the "trabada"
  * rule live here so the BoardSection view stays humble. Refreshes on the
@@ -122,6 +124,10 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
       this.refresh();
       return;
     }
+    if (column === "in_progress") {
+      void this.runForId(task.id, new StartTask(task.id));
+      return;
+    }
     if (column === "done") {
       void this.runForId(task.id, new CompleteTask(task.id));
       return;
@@ -134,6 +140,10 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
   }
 
   // ── Quick actions ───────────────────────────────────────
+  startTask(id: string): Promise<void> {
+    return this.runForId(id, new StartTask(id));
+  }
+
   complete(id: string): Promise<void> {
     return this.runForId(id, new CompleteTask(id));
   }
@@ -219,7 +229,7 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
   }
 
   private buildModel(): BoardViewModel {
-    const visible: BoardTaskState[] = this.scope === "active" ? ["pending"] : [...COLUMN_ORDER];
+    const visible: BoardTaskState[] = this.scope === "active" ? ["pending", "in_progress"] : [...COLUMN_ORDER];
     const mobileColumnId = visible.includes(this.mobileColumn) ? this.mobileColumn : visible[0];
     return {
       domainLabel: domainLabel(this.domain),
@@ -266,7 +276,8 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
       carryOverCount: task.carryOverCount,
       dateLabel: formatTaskDate(task.scheduledDate),
       state: task.status,
-      isStuck: task.isStuck && task.isPending,
+      isStuck: task.isStuck && task.isOpen,
+      canStart: task.isPending,
       busy: this.busyIds.has(task.id),
     };
   }

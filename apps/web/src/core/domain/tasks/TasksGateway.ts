@@ -47,6 +47,7 @@ export interface TasksGateway {
   deleteTask(id: string): Promise<void>;
 
   // status transitions
+  startTask(id: string): Promise<Task>;
   completeTask(id: string): Promise<Task>;
   carryOverTask(id: string, toDate?: string): Promise<Task>;
   discardTask(id: string): Promise<Task>;

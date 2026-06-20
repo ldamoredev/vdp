@@ -2,7 +2,7 @@ import { localDateStringSchema, type TasksAgentToolName } from '@vdp/shared';
 
 import { AgentTool } from '../../../../common/base/agents/BaseAgent';
 
-export const TASK_STATUSES = ['pending', 'done', 'discarded'] as const;
+export const TASK_STATUSES = ['pending', 'in_progress', 'done', 'discarded'] as const;
 export const TASK_DOMAINS = ['wallet', 'health', 'work', 'people', 'study'] as const;
 export const TASK_PRIORITIES = [1, 2, 3] as const;
 export const TASK_NOTE_TYPES = ['note', 'breakdown_step', 'blocker'] as const;

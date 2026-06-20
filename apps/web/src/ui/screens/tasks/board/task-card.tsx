@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { ArrowUpRight, Calendar, CalendarClock, Check, GripVertical, Trash2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Calendar, CalendarClock, Check, GripVertical, Trash2 } from "lucide-react";
 
 import type { BoardTaskActions, BoardTaskVM } from "@/ui/models/tasks/BoardViewModel";
 import { TaskBadges } from "@/ui/screens/tasks/components/task-badges";
@@ -42,7 +42,7 @@ function QuickAction({
 
 /**
  * Board task card (kanban). Distinct from the dashboard's list `TaskRow` but
- * shares badges, tones and the "trabada" rule. A pending task carried over 3+
+ * shares badges, tones and the "trabada" rule. An open task carried over 3+
  * times gets a red rail + soft surface; done/discarded states dim it and hide
  * the quick actions. Drag handlers are spread by the parent via `...rest`.
  */
@@ -110,6 +110,16 @@ export function TaskCard({
 
       {!terminal && (
         <div className="mt-3 flex items-center gap-1.5">
+          {task.canStart && (
+            <QuickAction
+              label="Empezar"
+              onClick={() => actions.onStart(task.id)}
+              disabled={task.busy}
+              className="border border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--foreground)]"
+            >
+              <ArrowRight size={14} />
+            </QuickAction>
+          )}
           <QuickAction
             label="Marcar como hecha"
             onClick={() => actions.onComplete(task.id)}

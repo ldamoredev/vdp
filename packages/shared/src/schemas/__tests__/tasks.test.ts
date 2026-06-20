@@ -20,7 +20,7 @@ import {
 // ─── Enums ────────────────────────────────────────────────
 
 describe("taskStatusEnum", () => {
-  it.each(["pending", "done", "discarded"])("accepts '%s'", (val) => {
+  it.each(["pending", "in_progress", "done", "discarded"])("accepts '%s'", (val) => {
     expect(taskStatusEnum.parse(val)).toBe(val);
   });
 

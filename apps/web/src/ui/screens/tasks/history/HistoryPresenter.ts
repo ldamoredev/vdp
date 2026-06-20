@@ -258,7 +258,7 @@ export class HistoryPresenter extends PresenterBase<HistoryViewModel> {
 
   private pendingTasks(): Task[] {
     if (this.review?.pendingTasks.length) return this.review.pendingTasks.map(Task.from);
-    return this.tasks.filter((task) => task.isPending);
+    return this.tasks.filter((task) => task.isOpen);
   }
 
   private closureTaskVM(task: Task): HistoryClosureTaskVM {

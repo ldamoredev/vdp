@@ -19,11 +19,12 @@ describe('GetTodayStatsQuery', () => {
         ctx.tasks.seed([
             createTask({ id: 'task-1', scheduledDate: '2026-06-17', status: 'done' }),
             createTask({ id: 'task-2', scheduledDate: '2026-06-17', status: 'pending' }),
+            createTask({ id: 'task-3', scheduledDate: '2026-06-17', status: 'in_progress' }),
         ]);
 
         const stats = await new GetTodayStatsQueryHandler(ctx.tasks)
             .handle(new GetTodayStatsQuery(), identity);
 
-        expect(stats).toMatchObject({ date: '2026-06-17', total: 2, completed: 1, pending: 1, completionRate: 50 });
+        expect(stats).toMatchObject({ date: '2026-06-17', total: 3, completed: 1, pending: 2, completionRate: 33 });
     });
 });

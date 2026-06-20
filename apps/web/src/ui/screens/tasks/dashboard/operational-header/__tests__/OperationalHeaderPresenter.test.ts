@@ -70,25 +70,29 @@ describe("OperationalHeaderPresenter", () => {
     const { presenter } = await build([
       taskDto({ id: "stuck", carryOverCount: 3 }),
       taskDto({ id: "high", priority: 3 }),
+      taskDto({ id: "progress", status: "in_progress", priority: 3 }),
       taskDto({ id: "carried", carryOverCount: 1 }),
       taskDto({ id: "plain", priority: 1 }),
       taskDto({ id: "done", status: "done" }),
     ]);
 
-    // urgent = pending with priority 3 OR carried over: stuck, high, carried
-    expect(presenter.model.urgentCount).toBe(3);
+    // urgent = open with priority 3 OR carried over: stuck, high, progress, carried
+    expect(presenter.model.urgentCount).toBe(4);
     expect(presenter.model.stuckCount).toBe(1);
-    expect(presenter.model.highPriorityCount).toBe(1);
-    expect(presenter.model.pendingCount).toBe(4);
+    expect(presenter.model.highPriorityCount).toBe(2);
+    expect(presenter.model.pendingCount).toBe(5);
     expect(presenter.model.doneCount).toBe(1);
     expect(presenter.model.pressureValue).toBe(1);
-    expect(presenter.model.pressureSub).toBe("1 trabada, 1 alta prioridad.");
-    expect(presenter.model.rhythmSub).toBe("4 pendientes, 1 cerrada.");
+    expect(presenter.model.pressureSub).toBe("1 trabada, 2 alta prioridad.");
+    expect(presenter.model.rhythmSub).toBe("5 pendientes, 1 cerrada.");
   });
 
-  it("can reschedule only when there are pending tasks", async () => {
+  it("can reschedule only when there are open tasks", async () => {
     const withPending = await build([taskDto({ id: "p" })]);
     expect(withPending.presenter.model.canReschedule).toBe(true);
+
+    const withProgress = await build([taskDto({ id: "i", status: "in_progress" })]);
+    expect(withProgress.presenter.model.canReschedule).toBe(true);
 
     const allDone = await build([taskDto({ id: "d", status: "done" })]);
     expect(allDone.presenter.model.canReschedule).toBe(false);

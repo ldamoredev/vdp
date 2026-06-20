@@ -64,6 +64,11 @@ export class HttpTasksGateway implements TasksGateway {
     await this.http.delete(`/tasks/${id}`);
   }
 
+  async startTask(id: string): Promise<Task> {
+    const { body } = await this.http.post<TaskDto>(`/tasks/${id}/start`, {});
+    return Task.from(body);
+  }
+
   async completeTask(id: string): Promise<Task> {
     const { body } = await this.http.post<TaskDto>(`/tasks/${id}/complete`, {});
     return Task.from(body);

@@ -18,6 +18,7 @@ import { GetTasksByDomain } from "../GetTasksByDomain";
 import { GetTodayStats } from "../GetTodayStats";
 import { ListTaskNotes } from "../ListTaskNotes";
 import { ListTasks } from "../ListTasks";
+import { StartTask } from "../StartTask";
 import { TasksModule } from "../TasksModule";
 import { UpdateTask } from "../UpdateTask";
 import { FakeTasksGateway } from "./fakes/FakeTasksGateway";
@@ -70,6 +71,13 @@ describe("tasks handlers (dispatched through the bus)", () => {
       const task = await coreWith(gateway).execute(new CompleteTask("t1"));
       expect(gateway.callsTo("completeTask")[0].args).toEqual(["t1"]);
       expect(task.isDone).toBe(true);
+    });
+
+    it("StartTask forwards id and returns the in-progress model", async () => {
+      const gateway = new FakeTasksGateway();
+      const task = await coreWith(gateway).execute(new StartTask("t1"));
+      expect(gateway.callsTo("startTask")[0].args).toEqual(["t1"]);
+      expect(task.isInProgress).toBe(true);
     });
 
     it("CarryOverTask forwards id and optional toDate; DiscardTask forwards id", async () => {

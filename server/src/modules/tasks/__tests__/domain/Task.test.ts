@@ -3,6 +3,19 @@ import { Task } from '../../domain/Task';
 import { createTask } from '../fakes/task-factory';
 
 describe('Task Entity', () => {
+    describe('start()', () => {
+        it('sets status to "in_progress" and clears completedAt', () => {
+            const task = createTask({ status: 'pending', completedAt: new Date('2026-06-17T10:00:00.000Z') });
+            const before = task.updatedAt;
+
+            task.start();
+
+            expect(task.status).toBe('in_progress');
+            expect(task.completedAt).toBeNull();
+            expect(task.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+        });
+    });
+
     describe('complete()', () => {
         it('sets status to "done" and assigns completedAt', () => {
             const task = createTask({ status: 'pending' });
@@ -49,6 +62,18 @@ describe('Task Entity', () => {
         });
     });
 
+    describe('isOpen()', () => {
+        it('returns true for pending and in_progress tasks', () => {
+            expect(createTask({ status: 'pending' }).isOpen()).toBe(true);
+            expect(createTask({ status: 'in_progress' }).isOpen()).toBe(true);
+        });
+
+        it('returns false for terminal tasks', () => {
+            expect(createTask({ status: 'done' }).isOpen()).toBe(false);
+            expect(createTask({ status: 'discarded' }).isOpen()).toBe(false);
+        });
+    });
+
     describe('toSnapshot() / fromSnapshot()', () => {
         it('roundtrip preserves all fields', () => {
             const original = createTask({
@@ -79,6 +104,13 @@ describe('Task Entity', () => {
 
             restored.complete();
             expect(restored.status).toBe('done');
+        });
+
+        it('accepts in_progress snapshots', () => {
+            const restored = Task.fromSnapshot(createTask({ status: 'in_progress' }).toSnapshot());
+
+            expect(restored.status).toBe('in_progress');
+            expect(restored.isOpen()).toBe(true);
         });
     });
 });

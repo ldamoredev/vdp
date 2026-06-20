@@ -3,7 +3,7 @@
  * TaskCard / BoardColumn views render them without computing anything.
  */
 
-export type BoardTaskState = "pending" | "done" | "discarded";
+export type BoardTaskState = "pending" | "in_progress" | "done" | "discarded";
 
 export interface BoardTaskVM {
   id: string;
@@ -14,13 +14,16 @@ export interface BoardTaskVM {
   /** Scheduled date, already formatted as an es-AR short label, e.g. "lun, 13 jun". */
   dateLabel: string;
   state: BoardTaskState;
-  /** Carried over enough to need a decision (carryOverCount >= 3) while pending. */
+  /** Carried over enough to need a decision (carryOverCount >= 3) while open. */
   isStuck: boolean;
+  /** The task can move into the in-progress column. */
+  canStart: boolean;
   /** A mutation for this task is in flight; quick actions are disabled. */
   busy: boolean;
 }
 
 export interface BoardTaskActions {
+  onStart: (id: string) => void;
   onComplete: (id: string) => void;
   onCarryOver: (id: string) => void;
   onDiscard: (id: string) => void;
@@ -30,7 +33,7 @@ export interface BoardTaskActions {
 /** Header dot tone per board column. */
 export type BoardColumnTone = "accent" | "green" | "amber" | "red" | "muted";
 
-/** Which columns the board shows: only the operable one, or all three. */
+/** Which columns the board shows: only active/open work, or all states. */
 export type BoardScope = "active" | "all";
 
 export interface BoardColumnVM {

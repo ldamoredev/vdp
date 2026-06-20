@@ -6,7 +6,7 @@ import type { PaginatedCollection } from "./common";
 // The server's internal domain model lives in
 // `server/src/modules/tasks/domain/Task.ts`.
 
-export type TaskStatus = "pending" | "done" | "discarded";
+export type TaskStatus = "pending" | "in_progress" | "done" | "discarded";
 
 export interface Task {
   id: string;

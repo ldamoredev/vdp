@@ -19,16 +19,17 @@ describe('GetTasksSnapshotQuery', () => {
         ctx.tasks.seed([
             createTask({ id: 'task-1', title: 'Stuck', scheduledDate: '2026-06-17', carryOverCount: 3 }),
             createTask({ id: 'task-2', scheduledDate: '2026-06-17', status: 'done' }),
+            createTask({ id: 'task-3', title: 'Started', scheduledDate: '2026-06-17', status: 'in_progress' }),
         ]);
 
         const snapshot = await new GetTasksSnapshotQueryHandler(ctx.tasks)
             .handle(new GetTasksSnapshotQuery(), identity);
 
         expect(snapshot).toMatchObject({
-            pendingCount: 1,
+            pendingCount: 2,
             completedCount: 1,
-            totalCount: 2,
-            completionRate: 50,
+            totalCount: 3,
+            completionRate: 33,
             stuckTasks: [{ title: 'Stuck', carryOverCount: 3 }],
         });
     });
@@ -48,16 +49,22 @@ describe('GetTasksSnapshotQuery', () => {
                 scheduledDate: '2026-06-17',
                 status: 'pending',
             }),
+            createTask({
+                id: 'task-progress-today',
+                title: 'Progress today',
+                scheduledDate: '2026-06-17',
+                status: 'in_progress',
+            }),
         ]);
 
         const snapshot = await new GetTasksSnapshotQueryHandler(ctx.tasks)
             .handle(new GetTasksSnapshotQuery(), identity);
 
         expect(snapshot).toMatchObject({
-            pendingCount: 1,
+            pendingCount: 2,
             completedCount: 1,
-            totalCount: 2,
-            completionRate: 50,
+            totalCount: 3,
+            completionRate: 33,
         });
     });
 });

@@ -18,6 +18,7 @@ import { GetTasksByDomain, GetTasksByDomainHandler } from "./GetTasksByDomain";
 import { GetTodayStats, GetTodayStatsHandler } from "./GetTodayStats";
 import { ListTaskNotes, ListTaskNotesHandler } from "./ListTaskNotes";
 import { ListTasks, ListTasksHandler } from "./ListTasks";
+import { StartTask, StartTaskHandler } from "./StartTask";
 import { UpdateTask, UpdateTaskHandler } from "./UpdateTask";
 
 /**
@@ -38,6 +39,7 @@ export class TasksModule implements CoreModule {
     core.bus.registerHandler(UpdateTask, () => new UpdateTaskHandler(gateway));
     core.bus.registerHandler(DeleteTask, () => new DeleteTaskHandler(gateway));
 
+    core.bus.registerHandler(StartTask, () => new StartTaskHandler(gateway));
     core.bus.registerHandler(CompleteTask, () => new CompleteTaskHandler(gateway));
     core.bus.registerHandler(CarryOverTask, () => new CarryOverTaskHandler(gateway));
     core.bus.registerHandler(DiscardTask, () => new DiscardTaskHandler(gateway));

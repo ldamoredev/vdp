@@ -27,6 +27,15 @@ describe('CompleteTaskCommand', () => {
         expect(task?.completedAt).toEqual(new Date(2026, 5, 17, 12, 0, 0));
     });
 
+    it('completes an in-progress task for the authenticated user', async () => {
+        ctx.tasks.seed([createTask({ id: 'task-1', status: 'in_progress' })]);
+
+        const task = await new CompleteTaskCommandHandler(ctx.tasks, ctx.eventBus)
+            .handle(new CompleteTaskCommand('task-1'), identity);
+
+        expect(task).toMatchObject({ id: 'task-1', status: 'done' });
+    });
+
     it('emits a completion event for the authenticated user', async () => {
         const emittedEvents: DomainEvent[] = [];
         ctx.eventBus.onAll((event) => {
@@ -48,7 +57,7 @@ describe('CompleteTaskCommand', () => {
         });
     });
 
-    it('rejects completing non-pending tasks', async () => {
+    it('rejects completing terminal tasks', async () => {
         ctx.tasks.seed([createTask({ id: 'task-1', status: 'discarded' })]);
 
         await expect(

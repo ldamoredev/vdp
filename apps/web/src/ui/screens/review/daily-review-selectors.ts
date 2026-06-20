@@ -83,7 +83,7 @@ export function buildWalletReviewSignals({
 export function buildTaskReviewSignals(
   tasks: PendingReviewTask[],
 ): ReviewSignalResult<TaskReviewSignal> {
-  const pendingTasks = tasks.filter((task) => task.status === "pending");
+  const pendingTasks = tasks.filter((task) => task.status === "pending" || task.status === "in_progress");
   const signals: TaskReviewSignal[] = [];
 
   const carried = pendingTasks.filter((task) => task.carryOverCount > 0);

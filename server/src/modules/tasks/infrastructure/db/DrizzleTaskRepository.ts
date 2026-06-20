@@ -190,7 +190,7 @@ export class DrizzleTaskRepository extends TaskRepository {
     async countByDate(userId: string, date: string): Promise<DateCounts> {
         const result = await this.db.query
             .select({
-                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'pending')::int`,
+                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} IN ('pending', 'in_progress'))::int`,
                 done: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'done')::int`,
                 discarded: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'discarded')::int`,
                 total: sql<number>`COUNT(*)::int`,
@@ -207,7 +207,7 @@ export class DrizzleTaskRepository extends TaskRepository {
                 date: tasks.scheduledDate,
                 total: sql<number>`COUNT(*)::int`,
                 completed: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'done')::int`,
-                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'pending')::int`,
+                pending: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} IN ('pending', 'in_progress'))::int`,
                 discarded: sql<number>`COUNT(*) FILTER (WHERE ${tasks.status} = 'discarded')::int`,
                 carriedOver: sql<number>`COUNT(*) FILTER (WHERE ${tasks.carryOverCount} > 0)::int`,
             })

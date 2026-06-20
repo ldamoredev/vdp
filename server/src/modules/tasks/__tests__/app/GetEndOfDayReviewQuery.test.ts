@@ -20,12 +20,14 @@ describe('GetEndOfDayReviewQuery', () => {
         ctx.tasks.seed([
             createTask({ id: 'task-1', scheduledDate: '2026-06-17', status: 'done' }),
             createTask({ id: 'task-2', scheduledDate: '2026-06-17', status: 'pending' }),
+            createTask({ id: 'task-3', scheduledDate: '2026-06-17', status: 'in_progress' }),
         ]);
 
         const review = await new GetEndOfDayReviewQueryHandler(ctx.tasks, new RecommendationEngine())
             .handle(new GetEndOfDayReviewQuery('2026-06-17'), identity);
 
-        expect(review).toMatchObject({ date: '2026-06-17', total: 2, completed: 1, pending: 1 });
+        expect(review).toMatchObject({ date: '2026-06-17', total: 3, completed: 1, pending: 2 });
+        expect(review.pendingTasks.map((task) => task.id)).toEqual(['task-2', 'task-3']);
     });
 
     it('includes tasks completed on the review date even when scheduled earlier', async () => {

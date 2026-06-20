@@ -25,3 +25,6 @@ skills-lock.json
 .superpowers
 apps/web/test-results/
 apps/web/playwright-report/
+
+# Local design-system handoff bundle
+docs/design/

@@ -22,7 +22,7 @@ export function createTaskTransitionTools(bus: CQBus, authContextStorage: AuthCo
         jsonTool({
             name: 'carry_over_task',
             description:
-                "Move a pending task to another day (default: tomorrow). Increments carry-over counter.",
+                "Move an active task to another day (default: tomorrow). Increments carry-over counter.",
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -49,7 +49,7 @@ export function createTaskTransitionTools(bus: CQBus, authContextStorage: AuthCo
         jsonTool({
             name: 'carry_over_all_pending',
             description:
-                'Carry over ALL pending tasks from a date to tomorrow (or another date). Use this only when the user explicitly wants to move everything.',
+                'Carry over ALL active tasks from a date to tomorrow (or another date). Use this only when the user explicitly wants to move everything.',
             inputSchema: {
                 type: 'object',
                 properties: {

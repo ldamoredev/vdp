@@ -6,6 +6,7 @@ import type { BoardTaskActions, BoardTaskVM } from "@/ui/models/tasks/BoardViewM
 import { TaskCard } from "../task-card";
 
 const actions: BoardTaskActions = {
+  onStart: vi.fn(),
   onComplete: vi.fn(),
   onCarryOver: vi.fn(),
   onDiscard: vi.fn(),
@@ -22,6 +23,7 @@ function task(overrides: Partial<BoardTaskVM> = {}): BoardTaskVM {
     dateLabel: "lun, 13 jun",
     state: "pending",
     isStuck: false,
+    canStart: true,
     busy: false,
     ...overrides,
   };
@@ -36,6 +38,7 @@ describe("TaskCard", () => {
     expect(markup).toContain("Finanzas"); // domain label
     expect(markup).toContain("lun, 13 jun"); // scheduled date chip
     expect(markup).toContain("font-data");
+    expect(markup).toContain('aria-label="Empezar"');
     expect(markup).toContain('aria-label="Marcar como hecha"');
     expect(markup).toContain('aria-label="Reprogramar a mañana"');
     expect(markup).toContain('aria-label="Descartar"');
@@ -54,7 +57,7 @@ describe("TaskCard", () => {
   });
 
   it("dims a done card, strikes the title and hides the quick actions", () => {
-    const markup = renderToStaticMarkup(createElement(TaskCard, { task: task({ state: "done" }), actions }));
+    const markup = renderToStaticMarkup(createElement(TaskCard, { task: task({ state: "done", canStart: false }), actions }));
 
     expect(markup).toContain("line-through");
     expect(markup).toContain("opacity-65");

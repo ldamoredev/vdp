@@ -44,7 +44,8 @@ export class CheckTasksOverload {
 
         // Check current load for today
         const todayStr = todayISO();
-        const todayTasks = await this.repository.getTasksByDateAndStatus(userId, todayStr, 'pending');
+        const todayTasks = (await this.repository.getTasksByDate(userId, todayStr))
+            .filter((task) => task.isOpen());
         const currentLoad = todayTasks.length;
 
         const overloaded = currentLoad > threshold;

@@ -63,7 +63,7 @@ export function createTaskManagementTools(bus: CQBus, authContextStorage: AuthCo
             name: 'list_tasks',
             description:
                 "List tasks filtered by scheduled date, completion date, status, domain, or priority. " +
-                "Defaults to today's pending tasks, and if status='done' with no date it defaults to tasks completed today.",
+                "Defaults to today's active tasks, and if status='done' with no date it defaults to tasks completed today.",
             inputSchema: {
                 type: 'object',
                 properties: {

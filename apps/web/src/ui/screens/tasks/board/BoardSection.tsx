@@ -29,6 +29,7 @@ export function BoardSection({ domain }: { domain: string }) {
   const navigate = useNavigate();
 
   const actions: BoardTaskActions = {
+    onStart: (id) => void presenter.startTask(id),
     onComplete: (id) => void presenter.complete(id),
     onCarryOver: (id) => void presenter.carryOver(id),
     onDiscard: (id) => void presenter.discard(id),
@@ -87,9 +88,9 @@ function BoardBody({
 
   return (
     <>
-      {/* Desktop: 3-column kanban with drag-drop. */}
+      {/* Desktop kanban with drag-drop. */}
       <div
-        className={`hidden gap-3 md:grid ${vm.columns.length === 1 ? "md:max-w-md" : "md:grid-cols-3"}`}
+        className={`hidden gap-3 md:grid ${desktopGridClass(vm.columns.length)}`}
       >
         {vm.columns.map((column) => (
           <Column key={column.id} column={column} vm={vm} presenter={presenter} actions={actions} />
@@ -297,7 +298,7 @@ function Composer({ composer, presenter }: { composer: BoardComposerVM; presente
 }
 
 function BoardSkeleton({ columns }: { columns: number }) {
-  const gridClass = columns === 1 ? "max-w-md" : "md:grid-cols-3";
+  const gridClass = desktopGridClass(columns);
   return (
     <div className={`grid gap-3 ${gridClass}`} role="status" aria-busy="true" aria-label="Cargando tablero">
       {Array.from({ length: columns }).map((_, columnIndex) => (
@@ -314,4 +315,11 @@ function BoardSkeleton({ columns }: { columns: number }) {
       ))}
     </div>
   );
+}
+
+function desktopGridClass(columns: number): string {
+  if (columns === 1) return "md:max-w-md";
+  if (columns === 2) return "md:grid-cols-2";
+  if (columns === 4) return "md:grid-cols-2 xl:grid-cols-4";
+  return "md:grid-cols-3";
 }

@@ -110,7 +110,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
     const selectedId = this.store.selectedId$.value;
     if (selectedId && tasks.some((task) => task.id === selectedId)) return;
 
-    const defaultTask = buildPlanningSignal({ tasks }).focusTasks[0] ?? tasks.find((task) => task.isPending);
+    const defaultTask = buildPlanningSignal({ tasks }).focusTasks[0] ?? tasks.find((task) => task.isOpen);
     this.store.select(defaultTask?.id);
   }
 
@@ -273,7 +273,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   private selectorItems(): DetailTaskSelectorItemVM[] {
     const selectedId = this.store.selectedId$.value;
     return this.store.tasks$.value
-      .filter((task) => task.isPending)
+      .filter((task) => task.isOpen)
       .slice(0, 6)
       .map((task) => ({
         id: task.id,

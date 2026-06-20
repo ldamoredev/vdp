@@ -111,6 +111,16 @@ describe("HttpTasksGateway", () => {
     expect(task.isDone).toBe(true);
   });
 
+  it("maps the started task to an in-progress domain model", async () => {
+    const http = new FakeHttpClient({ "POST /tasks/t1/start": taskDto({ status: "in_progress" }) });
+
+    const task = await new HttpTasksGateway(http).startTask("t1");
+
+    expect(task).toBeInstanceOf(Task);
+    expect(task.isInProgress).toBe(true);
+    expect(http.calls[0]).toMatchObject({ url: "/tasks/t1/start", body: {} });
+  });
+
   it("sends toDate on carry-over", async () => {
     const http = new FakeHttpClient({ "POST /tasks/t1/carry-over": taskDto() });
     await new HttpTasksGateway(http).carryOverTask("t1", "2026-06-14");

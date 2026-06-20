@@ -51,25 +51,27 @@ async function build(tasks: TaskDto[]) {
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("ExecutionQueuePresenter", () => {
-  it("defaults to the focus filter and lists hot pending tasks", async () => {
+  it("defaults to the focus filter and lists hot open tasks", async () => {
     const { presenter } = await build([
       taskDto({ id: "plain", priority: 1 }),
+      taskDto({ id: "progress", status: "in_progress", priority: 2 }),
       taskDto({ id: "hot", priority: 3 }),
     ]);
 
     expect(presenter.model.filter).toBe("focus");
-    expect(presenter.model.rows.map((r) => r.id)).toEqual(["hot"]);
+    expect(presenter.model.rows.map((r) => r.id)).toEqual(["hot", "progress"]);
   });
 
   it("computes filter counts across all tasks", async () => {
     const { presenter } = await build([
       taskDto({ id: "hot", priority: 3 }),
+      taskDto({ id: "progress", status: "in_progress", priority: 2 }),
       taskDto({ id: "plain" }),
       taskDto({ id: "done", status: "done" }),
     ]);
 
     const counts = Object.fromEntries(presenter.model.filterOptions.map((o) => [o.key, o.count]));
-    expect(counts).toMatchObject({ focus: 1, pending: 2, done: 1, all: 3 });
+    expect(counts).toMatchObject({ focus: 2, pending: 3, done: 1, all: 4 });
   });
 
   it("marks stuck task rows explicitly for the humble view", async () => {

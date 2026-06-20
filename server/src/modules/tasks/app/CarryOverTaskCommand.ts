@@ -49,7 +49,7 @@ export async function carryOverTask(input: {
     const task = await input.tasks.getTask(input.userId, input.id);
     if (!task) return null;
 
-    if (task.status !== 'pending') {
+    if (!task.isOpen()) {
         throw new DomainHttpError(`Cannot carry over a ${task.status} task`);
     }
 

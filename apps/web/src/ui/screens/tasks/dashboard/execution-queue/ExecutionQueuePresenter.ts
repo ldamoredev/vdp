@@ -116,7 +116,7 @@ export class ExecutionQueuePresenter extends PresenterBase<ExecutionQueueViewMod
   }
 
   private filterOptions(tasks: readonly Task[]): FilterOptionVM[] {
-    const pending = tasks.filter((task) => task.isPending).length;
+    const pending = tasks.filter((task) => task.isOpen).length;
     const done = tasks.filter((task) => task.isDone).length;
     const focus = filterTasks(tasks, "focus").length;
     return [

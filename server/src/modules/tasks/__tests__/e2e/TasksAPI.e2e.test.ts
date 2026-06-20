@@ -502,6 +502,18 @@ describe('Tasks API — E2E', () => {
 
     // ─── Status Transitions ────────────────────────
 
+    describe('POST /api/v1/tasks/:id/start', () => {
+        it('marks task as in progress', async () => {
+            const { body: task } = await createTask();
+
+            const res = await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${task.id}/start` });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.json().status).toBe('in_progress');
+            expect(res.json().completedAt).toBeNull();
+        });
+    });
+
     describe('POST /api/v1/tasks/:id/complete', () => {
         it('marks task as done', async () => {
             const { body: task } = await createTask();
@@ -577,11 +589,13 @@ describe('Tasks API — E2E', () => {
     });
 
     describe('POST /api/v1/tasks/carry-over-all', () => {
-        it('carries over all pending tasks from a date', async () => {
+        it('carries over all open tasks from a date', async () => {
             const today = todayISO();
             await createTask({ title: 'Pending 1', scheduledDate: today });
             await createTask({ title: 'Pending 2', scheduledDate: today });
+            const { body: progress } = await createTask({ title: 'Already started', scheduledDate: today });
             const { body: done } = await createTask({ title: 'Already done', scheduledDate: today });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${progress.id}/start` });
             await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${done.id}/complete` });
 
             const res = await testApp.app.inject({
@@ -592,10 +606,11 @@ describe('Tasks API — E2E', () => {
 
             expect(res.statusCode).toBe(200);
             const body = res.json();
-            expect(body.carriedOver).toBe(2);
-            expect(body.tasks).toHaveLength(2);
+            expect(body.carriedOver).toBe(3);
+            expect(body.tasks).toHaveLength(3);
             for (const task of body.tasks) {
                 expect(task.scheduledDate).toBe('2099-04-02');
+                expect(task.status).toBe('pending');
                 expect(task.carryOverCount).toBe(1);
             }
         });
@@ -618,6 +633,8 @@ describe('Tasks API — E2E', () => {
         it('returns completion stats for today', async () => {
             await createTask({ title: 'A' });
             const { body: b } = await createTask({ title: 'B' });
+            const { body: c } = await createTask({ title: 'C' });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${c.id}/start` });
             await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${b.id}/complete` });
 
             const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/stats/today' });
@@ -625,10 +642,10 @@ describe('Tasks API — E2E', () => {
             expect(res.statusCode).toBe(200);
             const body = res.json();
             expect(body.date).toBe(todayISO());
-            expect(body.total).toBe(2);
+            expect(body.total).toBe(3);
             expect(body.completed).toBe(1);
-            expect(body.pending).toBe(1);
-            expect(body.completionRate).toBe(50);
+            expect(body.pending).toBe(2);
+            expect(body.completionRate).toBe(33);
         });
     });
 
@@ -700,7 +717,9 @@ describe('Tasks API — E2E', () => {
     describe('GET /api/v1/tasks/review', () => {
         it('returns the end-of-day review for today', async () => {
             await createTask({ title: 'Pending review task' });
+            const { body: progress } = await createTask({ title: 'Progress review task' });
             const { body: done } = await createTask({ title: 'Done review task' });
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${progress.id}/start` });
             await testApp.app.inject({ method: 'POST', url: `/api/v1/tasks/${done.id}/complete` });
 
             const res = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks/review' });
@@ -708,11 +727,13 @@ describe('Tasks API — E2E', () => {
             expect(res.statusCode).toBe(200);
             const body = res.json();
             expect(body.date).toBe(todayISO());
-            expect(body.total).toBe(2);
+            expect(body.total).toBe(3);
             expect(body.completed).toBe(1);
-            expect(body.pending).toBe(1);
-            expect(body.pendingTasks).toHaveLength(1);
-            expect(body.pendingTasks[0].title).toBe('Pending review task');
+            expect(body.pending).toBe(2);
+            expect(body.pendingTasks.map((task: { title: string }) => task.title).sort()).toEqual([
+                'Pending review task',
+                'Progress review task',
+            ]);
             expect(Array.isArray(body.recommendations)).toBe(true);
         });
 

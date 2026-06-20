@@ -79,8 +79,10 @@ describe("SidebarCardsPresenter", () => {
     });
   });
 
-  it("falls back to a pending task when the active filter has no visible rows", async () => {
-    const { presenter, store } = await build([taskDto({ id: "plain", title: "Ordenar inbox", priority: 1 })]);
+  it("falls back to an open task when the active filter has no visible rows", async () => {
+    const { presenter, store } = await build([
+      taskDto({ id: "plain", title: "Ordenar inbox", priority: 1, status: "in_progress" }),
+    ]);
 
     store.setFilter("done");
 
@@ -98,6 +100,7 @@ describe("SidebarCardsPresenter", () => {
     const { presenter } = await build([
       taskDto({ id: "plain" }),
       taskDto({ id: "carried", carryOverCount: 1 }),
+      taskDto({ id: "progress", status: "in_progress", carryOverCount: 1 }),
       taskDto({ id: "stuck", carryOverCount: 3 }),
       taskDto({ id: "done", status: "done", carryOverCount: 4 }),
     ]);
@@ -110,7 +113,7 @@ describe("SidebarCardsPresenter", () => {
       },
       {
         label: "Con carry-over",
-        value: "2",
+        value: "3",
         className: "border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)]",
       },
       {

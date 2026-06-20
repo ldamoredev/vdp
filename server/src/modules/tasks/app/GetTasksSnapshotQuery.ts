@@ -29,7 +29,7 @@ export class GetTasksSnapshotQueryHandler implements RequestHandler<GetTasksSnap
         const scheduledTasks = await this.tasks.getTasksByDate(userId, today);
         const completedToday = await this.tasks.getTasksCompletedOnDate(userId, today);
         const todayTasks = mergeUniqueTasks(scheduledTasks, completedToday);
-        const pendingTasks = todayTasks.filter((task) => task.status === 'pending');
+        const pendingTasks = todayTasks.filter((task) => task.isOpen());
         const completedTasks = mergeUniqueTasks(
             scheduledTasks.filter((task) => task.status === 'done'),
             completedToday,
