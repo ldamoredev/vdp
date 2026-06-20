@@ -46,6 +46,7 @@ interface ComposerState {
 export class BoardPresenter extends PresenterBase<BoardViewModel> {
   private tasks: Task[] = [];
   private scope: BoardScope = "all";
+  private mobileColumn: BoardTaskState = "pending";
   private readonly busyIds = new Set<string>();
   private draggingId: string | null = null;
   private dropTargetId: BoardTaskState | null = null;
@@ -83,6 +84,12 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
   setScope(scope: BoardScope): void {
     if (this.scope === scope) return;
     this.scope = scope;
+    this.refresh();
+  }
+
+  setMobileColumn(column: BoardTaskState): void {
+    if (this.mobileColumn === column) return;
+    this.mobileColumn = column;
     this.refresh();
   }
 
@@ -212,10 +219,12 @@ export class BoardPresenter extends PresenterBase<BoardViewModel> {
   }
 
   private buildModel(): BoardViewModel {
-    const visible = this.scope === "active" ? (["pending"] as BoardTaskState[]) : COLUMN_ORDER;
+    const visible: BoardTaskState[] = this.scope === "active" ? ["pending"] : [...COLUMN_ORDER];
+    const mobileColumnId = visible.includes(this.mobileColumn) ? this.mobileColumn : visible[0];
     return {
       domainLabel: domainLabel(this.domain),
       scope: this.scope,
+      mobileColumnId,
       columns: visible.map((status) => this.columnVM(status)),
       draggingId: this.draggingId,
       isLoading: this.isLoading,

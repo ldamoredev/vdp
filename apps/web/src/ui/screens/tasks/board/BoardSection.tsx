@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
-import { ListChecks } from "lucide-react";
+import { ListChecks, Plus } from "lucide-react";
 
 import { priorityLabel } from "@/lib/format";
 import type {
@@ -85,13 +85,80 @@ function BoardBody({
     return <BoardSkeleton columns={vm.columns.length} />;
   }
 
-  const gridClass = vm.columns.length === 1 ? "max-w-md" : "md:grid-cols-3";
+  return (
+    <>
+      {/* Desktop: 3-column kanban with drag-drop. */}
+      <div
+        className={`hidden gap-3 md:grid ${vm.columns.length === 1 ? "md:max-w-md" : "md:grid-cols-3"}`}
+      >
+        {vm.columns.map((column) => (
+          <Column key={column.id} column={column} vm={vm} presenter={presenter} actions={actions} />
+        ))}
+      </div>
+
+      {/* Mobile: status switcher + single column, one-tap actions, no drag. */}
+      <MobileBoard vm={vm} presenter={presenter} actions={actions} />
+    </>
+  );
+}
+
+function MobileBoard({
+  vm,
+  presenter,
+  actions,
+}: {
+  vm: BoardViewModel;
+  presenter: BoardPresenter;
+  actions: BoardTaskActions;
+}) {
+  const selected = vm.columns.find((column) => column.id === vm.mobileColumnId) ?? vm.columns[0];
+  const showComposer = selected.id === "pending" && vm.composer !== null;
 
   return (
-    <div className={`grid gap-3 ${gridClass}`}>
-      {vm.columns.map((column) => (
-        <Column key={column.id} column={column} vm={vm} presenter={presenter} actions={actions} />
-      ))}
+    <div className="md:hidden">
+      <div role="tablist" aria-label="Estado" className="flex items-center gap-1.5">
+        <div className="flex flex-1 gap-1 overflow-x-auto">
+          {vm.columns.map((column) => (
+            <button
+              key={column.id}
+              type="button"
+              role="tab"
+              aria-selected={column.id === vm.mobileColumnId}
+              onClick={() => presenter.setMobileColumn(column.id)}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-sm)] px-3 text-xs font-medium transition-all ${
+                column.id === vm.mobileColumnId
+                  ? "bg-[var(--accent)] text-[var(--accent-contrast)]"
+                  : "bg-[var(--hover-overlay)] text-[var(--muted)]"
+              }`}
+            >
+              {column.title}
+              <span className="font-data text-[11px] font-semibold opacity-80">{column.count}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          aria-label="Crear tarea"
+          onClick={() => {
+            presenter.setMobileColumn("pending");
+            presenter.openComposer();
+          }}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--glass-border)] bg-[var(--card)] text-[var(--accent)] transition-all"
+        >
+          <Plus size={18} />
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-2.5">
+        {showComposer && vm.composer && <Composer composer={vm.composer} presenter={presenter} />}
+        {selected.tasks.length === 0 && !showComposer ? (
+          <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--divider)] px-3 py-8 text-center text-xs leading-relaxed text-[var(--muted)]">
+            {selected.emptyText}
+          </div>
+        ) : (
+          selected.tasks.map((task) => <TaskCard key={task.id} task={task} actions={actions} />)
+        )}
+      </div>
     </div>
   );
 }

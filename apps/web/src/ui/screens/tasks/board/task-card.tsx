@@ -33,7 +33,7 @@ function QuickAction({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] transition-all hover:scale-105 disabled:opacity-50 ${className}`}
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] transition-all hover:scale-105 disabled:opacity-50 md:h-8 md:w-8 ${className}`}
     >
       {children}
     </button>

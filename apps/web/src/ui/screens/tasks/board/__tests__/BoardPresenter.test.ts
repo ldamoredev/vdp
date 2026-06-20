@@ -129,4 +129,21 @@ describe("BoardPresenter", () => {
     ]);
     expect(presenter.model.composer).toBeNull();
   });
+
+  it("defaults the mobile column to pending and switches it", async () => {
+    const { presenter } = await build([taskDto({ id: "d", status: "done" })]);
+
+    expect(presenter.model.mobileColumnId).toBe("pending");
+    presenter.setMobileColumn("done");
+    expect(presenter.model.mobileColumnId).toBe("done");
+  });
+
+  it("clamps the mobile column to a visible one when the scope hides it", async () => {
+    const { presenter } = await build([taskDto({ id: "d", status: "done" })]);
+
+    presenter.setMobileColumn("done");
+    presenter.setScope("active");
+
+    expect(presenter.model.mobileColumnId).toBe("pending");
+  });
 });

@@ -55,6 +55,8 @@ export interface BoardComposerVM {
 export interface BoardViewModel {
   domainLabel: string;
   scope: BoardScope;
+  /** The single column shown on mobile (the switcher selection), clamped to a visible column. */
+  mobileColumnId: BoardTaskState;
   columns: BoardColumnVM[];
   /** Id of the card currently being dragged, so the view can fade its source. */
   draggingId: string | null;
