@@ -18,7 +18,11 @@ import { GetExchangeRates, GetExchangeRatesHandler } from "./GetExchangeRates";
 import { GetInvestments, GetInvestmentsHandler } from "./GetInvestments";
 import { GetSavings, GetSavingsHandler } from "./GetSavings";
 import { GetTransactions, GetTransactionsHandler } from "./GetTransactions";
+import { CreateRecurringTransaction, CreateRecurringTransactionHandler } from "./CreateRecurringTransaction";
+import { DeleteRecurringTransaction, DeleteRecurringTransactionHandler } from "./DeleteRecurringTransaction";
 import { GetFoodSpendingThisWeek, GetFoodSpendingThisWeekHandler } from "./GetFoodSpendingThisWeek";
+import { GetRecurringTransactions, GetRecurringTransactionsHandler } from "./GetRecurringTransactions";
+import { MaterializeDueRecurringTransactions, MaterializeDueRecurringTransactionsHandler } from "./MaterializeDueRecurringTransactions";
 import { GetWalletMonthlyTrend, GetWalletMonthlyTrendHandler } from "./GetWalletMonthlyTrend";
 import { GetWalletStatsByCategory, GetWalletStatsByCategoryHandler } from "./GetWalletStatsByCategory";
 import { GetWalletStatsSummary, GetWalletStatsSummaryHandler } from "./GetWalletStatsSummary";
@@ -82,5 +86,14 @@ export class WalletModule implements CoreModule {
     core.bus.registerHandler(GetExchangeRates, () => new GetExchangeRatesHandler(gateway));
     core.bus.registerHandler(CreateExchangeRate, () => new CreateExchangeRateHandler(gateway));
     core.bus.registerHandler(EnsureFreshDollarRates, () => new EnsureFreshDollarRatesHandler(gateway));
+
+    // recurring transactions
+    core.bus.registerHandler(GetRecurringTransactions, () => new GetRecurringTransactionsHandler(gateway));
+    core.bus.registerHandler(CreateRecurringTransaction, () => new CreateRecurringTransactionHandler(gateway));
+    core.bus.registerHandler(DeleteRecurringTransaction, () => new DeleteRecurringTransactionHandler(gateway));
+    core.bus.registerHandler(
+      MaterializeDueRecurringTransactions,
+      () => new MaterializeDueRecurringTransactionsHandler(gateway),
+    );
   }
 }

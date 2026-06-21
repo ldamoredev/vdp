@@ -7,6 +7,7 @@ import {
   timestamp,
   date,
   text,
+  integer,
   index,
   uniqueIndex,
   jsonb,
@@ -191,5 +192,31 @@ export const walletInsights = walletSchema.table(
   },
   (table) => [
     index("wallet_insights_owner_created_idx").on(table.ownerUserId, table.createdAt),
+  ]
+);
+
+// Recurring transactions (D1c): rules that materialize real transactions monthly
+export const recurringTransactions = walletSchema.table(
+  "recurring_transactions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    accountId: uuid("account_id").notNull().references(() => accounts.id),
+    categoryId: uuid("category_id").references(() => categories.id),
+    type: varchar("type", { length: 10 }).notNull(),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    description: varchar("description", { length: 255 }),
+    dayOfMonth: integer("day_of_month").notNull(),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date"),
+    lastRunDate: date("last_run_date"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("recurring_owner_user_idx").on(table.ownerUserId),
+    index("recurring_account_idx").on(table.accountId),
   ]
 );

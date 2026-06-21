@@ -14,6 +14,10 @@ import { GetCategoriesQuery, GetCategoriesQueryHandler } from './app/GetCategori
 import { GetCategoryTrendsQuery, GetCategoryTrendsQueryHandler } from './app/GetCategoryTrendsQuery';
 import { GetExchangeRatesQuery, GetExchangeRatesQueryHandler } from './app/GetExchangeRatesQuery';
 import { GetFoodSpendingThisWeekQuery, GetFoodSpendingThisWeekQueryHandler } from './app/GetFoodSpendingThisWeekQuery';
+import { CreateRecurringTransactionCommand, CreateRecurringTransactionCommandHandler } from './app/CreateRecurringTransactionCommand';
+import { GetRecurringTransactionsQuery, GetRecurringTransactionsQueryHandler } from './app/GetRecurringTransactionsQuery';
+import { DeleteRecurringTransactionCommand, DeleteRecurringTransactionCommandHandler } from './app/DeleteRecurringTransactionCommand';
+import { MaterializeDueRecurringTransactionsCommand, MaterializeDueRecurringTransactionsCommandHandler } from './app/MaterializeDueRecurringTransactionsCommand';
 import { GetInvestmentsQuery, GetInvestmentsQueryHandler } from './app/GetInvestmentsQuery';
 import { GetMonthlyTrendQuery, GetMonthlyTrendQueryHandler } from './app/GetMonthlyTrendQuery';
 import { GetSavingsGoalsQuery, GetSavingsGoalsQueryHandler } from './app/GetSavingsGoalsQuery';
@@ -37,6 +41,7 @@ import { CategoryRepository } from './domain/CategoryRepository';
 import { SavingsGoalRepository } from './domain/SavingsGoalRepository';
 import { InvestmentRepository } from './domain/InvestmentRepository';
 import { ExchangeRateRepository } from './domain/ExchangeRateRepository';
+import { RecurringTransactionRepository } from './domain/RecurringTransactionRepository';
 import { ExchangeRateProvider } from './domain/ExchangeRateProvider';
 import { DolarApiExchangeRateProvider } from './infrastructure/exchange-rates/DolarApiExchangeRateProvider';
 
@@ -104,6 +109,25 @@ export class WalletModuleRuntime {
         );
         this.deps.bus.registerHandler(GetFoodSpendingThisWeekQuery, () =>
             new GetFoodSpendingThisWeekQueryHandler(this.transactionRepository(), this.categoryRepository()),
+        );
+        this.deps.bus.registerHandler(GetRecurringTransactionsQuery, () =>
+            new GetRecurringTransactionsQueryHandler(this.recurringRepository()),
+        );
+        this.deps.bus.registerHandler(CreateRecurringTransactionCommand, () =>
+            new CreateRecurringTransactionCommandHandler(
+                this.recurringRepository(),
+                this.accountRepository(),
+                this.categoryRepository(),
+            ),
+        );
+        this.deps.bus.registerHandler(DeleteRecurringTransactionCommand, () =>
+            new DeleteRecurringTransactionCommandHandler(this.recurringRepository()),
+        );
+        this.deps.bus.registerHandler(MaterializeDueRecurringTransactionsCommand, () =>
+            new MaterializeDueRecurringTransactionsCommandHandler(
+                this.recurringRepository(),
+                this.transactionRepository(),
+            ),
         );
         this.deps.bus.registerHandler(GetMonthlyTrendQuery, () =>
             new GetMonthlyTrendQueryHandler(this.transactionRepository(), this.exchangeRateRepository()),
@@ -255,6 +279,10 @@ export class WalletModuleRuntime {
 
     private exchangeRateRepository(): ExchangeRateRepository {
         return this.deps.repositories.get(ExchangeRateRepository);
+    }
+
+    private recurringRepository(): RecurringTransactionRepository {
+        return this.deps.repositories.get(RecurringTransactionRepository);
     }
 
     private readonly exchangeRateProviderInstance: ExchangeRateProvider = new DolarApiExchangeRateProvider();

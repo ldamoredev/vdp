@@ -19,6 +19,7 @@ import { AccountsScreen } from "@/ui/screens/wallet/accounts/AccountsScreen";
 import { CategoriesScreen } from "@/ui/screens/wallet/categories/CategoriesScreen";
 import { DashboardScreen } from "@/ui/screens/wallet/dashboard/DashboardScreen";
 import { InvestmentsScreen } from "@/ui/screens/wallet/investments/InvestmentsScreen";
+import { RecurringScreen } from "@/ui/screens/wallet/recurring/RecurringScreen";
 import { SavingsScreen } from "@/ui/screens/wallet/savings/SavingsScreen";
 import { StatsScreen } from "@/ui/screens/wallet/stats/StatsScreen";
 import { TransactionFormScreen } from "@/ui/screens/wallet/transactions/TransactionFormScreen";
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
           { path: "/wallet/accounts", element: <AccountsScreen /> },
           { path: "/wallet/categories", element: <CategoriesScreen /> },
           { path: "/wallet/investments", element: <InvestmentsScreen /> },
+          { path: "/wallet/recurring", element: <RecurringScreen /> },
           { path: "/wallet/savings", element: <SavingsScreen /> },
           { path: "/wallet/stats", element: <StatsScreen /> },
           { path: "/wallet/transactions", element: <TransactionsScreen /> },

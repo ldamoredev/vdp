@@ -227,6 +227,17 @@ describe("DashboardPresenter", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("materializes due recurring rules on load, before reading transactions", async () => {
+    const { presenter, gateway, getTransactions } = build();
+    const materialize = vi.spyOn(gateway, "materializeDueRecurringTransactions");
+
+    presenter.start();
+    await flush();
+
+    expect(materialize).toHaveBeenCalledTimes(1);
+    expect(materialize.mock.invocationCallOrder[0]).toBeLessThan(getTransactions.mock.invocationCallOrder[0]);
+  });
+
   it("opens and saves recent transaction edits, then reloads", async () => {
     const { presenter, gateway, getTransactions } = build();
     const updateTransaction = vi.spyOn(gateway, "updateTransaction");

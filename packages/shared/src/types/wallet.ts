@@ -132,6 +132,23 @@ export interface FoodSpendingThisWeek {
   byCurrency: FoodSpendingByCurrency[];
 }
 
+export interface RecurringTransaction {
+  id: string;
+  accountId: string;
+  categoryId: string | null;
+  type: "expense" | "income";
+  amount: string;
+  currency: Currency;
+  description: string | null;
+  dayOfMonth: number;
+  startDate: string;
+  endDate: string | null;
+  lastRunDate: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ExchangeRate {
   id: string;
   fromCurrency: Currency;

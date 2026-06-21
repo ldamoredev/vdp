@@ -10,6 +10,7 @@ import {
     updateSavingsGoalSchema,
     createInvestmentSchema,
     updateInvestmentSchema,
+    createRecurringTransactionSchema,
 } from '@vdp/shared';
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
@@ -34,6 +35,10 @@ import { GetAccountsQuery } from '../../app/GetAccountsQuery';
 import { GetCategoriesQuery } from '../../app/GetCategoriesQuery';
 import { GetExchangeRatesQuery } from '../../app/GetExchangeRatesQuery';
 import { GetFoodSpendingThisWeekQuery } from '../../app/GetFoodSpendingThisWeekQuery';
+import { CreateRecurringTransactionCommand } from '../../app/CreateRecurringTransactionCommand';
+import { GetRecurringTransactionsQuery } from '../../app/GetRecurringTransactionsQuery';
+import { DeleteRecurringTransactionCommand } from '../../app/DeleteRecurringTransactionCommand';
+import { MaterializeDueRecurringTransactionsCommand } from '../../app/MaterializeDueRecurringTransactionsCommand';
 import { GetInvestmentsQuery } from '../../app/GetInvestmentsQuery';
 import { GetMonthlyTrendQuery } from '../../app/GetMonthlyTrendQuery';
 import { GetSavingsGoalsQuery } from '../../app/GetSavingsGoalsQuery';
@@ -66,6 +71,7 @@ type IdParams = z.infer<typeof idParamsSchema>;
 type CreateAccountBody = z.input<typeof createAccountSchema>;
 type UpdateAccountBody = z.input<typeof updateAccountSchema>;
 type CreateTransactionBody = z.input<typeof createTransactionSchema>;
+type CreateRecurringBody = z.infer<typeof createRecurringTransactionSchema>;
 type UpdateTransactionBody = z.input<typeof updateTransactionSchema>;
 type TransactionFilters = z.input<typeof transactionFiltersSchema>;
 type CategoryQuery = z.infer<typeof categoryQuerySchema>;
@@ -93,6 +99,7 @@ export class WalletController extends HttpController {
         this.registerSavingsRoutes(routes);
         this.registerInvestmentRoutes(routes);
         this.registerExchangeRateRoutes(routes);
+        this.registerRecurringRoutes(routes);
     }
 
     private registerAccountRoutes(routes: RouteRegister): void {
@@ -145,6 +152,14 @@ export class WalletController extends HttpController {
             .get('/exchange-rates/latest', this.getLatestExchangeRates)
             .post('/exchange-rates', { body: createExchangeRateBodySchema }, this.createExchangeRate)
             .post('/exchange-rates/refresh', this.refreshExchangeRates);
+    }
+
+    private registerRecurringRoutes(routes: RouteRegister): void {
+        routes
+            .get('/recurring', this.listRecurring)
+            .post('/recurring', { body: createRecurringTransactionSchema }, this.createRecurring)
+            .delete('/recurring/:id', { params: idParamsSchema }, this.deleteRecurring)
+            .post('/recurring/materialize', this.materializeRecurring);
     }
 
     // ─── Accounts ────────────────────────────────────────────
@@ -306,6 +321,46 @@ export class WalletController extends HttpController {
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);
+    };
+
+    // ─── Recurring transactions ──────────────────────────────
+
+    private readonly listRecurring = async (request: FastifyRequest, reply: FastifyReply) => {
+        const rules = await this.bus.execute(new GetRecurringTransactionsQuery(), executionContextFromAuth(request.auth));
+        return reply.send(rules.map((rule) => rule.toSnapshot()));
+    };
+
+    private readonly createRecurring: RouteContextHandler<undefined, undefined, CreateRecurringBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        const created = await this.bus.execute(
+            new CreateRecurringTransactionCommand(body!),
+            executionContextFromAuth(request.auth),
+        );
+        return sendCreated(reply, created.toSnapshot());
+    };
+
+    private readonly deleteRecurring: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const deleted = await this.bus.execute(
+            new DeleteRecurringTransactionCommand(params!.id),
+            executionContextFromAuth(request.auth),
+        );
+        assertFound(deleted, 'Recurring transaction not found');
+        return sendMessage(reply, 'Recurring transaction deleted');
+    };
+
+    private readonly materializeRecurring = async (request: FastifyRequest, reply: FastifyReply) => {
+        const created = await this.bus.execute(
+            new MaterializeDueRecurringTransactionsCommand(),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send({ created });
     };
 
     // ─── Savings ───────────────────────────────────────────

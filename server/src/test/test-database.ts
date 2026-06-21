@@ -324,6 +324,24 @@ CREATE TABLE IF NOT EXISTS wallet.wallet_insights (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS wallet.recurring_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    account_id UUID NOT NULL REFERENCES wallet.accounts(id),
+    category_id UUID REFERENCES wallet.categories(id),
+    type VARCHAR(10) NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
+    description VARCHAR(255),
+    day_of_month INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    last_run_date DATE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS categories_parent_id_idx ON wallet.categories(parent_id);
 CREATE INDEX IF NOT EXISTS categories_owner_user_idx ON wallet.categories(owner_user_id);
 CREATE INDEX IF NOT EXISTS tx_owner_user_idx ON wallet.transactions(owner_user_id);
@@ -337,6 +355,8 @@ CREATE INDEX IF NOT EXISTS investments_account_id_idx ON wallet.investments(acco
 CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
     ON wallet.exchange_rates(from_currency, to_currency, type, date);
 CREATE INDEX IF NOT EXISTS wallet_insights_owner_created_idx ON wallet.wallet_insights(owner_user_id, created_at);
+CREATE INDEX IF NOT EXISTS recurring_owner_user_idx ON wallet.recurring_transactions(owner_user_id);
+CREATE INDEX IF NOT EXISTS recurring_account_idx ON wallet.recurring_transactions(account_id);
 
 CREATE TABLE IF NOT EXISTS core.file_blobs (
     ref UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -428,6 +448,7 @@ export class TestDatabase {
                     health.weight_entries,
                     health.mood_check_ins,
                     wallet.wallet_insights,
+                    wallet.recurring_transactions,
                     wallet.savings_contributions,
                     wallet.transactions,
                     wallet.investments,

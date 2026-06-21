@@ -19,12 +19,14 @@ import type {
   MonthlyTrend,
   WalletStatsSummary,
 } from "../../../../domain/wallet/WalletStats";
+import type { RecurringTransaction } from "../../../../domain/wallet/RecurringTransaction";
 import type {
   ContributeSavingsInput,
   CreateAccountInput,
   CreateCategoryInput,
   CreateExchangeRateInput,
   CreateInvestmentInput,
+  CreateRecurringTransactionInput,
   CreateSavingsGoalInput,
   CreateTransactionInput,
   TransactionList,
@@ -230,5 +232,37 @@ export class FakeWalletGateway implements WalletGateway {
   async refreshExchangeRates(): Promise<ExchangeRate[]> {
     this.record("refreshExchangeRates");
     return [exchangeRateDto];
+  }
+
+  // recurring transactions
+  async getRecurringTransactions(): Promise<RecurringTransaction[]> {
+    this.record("getRecurringTransactions");
+    return [];
+  }
+  async createRecurringTransaction(input: CreateRecurringTransactionInput): Promise<RecurringTransaction> {
+    this.record("createRecurringTransaction", input);
+    return {
+      id: "rec1",
+      accountId: input.accountId,
+      categoryId: input.categoryId ?? null,
+      type: input.type,
+      amount: input.amount,
+      currency: input.currency,
+      description: input.description ?? null,
+      dayOfMonth: input.dayOfMonth,
+      startDate: input.startDate,
+      endDate: input.endDate ?? null,
+      lastRunDate: null,
+      active: true,
+      createdAt: "2026-06-14T08:00:00.000Z",
+      updatedAt: "2026-06-14T08:00:00.000Z",
+    };
+  }
+  async deleteRecurringTransaction(id: string): Promise<void> {
+    this.record("deleteRecurringTransaction", id);
+  }
+  async materializeDueRecurringTransactions(): Promise<number> {
+    this.record("materializeDueRecurringTransactions");
+    return 0;
   }
 }

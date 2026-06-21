@@ -21,12 +21,14 @@ import type {
   MonthlyTrend,
   WalletStatsSummary,
 } from "../../domain/wallet/WalletStats";
+import type { RecurringTransaction } from "../../domain/wallet/RecurringTransaction";
 import type {
   ContributeSavingsInput,
   CreateAccountInput,
   CreateCategoryInput,
   CreateExchangeRateInput,
   CreateInvestmentInput,
+  CreateRecurringTransactionInput,
   CreateSavingsGoalInput,
   CreateTransactionInput,
   TransactionList,
@@ -187,5 +189,24 @@ export class HttpWalletGateway implements WalletGateway {
   async refreshExchangeRates(): Promise<ExchangeRate[]> {
     const { body } = await this.http.post<ExchangeRateDto[]>(`${W}/exchange-rates/refresh`, {});
     return body;
+  }
+
+  async getRecurringTransactions(): Promise<RecurringTransaction[]> {
+    const { body } = await this.http.get<RecurringTransaction[]>(`${W}/recurring`);
+    return body;
+  }
+
+  async createRecurringTransaction(input: CreateRecurringTransactionInput): Promise<RecurringTransaction> {
+    const { body } = await this.http.post<RecurringTransaction>(`${W}/recurring`, input);
+    return body;
+  }
+
+  async deleteRecurringTransaction(id: string): Promise<void> {
+    await this.http.delete(`${W}/recurring/${id}`);
+  }
+
+  async materializeDueRecurringTransactions(): Promise<number> {
+    const { body } = await this.http.post<{ created: number }>(`${W}/recurring/materialize`, {});
+    return body.created;
   }
 }

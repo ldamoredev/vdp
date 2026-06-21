@@ -6,6 +6,7 @@ import type { ExchangeRate, ExchangeRateType } from "./ExchangeRate";
 import type { Investment, InvestmentType } from "./Investment";
 import type { SavingsGoal } from "./SavingsGoal";
 import type { Transaction, WalletTransactionFilters } from "./Transaction";
+import type { RecurringTransaction } from "./RecurringTransaction";
 import type { CategoryStat, FoodSpendingThisWeek, MonthlyTrend, WalletStatsSummary } from "./WalletStats";
 
 export interface CreateAccountInput {
@@ -71,6 +72,18 @@ export interface CreateExchangeRateInput {
   type: ExchangeRateType;
 }
 
+export interface CreateRecurringTransactionInput {
+  accountId: string;
+  categoryId?: string | null;
+  type: "expense" | "income";
+  amount: string;
+  currency: Currency;
+  description?: string | null;
+  dayOfMonth: number;
+  startDate: string;
+  endDate?: string | null;
+}
+
 export interface TransactionList {
   transactions: Transaction[];
   total: number;
@@ -120,4 +133,11 @@ export interface WalletGateway {
   createExchangeRate(input: CreateExchangeRateInput): Promise<ExchangeRate>;
   /** Pull current dollar quotes from the external provider and persist them. */
   refreshExchangeRates(): Promise<ExchangeRate[]>;
+
+  // recurring transactions
+  getRecurringTransactions(): Promise<RecurringTransaction[]>;
+  createRecurringTransaction(input: CreateRecurringTransactionInput): Promise<RecurringTransaction>;
+  deleteRecurringTransaction(id: string): Promise<void>;
+  /** Materializes due rules into transactions; returns how many were created. */
+  materializeDueRecurringTransactions(): Promise<number>;
 }

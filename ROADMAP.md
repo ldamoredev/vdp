@@ -109,12 +109,12 @@ explicitly deferred** — low daily composition, consistent with
 Study "last"). Pick by which loop stage is broken, not by which module is next: today
 the broken stages are *decide* and *learn*, both fixable without new modules.
 
-## D1: Cross-Domain Densification (in progress — June 2026)
+## D1: Cross-Domain Densification (COMPLETE — June 2026)
 
 Owner-directed promotion of D1 from candidate to active work. Same discipline as the
 Health series: one full-stack slice at a time, each shipping before the next. The
 differentiator is **signal → action**; the gap was directionality — only
-`wallet→tasks` (spending spike) lived. Three slices, in order:
+`wallet→tasks` (spending spike) lived. All three slices shipped, in order:
 
 ### D1a. tasks→wallet — "register the expense?" — SHIPPED June 2026
 
@@ -140,17 +140,42 @@ expense, deep-linked to a pre-filled quick-add. Verified in the owner's session
   durable surface (the suggestion is a 6s toast today, no persistent list since
   wallet insights have no GET) was **explicitly deferred** as a follow-up.
 
-### D1b. health→wallet — spend ↔ goal/treatment — NEXT
+### D1b. health→wallet — diet goal ↔ delivery spend — SHIPPED June 2026
 
-Delivery/pharmacy spend ↔ a nutrition goal or treatment (wallet→health and/or
-health→wallet). Needs a category-to-intent mapping; more product nuance than D1a.
+Each active weight/diet goal (a `Goal` with `targetWeightKg`) shows this week's
+eating-out / delivery spend, pulled from Wallet, with a link to those movements.
+Verified in the owner's session.
 
-### D1c. Recurring transactions — NOT STARTED
+- Read-time composition (owner decision): diet is a reflective goal, not a discrete
+  action, so a per-purchase nudge would be preachy — the number lives on the goal
+  card, where it's relevant. The composition is done in the web `GoalsPresenter`
+  (the mirror pattern: a presenter composes Health + Wallet queries over the bus),
+  with no backend coupling between the modules.
+- New currency-safe Wallet query `GetFoodSpendingThisWeekQuery` groups eating-out
+  spend by currency (never mixes ARS/USD); the food heuristic lives in
+  `wallet/services/food-category.ts`. Pharmacy/medication is **out** by the
+  medical-privacy rule (no medication entity, no LLM/cross-domain over medical).
 
-Rent/subscriptions/utilities as recurring entries so stats and spike detection stop
-operating on incomplete data — the highest data-quality payoff, and the largest
-slice (new entity + lazy materialization on overview load, no scheduler, per the
-"Insights And Time-Based Signals" rule in AGENTS.md).
+### D1c. Recurring transactions — SHIPPED June 2026
+
+Rent/subscriptions/utilities as recurring rules that **materialize real
+transactions** lazily on wallet load (no scheduler), so stats and spike detection
+stop operating on incomplete data. Verified in the owner's session.
+
+- `RecurringTransaction` rich entity owns `dueOccurrences` (monthly, day-of-month
+  clamped to short months, respects start/end/last-run). New table + the three
+  synchronized DB changes + forward-only migration `0009`. CQBus
+  Create/Get/Delete + `MaterializeDue`; HTTP under `/wallet/recurring`.
+- Auto-materialize (owner decision): a rule is an explicit opt-in, so it creates
+  the transaction automatically (editable, tagged `recurrente`) — completing stats
+  without the monthly friction of a confirm step. Materialization runs on the
+  dashboard load (`DashboardPresenter`), best-effort; the dedicated
+  `/wallet/recurring` page manages rules.
+- **Concurrency guard**: two parallel loads (e.g. React StrictMode double-mount)
+  raced and duplicated the boundary occurrence. Fixed with an atomic compare-and-swap
+  (`advanceLastRunIfBefore`: `UPDATE ... WHERE last_run_date < date`), so each
+  occurrence is claimed by exactly one run. Regression-tested with concurrent
+  `execute` calls.
 
 ## Architecture Track (COMPLETE — June 2026)
 

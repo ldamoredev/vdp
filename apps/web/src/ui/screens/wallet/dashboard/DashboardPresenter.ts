@@ -13,6 +13,7 @@ import type { UpdateTransactionInput } from "@/core/domain/wallet/WalletGateway"
 import type { WalletStatsSummary } from "@/core/domain/wallet/WalletStats";
 import { GetCategories } from "@/core/app/wallet/GetCategories";
 import { EnsureFreshDollarRates } from "@/core/app/wallet/EnsureFreshDollarRates";
+import { MaterializeDueRecurringTransactions } from "@/core/app/wallet/MaterializeDueRecurringTransactions";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
   getPresentationCurrency,
@@ -127,8 +128,20 @@ export class DashboardPresenter extends PresenterBase<DashboardViewModel> {
   /** Load right away, then refresh a stale MEP quote in the background and
    * reload only the summary — the external quote never blocks first paint. */
   private async bootstrap(): Promise<void> {
+    await this.materializeRecurring();
     await this.reload();
     await this.ensureFreshRates();
+  }
+
+  /** D1c: turn due recurring rules into real transactions before reading the
+   * dashboard, so they show up in the list and stats. Best-effort — a failure
+   * must never block the dashboard. */
+  private async materializeRecurring(): Promise<void> {
+    try {
+      await this.core.execute(new MaterializeDueRecurringTransactions());
+    } catch {
+      // Non-blocking: the dashboard still loads what already exists.
+    }
   }
 
   private async ensureFreshRates(): Promise<void> {

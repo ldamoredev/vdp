@@ -55,6 +55,19 @@ export const createTransactionSchema = z.object({
 
 export const updateTransactionSchema = createTransactionSchema.partial();
 
+// Recurring transactions
+export const createRecurringTransactionSchema = z.object({
+  accountId: uuidSchema,
+  categoryId: uuidSchema.nullable().optional(),
+  type: categoryTypeEnum,
+  amount: z.string().refine((v) => parseFloat(v) > 0, "Amount must be positive"),
+  currency: currencyEnum,
+  description: z.string().max(255).nullable().optional(),
+  dayOfMonth: z.coerce.number().int().min(1).max(31),
+  startDate: dateStringSchema,
+  endDate: nullableDateStringSchema.optional(),
+});
+
 export const transactionFiltersSchema = dateRangeSchema.extend({
   accountId: uuidSchema.optional(),
   categoryId: uuidSchema.optional(),
