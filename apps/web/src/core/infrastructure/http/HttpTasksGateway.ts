@@ -2,6 +2,7 @@ import { HttpClient } from "@nbottarini/abstract-http-client";
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
+  DailyReviewState,
   DomainStat,
   Task as TaskDto,
   TaskDetailsResponse,
@@ -94,6 +95,18 @@ export class HttpTasksGateway implements TasksGateway {
 
   async getReview(date?: string): Promise<TaskReview> {
     const { body } = await this.http.get<TaskReview>(withQuery("/tasks/review", { date }));
+    return body;
+  }
+
+  async getReviewState(date: string): Promise<DailyReviewState | null> {
+    const { body } = await this.http.get<DailyReviewState | null>(
+      withQuery("/tasks/review/state", { date }),
+    );
+    return body;
+  }
+
+  async saveReviewState(state: DailyReviewState): Promise<DailyReviewState> {
+    const { body } = await this.http.put<DailyReviewState>("/tasks/review/state", state);
     return body;
   }
 

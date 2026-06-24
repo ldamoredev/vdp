@@ -15,6 +15,7 @@ import type { Core } from "@/core/Core";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
 import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
+import { GetDailyReviewState } from "@/core/app/tasks/GetDailyReviewState";
 import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
 import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
 import { GetTaskTrend } from "@/core/app/tasks/GetTaskTrend";
@@ -53,7 +54,7 @@ import {
 } from "@/ui/screens/review/daily-review-selectors";
 import {
   createEmptyDailyReviewState,
-  loadDailyReviewState,
+  mergePersistedDailyReviewState,
 } from "@/ui/screens/review/daily-review-storage";
 import type { DailyReviewState } from "@/ui/screens/review/daily-review-types";
 
@@ -215,7 +216,6 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   }
 
   start(): void {
-    this.reviewState = loadDailyReviewState(this.today);
     this.events.tasksChanged.unsubscribe(this);
     this.events.tasksChanged.subscribe(this, () => void this.load());
     void this.load();
@@ -286,6 +286,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         reviewWalletByCategory,
         walletStats,
         walletRecentTransactions,
+        reviewState,
       ] = await Promise.all([
         this.core.execute(new GetTodayStats()),
         this.core.execute(new ListTasks({ scheduledDate: this.today, limit: "5" })),
@@ -303,8 +304,13 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         this.core.execute(new GetWalletStatsByCategory({ from: this.today, to: this.today })),
         this.core.execute(new GetWalletStatsSummary()),
         this.core.execute(new GetTransactions({ limit: "10" })),
+        this.core.execute(new GetDailyReviewState(this.today)),
       ]);
 
+      this.reviewState = mergePersistedDailyReviewState(
+        createEmptyDailyReviewState(this.today),
+        reviewState,
+      );
       this.taskStats = taskStats;
       this.todayTasks = todayTasks.tasks;
       this.review = review;
@@ -317,6 +323,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.walletStats = walletStats;
       this.walletRecentTransactions = walletRecentTransactions.transactions;
     } catch {
+      this.reviewState = createEmptyDailyReviewState(this.today);
       this.taskStats = null;
       this.todayTasks = [];
       this.review = null;

@@ -10,7 +10,9 @@ import { CreateTask } from "../CreateTask";
 import { DeleteTask } from "../DeleteTask";
 import { DiscardTask } from "../DiscardTask";
 import { GetCarryOverRate } from "../GetCarryOverRate";
+import { GetDailyReviewState } from "../GetDailyReviewState";
 import { GetRecentInsights } from "../GetRecentInsights";
+import { SaveDailyReviewState } from "../SaveDailyReviewState";
 import { GetTask } from "../GetTask";
 import { GetTaskReview } from "../GetTaskReview";
 import { GetTaskTrend } from "../GetTaskTrend";
@@ -117,6 +119,33 @@ describe("tasks handlers (dispatched through the bus)", () => {
       expect(gateway.callsTo("getTrend")[0].args).toEqual([7]);
       expect(gateway.callsTo("getByDomain")[0].args).toEqual([{ days: "30" }]);
       expect(gateway.callsTo("getCarryOverRate")[0].args).toEqual([7]);
+    });
+
+    it("routes the daily-review-state get/save through the gateway", async () => {
+      const gateway = new FakeTasksGateway();
+      const core = coreWith(gateway);
+      const state = {
+        date: "2026-06-13",
+        acknowledgedSignalIds: ["sig-1"],
+        watchedCategoryIds: ["cat-1"],
+        note: "cerrar mañana temprano",
+        openedAt: "2026-06-13T08:00:00.000Z",
+        completedAt: null,
+      };
+
+      const saved = await core.execute(new SaveDailyReviewState(state));
+      expect(gateway.callsTo("saveReviewState")[0].args).toEqual([state]);
+      expect(saved).toEqual(state);
+
+      const loaded = await core.execute(new GetDailyReviewState("2026-06-13"));
+      expect(gateway.callsTo("getReviewState")[0].args).toEqual(["2026-06-13"]);
+      expect(loaded).toEqual(state);
+    });
+
+    it("returns null when no review state has been persisted for the day", async () => {
+      const gateway = new FakeTasksGateway();
+      const result = await coreWith(gateway).execute(new GetDailyReviewState("2026-06-13"));
+      expect(result).toBeNull();
     });
   });
 

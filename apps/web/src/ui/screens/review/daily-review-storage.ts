@@ -1,7 +1,12 @@
 import type { DailyReviewState } from "./daily-review-types";
 
-const STORAGE_KEY = "daily-review-state";
-
+/**
+ * Pure helpers for the review's ceremony state. Persistence moved server-side
+ * (R1): the presenters hydrate via `GetDailyReviewState` and persist via
+ * `SaveDailyReviewState` over the Core bus, so the ritual is shared across
+ * devices. `mergePersistedDailyReviewState` reconciles a possibly-partial
+ * server record onto a fresh empty state; there is no localStorage path left.
+ */
 export function createEmptyDailyReviewState(date: string): DailyReviewState {
   return {
     date,
@@ -39,30 +44,4 @@ export function mergePersistedDailyReviewState(
         ? (persisted.completedAt ?? base.completedAt)
         : base.completedAt,
   };
-}
-
-export function loadDailyReviewState(date: string): DailyReviewState {
-  const base = createEmptyDailyReviewState(date);
-
-  if (typeof window === "undefined") {
-    return base;
-  }
-
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return base;
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<DailyReviewState>;
-    return mergePersistedDailyReviewState(base, parsed);
-  } catch {
-    return base;
-  }
-}
-
-export function saveDailyReviewState(state: DailyReviewState) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }

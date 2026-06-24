@@ -197,13 +197,27 @@ closed. Home and review were also migrated off React Query to the presenter patt
 So D2's real remainder is four small slices, shipped one at a time (owner reviews
 each before the next):
 
-### R1. Ritual ceremony-state to the server (multi-device) — NEXT
+### R1. Ritual ceremony-state to the server (multi-device) — SHIPPED June 2026
 
-The review's note + acknowledged signals + watched categories still live in
-`localStorage` (`ui/screens/review/daily-review-storage.ts`); the underlying data
-(tasks, mood, transactions) is already server-backed. So "review from the phone at
-night, the desktop in the morning" loses the ceremony state. Persist it
-server-side (small table + endpoint, swap localStorage→CQBus). PRODUCT_ANALYSIS P5.
+The review's note + acknowledged signals + watched categories used to live in
+`localStorage`; the underlying data (tasks, mood, transactions) was already
+server-backed, so "review from the phone at night, the desktop in the morning"
+lost the ceremony state. Now persisted server-side. PRODUCT_ANALYSIS P5.
+
+- Backend (CQBus): `daily_review_state` table (forward-only migration `0010`,
+  unique on `(owner_user_id, date)` for the upsert) + `DailyReviewStateRepository`
+  port and Drizzle impl; `GetDailyReviewStateQuery` / `SaveDailyReviewStateCommand`
+  handlers registered in `TaskModuleRuntime`; thin `GET/PUT /tasks/review/state`
+  controller routes.
+- Web (the mirror): `getReviewState`/`saveReviewState` on `TasksGateway` + HTTP
+  impl, `GetDailyReviewState` / `SaveDailyReviewState` use cases registered in the
+  web `TasksModule`. `ReviewPresenter` hydrates from the server (concurrently with
+  the data load), keeps the in-memory state driving the UI, and flushes edits with
+  a short debounce (note typing coalesces into one write) plus a flush on `stop()`;
+  `HomePresenter` reads the same state so the morning ritual card reflects what the
+  evening close wrote on another device. `daily-review-storage.ts` kept only its
+  pure helpers (`createEmptyDailyReviewState`, `mergePersistedDailyReviewState`) —
+  the localStorage path is gone.
 
 ### R2. Morning-plan ritual — NOT STARTED
 

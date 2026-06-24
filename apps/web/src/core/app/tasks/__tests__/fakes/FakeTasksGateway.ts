@@ -1,6 +1,7 @@
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
+  DailyReviewState,
   DomainStat,
   Task as TaskDto,
   TaskInsight,
@@ -114,6 +115,17 @@ export class FakeTasksGateway implements TasksGateway {
       pendingTasks: [],
       allTasks: [],
     };
+  }
+  reviewState: DailyReviewState | null = null;
+
+  async getReviewState(date: string): Promise<DailyReviewState | null> {
+    this.record("getReviewState", date);
+    return this.reviewState;
+  }
+  async saveReviewState(state: DailyReviewState): Promise<DailyReviewState> {
+    this.record("saveReviewState", state);
+    this.reviewState = state;
+    return state;
   }
   async getRecentInsights(limit?: number): Promise<TaskInsight[]> {
     this.record("getRecentInsights", limit);

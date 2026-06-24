@@ -9,6 +9,8 @@ import { CarryOverTask } from "@/core/app/tasks/CarryOverTask";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { DiscardTask } from "@/core/app/tasks/DiscardTask";
 import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
+import { GetDailyReviewState } from "@/core/app/tasks/GetDailyReviewState";
+import { SaveDailyReviewState } from "@/core/app/tasks/SaveDailyReviewState";
 import { GetRecentInsights } from "@/core/app/tasks/GetRecentInsights";
 import { GetTaskReview } from "@/core/app/tasks/GetTaskReview";
 import { GetCategories } from "@/core/app/wallet/GetCategories";
@@ -28,10 +30,12 @@ import {
 } from "./daily-review-selectors";
 import {
   createEmptyDailyReviewState,
-  loadDailyReviewState,
-  saveDailyReviewState,
+  mergePersistedDailyReviewState,
 } from "./daily-review-storage";
 import type { DailyReviewState } from "./daily-review-types";
+
+/** Coalesce rapid ceremony edits (e.g. typing the note) into one server write. */
+const PERSIST_DEBOUNCE_MS = 400;
 
 function buildTaskDetail(task: { carryOverCount: number; priority: number }): string {
   if (task.carryOverCount > 0) {
@@ -45,16 +49,18 @@ function buildTaskDetail(task: { carryOverCount: number; priority: number }): st
 
 /**
  * Drives the daily review screen: aggregates today's task review + wallet
- * movements + insights over the Core, and owns the locally-persisted review
- * state (acknowledged signals, watched categories, note, completion). Replaces
- * the former React-Query `useDailyReviewModel` hook. localStorage holds only
- * UI-side review state — there is no HTTP/storage in the data path beyond the
- * Core bus.
+ * movements + insights over the Core, and owns the review ceremony state
+ * (acknowledged signals, watched categories, note, completion). Replaces the
+ * former React-Query `useDailyReviewModel` hook. The ceremony state is now
+ * persisted server-side over the Core bus (R1) so the ritual is shared across
+ * devices; edits update in memory immediately and are flushed with a short
+ * debounce.
  */
 export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   private readonly today = getTodayISO();
   private reviewState: DailyReviewState = createEmptyDailyReviewState(this.today);
   private hydrated = false;
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
 
   private review: TaskReview | null = null;
   private transactions: Transaction[] = [];
@@ -83,16 +89,33 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   }
 
   start(): void {
-    const loaded = loadDailyReviewState(this.today);
-    this.reviewState = { ...loaded, openedAt: loaded.openedAt ?? new Date().toISOString() };
-    this.hydrated = true;
     this.events.tasksChanged.unsubscribe(this);
     this.events.tasksChanged.subscribe(this, () => void this.load());
-    void this.load();
+    void this.hydrate();
   }
 
   stop(): void {
     this.events.tasksChanged.unsubscribe(this);
+    this.flushPersist();
+  }
+
+  /** Pull the day's ceremony state and the aggregated data concurrently, then stamp the open. */
+  private async hydrate(): Promise<void> {
+    const loadPromise = this.load();
+    let persisted: DailyReviewState | null = null;
+    try {
+      persisted = await this.core.execute(new GetDailyReviewState(this.today));
+    } catch {
+      persisted = null;
+    }
+    const base = createEmptyDailyReviewState(this.today);
+    const loaded = mergePersistedDailyReviewState(base, persisted);
+    this.reviewState = { ...loaded, openedAt: loaded.openedAt ?? new Date().toISOString() };
+    this.hydrated = true;
+    // Persist the opened stamp so the morning surface knows the ritual was started.
+    this.schedulePersist();
+    this.refresh();
+    await loadPromise;
   }
 
   // ─── task decisions ──────────────────────────────────────
@@ -222,8 +245,33 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
 
   private updateState(mutator: (current: DailyReviewState) => DailyReviewState): void {
     this.reviewState = mutator(this.reviewState);
-    if (this.hydrated) saveDailyReviewState(this.reviewState);
+    this.schedulePersist();
     this.refresh();
+  }
+
+  /** Debounced, best-effort server write; the in-memory state always drives the UI. */
+  private schedulePersist(): void {
+    if (!this.hydrated) return;
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      void this.persist();
+    }, PERSIST_DEBOUNCE_MS);
+  }
+
+  private flushPersist(): void {
+    if (!this.persistTimer) return;
+    clearTimeout(this.persistTimer);
+    this.persistTimer = null;
+    void this.persist();
+  }
+
+  private async persist(): Promise<void> {
+    try {
+      await this.core.execute(new SaveDailyReviewState(this.reviewState));
+    } catch {
+      // Best-effort: a failed sync leaves the in-memory state intact for this session.
+    }
   }
 
   private refresh(): void {
@@ -320,10 +368,10 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     if (!this.hydrated) return;
     if (completed && !this.reviewState.completedAt) {
       this.reviewState = { ...this.reviewState, completedAt: new Date().toISOString() };
-      saveDailyReviewState(this.reviewState);
+      this.schedulePersist();
     } else if (!completed && this.reviewState.completedAt) {
       this.reviewState = { ...this.reviewState, completedAt: null };
-      saveDailyReviewState(this.reviewState);
+      this.schedulePersist();
     }
   }
 
