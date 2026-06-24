@@ -237,64 +237,6 @@ The literal D2 ask: one daily surface with morning/evening phases by time of day
 Highest refactor/risk and arguably low value — two bridged screens already work.
 Last, and revisit whether it's worth doing after R1–R3.
 
-## Architecture Track (COMPLETE — June 2026)
-
-Owner-approved in the June 2026 architecture session. Source of truth for rationale,
-decisions, and detailed plans: [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
-One phase per work session unless noted. Phase 4 and the full Architecture Track
-(A1 Vite port → A6 CQBus on the api) are complete; there is no open architecture item.
-
-Confirmed decisions (summary): Vite SPA replacing Next.js (served as static build by
-Fastify, single service, Vercel retired); presenters (Humble Object) + CQBus +
-`core/` composition root mirroring the backend; React Query removed from active
-domains; `FetchHttpClient` over `abstract-http-client`; `react-presenter` used
-as published (under Vite its optional react-navigation `require` is harmless at
-runtime — no custom publish). On the api side, new active-domain work is
-CQBus-first: `app/{UseCase}{Command|Query}.ts` + handler, runtime registration,
-thin HTTP controllers executing the bus with auth-derived `ExecutionContext`.
-
-### A6. CQBus on the api — SHIPPED June 2026
-
-Shipped:
-
-- `Core` owns a backend `CQBus` and registers an auth middleware that can derive
-  identity from `AuthContextStorage`.
-- Auth, Health, Tasks, and Wallet expose their active HTTP surface through
-  `Command`/`Query` classes in `server/src/modules/{domain}/app/`, handlers
-  registered in `{Domain}ModuleRuntime.registerHandlers()`, and controllers
-  that call `bus.execute(..., executionContextFromAuth(request.auth))`.
-- Auth still uses its existing service classes as reusable collaborators behind
-  CQBus handlers; the HTTP controller no longer calls those services directly.
-- Agent tools for active domains dispatch the same commands/queries from the
-  current auth context; tool input still never carries `userId`.
-- Wallet intelligence tools now fetch Tasks context through
-  `GetTasksSnapshotQuery` on CQBus instead of `ServiceProvider`, and Wallet
-  CRUD/read/stat use-case logic now lives directly in its `app/`
-  Command/Query handlers. `wallet/services/` keeps only event/insight
-  collaborators.
-- Tasks CRUD/read/review/stat use-case logic now lives directly in its `app/`
-  Command/Query handlers. `TaskModuleRuntime` builds explicit/lazy
-  collaborators (`EmbedTask`, `FindSimilarTasks`, `DetectRepeatPattern`,
-  `RecommendationEngine`, `RebuildStreaks`) without `ServiceProvider`, and
-  cross-domain events create recovery/review tasks by dispatching
-  `CreateTaskCommand` through CQBus.
-- The web side remains the mirror: `core/domain` ports, `core/app`
-  commands/queries, `Http*Gateway`, presenter + ViewModel + humble view.
-- Final cleanup (June 2026): `ServiceProvider` and `ServiceResolver` are
-  deleted; `Core`, `ModuleContext`, and `BaseModule` no longer carry a
-  `services` registry; and the `registerServices()` lifecycle hook — dead once
-  every collaborator moved into CQBus handler wiring — was removed from
-  `BaseModule` and all module/runtime classes. `bootstrap()` now runs
-  `registerHandlers → registerEventHandlers → registerAgents`. The
-  `create-service-api`, `create-service-web`, `create-presenter-web`, and
-  `create-agent-tool` skills are aligned with this final CQBus form.
-
-Lesson carried into the skills: with CQBus the handler is the single
-transport-agnostic entry point shared by HTTP controllers and agent tools, so
-cross-cutting rules that must hold for every caller (e.g. medical upload
-content-sniffing and size caps) live in the handler, not the controller. The
-controller stays a thin adapter that builds the command and executes the bus.
-
 ## Data Constraint
 
 Tasks production-readiness is complete. Do not assume production data is
