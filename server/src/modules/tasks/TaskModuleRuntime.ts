@@ -11,6 +11,8 @@ import { FindSimilarTasksQuery, FindSimilarTasksQueryHandler } from './app/FindS
 import { GetCarryOverRateQuery, GetCarryOverRateQueryHandler } from './app/GetCarryOverRateQuery';
 import { GetCompletionByDomainQuery, GetCompletionByDomainQueryHandler } from './app/GetCompletionByDomainQuery';
 import { GetEndOfDayReviewQuery, GetEndOfDayReviewQueryHandler } from './app/GetEndOfDayReviewQuery';
+import { GetDailyReviewStateQuery, GetDailyReviewStateQueryHandler } from './app/GetDailyReviewStateQuery';
+import { SaveDailyReviewStateCommand, SaveDailyReviewStateCommandHandler } from './app/SaveDailyReviewStateCommand';
 import { GetPlanningContextQuery, GetPlanningContextQueryHandler } from './app/GetPlanningContextQuery';
 import { GetTaskQuery, GetTaskQueryHandler } from './app/GetTaskQuery';
 import { GetTasksQuery, GetTasksQueryHandler } from './app/GetTasksQuery';
@@ -27,6 +29,7 @@ import { TaskInsightsSSEController } from './infrastructure/routes/TaskInsightsS
 import { TaskEmbeddingRepository } from './domain/TaskEmbeddingRepository';
 import { TaskNoteRepository } from './domain/TaskNoteRepository';
 import { TaskRepository } from './domain/TaskRepository';
+import { DailyReviewStateRepository } from './domain/DailyReviewStateRepository';
 import { TaskInsightsStore } from './services/TaskInsightsStore';
 import { CheckDailyCompletion } from './services/CheckDailyCompletion';
 import { DetectRepeatPattern } from './services/DetectRepeatPattern';
@@ -96,6 +99,12 @@ export class TaskModuleRuntime {
         );
         this.deps.bus.registerHandler(GetEndOfDayReviewQuery, () =>
             new GetEndOfDayReviewQueryHandler(this.taskRepository(), this.recommendationEngine()),
+        );
+        this.deps.bus.registerHandler(GetDailyReviewStateQuery, () =>
+            new GetDailyReviewStateQueryHandler(this.dailyReviewStateRepository()),
+        );
+        this.deps.bus.registerHandler(SaveDailyReviewStateCommand, () =>
+            new SaveDailyReviewStateCommandHandler(this.dailyReviewStateRepository()),
         );
         this.deps.bus.registerHandler(GetTodayStatsQuery, () =>
             new GetTodayStatsQueryHandler(this.taskRepository()),
@@ -245,6 +254,10 @@ export class TaskModuleRuntime {
 
     private taskEmbeddingRepository(): TaskEmbeddingRepository {
         return this.deps.repositories.get(TaskEmbeddingRepository);
+    }
+
+    private dailyReviewStateRepository(): DailyReviewStateRepository {
+        return this.deps.repositories.get(DailyReviewStateRepository);
     }
 
     private agentRepository(): AgentRepository {

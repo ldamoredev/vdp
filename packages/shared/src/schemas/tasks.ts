@@ -12,6 +12,18 @@ export const taskStatusEnum = z.enum(["pending", "in_progress", "done", "discard
 export const taskPriorityEnum = z.coerce.number().int().min(1).max(3);
 export const taskDomainEnum = z.enum(["wallet", "health", "work", "people", "study"]);
 
+// ─── Daily review state (R1) ────────────────────────────
+export const reviewStateQuerySchema = z.object({ date: localDateStringSchema });
+
+export const saveDailyReviewStateSchema = z.object({
+  date: localDateStringSchema,
+  acknowledgedSignalIds: z.array(z.string()).default([]),
+  watchedCategoryIds: z.array(z.string()).default([]),
+  note: z.string().default(""),
+  openedAt: z.string().datetime().nullable().default(null),
+  completedAt: z.string().datetime().nullable().default(null),
+});
+
 // ─── Tasks ──────────────────────────────────────────────
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(200),

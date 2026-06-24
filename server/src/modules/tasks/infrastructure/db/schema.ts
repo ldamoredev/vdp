@@ -7,6 +7,7 @@ import {
   timestamp,
   date,
   index,
+  uniqueIndex,
   boolean,
   jsonb,
 } from "drizzle-orm/pg-core";
@@ -84,5 +85,29 @@ export const taskInsights = tasksSchema.table(
   },
   (table) => [
     index("task_insights_owner_created_idx").on(table.ownerUserId, table.createdAt),
+  ]
+);
+
+// ─── Daily Review State (R1) ─────────────────────────────
+// The review ritual's ceremony state (note, acknowledged signals, watched
+// categories, opened/completed timestamps), persisted per user per day so the
+// ritual survives across devices. The underlying data (tasks, mood, movements)
+// is already server-backed; only this ceremony state used to live in localStorage.
+export const dailyReviewState = tasksSchema.table(
+  "daily_review_state",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    date: date("date").notNull(),
+    acknowledgedSignalIds: text("acknowledged_signal_ids").array().notNull().default([]),
+    watchedCategoryIds: text("watched_category_ids").array().notNull().default([]),
+    note: text("note").notNull().default(""),
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("daily_review_owner_date_idx").on(table.ownerUserId, table.date),
   ]
 );

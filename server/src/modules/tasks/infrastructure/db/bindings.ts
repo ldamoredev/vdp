@@ -8,10 +8,13 @@ import { DrizzleTaskRepository } from './DrizzleTaskRepository';
 import { DrizzleTaskNoteRepository } from './DrizzleTaskNoteRepository';
 import { DrizzleTaskEmbeddingRepository } from './DrizzleTaskEmbeddingRepository';
 import { DrizzleTaskInsightRepository } from './DrizzleTaskInsightRepository';
+import { DailyReviewStateRepository } from '../../domain/DailyReviewStateRepository';
+import { DrizzleDailyReviewStateRepository } from './DrizzleDailyReviewStateRepository';
 
 export function registerTasksRepositories(registry: RepositoryRegistry, db: Database): void {
     registry.register(TaskRepository, () => new DrizzleTaskRepository(db));
     registry.register(TaskNoteRepository, () => new DrizzleTaskNoteRepository(db));
     registry.register(TaskEmbeddingRepository, () => new DrizzleTaskEmbeddingRepository(db));
     registry.register(TaskInsightRepository, () => new DrizzleTaskInsightRepository(db));
+    registry.register(DailyReviewStateRepository, () => new DrizzleDailyReviewStateRepository(db));
 }

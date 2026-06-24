@@ -115,6 +115,20 @@ CREATE TABLE IF NOT EXISTS tasks.task_insights (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS tasks.daily_review_state (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    acknowledged_signal_ids TEXT[] NOT NULL DEFAULT '{}',
+    watched_category_ids TEXT[] NOT NULL DEFAULT '{}',
+    note TEXT NOT NULL DEFAULT '',
+    opened_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS daily_review_owner_date_idx ON tasks.daily_review_state(owner_user_id, date);
+
 CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_date);
 CREATE INDEX IF NOT EXISTS tasks_owner_user_idx ON tasks.tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
@@ -439,6 +453,7 @@ export class TestDatabase {
                     tasks.task_embeddings,
                     tasks.task_notes,
                     tasks.task_insights,
+                    tasks.daily_review_state,
                     tasks.tasks,
                     health.habit_logs,
                     health.habits,

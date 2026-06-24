@@ -105,3 +105,12 @@ export interface CarryOverRateResponse {
   rate: number;
   days: number;
 }
+
+export interface DailyReviewState {
+  date: string;
+  acknowledgedSignalIds: string[];
+  watchedCategoryIds: string[];
+  note: string;
+  openedAt: string | null;
+  completedAt: string | null;
+}

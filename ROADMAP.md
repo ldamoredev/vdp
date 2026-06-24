@@ -20,7 +20,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). The A5 frontend migration shipped and A6 closed: Auth/Health/Tasks/Wallet expose HTTP through CQBus, no domain depends on `ServiceProvider`, and the legacy bridge — plus its now-dead `registerServices` lifecycle hook — was deleted from the common core.
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) is in progress** — D1a (`tasks→wallet`) shipped; see the D1 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -67,6 +67,12 @@ surface (morning plan + evening close) and **bring the agent onto it** — today
 chat panel returns `null` outside an active domain, so on `/home` and `/review`
 (the two synthesis surfaces) Ctrl+K is a no-op. This is the screen opened ~20x/day;
 its passivity is the biggest waste.
+
+**Status (June 2026): mostly already shipped — this framing is stale.** On opening
+D2 the chat panel was already global (falls back to a user-selectable agent
+outside a domain), `/home` was already a command center with quick capture +
+cross-domain signals, and `/review` a full server-backed close ritual. The real
+remainder (R1–R4) lives in the "D2" execution section below.
 
 ### D3. Activate Work / Projects — *execute → direct* — new module
 
@@ -176,6 +182,46 @@ stop operating on incomplete data. Verified in the owner's session.
   (`advanceLastRunIfBefore`: `UPDATE ... WHERE last_run_date < date`), so each
   occurrence is claimed by exactly one run. Regression-tested with concurrent
   `execute` calls.
+
+## D2: "Today" Command Center (in progress — June 2026)
+
+Reality check on opening D2: most of the original D2 description was already
+shipped. `/home` is a command center (quick task capture, stats, cross-domain
+signals, wallet snapshot, weekly trend, operational rhythm, and a ritual card
+linking to `/review`); `/review` is a full evening-close ritual (task queue,
+mood/energy check-in, wallet queue, insights queue, decisions) with
+**server-backed data via CQBus**; the chat panel is **already global** — outside a
+domain it falls back to a user-selectable agent, so the "Ctrl+K is a no-op" gap is
+closed. Home and review were also migrated off React Query to the presenter pattern.
+
+So D2's real remainder is four small slices, shipped one at a time (owner reviews
+each before the next):
+
+### R1. Ritual ceremony-state to the server (multi-device) — NEXT
+
+The review's note + acknowledged signals + watched categories still live in
+`localStorage` (`ui/screens/review/daily-review-storage.ts`); the underlying data
+(tasks, mood, transactions) is already server-backed. So "review from the phone at
+night, the desktop in the morning" loses the ceremony state. Persist it
+server-side (small table + endpoint, swap localStorage→CQBus). PRODUCT_ANALYSIS P5.
+
+### R2. Morning-plan ritual — NOT STARTED
+
+Asymmetry: the evening has an active close ritual; the morning is a passive
+dashboard. Add a light "plan the day" step (confirm yesterday's carry-overs, pick
+today's focus) — the morning mirror of the close.
+
+### R3. Proactive agent brief on the synthesis surfaces — NOT STARTED
+
+The chat is available on `/home` and `/review` but passive. Open it with a one-line
+day brief (tasks, spend alerts, streaks) so the agent participates in the *decide*
+stage. Folds in part of D6.
+
+### R4. Unify /home + /review into one "Today" surface — NOT STARTED (maybe skip)
+
+The literal D2 ask: one daily surface with morning/evening phases by time of day.
+Highest refactor/risk and arguably low value — two bridged screens already work.
+Last, and revisit whether it's worth doing after R1–R3.
 
 ## Architecture Track (COMPLETE — June 2026)
 

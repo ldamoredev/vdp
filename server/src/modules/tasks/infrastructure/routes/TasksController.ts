@@ -5,6 +5,8 @@ import {
     createTaskSchema,
     domainStatsFiltersSchema,
     reviewFiltersSchema,
+    reviewStateQuerySchema,
+    saveDailyReviewStateSchema,
     taskFiltersSchema,
     taskIdParamsSchema,
     trendFiltersSchema,
@@ -34,6 +36,8 @@ import { DiscardTaskCommand } from '../../app/DiscardTaskCommand';
 import { GetCarryOverRateQuery } from '../../app/GetCarryOverRateQuery';
 import { GetCompletionByDomainQuery } from '../../app/GetCompletionByDomainQuery';
 import { GetEndOfDayReviewQuery } from '../../app/GetEndOfDayReviewQuery';
+import { GetDailyReviewStateQuery } from '../../app/GetDailyReviewStateQuery';
+import { SaveDailyReviewStateCommand } from '../../app/SaveDailyReviewStateCommand';
 import { GetTaskQuery } from '../../app/GetTaskQuery';
 import { GetTasksQuery } from '../../app/GetTasksQuery';
 import { GetTodayStatsQuery } from '../../app/GetTodayStatsQuery';
@@ -49,6 +53,8 @@ type CarryOverBody = z.infer<typeof carryOverSchema>;
 type CarryOverAllBody = z.infer<typeof carryOverAllSchema>;
 type CreateTaskNoteBody = z.input<typeof createTaskNoteSchema>;
 type ReviewFilters = z.infer<typeof reviewFiltersSchema>;
+type ReviewStateQuery = z.infer<typeof reviewStateQuerySchema>;
+type SaveReviewStateBody = z.infer<typeof saveDailyReviewStateSchema>;
 type TrendFilters = z.input<typeof trendFiltersSchema>;
 type DomainStatsFilters = z.infer<typeof domainStatsFiltersSchema>;
 
@@ -93,7 +99,10 @@ export class TasksController extends HttpController {
     }
 
     private registerReviewRoutes(routes: RouteRegister): void {
-        routes.get('/review', { query: reviewFiltersSchema }, this.getReview);
+        routes
+            .get('/review', { query: reviewFiltersSchema }, this.getReview)
+            .get('/review/state', { query: reviewStateQuerySchema }, this.getReviewState)
+            .put('/review/state', { body: saveDailyReviewStateSchema }, this.saveReviewState);
     }
 
     private registerStatsRoutes(routes: RouteRegister): void {
@@ -259,6 +268,30 @@ export class TasksController extends HttpController {
     }) => {
         const result = await this.bus.execute(
             new GetEndOfDayReviewQuery(query!.date),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send(result);
+    };
+
+    private readonly getReviewState: RouteContextHandler<undefined, ReviewStateQuery, undefined> = async ({
+        request,
+        query,
+        reply,
+    }) => {
+        const result = await this.bus.execute(
+            new GetDailyReviewStateQuery(query!.date),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send(result);
+    };
+
+    private readonly saveReviewState: RouteContextHandler<undefined, undefined, SaveReviewStateBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        const result = await this.bus.execute(
+            new SaveDailyReviewStateCommand(body!),
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);
