@@ -104,7 +104,7 @@ export class TaskModuleRuntime {
             new GetDailyReviewStateQueryHandler(this.dailyReviewStateRepository()),
         );
         this.deps.bus.registerHandler(SaveDailyReviewStateCommand, () =>
-            new SaveDailyReviewStateCommandHandler(this.dailyReviewStateRepository()),
+            new SaveDailyReviewStateCommandHandler(this.dailyReviewStateRepository(), this.taskRepository()),
         );
         this.deps.bus.registerHandler(GetTodayStatsQuery, () =>
             new GetTodayStatsQueryHandler(this.taskRepository()),

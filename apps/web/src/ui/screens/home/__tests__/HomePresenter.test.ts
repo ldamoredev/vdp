@@ -71,6 +71,35 @@ function trend(): TaskTrendDay[] {
   ];
 }
 
+function taskReview(overrides: Partial<ReturnType<typeof buildTaskReview>> = {}) {
+  return buildTaskReview(overrides);
+}
+
+function buildTaskReview(overrides: Partial<{
+  date: string;
+  total: number;
+  completed: number;
+  pending: number;
+  carriedOver: number;
+  discarded: number;
+  completionRate: number;
+  pendingTasks: TaskDto[];
+  allTasks: TaskDto[];
+}> = {}) {
+  return {
+    date: "2026-06-15",
+    total: 4,
+    completed: 2,
+    pending: 2,
+    carriedOver: 0,
+    discarded: 0,
+    completionRate: 50,
+    pendingTasks: [taskDto()],
+    allTasks: [taskDto()],
+    ...overrides,
+  };
+}
+
 function insight(overrides: Partial<TaskInsight> = {}): TaskInsight {
   return {
     id: "i1",
@@ -117,15 +146,7 @@ function build() {
     total: 1,
   });
   vi.spyOn(tasks, "getReview").mockResolvedValue({
-    date: "2026-06-15",
-    total: 4,
-    completed: 2,
-    pending: 2,
-    carriedOver: 0,
-    discarded: 0,
-    completionRate: 50,
-    pendingTasks: [taskDto()],
-    allTasks: [taskDto()],
+    ...taskReview(),
   });
   vi.spyOn(tasks, "getTrend").mockResolvedValue(trend());
   vi.spyOn(tasks, "getRecentInsights").mockResolvedValue([insight()]);
@@ -230,6 +251,70 @@ describe("HomePresenter", () => {
     expect(tasks.completeTask).toHaveBeenCalledWith("t1");
     expect(emit).toHaveBeenCalled();
     expect(presenter.model.todayTasks.tasks[0].busy).toBe(false);
+    presenter.stop();
+  });
+
+  it("confirms yesterday carry-overs and persists today's focus", async () => {
+    const { presenter, tasks, events } = build();
+    const yesterdayTask = taskDto({
+      id: "yesterday-1",
+      title: "Mover factura",
+      scheduledDate: "2026-06-14",
+      carryOverCount: 1,
+    });
+    const focusTask = taskDto({
+      id: "focus-1",
+      title: "Enviar propuesta",
+      scheduledDate: "2026-06-15",
+      priority: 3,
+    });
+    vi.spyOn(tasks, "getReview").mockImplementation(async (date?: string) => {
+      if (date === "2026-06-14") {
+        return taskReview({
+          date: "2026-06-14",
+          total: 1,
+          completed: 0,
+          pending: 1,
+          pendingTasks: [yesterdayTask],
+          allTasks: [yesterdayTask],
+        });
+      }
+
+      return taskReview({
+        date: "2026-06-15",
+        total: 1,
+        completed: 0,
+        pending: 1,
+        pendingTasks: [focusTask],
+        allTasks: [focusTask],
+      });
+    });
+    const carryOverAll = vi.spyOn(tasks, "carryOverAll").mockResolvedValue({
+      carriedOver: 1,
+      tasks: [Task.from({ ...yesterdayTask, scheduledDate: "2026-06-15", carryOverCount: 2 })],
+    });
+    const saveReviewState = vi.spyOn(tasks, "saveReviewState");
+    const emit = vi.spyOn(events, "emitTasksChanged");
+
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.ritual.morning.carryOverTasks[0].title).toBe("Mover factura");
+
+    await presenter.confirmCarryOvers();
+
+    expect(carryOverAll).toHaveBeenCalledWith("2026-06-14", "2026-06-15");
+    expect(emit).toHaveBeenCalled();
+
+    await presenter.chooseFocus("focus-1");
+
+    expect(saveReviewState).toHaveBeenLastCalledWith(expect.objectContaining({
+      date: "2026-06-15",
+      focusTaskId: "focus-1",
+      plannedAt: "2026-06-15T12:00:00.000Z",
+    }));
+    expect(presenter.model.ritual.morning.statusLabel).toBe("Plan listo");
+    expect(presenter.model.ritual.morning.focusTaskTitle).toBe("Enviar propuesta");
     presenter.stop();
   });
 

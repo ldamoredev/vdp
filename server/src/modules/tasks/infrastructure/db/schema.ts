@@ -88,11 +88,11 @@ export const taskInsights = tasksSchema.table(
   ]
 );
 
-// ─── Daily Review State (R1) ─────────────────────────────
-// The review ritual's ceremony state (note, acknowledged signals, watched
-// categories, opened/completed timestamps), persisted per user per day so the
-// ritual survives across devices. The underlying data (tasks, mood, movements)
-// is already server-backed; only this ceremony state used to live in localStorage.
+// ─── Daily Review State (R1/R2) ──────────────────────────
+// The daily ritual's ceremony state (evening close + morning plan), persisted
+// per user per day so the ritual survives across devices. The underlying data
+// (tasks, mood, movements) is already server-backed; only this ceremony state
+// used to live in localStorage.
 export const dailyReviewState = tasksSchema.table(
   "daily_review_state",
   {
@@ -104,6 +104,8 @@ export const dailyReviewState = tasksSchema.table(
     note: text("note").notNull().default(""),
     openedAt: timestamp("opened_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    focusTaskId: uuid("focus_task_id").references(() => tasks.id, { onDelete: 'set null' }),
+    plannedAt: timestamp("planned_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

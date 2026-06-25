@@ -12,10 +12,14 @@ describe("mergePersistedDailyReviewState", () => {
       acknowledgedSignalIds: ["wallet:uncategorized"],
       watchedCategoryIds: ["cat-food"],
       note: "Mirar gastos chicos",
+      focusTaskId: "focus-1",
+      plannedAt: "2026-04-10T09:00:00.000Z",
     });
 
     expect(result.acknowledgedSignalIds).toEqual(["wallet:uncategorized"]);
     expect(result.watchedCategoryIds).toEqual(["cat-food"]);
     expect(result.note).toBe("Mirar gastos chicos");
+    expect(result.focusTaskId).toBe("focus-1");
+    expect(result.plannedAt).toBe("2026-04-10T09:00:00.000Z");
   });
 });

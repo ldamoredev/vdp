@@ -15,6 +15,7 @@ import {
   trendFiltersSchema,
   reviewFiltersSchema,
   domainStatsFiltersSchema,
+  saveDailyReviewStateSchema,
 } from "../tasks";
 
 // ─── Enums ────────────────────────────────────────────────
@@ -69,6 +70,29 @@ describe("taskDomainEnum", () => {
 
   it("rejects unknown domain", () => {
     expect(() => taskDomainEnum.parse("fitness")).toThrow();
+  });
+});
+
+describe("saveDailyReviewStateSchema", () => {
+  it("accepts morning-plan fields on the shared daily ritual state", () => {
+    const focusTaskId = randomUUID();
+
+    const result = saveDailyReviewStateSchema.parse({
+      date: "2026-06-15",
+      focusTaskId,
+      plannedAt: "2026-06-15T09:00:00.000Z",
+    });
+
+    expect(result).toMatchObject({
+      date: "2026-06-15",
+      focusTaskId,
+      plannedAt: "2026-06-15T09:00:00.000Z",
+      acknowledgedSignalIds: [],
+      watchedCategoryIds: [],
+      note: "",
+      openedAt: null,
+      completedAt: null,
+    });
   });
 });
 

@@ -30,7 +30,29 @@ export interface HomeTodayTasksViewModel {
   readonly createError: string | null;
 }
 
+export interface HomeMorningPlanTaskViewModel {
+  readonly id: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly selected: boolean;
+}
+
+export interface HomeMorningPlanViewModel {
+  readonly statusLabel: string;
+  readonly summary: string;
+  readonly carryOverTasks: readonly HomeMorningPlanTaskViewModel[];
+  readonly carryOverCountLabel: string;
+  readonly canConfirmCarryOvers: boolean;
+  readonly isConfirmingCarryOvers: boolean;
+  readonly focusOptions: readonly HomeMorningPlanTaskViewModel[];
+  readonly focusTaskTitle: string | null;
+  readonly plannedAtLabel: string | null;
+  readonly isSavingFocus: boolean;
+  readonly error: string | null;
+}
+
 export interface HomeRitualViewModel {
+  readonly morning: HomeMorningPlanViewModel;
   readonly statusLabel: string;
   readonly href: string;
   readonly ctaLabel: string;

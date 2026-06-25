@@ -1,0 +1,3 @@
+ALTER TABLE "tasks"."daily_review_state" ADD COLUMN "focus_task_id" uuid;--> statement-breakpoint
+ALTER TABLE "tasks"."daily_review_state" ADD COLUMN "planned_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "tasks"."daily_review_state" ADD CONSTRAINT "daily_review_state_focus_task_id_tasks_id_fk" FOREIGN KEY ("focus_task_id") REFERENCES "tasks"."tasks"("id") ON DELETE set null ON UPDATE no action;

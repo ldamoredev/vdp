@@ -23,6 +23,8 @@ export interface DailyReviewState {
   note: string;
   openedAt: string | null;
   completedAt: string | null;
+  focusTaskId: string | null;
+  plannedAt: string | null;
 }
 
 export type WalletReviewSignalKind =

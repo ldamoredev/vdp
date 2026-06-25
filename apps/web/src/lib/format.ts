@@ -53,6 +53,13 @@ export function getTomorrowISO(): string {
   return localDateISO(d);
 }
 
+/** Adds calendar days to a YYYY-MM-DD date in local time. */
+export function addLocalDaysISO(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return localDateISO(d);
+}
+
 /** Formats a Date as YYYY-MM-DD using local timezone (not UTC). */
 function localDateISO(d: Date): string {
   const y = d.getFullYear();

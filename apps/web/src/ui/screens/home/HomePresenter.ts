@@ -3,6 +3,7 @@ import type {
   CarryOverRateResponse,
   CategoryStat,
   DomainStat,
+  Task as TaskDto,
   TaskInsight,
   TaskInsightAction,
   TaskInsightMetadata,
@@ -12,6 +13,7 @@ import type {
 } from "@/lib/api/types";
 
 import type { Core } from "@/core/Core";
+import { CarryOverAll } from "@/core/app/tasks/CarryOverAll";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
 import { GetCarryOverRate } from "@/core/app/tasks/GetCarryOverRate";
@@ -22,6 +24,7 @@ import { GetTaskTrend } from "@/core/app/tasks/GetTaskTrend";
 import { GetTasksByDomain } from "@/core/app/tasks/GetTasksByDomain";
 import { GetTodayStats } from "@/core/app/tasks/GetTodayStats";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
+import { SaveDailyReviewState } from "@/core/app/tasks/SaveDailyReviewState";
 import { GetTransactions } from "@/core/app/wallet/GetTransactions";
 import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
 import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
@@ -32,6 +35,7 @@ import {
   formatDateShort,
   formatMoney,
   formatRelative,
+  addLocalDaysISO,
   getTodayISO,
   priorityBadge,
   priorityLabel,
@@ -40,6 +44,7 @@ import { getDomainConfig } from "@/lib/navigation";
 import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type {
   HomeInsightTone,
+  HomeMorningPlanTaskViewModel,
   HomeRhythmTone,
   HomeSignalViewModel,
   HomeTodayTaskViewModel,
@@ -180,13 +185,49 @@ function buildRhythmSummary(carryOver: CarryOverRateResponse | null): {
   };
 }
 
+function isOpenTask(task: TaskDto): boolean {
+  return task.status === "pending" || task.status === "in_progress";
+}
+
+function sortPlanTasks(tasks: readonly TaskDto[]): TaskDto[] {
+  return [...tasks].sort((left, right) => {
+    if (left.carryOverCount !== right.carryOverCount) {
+      return right.carryOverCount - left.carryOverCount;
+    }
+    if (left.priority !== right.priority) {
+      return right.priority - left.priority;
+    }
+    return left.createdAt.localeCompare(right.createdAt);
+  });
+}
+
+function planTaskDetail(task: TaskDto): string {
+  const carryOver =
+    task.carryOverCount > 0
+      ? ` · ${task.carryOverCount} arrastre${task.carryOverCount === 1 ? "" : "s"}`
+      : "";
+  return `${priorityLabel(task.priority)}${carryOver}`;
+}
+
+function formatPlanTime(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export class HomePresenter extends PresenterBase<HomeViewModel> {
   private readonly today = getTodayISO();
+  private readonly yesterday = addLocalDaysISO(this.today, -1);
   private reviewState: DailyReviewState = createEmptyDailyReviewState(this.today);
 
   private taskStats: TaskStats | null = null;
   private todayTasks: Task[] = [];
   private review: TaskReview | null = null;
+  private yesterdayReview: TaskReview | null = null;
   private trend: TaskTrendDay[] = [];
   private recentInsights: TaskInsight[] = [];
   private carryOverRate: CarryOverRateResponse | null = null;
@@ -201,6 +242,9 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   private newTaskTitle = "";
   private creatingTask = false;
   private createTaskError: string | null = null;
+  private confirmingCarryOvers = false;
+  private savingFocus = false;
+  private morningPlanError: string | null = null;
   private busyTaskIds = new Set<string>();
 
   constructor(
@@ -268,6 +312,53 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     }
   }
 
+  async confirmCarryOvers(): Promise<void> {
+    if (this.confirmingCarryOvers || this.carryOverCandidates().length === 0) return;
+
+    this.confirmingCarryOvers = true;
+    this.morningPlanError = null;
+    this.refresh();
+
+    try {
+      await this.core.execute(new CarryOverAll(this.yesterday, this.today));
+      await this.load();
+      await this.events.emitTasksChanged();
+    } catch {
+      this.morningPlanError = "No se pudieron traer los pendientes de ayer. Probá de nuevo.";
+    } finally {
+      this.confirmingCarryOvers = false;
+      this.refresh();
+    }
+  }
+
+  async chooseFocus(taskId: string): Promise<void> {
+    if (this.savingFocus) return;
+    const focus = this.focusCandidates().find((task) => task.id === taskId);
+    if (!focus) return;
+
+    this.savingFocus = true;
+    this.morningPlanError = null;
+    this.reviewState = {
+      ...this.reviewState,
+      focusTaskId: focus.id,
+      plannedAt: new Date().toISOString(),
+    };
+    this.refresh();
+
+    try {
+      const saved = await this.core.execute(new SaveDailyReviewState(this.reviewState));
+      this.reviewState = mergePersistedDailyReviewState(
+        createEmptyDailyReviewState(this.today),
+        saved,
+      );
+    } catch {
+      this.morningPlanError = "No se pudo guardar el foco de hoy. Probá de nuevo.";
+    } finally {
+      this.savingFocus = false;
+      this.refresh();
+    }
+  }
+
   private async load(): Promise<void> {
     this.loadingWalletStats = true;
     this.loadingWalletRecentTransactions = true;
@@ -278,6 +369,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         taskStats,
         todayTasks,
         review,
+        yesterdayReview,
         trend,
         recentInsights,
         carryOverRate,
@@ -291,6 +383,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         this.core.execute(new GetTodayStats()),
         this.core.execute(new ListTasks({ scheduledDate: this.today, limit: "5" })),
         this.core.execute(new GetTaskReview(this.today)),
+        this.core.execute(new GetTaskReview(this.yesterday)),
         this.core.execute(new GetTaskTrend(7)),
         this.core.execute(new GetRecentInsights(5)),
         this.core.execute(new GetCarryOverRate(7)),
@@ -314,6 +407,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.taskStats = taskStats;
       this.todayTasks = todayTasks.tasks;
       this.review = review;
+      this.yesterdayReview = yesterdayReview;
       this.trend = trend;
       this.recentInsights = recentInsights;
       this.carryOverRate = carryOverRate;
@@ -327,6 +421,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.taskStats = null;
       this.todayTasks = [];
       this.review = null;
+      this.yesterdayReview = null;
       this.trend = [];
       this.recentInsights = [];
       this.carryOverRate = null;
@@ -395,6 +490,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         createError: this.createTaskError,
       },
       ritual: {
+        morning: this.morningPlanVM(),
         statusLabel: this.reviewState.completedAt
           ? "Ritual cerrado"
           : this.reviewState.openedAt
@@ -417,6 +513,62 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       trend: this.trend.map((day) => this.trendDayVM(day)),
       rhythm: this.rhythmVM(),
     };
+  }
+
+  private morningPlanVM() {
+    const carryOverTasks = this.carryOverCandidates();
+    const focusOptions = this.focusCandidates();
+    const selectedFocus = this.selectedFocusTask();
+    const plannedAtTime = formatPlanTime(this.reviewState.plannedAt);
+
+    return {
+      statusLabel: selectedFocus
+        ? "Plan listo"
+        : carryOverTasks.length > 0
+          ? "Pendientes de ayer"
+          : focusOptions.length > 0
+            ? "Elegí foco"
+            : "Día liviano",
+      summary: selectedFocus
+        ? `Foco de hoy: ${selectedFocus.title}`
+        : carryOverTasks.length > 0
+          ? `Confirmá ${carryOverTasks.length} pendiente${carryOverTasks.length === 1 ? "" : "s"} de ayer y después elegí el foco.`
+          : focusOptions.length > 0
+            ? "Sin arrastre de ayer. Elegí una tarea para proteger como foco del día."
+            : "No hay tareas abiertas para planificar hoy.",
+      carryOverTasks: carryOverTasks.slice(0, 4).map((task) => this.morningPlanTaskVM(task)),
+      carryOverCountLabel: `${carryOverTasks.length} pendiente${carryOverTasks.length === 1 ? "" : "s"}`,
+      canConfirmCarryOvers: carryOverTasks.length > 0 && !this.confirmingCarryOvers,
+      isConfirmingCarryOvers: this.confirmingCarryOvers,
+      focusOptions: focusOptions.slice(0, 6).map((task) => this.morningPlanTaskVM(task)),
+      focusTaskTitle: selectedFocus?.title ?? null,
+      plannedAtLabel: plannedAtTime ? `Planificado ${plannedAtTime}` : null,
+      isSavingFocus: this.savingFocus,
+      error: this.morningPlanError,
+    };
+  }
+
+  private morningPlanTaskVM(task: TaskDto): HomeMorningPlanTaskViewModel {
+    return {
+      id: task.id,
+      title: task.title,
+      detail: planTaskDetail(task),
+      selected: this.reviewState.focusTaskId === task.id,
+    };
+  }
+
+  private carryOverCandidates(): TaskDto[] {
+    return sortPlanTasks((this.yesterdayReview?.pendingTasks ?? []).filter(isOpenTask));
+  }
+
+  private focusCandidates(): TaskDto[] {
+    return sortPlanTasks((this.review?.pendingTasks ?? []).filter(isOpenTask));
+  }
+
+  private selectedFocusTask(): TaskDto | null {
+    const focusTaskId = this.reviewState.focusTaskId;
+    if (!focusTaskId) return null;
+    return this.review?.allTasks.find((task) => task.id === focusTaskId) ?? null;
   }
 
   private taskVM(task: Task): HomeTodayTaskViewModel {

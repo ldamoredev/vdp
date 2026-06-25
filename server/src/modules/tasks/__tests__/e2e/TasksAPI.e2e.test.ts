@@ -744,6 +744,55 @@ describe('Tasks API — E2E', () => {
         });
     });
 
+    describe('GET/PUT /api/v1/tasks/review/state', () => {
+        it('persists the daily ritual state including the morning plan fields', async () => {
+            const today = todayISO();
+            const { body: focusTask } = await createTask({ title: 'Focus task', scheduledDate: today });
+            const payload = {
+                date: today,
+                acknowledgedSignalIds: ['wallet:uncategorized'],
+                watchedCategoryIds: [],
+                note: 'Mirar pagos al cierre',
+                openedAt: null,
+                completedAt: null,
+                focusTaskId: focusTask.id,
+                plannedAt: '2026-06-15T09:00:00.000Z',
+            };
+
+            const put = await testApp.app.inject({
+                method: 'PUT',
+                url: '/api/v1/tasks/review/state',
+                payload,
+            });
+
+            expect(put.statusCode).toBe(200);
+            expect(put.json()).toMatchObject(payload);
+
+            const get = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/tasks/review/state?date=${today}`,
+            });
+
+            expect(get.statusCode).toBe(200);
+            expect(get.json()).toMatchObject(payload);
+        });
+
+        it('rejects a focus task that is not visible to the authenticated user', async () => {
+            const res = await testApp.app.inject({
+                method: 'PUT',
+                url: '/api/v1/tasks/review/state',
+                payload: {
+                    date: todayISO(),
+                    focusTaskId: '22222222-2222-2222-2222-222222222222',
+                    plannedAt: '2026-06-15T09:00:00.000Z',
+                },
+            });
+
+            expect(res.statusCode).toBe(422);
+            expect(res.json()).toMatchObject({ error: 'DOMAIN_ERROR', message: 'Focus task not found' });
+        });
+    });
+
     // ─── Validation & lifecycle errors ─────────────
 
     describe('Validation guards', () => {

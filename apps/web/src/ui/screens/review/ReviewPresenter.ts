@@ -326,6 +326,9 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
       watchedCategoryNames: watchedCategories.filter((c) => c.watched).map((c) => c.name),
       note: this.reviewState.note,
     });
+    const focusTask = this.review?.allTasks.find((task) => task.id === this.reviewState.focusTaskId);
+    const morningFocusSummary = focusTask ? `Foco de la mañana: ${focusTask.title}.` : undefined;
+    const decisionSummary = [morningFocusSummary, morningSummary].filter(Boolean).join(" ");
     const taskSummary =
       taskSignals.visibleSignals.length > 0
         ? `${taskSignals.visibleSignals.length} señal${taskSignals.visibleSignals.length === 1 ? "" : "es"} de tareas para resolver antes del cierre.`
@@ -352,7 +355,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
         categories: watchedCategories,
         note: this.reviewState.note,
         summary:
-          morningSummary ||
+          decisionSummary ||
           taskSummary ||
           "Todavía no dejaste una señal clara para el próximo arranque.",
       },

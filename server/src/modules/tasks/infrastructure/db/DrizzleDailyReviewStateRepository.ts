@@ -14,6 +14,8 @@ function toRecord(row: Row): DailyReviewStateRecord {
         note: row.note,
         openedAt: row.openedAt ? row.openedAt.toISOString() : null,
         completedAt: row.completedAt ? row.completedAt.toISOString() : null,
+        focusTaskId: row.focusTaskId,
+        plannedAt: row.plannedAt ? row.plannedAt.toISOString() : null,
     };
 }
 
@@ -37,6 +39,8 @@ export class DrizzleDailyReviewStateRepository extends DailyReviewStateRepositor
             note: state.note,
             openedAt: state.openedAt ? new Date(state.openedAt) : null,
             completedAt: state.completedAt ? new Date(state.completedAt) : null,
+            focusTaskId: state.focusTaskId,
+            plannedAt: state.plannedAt ? new Date(state.plannedAt) : null,
             updatedAt: new Date(),
         };
         const [row] = await this.db.query

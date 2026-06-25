@@ -100,7 +100,11 @@ export default function HomeScreen() {
               onCreate={() => void presenter.createTask()}
               onComplete={(taskId) => void presenter.completeTask(taskId)}
             />
-            <DailyRitualCard model={model.ritual} />
+            <DailyRitualCard
+              model={model.ritual}
+              onConfirmCarryOvers={() => void presenter.confirmCarryOvers()}
+              onChooseFocus={(taskId) => void presenter.chooseFocus(taskId)}
+            />
           </div>
 
           <div className="space-y-6">

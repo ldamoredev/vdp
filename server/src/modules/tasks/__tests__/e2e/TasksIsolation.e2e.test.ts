@@ -227,6 +227,24 @@ describe('Tasks API — Cross-user isolation', () => {
         expect(ownerView.json().task.carryOverCount).toBe(0);
     });
 
+    it('does not let another user save a morning focus pointing at the owners task', async () => {
+        const ownerTask = await createTaskAs(PRIMARY_TEST_USER.id, 'Owner focus');
+
+        const response = await testApp.app.inject({
+            method: 'PUT',
+            url: '/api/v1/tasks/review/state',
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: {
+                date: ownerTask.scheduledDate,
+                focusTaskId: ownerTask.id,
+                plannedAt: '2026-06-15T09:00:00.000Z',
+            },
+        });
+
+        expect(response.statusCode).toBe(422);
+        expect(response.json()).toMatchObject({ error: 'DOMAIN_ERROR', message: 'Focus task not found' });
+    });
+
     it('derives the agent tool user from the request, not another user', async () => {
         const agent = testApp.core.agentRegistry.get('tasks');
         if (!agent) throw new Error('Tasks agent not registered');

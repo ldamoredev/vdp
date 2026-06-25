@@ -219,11 +219,22 @@ lost the ceremony state. Now persisted server-side. PRODUCT_ANALYSIS P5.
   pure helpers (`createEmptyDailyReviewState`, `mergePersistedDailyReviewState`) —
   the localStorage path is gone.
 
-### R2. Morning-plan ritual — NOT STARTED
+### R2. Morning-plan ritual — SHIPPED June 2026
 
 Asymmetry: the evening has an active close ritual; the morning is a passive
 dashboard. Add a light "plan the day" step (confirm yesterday's carry-overs, pick
 today's focus) — the morning mirror of the close.
+
+- Reused the R1 `daily_review_state` row: added `focus_task_id` and `planned_at`
+  (forward-only migration `0011`) instead of opening a second ritual table.
+- Backend keeps the same CQBus state surface (`GetDailyReviewStateQuery` /
+  `SaveDailyReviewStateCommand`) and validates that a saved focus task belongs
+  to the authenticated user. `CarryOverAllPendingCommand` remains the action for
+  confirming yesterday's pending tasks into today.
+- Web: `/home` now renders an active morning plan inside the daily ritual card:
+  lazy-loads yesterday's pending review, can carry all open tasks into today,
+  lets the owner choose today's focus, and persists the plan server-side. The
+  evening `/review` summary reads the same state and shows the morning focus.
 
 ### R3. Proactive agent brief on the synthesis surfaces — NOT STARTED
 

@@ -131,6 +131,8 @@ describe("tasks handlers (dispatched through the bus)", () => {
         note: "cerrar mañana temprano",
         openedAt: "2026-06-13T08:00:00.000Z",
         completedAt: null,
+        focusTaskId: "task-focus",
+        plannedAt: "2026-06-13T09:00:00.000Z",
       };
 
       const saved = await core.execute(new SaveDailyReviewState(state));
