@@ -1,4 +1,4 @@
-import type { Task as TaskDto, TaskStatus } from "@vdp/shared";
+import type { Task as TaskDto, TaskBoardStatus, TaskStatus } from "@vdp/shared";
 
 export type TaskFilter = "focus" | "pending" | "done" | "all";
 
@@ -20,6 +20,8 @@ export class Task {
     readonly status: TaskStatus,
     readonly scheduledDate: string,
     readonly domain: string | null,
+    readonly projectId: string | null,
+    readonly boardStatus: TaskBoardStatus,
     readonly carryOverCount: number,
     readonly completedAt: string | null,
     readonly createdAt: string,
@@ -35,6 +37,8 @@ export class Task {
       dto.status,
       dto.scheduledDate,
       dto.domain,
+      dto.projectId ?? null,
+      dto.boardStatus ?? "backlog",
       dto.carryOverCount,
       dto.completedAt,
       dto.createdAt,

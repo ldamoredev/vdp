@@ -15,12 +15,13 @@ import {
   Dumbbell,
   Users,
   Briefcase,
+  FolderKanban,
   GraduationCap,
   Settings2,
   type LucideIcon,
 } from "lucide-react";
 
-export type DomainKey = "tasks" | "wallet" | "health" | "people" | "work" | "study";
+export type DomainKey = "tasks" | "wallet" | "health" | "projects" | "people" | "work" | "study";
 
 export interface NavItem {
   href: string;
@@ -110,6 +111,21 @@ export const domains: DomainConfig[] = [
     navItems: [
       { href: "/health", label: "Habitos", icon: Dumbbell },
       { href: "/health/medical", label: "Fichas médicas", icon: Stethoscope },
+    ],
+  },
+  {
+    key: "projects",
+    label: "Projects",
+    subtitle: "Dirección",
+    icon: FolderKanban,
+    iconLetter: "P",
+    agentEndpoint: null,
+    chatPlaceholder: "Planificá un proyecto...",
+    chatWelcome: "Projects todavía no tiene agente propio",
+    chatDescription: "El board usa tus tasks existentes como fuente de verdad.",
+    aiDescription: "Sin agente en D3a.",
+    navItems: [
+      { href: "/projects", label: "Proyectos", icon: LayoutDashboard },
     ],
   },
   {

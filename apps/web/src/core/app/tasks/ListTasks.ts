@@ -1,9 +1,9 @@
 import { Query, RequestHandler } from "@nbottarini/cqbus";
 
-import type { TaskList, TasksGateway } from "../../domain/tasks/TasksGateway";
+import type { TaskList, TaskListParams, TasksGateway } from "../../domain/tasks/TasksGateway";
 
 export class ListTasks extends Query<TaskList> {
-  constructor(readonly params?: Record<string, string>) {
+  constructor(readonly params?: TaskListParams) {
     super();
   }
 }

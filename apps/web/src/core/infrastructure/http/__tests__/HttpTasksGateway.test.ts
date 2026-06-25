@@ -61,6 +61,8 @@ function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
     status: "pending",
     scheduledDate: "2026-06-13",
     domain: null,
+    projectId: null,
+    boardStatus: "backlog",
     carryOverCount: 0,
     completedAt: null,
     createdAt: "2026-06-13T08:00:00.000Z",

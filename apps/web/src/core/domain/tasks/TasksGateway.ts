@@ -3,6 +3,7 @@ import type {
   CarryOverRateResponse,
   DailyReviewState,
   DomainStat,
+  TaskBoardStatus,
   TaskInsight,
   TaskReview,
   TaskStats,
@@ -21,8 +22,18 @@ export interface CreateTaskInput {
 }
 
 export type UpdateTaskInput = Partial<
-  Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain">
+  Pick<Task, "title" | "description" | "priority" | "scheduledDate" | "domain" | "projectId" | "boardStatus">
 >;
+
+export interface TaskListParams extends Record<string, string | undefined> {
+  scheduledDate?: string;
+  status?: string;
+  domain?: string;
+  projectId?: string;
+  boardStatus?: TaskBoardStatus;
+  limit?: string;
+  offset?: string;
+}
 
 export interface TaskDetails {
   task: Task;
@@ -41,7 +52,7 @@ export interface TaskList {
  */
 export interface TasksGateway {
   // CRUD
-  listTasks(params?: Record<string, string>): Promise<TaskList>;
+  listTasks(params?: TaskListParams): Promise<TaskList>;
   getTask(id: string): Promise<TaskDetails>;
   createTask(input: CreateTaskInput): Promise<Task>;
   updateTask(id: string, input: UpdateTaskInput): Promise<Task>;

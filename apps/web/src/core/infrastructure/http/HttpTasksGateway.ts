@@ -20,6 +20,7 @@ import type {
   CreateTaskInput,
   TaskDetails,
   TaskList,
+  TaskListParams,
   TasksGateway,
   UpdateTaskInput,
 } from "../../domain/tasks/TasksGateway";
@@ -41,7 +42,7 @@ function withQuery(path: string, params?: Record<string, string | number | undef
 export class HttpTasksGateway implements TasksGateway {
   constructor(private readonly http: HttpClient) {}
 
-  async listTasks(params?: Record<string, string>): Promise<TaskList> {
+  async listTasks(params?: TaskListParams): Promise<TaskList> {
     const { body } = await this.http.get<TaskListResponse>(withQuery("/tasks", params));
     return { tasks: body.tasks.map(Task.from), total: body.total };
   }
