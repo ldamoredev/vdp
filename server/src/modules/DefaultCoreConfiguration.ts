@@ -21,6 +21,7 @@ import { Logger } from './common/base/observability/logging/Logger';
 import { ConsoleLogger } from './common/infrastructure/observability/logging/ConsoleLogger';
 import { AuthContextStorage } from './common/http/AuthContextStorage';
 import { AuthModule } from './auth/AuthModule';
+import { ProjectsModule } from './projects/ProjectsModule';
 
 export class DefaultCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -45,6 +46,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
             (context) => new TaskModule(context),
             (context) => new WalletModule(context),
             (context) => new HealthModule(context),
+            (context) => new ProjectsModule(context),
         ];
     }
 }

@@ -56,6 +56,8 @@ export class FakeTaskRepository extends TaskRepository {
             );
         }
         if (filters.status) tasks = tasks.filter(t => t.status === filters.status);
+        if (filters.projectId) tasks = tasks.filter(t => t.projectId === filters.projectId);
+        if (filters.boardStatus) tasks = tasks.filter(t => t.boardStatus === filters.boardStatus);
         if (filters.domain) tasks = tasks.filter(t => t.domain === filters.domain);
         if (filters.priority !== undefined) tasks = tasks.filter(t => t.priority === filters.priority);
 
@@ -85,6 +87,8 @@ export class FakeTaskRepository extends TaskRepository {
             data.scheduledDate ?? todayISO(),
             data.domain ?? null,
             0,
+            data.projectId ?? null,
+            data.boardStatus ?? 'backlog',
         );
         this.store.set(task.id, task.toSnapshot());
         return task;
@@ -100,6 +104,8 @@ export class FakeTaskRepository extends TaskRepository {
         if (data.priority !== undefined) task.priority = data.priority;
         if (data.scheduledDate !== undefined) task.scheduledDate = data.scheduledDate;
         if (data.domain !== undefined) task.domain = data.domain;
+        if (data.projectId !== undefined) task.projectId = data.projectId;
+        if (data.boardStatus !== undefined) task.boardStatus = data.boardStatus;
         task.updatedAt = new Date();
 
         this.store.set(id, task.toSnapshot());

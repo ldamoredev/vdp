@@ -53,6 +53,10 @@ export class DrizzleTaskRepository extends TaskRepository {
         }
         if (filters.status)
             conditions.push(eq(tasks.status, filters.status));
+        if (filters.projectId)
+            conditions.push(eq(tasks.projectId, filters.projectId));
+        if (filters.boardStatus)
+            conditions.push(eq(tasks.boardStatus, filters.boardStatus));
         if (filters.domain)
             conditions.push(eq(tasks.domain, filters.domain));
         if (filters.priority)
@@ -96,13 +100,23 @@ export class DrizzleTaskRepository extends TaskRepository {
                 priority: data.priority ?? 2,
                 scheduledDate,
                 domain: data.domain || null,
+                projectId: data.projectId ?? null,
+                boardStatus: data.boardStatus ?? 'backlog',
             })
             .returning();
 
         return Task.fromSnapshot(row);
     }
 
-    private static readonly UPDATABLE_FIELDS = ['title', 'description', 'priority', 'scheduledDate', 'domain'] as const;
+    private static readonly UPDATABLE_FIELDS = [
+        'title',
+        'description',
+        'priority',
+        'scheduledDate',
+        'domain',
+        'projectId',
+        'boardStatus',
+    ] as const;
 
     async updateTask(userId: string, id: string, data: UpdateTaskData): Promise<Task | null> {
         const updateData: Record<string, unknown> = { updatedAt: new Date() };

@@ -1,5 +1,9 @@
 export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'discarded';
-type TaskSnapshotLike = Omit<TaskSnapshot, 'status'> & { status: string };
+export type TaskBoardStatus = 'backlog' | 'next' | 'doing' | 'done';
+type TaskSnapshotLike = Omit<TaskSnapshot, 'status' | 'boardStatus'> & {
+    status: string;
+    boardStatus?: string | null;
+};
 
 
 export class Task {
@@ -15,6 +19,8 @@ export class Task {
         public scheduledDate: string,
         public domain: string | null,
         public carryOverCount: number,
+        public projectId: string | null = null,
+        public boardStatus: TaskBoardStatus = 'backlog',
     ) {}
 
     start() {
@@ -41,6 +47,18 @@ export class Task {
         this.updatedAt = new Date();
     }
 
+    assignToProject(projectId: string, boardStatus: TaskBoardStatus = 'backlog') {
+        this.projectId = projectId;
+        this.boardStatus = boardStatus;
+        this.updatedAt = new Date();
+    }
+
+    unassignFromProject() {
+        this.projectId = null;
+        this.boardStatus = 'backlog';
+        this.updatedAt = new Date();
+    }
+
     isStuck(): boolean {
         return this.carryOverCount >= 3;
     }
@@ -60,9 +78,24 @@ export class Task {
             domain: this.domain,
             completedAt: this.completedAt,
             carryOverCount: this.carryOverCount,
+            projectId: this.projectId,
+            boardStatus: this.boardStatus,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };
+    }
+
+    private static parseBoardStatus(status: string | null | undefined): TaskBoardStatus {
+        const value = status ?? 'backlog';
+        switch (value) {
+            case 'backlog':
+            case 'next':
+            case 'doing':
+            case 'done':
+                return value;
+            default:
+                throw new Error(`Invalid task board status: ${status}`);
+        }
     }
 
     private static parseTaskStatus(status: string): TaskStatus {
@@ -90,6 +123,8 @@ export class Task {
             s.scheduledDate,
             s.domain,
             s.carryOverCount,
+            s.projectId ?? null,
+            Task.parseBoardStatus(s.boardStatus),
         );
     }
 }
@@ -104,6 +139,8 @@ export type TaskSnapshot = {
     domain: string | null;
     completedAt: Date | null;
     carryOverCount: number;
+    projectId: string | null;
+    boardStatus: TaskBoardStatus;
     createdAt: Date;
     updatedAt: Date;
 };

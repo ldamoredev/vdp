@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from './Task';
+import { Task, TaskBoardStatus, TaskStatus } from './Task';
 
 export abstract class TaskRepository {
     abstract getTask(userId: string, id: string): Promise<Task | null>;
@@ -26,6 +26,8 @@ export type TaskFilters = {
     scheduledDate?: string;
     completedDate?: string;
     status?: TaskStatus;
+    projectId?: string;
+    boardStatus?: TaskBoardStatus;
     domain?: string;
     priority?: number;
     limit?: number;
@@ -45,6 +47,8 @@ export type CreateTaskData = {
     priority?: number;
     scheduledDate?: string;
     domain?: string | null;
+    projectId?: string | null;
+    boardStatus?: TaskBoardStatus;
 };
 
 export type UpdateTaskData = {
@@ -53,6 +57,8 @@ export type UpdateTaskData = {
     priority?: number;
     scheduledDate?: string;
     domain?: string | null;
+    projectId?: string | null;
+    boardStatus?: TaskBoardStatus;
 };
 
 export type DomainStat = {

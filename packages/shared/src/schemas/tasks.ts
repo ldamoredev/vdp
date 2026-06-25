@@ -6,6 +6,7 @@ import {
   optionalLocalDateStringSchema,
   daysWindowSchema,
 } from "./common";
+import { taskBoardStatusEnum } from "./projects";
 
 // ─── Enums ───────────────────────────────────────────────
 export const taskStatusEnum = z.enum(["pending", "in_progress", "done", "discarded"]);
@@ -46,6 +47,8 @@ export const updateTaskSchema = z.object({
 export const taskFiltersSchema = z.object({
   scheduledDate: optionalLocalDateStringSchema,
   status: taskStatusEnum.optional(),
+  projectId: z.string().uuid().optional(),
+  boardStatus: taskBoardStatusEnum.optional(),
   domain: taskDomainEnum.optional(),
   priority: taskPriorityEnum.optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),

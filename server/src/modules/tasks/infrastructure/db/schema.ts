@@ -12,6 +12,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { users } from '../../../auth/infrastructure/db/schema';
+import { projects } from '../../../projects/infrastructure/db/schema';
 
 export const tasksSchema = pgSchema("tasks");
 
@@ -32,6 +33,8 @@ export const tasks = tasksSchema.table(
     // Which day this task belongs to (defaults to today)
     domain: varchar("domain", { length: 20 }),
     // Optional link: "wallet", "health", "work", "people", "study", or null
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: 'set null' }),
+    boardStatus: varchar("board_status", { length: 20 }).notNull().default("backlog"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     carryOverCount: integer("carry_over_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -42,6 +45,8 @@ export const tasks = tasksSchema.table(
     index("tasks_scheduled_date_idx").on(table.scheduledDate),
     index("tasks_status_idx").on(table.status),
     index("tasks_domain_idx").on(table.domain),
+    index("tasks_project_idx").on(table.projectId),
+    index("tasks_project_board_idx").on(table.projectId, table.boardStatus),
     index("tasks_date_status_idx").on(table.scheduledDate, table.status),
   ]
 );

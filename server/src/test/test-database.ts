@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as authSchema from '../modules/auth/infrastructure/db/schema';
 import * as agentSchema from '../modules/common/infrastructure/agents/schema';
 import * as walletSchema from '../modules/wallet/infrastructure/db/schema';
+import * as projectsSchema from '../modules/projects/infrastructure/db/schema';
 import * as tasksSchema from '../modules/tasks/infrastructure/db/schema';
 import * as embeddingsSchema from '../modules/tasks/infrastructure/db/embeddings-schema';
 import { DEFAULT_TEST_USERS, TestUser } from './testUsers';
@@ -16,6 +17,7 @@ CREATE SCHEMA IF NOT EXISTS tasks;
 CREATE SCHEMA IF NOT EXISTS wallet;
 CREATE SCHEMA IF NOT EXISTS health;
 CREATE SCHEMA IF NOT EXISTS medical;
+CREATE SCHEMA IF NOT EXISTS projects;
 
 CREATE TABLE IF NOT EXISTS core.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -80,11 +82,38 @@ CREATE TABLE IF NOT EXISTS tasks.tasks (
     priority INTEGER NOT NULL DEFAULT 2,
     scheduled_date DATE NOT NULL,
     domain VARCHAR(20),
+    project_id UUID,
+    board_status VARCHAR(20) NOT NULL DEFAULT 'backlog',
     completed_at TIMESTAMPTZ,
     carry_over_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS projects.projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    kind VARCHAR(20) NOT NULL,
+    outcome TEXT NOT NULL,
+    next_action TEXT NOT NULL,
+    focus VARCHAR(160) NOT NULL,
+    client VARCHAR(160),
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    archived_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'tasks_project_id_projects_id_fk'
+    ) THEN
+        ALTER TABLE tasks.tasks
+            ADD CONSTRAINT tasks_project_id_projects_id_fk
+            FOREIGN KEY (project_id) REFERENCES projects.projects(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS tasks.task_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -135,7 +164,12 @@ CREATE INDEX IF NOT EXISTS tasks_scheduled_date_idx ON tasks.tasks(scheduled_dat
 CREATE INDEX IF NOT EXISTS tasks_owner_user_idx ON tasks.tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks.tasks(status);
 CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
+CREATE INDEX IF NOT EXISTS tasks_project_idx ON tasks.tasks(project_id);
+CREATE INDEX IF NOT EXISTS tasks_project_board_idx ON tasks.tasks(project_id, board_status);
 CREATE INDEX IF NOT EXISTS tasks_date_status_idx ON tasks.tasks(scheduled_date, status);
+CREATE INDEX IF NOT EXISTS projects_owner_user_idx ON projects.projects(owner_user_id);
+CREATE INDEX IF NOT EXISTS projects_status_idx ON projects.projects(status);
+CREATE INDEX IF NOT EXISTS projects_kind_idx ON projects.projects(kind);
 CREATE INDEX IF NOT EXISTS task_notes_owner_user_idx ON tasks.task_notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS task_insights_owner_created_idx ON tasks.task_insights(owner_user_id, created_at);
@@ -420,7 +454,14 @@ export class TestDatabase {
     constructor() {
         this.pool = new pg.Pool({ connectionString: TEST_DATABASE_CONNECTION_STRING });
         this.query = drizzle(this.pool, {
-            schema: { ...authSchema, ...agentSchema, ...walletSchema, ...tasksSchema, ...embeddingsSchema },
+            schema: {
+                ...authSchema,
+                ...agentSchema,
+                ...walletSchema,
+                ...projectsSchema,
+                ...tasksSchema,
+                ...embeddingsSchema,
+            },
         });
     }
 
@@ -457,6 +498,7 @@ export class TestDatabase {
                     tasks.task_insights,
                     tasks.daily_review_state,
                     tasks.tasks,
+                    projects.projects,
                     health.habit_logs,
                     health.habits,
                     health.counter_attempts,
@@ -522,6 +564,7 @@ export class TestDatabase {
             await client.query('DROP SCHEMA IF EXISTS core CASCADE');
             await client.query('DROP SCHEMA IF EXISTS tasks CASCADE');
             await client.query('DROP SCHEMA IF EXISTS wallet CASCADE');
+            await client.query('DROP SCHEMA IF EXISTS projects CASCADE');
         } finally {
             client.release();
         }

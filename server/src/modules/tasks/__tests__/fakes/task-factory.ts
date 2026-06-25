@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from '../../domain/Task';
+import { Task, TaskBoardStatus, TaskStatus } from '../../domain/Task';
 import { randomUUID } from 'crypto';
 import { todayISO } from '../../../common/base/time/dates';
 
@@ -10,6 +10,8 @@ type TaskOverrides = Partial<{
     priority: number;
     scheduledDate: string;
     domain: string | null;
+    projectId: string | null;
+    boardStatus: TaskBoardStatus;
     completedAt: Date | null;
     carryOverCount: number;
     createdAt: Date;
@@ -30,5 +32,7 @@ export function createTask(overrides: TaskOverrides = {}): Task {
         overrides.scheduledDate ?? todayISO(),
         overrides.domain ?? null,
         overrides.carryOverCount ?? 0,
+        overrides.projectId ?? null,
+        overrides.boardStatus ?? 'backlog',
     );
 }

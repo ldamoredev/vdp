@@ -1,4 +1,5 @@
 import type { PaginatedCollection } from "./common";
+import type { TaskBoardStatus } from "./projects";
 
 // ─── Tasks API response shapes ───────────────────────────
 //
@@ -16,6 +17,8 @@ export interface Task {
   status: TaskStatus;
   scheduledDate: string;
   domain: string | null;
+  projectId?: string | null;
+  boardStatus?: TaskBoardStatus;
   carryOverCount: number;
   completedAt: string | null;
   createdAt: string;

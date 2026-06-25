@@ -35,6 +35,8 @@ export class UpdateTaskCommandHandler implements RequestHandler<UpdateTaskComman
         if (command.input.priority !== undefined) task.priority = command.input.priority;
         if (command.input.scheduledDate !== undefined) task.scheduledDate = command.input.scheduledDate;
         if (command.input.domain !== undefined) task.domain = command.input.domain;
+        if (command.input.projectId !== undefined) task.projectId = command.input.projectId;
+        if (command.input.boardStatus !== undefined) task.boardStatus = command.input.boardStatus;
         task.updatedAt = new Date();
 
         const saved = await this.tasks.save(userId, task);
