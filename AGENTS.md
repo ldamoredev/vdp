@@ -24,6 +24,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
+- `projects`: active D3a direction layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional client, and lifecycle; Tasks remain the only work-item store and carry optional `projectId` + board column.
 
 Inactive domains:
 
@@ -165,6 +166,7 @@ The active migrations create these PostgreSQL schemas:
 
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
 - `tasks`: tasks, task notes, task embeddings, task insights.
+- `projects`: projects direction aggregate (`work|personal`) used by the project board; task rows link to it through nullable `project_id`.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
 - `health`: habits, habit logs, counters, counter attempts, goals, mood check-ins, weight entries.
 - `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
@@ -241,7 +243,7 @@ The frontend is a Vite SPA (no SSR) that mirrors the backend module pattern with
 main.tsx          Entry: mounts <WebApp/> under React StrictMode.
 WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
 routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
-createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).
+createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).
 core/             NO React under here (grep/lint enforced): domain/{m}, app/{m} (Command/Query+handlers
                   + {M}Module), infrastructure/http (Http{M}Gateway + FetchHttpClient).
 ui/               All React: primitives/ (design-system leaves), shell/ (chrome + auth-gate),
@@ -259,7 +261,7 @@ Import direction rules:
 - `ui/` may import `core/` (via `useCore()`/the bus), `lib/`, and `@vdp/shared`. A screen owns its own presenter/VM; cross-section coordination goes through `ui/events`, never by reaching into another screen's internals.
 - `routes.tsx` and entrypoints may import anything.
 
-Migration status: **health, tasks, wallet** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
+Migration status: **health, tasks, wallet, projects** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
 
 API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 

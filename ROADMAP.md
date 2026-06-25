@@ -9,6 +9,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Tasks | ✅ | ✅ | ✅ | Stable reference module; production-ready for personal daily use |
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
+| Projects | ✅ | ✅ | — | Active D3a direction layer; Tasks remain the only work-item store |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -20,7 +21,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3a (Project aggregate + task linking + board) shipped**; D3b/D3c remain unstarted.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -82,6 +83,11 @@ complexity, move it to Work"). Projects with outcome + next action + weekly focu
 turn Tasks from pure execution into direction. **Gate:** define the
 daily-task ↔ project boundary first, or the two cannibalize. Passes the New Domain
 Gate; second domain, not People.
+Owner edit: Time/Hours load and report for track how much I spend time in a project to then inform it to my bosses/clients.
+
+**Status (June 2026): in progress.** The boundary gate is resolved (a Project owns
+an outcome, not a separate task store) and the work is sliced in the "D3: Activate
+Work / Projects" execution section below.
 
 ### D4. Life Goals (Goals 2.0) — *decide, top layer* — strategic layer
 
@@ -236,17 +242,105 @@ today's focus) — the morning mirror of the close.
   lets the owner choose today's focus, and persists the plan server-side. The
   evening `/review` summary reads the same state and shows the morning focus.
 
-### R3. Proactive agent brief on the synthesis surfaces — NOT STARTED
+### R3. Proactive agent brief on the synthesis surfaces — PAUSED (2026-06-25)
 
 The chat is available on `/home` and `/review` but passive. Open it with a one-line
 day brief (tasks, spend alerts, streaks) so the agent participates in the *decide*
 stage. Folds in part of D6.
+
+**Paused 2026-06-25:** there is no LLM provider configured in DEV or PROD today, so
+the agent layer this slice activates is dead end-to-end. Even a determinístic brief
+would ship into a surface whose chat can't respond, so R3 waits until a provider
+exists. Revisit when the owner wires an LLM provider (local or hosted).
 
 ### R4. Unify /home + /review into one "Today" surface — NOT STARTED (maybe skip)
 
 The literal D2 ask: one daily surface with morning/evening phases by time of day.
 Highest refactor/risk and arguably low value — two bridged screens already work.
 Last, and revisit whether it's worth doing after R1–R3.
+
+## D3: Activate Work / Projects (in progress — June 2026)
+
+Owner-directed promotion of D3 from candidate to active work. Same discipline as the
+Health and D1 series: one full-stack slice at a time, each shipping before the next.
+The owner's primary driver is **tracking hours per project to report to bosses /
+clients**; the structural prerequisite is resolving the Tasks ↔ Projects boundary so
+the two don't cannibalize.
+
+**Gate resolved (owner decisions, 2026-06-25).** These are settled and not to be
+re-litigated when implementing:
+
+1. **A Project is an aggregate that owns `outcome + next action + focus` — NOT a new
+   task store.** Tasks remain the single store of work items. A `Project` is the
+   direction layer; `Task` gains an optional `projectId`.
+2. **The board per project is a *view* over existing Tasks (`GROUP BY` status /
+   column), not a separate set of cards.** "Today" stays the daily-execution lens;
+   the board is the per-project direction lens over the *same* tasks. This preserves
+   the moat (agent + cross-domain already hang off `tasks.task.*`).
+3. **Time tracking is manual entry first** (Wallet philosophy), timer is a later
+   enhancement. A `TimeEntry` points at a **Project**, with an optional `taskId` —
+   but logging will be **mostly at the project level**. The report (by
+   project / week / client) is the feature; capture is just its input.
+4. **Projects have a `kind: work | personal`.** Hours reporting (with a
+   `client`/recipient) applies to **work** projects; personal projects use
+   outcome + board without billing. The board itself is available to both.
+5. **Clients should become a selectable catalog, not free text.** D3a shipped with
+   `Project.client` as optional text to keep the first slice small; before hours
+   reporting, promote this into a Projects-owned Client ABM / selector so reports
+   can group reliably by client. Existing text clients should be preserved and
+   migrated forward, not discarded.
+6. **Task creation/editing should offer a Project selector.** This is a Projects/Tasks
+   UX refinement over the D3a link, not a new work-item store: creating a work/project
+   task can attach the existing task to a project and initial board column.
+
+### D3a. Project aggregate + task linking + board — SHIPPED (2026-06-25)
+
+Resolves the gate in code and gives the structure everything else hangs off.
+
+- **Backend (CQBus + new aggregate):** `Project` rich entity (`kind`, `outcome`,
+  `nextAction`, `focus`, optional `client`, lifecycle/status) + repository port +
+  Drizzle impl + the three synchronized DB changes + fake + test. New
+  forward-only migration. Create/Get/List/Update + Archive use cases; thin HTTP
+  controller under `/projects` (or a `work` module — decide module home at
+  implementation, consistent with AGENTS.md module rules).
+- **Task ↔ Project link:** add optional `projectId` (and a board `status`/column) to
+  the Task aggregate via a forward-only migration; a use case to assign/unassign a
+  task to a project. No data loss for existing tasks (nullable, defaults preserved).
+- **Web (the mirror):** `ProjectsGateway` + HTTP impl, web use cases registered in a
+  `ProjectsModule`; a projects list screen and a per-project board presenter that
+  renders the project's tasks grouped by column (reuses the Tasks read paths — no
+  new card entity). Presenter unit tests, React-free.
+
+### D3b. Time tracking + hours report — NOT STARTED
+
+The owner's core value: log hours and report them to bosses / clients.
+
+- **Backend:** `TimeEntry` aggregate (project, optional task, date, minutes, note) +
+  repository + Drizzle impl + three synchronized DB changes + fake + test; new
+  forward-only migration. Log/Edit/Delete + a report query
+  (`GetProjectHoursReportQuery`) aggregating by project / week, scoped to the
+  authenticated owner. Currency-safe is N/A here, but keep minutes integer-safe.
+- **Client catalog prerequisite:** add a Projects-owned Client entity/ABM and replace
+  free-text project client entry with a selector. Preserve/migrate existing text
+  clients forward into the catalog. Reports should group by client identity, not
+  spelling.
+- **Web:** manual log entry on the project (and optionally on a task), plus a report
+  view per project / per week / per client, with an export (copy or CSV) for sending
+  to a boss / client. Project create/edit uses the client selector; Task create/edit
+  exposes a Project selector for work/project tasks. Presenter + ViewModel + unit
+  tests.
+
+### D3c. Cross-domain — NOT STARTED
+
+What keeps Work from being a siloed module competing with Toggl/Linear. Each is a
+candidate slice, sequenced after D3a/D3b land:
+
+- **`projects→wallet`:** a work/freelance project's tracked hours × rate → expected
+  income, or register the income on invoicing. The reaction (a wallet entry) lives
+  in Wallet's cross-domain handlers, per the AGENTS.md "the module that owns the
+  reaction owns the subscriber" rule.
+- **`time→review`:** surface "today you spent Xh on Project Y" in the evening close /
+  morning plan, feeding the *learn* stage of the loop.
 
 ## Data Constraint
 
