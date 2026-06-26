@@ -25,6 +25,7 @@ describe("ProjectsListPresenter", () => {
         outcome: "Archived",
         nextAction: "None",
         focus: "Old",
+        clientId: null,
         client: null,
         status: "archived",
         archivedAt: "2026-06-10T08:00:00.000Z",
@@ -37,6 +38,7 @@ describe("ProjectsListPresenter", () => {
         outcome: "Active",
         nextAction: "Next",
         focus: "Now",
+        clientId: null,
         client: "Acme",
         status: "active",
         archivedAt: null,
@@ -70,7 +72,7 @@ describe("ProjectsListPresenter", () => {
     presenter.setOutcome("Ship reports");
     presenter.setNextAction("Create report");
     presenter.setFocus("Client visibility");
-    presenter.setClient("Acme");
+    presenter.setClientId("c1");
     await presenter.createProject();
 
     expect(gateway.callsTo("createProject")[0].args[0]).toMatchObject({
@@ -78,9 +80,48 @@ describe("ProjectsListPresenter", () => {
       outcome: "Ship reports",
       nextAction: "Create report",
       focus: "Client visibility",
-      client: "Acme",
+      clientId: "c1",
     });
     expect(presenter.model.selectedProjectId).toBe("created");
     expect(presenter.model.form.isOpen).toBe(false);
+  });
+
+  it("exposes active clients as selector options and resolves project client labels", async () => {
+    const gateway = new FakeProjectsGateway();
+    const presenter = new ProjectsListPresenter(vi.fn(), coreWith(gateway));
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.clientOptions).toEqual([{ id: "c1", name: "Acme" }]);
+    // FakeProjectsGateway's seed project has clientId "c1" → label resolves to the client name.
+    expect(presenter.model.projects[0].clientLabel).toBe("Acme");
+  });
+
+  it("refreshes the client options when the form opens", async () => {
+    const gateway = new FakeProjectsGateway();
+    const presenter = new ProjectsListPresenter(vi.fn(), coreWith(gateway));
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    const before = gateway.callsTo("listClients").length;
+    presenter.openForm();
+    await flush();
+
+    expect(gateway.callsTo("listClients").length).toBe(before + 1);
+  });
+
+  it("re-reads the catalog on demand so the selector stays in sync", async () => {
+    const gateway = new FakeProjectsGateway();
+    const presenter = new ProjectsListPresenter(vi.fn(), coreWith(gateway));
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    const before = gateway.callsTo("listClients").length;
+    await presenter.reloadClients();
+
+    expect(gateway.callsTo("listClients").length).toBe(before + 1);
   });
 });

@@ -1,9 +1,10 @@
 export type ProjectKind = 'work' | 'personal';
 export type ProjectStatus = 'active' | 'archived';
 
-type ProjectSnapshotLike = Omit<ProjectSnapshot, 'kind' | 'status'> & {
+type ProjectSnapshotLike = Omit<ProjectSnapshot, 'kind' | 'status' | 'clientId'> & {
     kind: string;
     status: string;
+    clientId?: string | null;
 };
 
 export class Project {
@@ -13,6 +14,7 @@ export class Project {
         public outcome: string,
         public nextAction: string,
         public focus: string,
+        public clientId: string | null,
         public client: string | null,
         public status: ProjectStatus,
         public archivedAt: Date | null,
@@ -25,6 +27,7 @@ export class Project {
         if (data.outcome !== undefined) this.outcome = data.outcome;
         if (data.nextAction !== undefined) this.nextAction = data.nextAction;
         if (data.focus !== undefined) this.focus = data.focus;
+        if (data.clientId !== undefined) this.clientId = data.clientId;
         if (data.client !== undefined) this.client = data.client;
         this.updatedAt = new Date();
     }
@@ -47,6 +50,7 @@ export class Project {
             outcome: this.outcome,
             nextAction: this.nextAction,
             focus: this.focus,
+            clientId: this.clientId,
             client: this.client,
             status: this.status,
             archivedAt: this.archivedAt,
@@ -82,6 +86,7 @@ export class Project {
             s.outcome,
             s.nextAction,
             s.focus,
+            s.clientId ?? null,
             s.client,
             Project.parseStatus(s.status),
             s.archivedAt,
@@ -96,6 +101,7 @@ export type ProjectUpdate = {
     outcome?: string;
     nextAction?: string;
     focus?: string;
+    clientId?: string | null;
     client?: string | null;
 };
 
@@ -105,6 +111,7 @@ export type ProjectSnapshot = {
     outcome: string;
     nextAction: string;
     focus: string;
+    clientId: string | null;
     client: string | null;
     status: ProjectStatus;
     archivedAt: Date | null;

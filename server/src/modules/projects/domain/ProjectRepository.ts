@@ -5,6 +5,7 @@ export type CreateProjectData = {
     readonly outcome: string;
     readonly nextAction: string;
     readonly focus: string;
+    readonly clientId?: string | null;
     readonly client?: string | null;
 };
 

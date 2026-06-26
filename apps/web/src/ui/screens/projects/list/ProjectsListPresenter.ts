@@ -2,7 +2,9 @@ import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
 import type { Core } from "@/core/Core";
 import { CreateProject } from "@/core/app/projects/CreateProject";
+import { ListClients } from "@/core/app/projects/ListClients";
 import { ListProjects } from "@/core/app/projects/ListProjects";
+import { sortClients, type Client } from "@/core/domain/projects/Client";
 import { sortProjects, type Project } from "@/core/domain/projects/Project";
 import type { ProjectsListViewModel } from "@/ui/models/projects/ProjectsListViewModel";
 
@@ -11,13 +13,14 @@ type ProjectFormState = {
   outcome: string;
   nextAction: string;
   focus: string;
-  client: string;
+  clientId: string;
   isOpen: boolean;
   isSaving: boolean;
 };
 
 export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> {
   private projects: Project[] = [];
+  private clients: Client[] = [];
   private selectedProjectId: string | null = null;
   private isLoading = true;
   private error: string | null = null;
@@ -26,7 +29,7 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     outcome: "",
     nextAction: "",
     focus: "",
-    client: "",
+    clientId: "",
     isOpen: false,
     isSaving: false,
   };
@@ -55,6 +58,8 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
   openForm(): void {
     this.form.isOpen = true;
     this.refresh();
+    // Refresh the client catalog so the selector reflects clients added meanwhile.
+    void this.loadClients();
   }
 
   closeForm(): void {
@@ -82,9 +87,14 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     this.refresh();
   }
 
-  setClient(client: string): void {
-    this.form.client = client;
+  setClientId(clientId: string): void {
+    this.form.clientId = clientId;
     this.refresh();
+  }
+
+  /** Re-reads the client catalog; used to keep the selector in sync with the client manager. */
+  reloadClients(): Promise<void> {
+    return this.loadClients();
   }
 
   async createProject(): Promise<void> {
@@ -97,7 +107,7 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
         outcome: this.form.outcome.trim(),
         nextAction: this.form.nextAction.trim(),
         focus: this.form.focus.trim(),
-        client: this.form.client.trim() || null,
+        clientId: this.form.clientId || null,
       }));
       this.selectedProjectId = project.id;
       this.form = {
@@ -105,7 +115,7 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
         outcome: "",
         nextAction: "",
         focus: "",
-        client: "",
+        clientId: "",
         isOpen: false,
         isSaving: false,
       };
@@ -121,7 +131,12 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     this.isLoading = true;
     this.refresh();
     try {
-      this.projects = sortProjects(await this.core.execute(new ListProjects()));
+      const [projects, clients] = await Promise.all([
+        this.core.execute(new ListProjects()),
+        this.core.execute(new ListClients()),
+      ]);
+      this.projects = sortProjects(projects);
+      this.clients = sortClients(clients);
       if (!this.selectedProjectId || !this.projects.some((project) => project.id === this.selectedProjectId)) {
         this.selectedProjectId = this.projects[0]?.id ?? null;
       }
@@ -131,6 +146,15 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     } finally {
       this.isLoading = false;
       this.refresh();
+    }
+  }
+
+  private async loadClients(): Promise<void> {
+    try {
+      this.clients = sortClients(await this.core.execute(new ListClients()));
+      this.refresh();
+    } catch {
+      // Keep the previously loaded options; the manager section surfaces client errors.
     }
   }
 
@@ -147,6 +171,7 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
   }
 
   private buildModel(): ProjectsListViewModel {
+    const activeClients = this.clients.filter((client) => client.isActive);
     return {
       isLoading: this.isLoading,
       error: this.error,
@@ -157,14 +182,23 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
         nextAction: project.nextAction,
         focus: project.focus,
         kindLabel: project.kind === "work" ? "Trabajo" : "Personal",
-        clientLabel: project.client,
+        clientLabel: this.clientLabelFor(project),
         statusLabel: project.status === "active" ? "Activo" : "Archivado",
         isSelected: project.id === this.selectedProjectId,
       })),
+      clientOptions: activeClients.map((client) => ({ id: client.id, name: client.name })),
       form: {
         ...this.form,
         canSubmit: this.canSubmit() && !this.form.isSaving,
       },
     };
+  }
+
+  private clientLabelFor(project: Project): string | null {
+    if (project.clientId) {
+      const client = this.clients.find((candidate) => candidate.id === project.clientId);
+      if (client) return client.name;
+    }
+    return project.client;
   }
 }

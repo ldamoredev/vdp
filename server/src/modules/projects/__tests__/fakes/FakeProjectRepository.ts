@@ -19,6 +19,7 @@ export class FakeProjectRepository extends ProjectRepository {
             outcome: data.outcome,
             nextAction: data.nextAction,
             focus: data.focus,
+            clientId: data.clientId ?? null,
             client: data.client ?? null,
             status: 'active',
             archivedAt: null,

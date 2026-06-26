@@ -19,6 +19,7 @@ export class DrizzleProjectRepository extends ProjectRepository {
                 outcome: data.outcome,
                 nextAction: data.nextAction,
                 focus: data.focus,
+                clientId: data.clientId ?? null,
                 client: data.client ?? null,
             })
             .returning();
@@ -55,6 +56,7 @@ export class DrizzleProjectRepository extends ProjectRepository {
                 outcome: snapshot.outcome,
                 nextAction: snapshot.nextAction,
                 focus: snapshot.focus,
+                clientId: snapshot.clientId,
                 client: snapshot.client,
                 status: snapshot.status,
                 archivedAt: snapshot.archivedAt,
@@ -73,6 +75,7 @@ export class DrizzleProjectRepository extends ProjectRepository {
             outcome: row.outcome,
             nextAction: row.nextAction,
             focus: row.focus,
+            clientId: row.clientId,
             client: row.client,
             status: row.status,
             archivedAt: row.archivedAt,

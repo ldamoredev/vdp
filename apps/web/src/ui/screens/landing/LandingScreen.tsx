@@ -36,6 +36,17 @@ const modules = [
     ready: true,
   },
   {
+    key: "projects",
+    name: "Projects",
+    description: "Dirección: outcome, próxima acción, clientes y horas por proyecto",
+    href: "/projects",
+    iconLetter: "P",
+    softBg: "var(--cyan-soft-bg)",
+    softText: "var(--cyan-soft-text)",
+    softBorder: "var(--cyan-soft-border)",
+    ready: true,
+  },
+  {
     key: "people",
     name: "People",
     description: "Cuidá tus relaciones, no pierdas el hilo de nadie",

@@ -7,6 +7,7 @@ import { GetProjectQuery, GetProjectQueryHandler } from '../../app/GetProjectQue
 import { ListProjectsQuery, ListProjectsQueryHandler } from '../../app/ListProjectsQuery';
 import { UpdateProjectCommand, UpdateProjectCommandHandler } from '../../app/UpdateProjectCommand';
 import { NotFoundHttpError } from '../../../common/http/errors';
+import { FakeClientRepository } from '../fakes/FakeClientRepository';
 import { FakeProjectRepository } from '../fakes/FakeProjectRepository';
 import { FakeTaskRepository } from '../../../tasks/__tests__/fakes/FakeTaskRepository';
 import { createTask } from '../../../tasks/__tests__/fakes/task-factory';
@@ -14,12 +15,14 @@ import { identity, userId } from '../../../tasks/__tests__/app/task-cqbus-test-h
 
 describe('Project use cases', () => {
     let projects: FakeProjectRepository;
+    let clients: FakeClientRepository;
     let tasks: FakeTaskRepository;
 
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 5, 17, 12, 0, 0));
         projects = new FakeProjectRepository();
+        clients = new FakeClientRepository();
         tasks = new FakeTaskRepository();
     });
 
@@ -28,19 +31,21 @@ describe('Project use cases', () => {
     });
 
     it('creates, lists and reads projects for the authenticated user', async () => {
-        const created = await new CreateProjectCommandHandler(projects)
+        const client = await clients.createClient(userId, { name: 'Acme' });
+        const created = await new CreateProjectCommandHandler(projects, clients)
             .handle(new CreateProjectCommand({
                 kind: 'work',
                 outcome: 'Launch reporting',
                 nextAction: 'Map current spreadsheet',
                 focus: 'Make the first report useful',
-                client: 'Acme',
+                clientId: client.id,
             }), identity);
 
         const listed = await new ListProjectsQueryHandler(projects).handle(new ListProjectsQuery(), identity);
         const read = await new GetProjectQueryHandler(projects).handle(new GetProjectQuery(created.id), identity);
 
         expect(projects.lastCreateUserId).toBe(userId);
+        expect(created.clientId).toBe(client.id);
         expect(listed).toEqual([created]);
         expect(read).toEqual(created);
     });
@@ -53,7 +58,7 @@ describe('Project use cases', () => {
             focus: 'Logistics',
         });
 
-        const updated = await new UpdateProjectCommandHandler(projects)
+        const updated = await new UpdateProjectCommandHandler(projects, clients)
             .handle(new UpdateProjectCommand(project.id, {
                 outcome: 'Move without chaos',
                 nextAction: 'Confirm truck',

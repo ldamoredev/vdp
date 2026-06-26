@@ -9,17 +9,23 @@ export interface ProjectListItemVM {
   isSelected: boolean;
 }
 
+export interface ClientOptionVM {
+  id: string;
+  name: string;
+}
+
 export interface ProjectsListViewModel {
   isLoading: boolean;
   error: string | null;
   selectedProjectId: string | null;
   projects: ProjectListItemVM[];
+  clientOptions: ClientOptionVM[];
   form: {
     kind: "work" | "personal";
     outcome: string;
     nextAction: string;
     focus: string;
-    client: string;
+    clientId: string;
     isOpen: boolean;
     isSaving: boolean;
     canSubmit: boolean;

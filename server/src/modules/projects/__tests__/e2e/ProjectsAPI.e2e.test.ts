@@ -40,6 +40,16 @@ async function createProjectAs(userId: string, overrides: Record<string, unknown
     return response.json();
 }
 
+async function createClientAs(userId: string, name = 'Acme') {
+    const response = await testApp.app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/clients',
+        headers: asUser(userId),
+        payload: { name },
+    });
+    return response.json();
+}
+
 async function createTaskAs(userId: string, title: string) {
     const response = await testApp.app.inject({
         method: 'POST',
@@ -48,6 +58,16 @@ async function createTaskAs(userId: string, title: string) {
         payload: { title },
     });
     return response.json().task ?? response.json();
+}
+
+async function logTimeAs(userId: string, projectId: string, overrides: Record<string, unknown> = {}) {
+    const response = await testApp.app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/time-entries',
+        headers: asUser(userId),
+        payload: { projectId, date: '2026-06-18', minutes: 60, ...overrides },
+    });
+    return response.json();
 }
 
 describe('Projects API — E2E', () => {
@@ -150,5 +170,152 @@ describe('Projects API — E2E', () => {
 
         expect(response.statusCode).toBe(404);
         expect(response.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Project not found' });
+    });
+
+    it('manages clients and logs project hours', async () => {
+        const client = await createClientAs(PRIMARY_TEST_USER.id);
+        const project = await createProjectAs(PRIMARY_TEST_USER.id, { clientId: client.id });
+        const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Log implementation time');
+        await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/tasks`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { taskId: task.id, boardStatus: 'doing' },
+        });
+
+        const logged = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/projects/time-entries',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: {
+                projectId: project.id,
+                taskId: task.id,
+                date: '2026-06-18',
+                minutes: 90,
+                note: 'Backend wiring',
+            },
+        });
+        const report = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/projects/hours-report?fromDate=2026-06-15&toDate=2026-06-21',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const entries = await testApp.app.inject({
+            method: 'GET',
+            url: `/api/v1/projects/time-entries?projectId=${project.id}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        expect(logged.statusCode).toBe(201);
+        expect(logged.json()).toMatchObject({ projectId: project.id, taskId: task.id, minutes: 90 });
+        expect(entries.json().entries).toHaveLength(1);
+        expect(report.json()).toMatchObject({
+            totalMinutes: 90,
+            rows: [{
+                clientId: client.id,
+                clientName: 'Acme',
+                projectId: project.id,
+                projectOutcome: 'Ship D3a',
+                weekStart: '2026-06-15',
+                minutes: 90,
+            }],
+        });
+    });
+
+    it('does not let a user log time against another users project', async () => {
+        const otherProject = await createProjectAs(SECONDARY_TEST_USER.id);
+
+        const response = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/projects/time-entries',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: {
+                projectId: otherProject.id,
+                date: '2026-06-18',
+                minutes: 30,
+            },
+        });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Project not found' });
+    });
+
+    it('does not expose clients across users', async () => {
+        await createClientAs(PRIMARY_TEST_USER.id, 'Acme');
+
+        const list = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/projects/clients',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(list.json().clients).toEqual([]);
+    });
+
+    it('does not let a user update or archive another users client', async () => {
+        const client = await createClientAs(PRIMARY_TEST_USER.id, 'Acme');
+
+        const update = await testApp.app.inject({
+            method: 'PUT',
+            url: `/api/v1/projects/clients/${client.id}`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: { name: 'Hijacked' },
+        });
+        const archive = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/clients/${client.id}/archive`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(update.statusCode).toBe(404);
+        expect(archive.statusCode).toBe(404);
+    });
+
+    it('does not expose or mutate another users time entries', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+        const entry = await logTimeAs(PRIMARY_TEST_USER.id, project.id, { minutes: 45 });
+
+        const list = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/projects/time-entries',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+        const update = await testApp.app.inject({
+            method: 'PUT',
+            url: `/api/v1/projects/time-entries/${entry.id}`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: { minutes: 120 },
+        });
+        const remove = await testApp.app.inject({
+            method: 'DELETE',
+            url: `/api/v1/projects/time-entries/${entry.id}`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(list.json().entries).toEqual([]);
+        expect(update.statusCode).toBe(404);
+        expect(remove.json()).toEqual({ deleted: false });
+
+        // The owner's entry survived the cross-user attempts.
+        const ownerEntries = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/projects/time-entries',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(ownerEntries.json().entries).toHaveLength(1);
+        expect(ownerEntries.json().entries[0]).toMatchObject({ id: entry.id, minutes: 45 });
+    });
+
+    it('scopes the hours report to the requesting user', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+        await logTimeAs(PRIMARY_TEST_USER.id, project.id, { minutes: 90 });
+
+        const report = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/projects/hours-report?fromDate=2026-06-15&toDate=2026-06-21',
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(report.json()).toMatchObject({ totalMinutes: 0, rows: [] });
     });
 });

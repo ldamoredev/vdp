@@ -90,6 +90,16 @@ CREATE TABLE IF NOT EXISTS tasks.tasks (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS projects.clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    name VARCHAR(160) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    archived_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS projects.projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -97,9 +107,22 @@ CREATE TABLE IF NOT EXISTS projects.projects (
     outcome TEXT NOT NULL,
     next_action TEXT NOT NULL,
     focus VARCHAR(160) NOT NULL,
+    client_id UUID REFERENCES projects.clients(id) ON DELETE SET NULL,
     client VARCHAR(160),
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     archived_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS projects.time_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects.projects(id) ON DELETE CASCADE,
+    task_id UUID,
+    date DATE NOT NULL,
+    minutes INTEGER NOT NULL,
+    note TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -167,9 +190,16 @@ CREATE INDEX IF NOT EXISTS tasks_domain_idx ON tasks.tasks(domain);
 CREATE INDEX IF NOT EXISTS tasks_project_idx ON tasks.tasks(project_id);
 CREATE INDEX IF NOT EXISTS tasks_project_board_idx ON tasks.tasks(project_id, board_status);
 CREATE INDEX IF NOT EXISTS tasks_date_status_idx ON tasks.tasks(scheduled_date, status);
+CREATE INDEX IF NOT EXISTS clients_owner_user_idx ON projects.clients(owner_user_id);
+CREATE INDEX IF NOT EXISTS clients_status_idx ON projects.clients(status);
+CREATE UNIQUE INDEX IF NOT EXISTS clients_owner_name_idx ON projects.clients(owner_user_id, name);
 CREATE INDEX IF NOT EXISTS projects_owner_user_idx ON projects.projects(owner_user_id);
 CREATE INDEX IF NOT EXISTS projects_status_idx ON projects.projects(status);
 CREATE INDEX IF NOT EXISTS projects_kind_idx ON projects.projects(kind);
+CREATE INDEX IF NOT EXISTS projects_client_idx ON projects.projects(client_id);
+CREATE INDEX IF NOT EXISTS time_entries_owner_date_idx ON projects.time_entries(owner_user_id, date);
+CREATE INDEX IF NOT EXISTS time_entries_project_date_idx ON projects.time_entries(project_id, date);
+CREATE INDEX IF NOT EXISTS time_entries_task_idx ON projects.time_entries(task_id);
 CREATE INDEX IF NOT EXISTS task_notes_owner_user_idx ON tasks.task_notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS task_insights_owner_created_idx ON tasks.task_insights(owner_user_id, created_at);
@@ -498,7 +528,9 @@ export class TestDatabase {
                     tasks.task_insights,
                     tasks.daily_review_state,
                     tasks.tasks,
+                    projects.time_entries,
                     projects.projects,
+                    projects.clients,
                     health.habit_logs,
                     health.habits,
                     health.counter_attempts,

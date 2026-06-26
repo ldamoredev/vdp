@@ -3,7 +3,10 @@ import { Plus } from "lucide-react";
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
 import { ProjectBoardSection } from "./board/ProjectBoardSection";
+import { ClientManagerSection } from "./clients/ClientManagerSection";
 import { useProjectsListPresenter } from "./list/useProjectsListPresenter";
+import { HoursReportSection } from "./report/HoursReportSection";
+import { TimeTrackingSection } from "./time/TimeTrackingSection";
 
 export function ProjectsScreen() {
   const presenter = useProjectsListPresenter();
@@ -68,7 +71,23 @@ export function ProjectsScreen() {
                 onChange={(value) => presenter.setNextAction(value)}
               />
               <Input label="Foco" value={vm.form.focus} onChange={(value) => presenter.setFocus(value)} />
-              <Input label="Cliente" value={vm.form.client} onChange={(value) => presenter.setClient(value)} />
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
+                  Cliente
+                </span>
+                <select
+                  value={vm.form.clientId}
+                  onChange={(event) => presenter.setClientId(event.target.value)}
+                  className="min-h-11 w-full rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                >
+                  <option value="">Sin cliente</option>
+                  {vm.clientOptions.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="flex gap-2">
                 <button type="submit" disabled={!vm.form.canSubmit} className="btn-primary flex-1">
                   Crear
@@ -123,10 +142,17 @@ export function ProjectsScreen() {
               )}
             </div>
           </section>
+
+          <ClientManagerSection onClientsChanged={() => void presenter.reloadClients()} />
         </aside>
 
-        <ProjectBoardSection projectId={vm.selectedProjectId} />
+        <div className="space-y-5">
+          <ProjectBoardSection projectId={vm.selectedProjectId} />
+          <TimeTrackingSection projectId={vm.selectedProjectId} />
+        </div>
       </div>
+
+      <HoursReportSection />
     </ModulePage>
   );
 }
