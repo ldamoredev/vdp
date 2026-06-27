@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 
 import { UserIdentity } from '../../../common/app/auth/UserIdentity';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
+import { FakeProjectRepository } from '../../../projects/__tests__/fakes/FakeProjectRepository';
 import { FakeEmbeddingProvider } from '../fakes/FakeEmbeddingProvider';
 import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepository';
 import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
@@ -24,6 +25,7 @@ export const anonymous = {
 
 export type TasksCQBusTestContext = {
     readonly tasks: FakeTaskRepository;
+    readonly projects: FakeProjectRepository;
     readonly notes: FakeTaskNoteRepository;
     readonly embeddings: FakeTaskEmbeddingRepository;
     readonly embeddingProvider: FakeEmbeddingProvider;
@@ -47,6 +49,7 @@ export function setupTasksCQBusTest(): TasksCQBusTestContext {
 
     return {
         tasks: new FakeTaskRepository(),
+        projects: new FakeProjectRepository(),
         notes: new FakeTaskNoteRepository(),
         embeddings: new FakeTaskEmbeddingRepository(),
         embeddingProvider: new FakeEmbeddingProvider(3),

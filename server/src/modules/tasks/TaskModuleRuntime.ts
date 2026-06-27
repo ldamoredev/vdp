@@ -1,5 +1,6 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { ProjectRepository } from '../projects/domain/ProjectRepository';
 import { AddTaskNoteCommand, AddTaskNoteCommandHandler } from './app/AddTaskNoteCommand';
 import { CarryOverAllPendingCommand, CarryOverAllPendingCommandHandler } from './app/CarryOverAllPendingCommand';
 import { CarryOverTaskCommand, CarryOverTaskCommandHandler } from './app/CarryOverTaskCommand';
@@ -57,12 +58,13 @@ export class TaskModuleRuntime {
         this.deps.bus.registerHandler(CreateTaskCommand, () =>
             new CreateTaskCommandHandler(
                 this.taskRepository(),
+                this.projectRepository(),
                 this.embedTask(),
                 this.findSimilarTasks(),
             ),
         );
         this.deps.bus.registerHandler(UpdateTaskCommand, () =>
-            new UpdateTaskCommandHandler(this.taskRepository(), this.embedTask()),
+            new UpdateTaskCommandHandler(this.taskRepository(), this.projectRepository(), this.embedTask()),
         );
         this.deps.bus.registerHandler(DeleteTaskCommand, () =>
             new DeleteTaskCommandHandler(this.taskRepository(), this.taskNoteRepository()),
@@ -258,6 +260,10 @@ export class TaskModuleRuntime {
 
     private dailyReviewStateRepository(): DailyReviewStateRepository {
         return this.deps.repositories.get(DailyReviewStateRepository);
+    }
+
+    private projectRepository(): ProjectRepository {
+        return this.deps.repositories.get(ProjectRepository);
     }
 
     private agentRepository(): AgentRepository {

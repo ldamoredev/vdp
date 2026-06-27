@@ -108,12 +108,15 @@ describe("createTaskSchema", () => {
   });
 
   it("accepts a fully-populated task", () => {
+    const projectId = randomUUID();
     const input = {
       title: "Write report",
       description: "Quarterly report for Q1",
       priority: 1,
       scheduledDate: "2026-04-01",
       domain: "work",
+      projectId,
+      boardStatus: "backlog",
     };
     const result = createTaskSchema.parse(input);
     expect(result).toEqual(input);
@@ -135,6 +138,11 @@ describe("createTaskSchema", () => {
   it("allows null domain", () => {
     const result = createTaskSchema.parse({ title: "Task", domain: null });
     expect(result.domain).toBeNull();
+  });
+
+  it("allows null projectId to leave the task unassigned", () => {
+    const result = createTaskSchema.parse({ title: "Task", projectId: null });
+    expect(result.projectId).toBeNull();
   });
 
   it("allows omitted scheduledDate", () => {
@@ -174,6 +182,11 @@ describe("createTaskSchema", () => {
       createTaskSchema.parse({ title: "Task", domain: "unknown" }),
     ).toThrow();
   });
+
+  it("rejects invalid project assignment fields in create", () => {
+    expect(() => createTaskSchema.parse({ title: "Task", projectId: "nope" })).toThrow();
+    expect(() => createTaskSchema.parse({ title: "Task", boardStatus: "later" })).toThrow();
+  });
 });
 
 // ─── updateTaskSchema ─────────────────────────────────────
@@ -204,6 +217,14 @@ describe("updateTaskSchema", () => {
     expect(result.domain).toBeNull();
   });
 
+  it("accepts project assignment updates", () => {
+    const projectId = randomUUID();
+
+    expect(updateTaskSchema.parse({ projectId })).toEqual({ projectId });
+    expect(updateTaskSchema.parse({ projectId: null })).toEqual({ projectId: null });
+    expect(updateTaskSchema.parse({ boardStatus: "doing" })).toEqual({ boardStatus: "doing" });
+  });
+
   it("rejects unknown fields (strict mode)", () => {
     expect(() =>
       updateTaskSchema.parse({ title: "Ok", status: "done" }),
@@ -218,6 +239,11 @@ describe("updateTaskSchema", () => {
     expect(() =>
       updateTaskSchema.parse({ title: "x".repeat(201) }),
     ).toThrow();
+  });
+
+  it("rejects invalid project assignment fields in update", () => {
+    expect(() => updateTaskSchema.parse({ projectId: "nope" })).toThrow();
+    expect(() => updateTaskSchema.parse({ boardStatus: "later" })).toThrow();
   });
 });
 

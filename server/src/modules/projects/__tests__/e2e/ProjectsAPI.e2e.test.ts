@@ -124,6 +124,69 @@ describe('Projects API — E2E', () => {
         expect(unassigned.json()).toMatchObject({ id: task.id, projectId: null, boardStatus: 'backlog' });
     });
 
+    it('creates a task assigned to an owned project from the tasks API', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+
+        const response = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/tasks',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { title: 'Wire selector', projectId: project.id },
+        });
+
+        expect(response.statusCode).toBe(201);
+        expect(response.json().task).toMatchObject({
+            title: 'Wire selector',
+            projectId: project.id,
+            boardStatus: 'backlog',
+        });
+    });
+
+    it('updates a task project assignment from the tasks API', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+        const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Move into project');
+
+        const assigned = await testApp.app.inject({
+            method: 'PUT',
+            url: `/api/v1/tasks/${task.id}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { projectId: project.id },
+        });
+        const unassigned = await testApp.app.inject({
+            method: 'PUT',
+            url: `/api/v1/tasks/${task.id}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { projectId: null },
+        });
+
+        expect(assigned.statusCode).toBe(200);
+        expect(assigned.json()).toMatchObject({ id: task.id, projectId: project.id, boardStatus: 'backlog' });
+        expect(unassigned.json()).toMatchObject({ id: task.id, projectId: null, boardStatus: 'backlog' });
+    });
+
+    it('does not let a user create or update tasks against another users project', async () => {
+        const otherProject = await createProjectAs(SECONDARY_TEST_USER.id);
+        const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Private task');
+
+        const createResponse = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/tasks',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { title: 'Cross-user project', projectId: otherProject.id },
+        });
+        const updateResponse = await testApp.app.inject({
+            method: 'PUT',
+            url: `/api/v1/tasks/${task.id}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { projectId: otherProject.id },
+        });
+
+        expect(createResponse.statusCode).toBe(404);
+        expect(createResponse.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Project not found' });
+        expect(updateResponse.statusCode).toBe(404);
+        expect(updateResponse.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Project not found' });
+    });
+
     it('does not expose projects across users', async () => {
         const project = await createProjectAs(PRIMARY_TEST_USER.id);
 

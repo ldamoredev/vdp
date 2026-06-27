@@ -1,7 +1,8 @@
 import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
-import { DomainHttpError } from '../../common/http/errors';
+import { DomainHttpError, NotFoundHttpError } from '../../common/http/errors';
+import { ProjectRepository } from '../../projects/domain/ProjectRepository';
 import { Task } from '../domain/Task';
 import { TaskRepository, UpdateTaskData } from '../domain/TaskRepository';
 import { EmbedTask } from '../services/EmbedTask';
@@ -18,6 +19,7 @@ export class UpdateTaskCommand extends Command<Task | null> {
 export class UpdateTaskCommandHandler implements RequestHandler<UpdateTaskCommand, Task | null> {
     constructor(
         private readonly tasks: TaskRepository,
+        private readonly projects: ProjectRepository,
         private readonly embedTask: EmbedTask,
     ) {}
 
@@ -35,12 +37,28 @@ export class UpdateTaskCommandHandler implements RequestHandler<UpdateTaskComman
         if (command.input.priority !== undefined) task.priority = command.input.priority;
         if (command.input.scheduledDate !== undefined) task.scheduledDate = command.input.scheduledDate;
         if (command.input.domain !== undefined) task.domain = command.input.domain;
-        if (command.input.projectId !== undefined) task.projectId = command.input.projectId;
-        if (command.input.boardStatus !== undefined) task.boardStatus = command.input.boardStatus;
+        await this.applyProjectAssignment(userId, task, command.input);
         task.updatedAt = new Date();
 
         const saved = await this.tasks.save(userId, task);
         this.embedTask.executeInBackground(userId, command.id);
         return saved;
+    }
+
+    private async applyProjectAssignment(userId: string, task: Task, input: UpdateTaskData): Promise<void> {
+        if (input.projectId === undefined) {
+            if (input.boardStatus !== undefined) task.boardStatus = input.boardStatus;
+            return;
+        }
+
+        if (input.projectId === null) {
+            task.unassignFromProject();
+            return;
+        }
+
+        const project = await this.projects.getProject(userId, input.projectId);
+        if (!project) throw new NotFoundHttpError('Project not found');
+
+        task.assignToProject(project.id, input.boardStatus ?? 'backlog');
     }
 }

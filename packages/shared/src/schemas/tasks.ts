@@ -34,6 +34,8 @@ export const createTaskSchema = z.object({
   priority: taskPriorityEnum.default(2),
   scheduledDate: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
   domain: taskDomainEnum.nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  boardStatus: taskBoardStatusEnum.optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -42,6 +44,8 @@ export const updateTaskSchema = z.object({
   priority: taskPriorityEnum.optional(),
   scheduledDate: optionalLocalDateStringSchema,
   domain: taskDomainEnum.nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  boardStatus: taskBoardStatusEnum.optional(),
 }).strict();
 
 export const taskFiltersSchema = z.object({
