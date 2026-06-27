@@ -10,10 +10,13 @@ import type {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
+import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
+import { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import { Task } from "@/core/domain/tasks/Task";
 import { Transaction } from "@/core/domain/wallet/Transaction";
 import { TasksEvents } from "@/ui/events/TasksEvents";
@@ -140,6 +143,7 @@ function categoryStat(overrides: Partial<CategoryStat> = {}): CategoryStat {
 function build() {
   const tasks = new FakeTasksGateway();
   const wallet = new FakeWalletGateway();
+  const projects = new FakeProjectsGateway();
   const getTodayStats = vi.spyOn(tasks, "getTodayStats").mockResolvedValue(stats());
   vi.spyOn(tasks, "listTasks").mockResolvedValue({
     tasks: [Task.from(taskDto())],
@@ -165,17 +169,41 @@ function build() {
   });
   vi.spyOn(wallet, "getStatsByCategory").mockResolvedValue([categoryStat()]);
   vi.spyOn(wallet, "getStatsSummary").mockResolvedValue(walletStats());
+  vi.spyOn(projects, "getHoursReport").mockResolvedValue(ProjectHoursReport.from({
+    fromDate: "2026-06-15",
+    toDate: "2026-06-15",
+    totalMinutes: 135,
+    rows: [
+      {
+        clientId: "c1",
+        clientName: "Acme",
+        projectId: "p1",
+        projectOutcome: "Client portal",
+        weekStart: "2026-06-15",
+        minutes: 90,
+      },
+      {
+        clientId: null,
+        clientName: null,
+        projectId: "p2",
+        projectOutcome: "Internal ops",
+        weekStart: "2026-06-15",
+        minutes: 45,
+      },
+    ],
+  }));
 
   const core = new Core({
     httpClient: {} as never,
     loggingSink: { debug: vi.fn(), error: vi.fn() },
   })
     .use(new TasksModule(tasks))
-    .use(new WalletModule(wallet));
+    .use(new WalletModule(wallet))
+    .use(new ProjectsModule(projects));
   const events = new TasksEvents();
   const presenter = new HomePresenter(vi.fn(), core, events);
   presenter.init(undefined);
-  return { presenter, tasks, wallet, events, getTodayStats };
+  return { presenter, tasks, wallet, projects, events, getTodayStats };
 }
 
 async function flush() {
@@ -193,7 +221,7 @@ describe("HomePresenter", () => {
   });
 
   it("loads command center data into the view model", async () => {
-    const { presenter, wallet } = build();
+    const { presenter, wallet, projects } = build();
 
     presenter.start();
     await flush();
@@ -205,6 +233,15 @@ describe("HomePresenter", () => {
     expect(presenter.model.wallet.netBalanceLabel).toBe("$ 3.800,00");
     expect(presenter.model.signals[0].title).toBe("Gasto inusual");
     expect(presenter.model.rhythm.rateLabel).toBe("20%");
+    expect(presenter.model.ritual.morning.projectHours.totalLabel).toBe("2h 15m");
+    expect(presenter.model.ritual.morning.projectHours.rows.map((row) => row.projectOutcome)).toEqual([
+      "Client portal",
+      "Internal ops",
+    ]);
+    expect(projects.getHoursReport).toHaveBeenCalledWith({
+      fromDate: "2026-06-15",
+      toDate: "2026-06-15",
+    });
     expect(wallet.getTransactions).toHaveBeenCalledWith({
       limit: "50",
       offset: "0",

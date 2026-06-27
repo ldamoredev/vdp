@@ -5,6 +5,7 @@ interface DailyReviewScreenProps {
   dateLabel: string;
   progressLabel: string;
   taskSection: ReactNode;
+  projectHoursSection: ReactNode;
   moodSection: ReactNode;
   walletSection: ReactNode;
   insightsSection: ReactNode;
@@ -15,6 +16,7 @@ export function DailyReviewScreen({
   dateLabel,
   progressLabel,
   taskSection,
+  projectHoursSection,
   moodSection,
   walletSection,
   insightsSection,
@@ -30,6 +32,7 @@ export function DailyReviewScreen({
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6">
           {taskSection}
+          {projectHoursSection}
           {walletSection}
           {insightsSection}
         </div>

@@ -5,6 +5,7 @@ import type { CarryOverRateResponse, MoodCheckInsResponse } from "@vdp/shared";
 import type { Core } from "@/core/Core";
 import { GetMoodCheckIns } from "@/core/app/health/GetMoodCheckIns";
 import { SaveMoodCheckIn } from "@/core/app/health/SaveMoodCheckIn";
+import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
 import { CarryOverTask } from "@/core/app/tasks/CarryOverTask";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { DiscardTask } from "@/core/app/tasks/DiscardTask";
@@ -18,10 +19,12 @@ import { GetTransactions } from "@/core/app/wallet/GetTransactions";
 import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
 import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
 import type { Category } from "@/core/domain/wallet/Category";
+import type { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
 import { formatDate, getTodayISO } from "@/lib/format";
 import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type { ReviewViewModel } from "@/ui/models/review/ReviewViewModel";
+import { buildTodayProjectHoursVM } from "@/ui/screens/projects/today-project-hours";
 import {
   buildDailyReviewProgress,
   buildMorningReviewSummary,
@@ -68,6 +71,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   private byCategory: CategoryStat[] = [];
   private insights: TaskInsight[] = [];
   private categories: Category[] = [];
+  private projectHoursReport: ProjectHoursReport | null = null;
   private moodOverview: MoodCheckInsResponse | null = null;
   private carryOverRate: CarryOverRateResponse | null = null;
   private savingMoodCheckIn = false;
@@ -221,7 +225,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   }
 
   private async load(): Promise<void> {
-    const [review, transactionsResult, statsSummary, byCategory, insights, categories, moodOverview, carryOverRate] =
+    const [review, transactionsResult, statsSummary, byCategory, insights, categories, moodOverview, carryOverRate, projectHoursReport] =
       await Promise.all([
         this.core.execute(new GetTaskReview(this.today)),
         this.core.execute(new GetTransactions({ limit: "50", offset: "0", from: this.today, to: this.today })),
@@ -231,6 +235,8 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
         this.core.execute(new GetCategories()),
         this.core.execute(new GetMoodCheckIns(7)),
         this.core.execute(new GetCarryOverRate(7)),
+        this.core.execute(new GetHoursReport({ fromDate: this.today, toDate: this.today }))
+          .catch(() => null),
       ]);
     this.review = review;
     this.transactions = transactionsResult.transactions;
@@ -238,6 +244,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     this.byCategory = byCategory;
     this.insights = insights;
     this.categories = categories;
+    this.projectHoursReport = projectHoursReport;
     this.moodOverview = moodOverview;
     this.carryOverRate = carryOverRate;
     this.refresh();
@@ -344,6 +351,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
       dateLabel,
       progressLabel: progress.label,
       taskQueue,
+      projectHours: buildTodayProjectHoursVM(this.projectHoursReport),
       mood: this.buildMoodModel(),
       wallet: {
         signals: walletSignals.visibleSignals,

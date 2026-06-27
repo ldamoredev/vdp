@@ -4,10 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Core } from "@/core/Core";
 import { HealthModule } from "@/core/app/health/HealthModule";
 import { FakeHealthGateway } from "@/core/app/health/__tests__/fakes/FakeHealthGateway";
+import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
+import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
+import { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import { TasksEvents } from "@/ui/events/TasksEvents";
 import { ReviewPresenter } from "../ReviewPresenter";
 
@@ -47,19 +50,44 @@ function build() {
   const tasks = new FakeTasksGateway();
   const wallet = new FakeWalletGateway();
   const health = new FakeHealthGateway();
+  const projects = new FakeProjectsGateway();
   const getReview = vi.spyOn(tasks, "getReview").mockResolvedValue(review());
   const completeTask = vi.spyOn(tasks, "completeTask");
+  vi.spyOn(projects, "getHoursReport").mockResolvedValue(ProjectHoursReport.from({
+    fromDate: "2026-06-13",
+    toDate: "2026-06-13",
+    totalMinutes: 150,
+    rows: [
+      {
+        clientId: "c1",
+        clientName: "Acme",
+        projectId: "p1",
+        projectOutcome: "Client portal",
+        weekStart: "2026-06-08",
+        minutes: 120,
+      },
+      {
+        clientId: null,
+        clientName: null,
+        projectId: "p2",
+        projectOutcome: "Planning",
+        weekStart: "2026-06-08",
+        minutes: 30,
+      },
+    ],
+  }));
   const core = new Core({
     httpClient: {} as never,
     loggingSink: { debug: vi.fn(), error: vi.fn() },
   })
     .use(new TasksModule(tasks))
     .use(new WalletModule(wallet))
-    .use(new HealthModule(health));
+    .use(new HealthModule(health))
+    .use(new ProjectsModule(projects));
   const events = new TasksEvents();
   const presenter = new ReviewPresenter(vi.fn(), core, events);
   presenter.init(undefined);
-  return { presenter, tasks, wallet, health, getReview, completeTask, events };
+  return { presenter, tasks, wallet, health, projects, getReview, completeTask, events };
 }
 
 async function flush() {
@@ -77,7 +105,7 @@ describe("ReviewPresenter", () => {
   });
 
   it("aggregates today's review into the view model", async () => {
-    const { presenter, getReview } = build();
+    const { presenter, projects, getReview } = build();
 
     presenter.start();
     await flush();
@@ -87,6 +115,12 @@ describe("ReviewPresenter", () => {
     expect(presenter.model.taskQueue[0].title).toBe("Resolver alta");
     // carryOverCount > 0 picks the "se arrastra" detail copy
     expect(presenter.model.taskQueue[0].detail).toContain("se arrastra");
+    expect(presenter.model.projectHours.totalLabel).toBe("2h 30m");
+    expect(presenter.model.projectHours.rows.map((row) => row.durationLabel)).toEqual(["2h", "30m"]);
+    expect(projects.getHoursReport).toHaveBeenCalledWith({
+      fromDate: "2026-06-13",
+      toDate: "2026-06-13",
+    });
     expect(presenter.model.dateLabel).toBeTruthy();
     presenter.stop();
   });

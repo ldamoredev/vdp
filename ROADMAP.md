@@ -345,7 +345,7 @@ active project.
   tests for both create/edit surfaces, and Projects+Tasks API E2E coverage including
   cross-user isolation.
 
-### D3d. Cross-domain — NOT STARTED
+### D3d. Cross-domain — IN PROGRESS
 
 What keeps Work from being a siloed module competing with Toggl/Linear. Each is a
 candidate slice, sequenced after D3a/D3b/D3c land:
@@ -354,8 +354,10 @@ candidate slice, sequenced after D3a/D3b/D3c land:
   income, or register the income on invoicing. The reaction (a wallet entry) lives
   in Wallet's cross-domain handlers, per the AGENTS.md "the module that owns the
   reaction owns the subscriber" rule.
-- **`time→review`:** surface "today you spent Xh on Project Y" in the evening close /
-  morning plan, feeding the *learn* stage of the loop.
+- **`time→review`: SHIPPED (2026-06-27).** Home morning plan and Review evening close
+  reuse `GetProjectHoursReportQuery` for `fromDate=toDate=today`, showing total
+  project time plus a short per-project list. No backend query or migration was
+  added for this slice.
 
 ## Data Constraint
 

@@ -1,3 +1,5 @@
+import type { TodayProjectHoursViewModel } from "@/ui/models/projects/TodayProjectHoursViewModel";
+
 export type HomeTaskStatusTone = "pending" | "done";
 export type HomeTransactionTone = "income" | "expense" | "transfer";
 export type HomeInsightTone = "achievement" | "warning" | "suggestion";
@@ -40,6 +42,7 @@ export interface HomeMorningPlanTaskViewModel {
 export interface HomeMorningPlanViewModel {
   readonly statusLabel: string;
   readonly summary: string;
+  readonly projectHours: TodayProjectHoursViewModel;
   readonly carryOverTasks: readonly HomeMorningPlanTaskViewModel[];
   readonly carryOverCountLabel: string;
   readonly canConfirmCarryOvers: boolean;

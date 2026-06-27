@@ -19,6 +19,15 @@ vi.mock("react-router", () => ({
 
 import { DailyRitualCard } from "../daily-ritual-card";
 
+const emptyProjectHours = {
+  title: "Tiempo de proyectos hoy",
+  summary: "Todavía no cargaste horas de proyecto para hoy.",
+  totalLabel: "0m",
+  emptyLabel: "Sin horas registradas hoy.",
+  hasEntries: false,
+  rows: [],
+};
+
 beforeEach(() => {
   globalThis.React = React;
 });
@@ -31,6 +40,7 @@ describe("DailyRitualCard", () => {
           morning: {
             statusLabel: "Elegí foco",
             summary: "Sin arrastre de ayer. Elegí una tarea para proteger como foco del día.",
+            projectHours: emptyProjectHours,
             carryOverTasks: [],
             carryOverCountLabel: "0 pendientes",
             canConfirmCarryOvers: false,

@@ -4,6 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DailyReviewScreen } from "../components/daily-review-screen";
 
 const useReviewPresenterMock = vi.fn();
+const emptyProjectHours = {
+  title: "Tiempo de proyectos hoy",
+  summary: "Todavía no cargaste horas de proyecto para hoy.",
+  totalLabel: "0m",
+  emptyLabel: "Sin horas registradas hoy.",
+  hasEntries: false,
+  rows: [],
+};
 
 vi.mock("../useReviewPresenter", () => ({
   useReviewPresenter: () => useReviewPresenterMock(),
@@ -22,6 +30,7 @@ describe("DailyReviewScreen", () => {
         dateLabel: "viernes, 10 abr",
         progressLabel: "2 de 4 bloques resueltos",
         taskSection: createElement("div", null, "Cerrar tareas"),
+        projectHoursSection: createElement("div", null, "Horas de proyectos"),
         moodSection: createElement("div", null, "Animo"),
         walletSection: createElement("div", null, "Verificar wallet"),
         insightsSection: createElement("div", null, "Resolver alertas"),
@@ -46,6 +55,7 @@ describe("review page", () => {
         dateLabel: "viernes, 10 abr",
         progressLabel: "1 de 4 bloques resueltos",
         taskQueue: [],
+        projectHours: emptyProjectHours,
         mood: {
           selectedMood: null,
           selectedEnergy: null,

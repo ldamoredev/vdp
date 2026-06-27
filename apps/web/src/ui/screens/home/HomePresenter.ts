@@ -13,6 +13,7 @@ import type {
 } from "@/lib/api/types";
 
 import type { Core } from "@/core/Core";
+import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
 import { CarryOverAll } from "@/core/app/tasks/CarryOverAll";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
@@ -29,6 +30,7 @@ import { GetTransactions } from "@/core/app/wallet/GetTransactions";
 import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
 import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
 import type { Task } from "@/core/domain/tasks/Task";
+import type { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
 import type { WalletStatsSummary } from "@/core/domain/wallet/WalletStats";
 import {
@@ -62,6 +64,7 @@ import {
   mergePersistedDailyReviewState,
 } from "@/ui/screens/review/daily-review-storage";
 import type { DailyReviewState } from "@/ui/screens/review/daily-review-types";
+import { buildTodayProjectHoursVM } from "@/ui/screens/projects/today-project-hours";
 
 function formatInsightDate(value: string): string {
   const date = new Date(value);
@@ -234,6 +237,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   private completionByDomain: DomainStat[] = [];
   private reviewWalletTransactions: Transaction[] = [];
   private reviewWalletByCategory: CategoryStat[] = [];
+  private projectHoursReport: ProjectHoursReport | null = null;
   private walletStats: WalletStatsSummary | null = null;
   private walletRecentTransactions: Transaction[] = [];
 
@@ -379,6 +383,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         walletStats,
         walletRecentTransactions,
         reviewState,
+        projectHoursReport,
       ] = await Promise.all([
         this.core.execute(new GetTodayStats()),
         this.core.execute(new ListTasks({ scheduledDate: this.today, limit: "5" })),
@@ -398,6 +403,8 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         this.core.execute(new GetWalletStatsSummary()),
         this.core.execute(new GetTransactions({ limit: "10" })),
         this.core.execute(new GetDailyReviewState(this.today)),
+        this.core.execute(new GetHoursReport({ fromDate: this.today, toDate: this.today }))
+          .catch(() => null),
       ]);
 
       this.reviewState = mergePersistedDailyReviewState(
@@ -414,6 +421,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.completionByDomain = completionByDomain;
       this.reviewWalletTransactions = reviewWalletTransactions.transactions;
       this.reviewWalletByCategory = reviewWalletByCategory;
+      this.projectHoursReport = projectHoursReport;
       this.walletStats = walletStats;
       this.walletRecentTransactions = walletRecentTransactions.transactions;
     } catch {
@@ -428,6 +436,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.completionByDomain = [];
       this.reviewWalletTransactions = [];
       this.reviewWalletByCategory = [];
+      this.projectHoursReport = null;
       this.walletStats = null;
       this.walletRecentTransactions = [];
     } finally {
@@ -536,6 +545,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
           : focusOptions.length > 0
             ? "Sin arrastre de ayer. Elegí una tarea para proteger como foco del día."
             : "No hay tareas abiertas para planificar hoy.",
+      projectHours: buildTodayProjectHoursVM(this.projectHoursReport),
       carryOverTasks: carryOverTasks.slice(0, 4).map((task) => this.morningPlanTaskVM(task)),
       carryOverCountLabel: `${carryOverTasks.length} pendiente${carryOverTasks.length === 1 ? "" : "s"}`,
       canConfirmCarryOvers: carryOverTasks.length > 0 && !this.confirmingCarryOvers,

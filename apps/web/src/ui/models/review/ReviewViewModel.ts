@@ -1,5 +1,6 @@
 import type { TaskInsight } from "@/lib/api/types";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
+import type { TodayProjectHoursViewModel } from "@/ui/models/projects/TodayProjectHoursViewModel";
 import type { WalletReviewSignal } from "@/ui/screens/review/daily-review-types";
 
 export interface ReviewTaskItemVM {
@@ -25,6 +26,7 @@ export interface ReviewViewModel {
   dateLabel: string;
   progressLabel: string;
   taskQueue: ReviewTaskItemVM[];
+  projectHours: TodayProjectHoursViewModel;
   mood: {
     selectedMood: number | null;
     selectedEnergy: number | null;
