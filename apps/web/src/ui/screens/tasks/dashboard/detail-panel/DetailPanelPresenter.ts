@@ -1,15 +1,19 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
 import type { Core } from "@/core/Core";
+import { ListProjects } from "@/core/app/projects/ListProjects";
 import { AddTaskNote } from "@/core/app/tasks/AddTaskNote";
 import { GetTask } from "@/core/app/tasks/GetTask";
 import { ListTaskNotes } from "@/core/app/tasks/ListTaskNotes";
+import { UpdateTask } from "@/core/app/tasks/UpdateTask";
+import { sortProjects, type Project } from "@/core/domain/projects/Project";
 import { buildPlanningSignal } from "@/core/domain/tasks/PlanningSignal";
 import type { Task } from "@/core/domain/tasks/Task";
 import type { TaskNote, TaskNoteType } from "@/core/domain/tasks/TaskNote";
 import { formatTaskDate } from "@/lib/format";
 import type {
   BreakdownSuggestionVM,
+  DetailProjectAssignmentVM,
   DetailPanelViewModel,
   DetailTaskSelectorItemVM,
   DetailTaskSummaryVM,
@@ -21,6 +25,7 @@ const DEFAULT_NOTE_TYPE: TaskNoteType = "note";
 
 export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   private selectedTask: Task | null = null;
+  private projects: Project[] = [];
   private notes: TaskNote[] = [];
   private lastLoadedTaskId: string | undefined;
   private breakdownStep = "";
@@ -28,6 +33,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   private noteType: TaskNoteType = DEFAULT_NOTE_TYPE;
   private isLoading = false;
   private isAddingNote = false;
+  private isAssigningProject = false;
 
   constructor(
     onChange: ChangeFunc,
@@ -44,6 +50,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   start(): void {
     this.store.tasks$.subscribe(this, () => this.handleStoreChanged());
     this.store.selectedId$.subscribe(this, () => this.handleStoreChanged());
+    void this.reloadProjects();
     this.handleStoreChanged();
   }
 
@@ -79,6 +86,37 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
   setNoteType(type: TaskNoteType): void {
     this.noteType = type;
     this.refresh();
+  }
+
+  async reloadProjects(): Promise<void> {
+    try {
+      const projects = await this.core.execute(new ListProjects());
+      this.projects = sortProjects(projects).filter((project) => project.isActive);
+    } catch {
+      this.projects = [];
+    } finally {
+      this.refresh();
+    }
+  }
+
+  async setProject(projectId: string): Promise<void> {
+    const task = this.activeTask();
+    if (!task || this.isAssigningProject) return;
+
+    const nextProjectId = projectId || null;
+    if (task.projectId === nextProjectId) return;
+
+    this.isAssigningProject = true;
+    this.refresh();
+    try {
+      const updated = await this.core.execute(new UpdateTask(task.id, { projectId: nextProjectId }));
+      this.selectedTask = updated;
+      await this.store.load();
+      this.store.select(updated.id);
+    } finally {
+      this.isAssigningProject = false;
+      this.refresh();
+    }
   }
 
   async addNote(): Promise<void> {
@@ -186,6 +224,7 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
         label: "Elegir tarea",
         items: this.selectorItems(),
       },
+      projectAssignment: this.projectAssignmentVM(activeTask),
       breakdownSuggestions: activeTask ? this.breakdownSuggestions(activeTask) : [],
       breakdownForm: {
         label: "Agregar siguiente paso",
@@ -284,6 +323,25 @@ export class DetailPanelPresenter extends PresenterBase<DetailPanelViewModel> {
             ? "bg-[var(--accent)] text-white shadow-lg"
             : "bg-[var(--hover-overlay)] text-[var(--muted)] hover:text-[var(--foreground)]",
       }));
+  }
+
+  private projectAssignmentVM(task: Task | null): DetailProjectAssignmentVM {
+    return {
+      label: "Proyecto",
+      projectId: task?.projectId ?? "",
+      options: [
+        { value: "", label: "Sin proyecto" },
+        ...this.projects.map((project) => ({
+          value: project.id,
+          label: this.projectLabel(project),
+        })),
+      ],
+      disabled: !task || this.isAssigningProject,
+    };
+  }
+
+  private projectLabel(project: Project): string {
+    return project.client ? `${project.client} · ${project.outcome}` : project.outcome;
   }
 
   private breakdownSuggestions(task: Task): BreakdownSuggestionVM[] {

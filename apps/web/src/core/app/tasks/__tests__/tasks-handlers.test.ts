@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { Core } from "../../../Core";
-import { Task } from "../../../domain/tasks/Task";
+import { Core } from "@/core/Core";
+import { Task } from "@/core/domain/tasks/Task";
 import { AddTaskNote } from "../AddTaskNote";
 import { CarryOverAll } from "../CarryOverAll";
 import { CarryOverTask } from "../CarryOverTask";

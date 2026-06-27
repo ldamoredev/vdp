@@ -19,6 +19,8 @@ export interface CreateTaskInput {
   priority?: number;
   scheduledDate?: string;
   domain?: string;
+  projectId?: string | null;
+  boardStatus?: TaskBoardStatus;
 }
 
 export type UpdateTaskInput = Partial<

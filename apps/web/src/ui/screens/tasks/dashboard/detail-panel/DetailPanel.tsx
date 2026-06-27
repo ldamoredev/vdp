@@ -7,6 +7,7 @@ import { TaskPriorityBadge } from "@/ui/screens/tasks/components/task-priority-b
 import type {
   BreakdownFormVM,
   BreakdownSuggestionVM,
+  DetailProjectAssignmentVM,
   DetailTaskSelectorVM,
   DetailTaskSummaryVM,
   NoteFormVM,
@@ -29,6 +30,10 @@ export function DetailPanel() {
         <div className="mt-4 space-y-4">
           <TaskSummary vm={vm.selectedTask} />
           <TaskSelector vm={vm.selector} onOpenDetail={(id) => presenter.openDetail(id)} />
+          <ProjectAssignment
+            vm={vm.projectAssignment}
+            onChange={(projectId) => void presenter.setProject(projectId)}
+          />
           <BreakdownSuggestions
             suggestions={vm.breakdownSuggestions}
             onAddStep={(content) => void presenter.addSuggestedStep(content)}
@@ -94,6 +99,34 @@ function TaskSummary({ vm }: { vm: DetailTaskSummaryVM }) {
         ))}
       </div>
     </>
+  );
+}
+
+function ProjectAssignment({
+  vm,
+  onChange,
+}: {
+  vm: DetailProjectAssignmentVM;
+  onChange: (projectId: string) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+        {vm.label}
+      </div>
+      <select
+        value={vm.projectId}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={vm.disabled}
+        className="glass-input w-full px-3 py-2 text-sm"
+      >
+        {vm.options.map((option) => (
+          <option key={option.value || "none"} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 

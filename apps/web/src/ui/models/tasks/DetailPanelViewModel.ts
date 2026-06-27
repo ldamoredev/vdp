@@ -4,6 +4,7 @@ export interface DetailPanelViewModel {
   title: string;
   selectedTask: DetailTaskSummaryVM | null;
   selector: DetailTaskSelectorVM;
+  projectAssignment: DetailProjectAssignmentVM;
   breakdownSuggestions: BreakdownSuggestionVM[];
   breakdownForm: BreakdownFormVM;
   persistedSteps: NoteListVM;
@@ -41,6 +42,18 @@ export interface DetailTaskSelectorItemVM {
   title: string;
   selected: boolean;
   className: string;
+}
+
+export interface DetailProjectAssignmentVM {
+  label: string;
+  projectId: string;
+  options: DetailProjectOptionVM[];
+  disabled: boolean;
+}
+
+export interface DetailProjectOptionVM {
+  value: string;
+  label: string;
 }
 
 export interface BreakdownSuggestionVM {

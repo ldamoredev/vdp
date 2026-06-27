@@ -2,8 +2,11 @@ import type { Task as TaskDto } from "@vdp/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
+import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
+import { Project } from "@/core/domain/projects/Project";
 import { Task } from "@/core/domain/tasks/Task";
 import { TasksEvents } from "@/ui/events/TasksEvents";
 import { TasksDashboardStore } from "../../TasksDashboardStore";
@@ -31,14 +34,17 @@ function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
 
 function build() {
   const gateway = new FakeTasksGateway();
-  const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } }).use(
-    new TasksModule(gateway),
-  );
+  const projectsGateway = new FakeProjectsGateway();
+  const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } })
+    .use(new TasksModule(gateway))
+    .use(new ProjectsModule(projectsGateway));
   const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
   const presenter = new QuickCapturePresenter(vi.fn(), store, core);
   presenter.init(undefined);
-  return { presenter, store, gateway };
+  return { presenter, store, gateway, projectsGateway };
 }
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function defer<T>() {
   let resolve!: (value: T) => void;
@@ -66,6 +72,7 @@ describe("QuickCapturePresenter", () => {
       "Alta",
     ]);
     expect(presenter.model.domainOptions[0]).toEqual({ value: "", label: "Sin dominio" });
+    expect(presenter.model.projectOptions[0]).toEqual({ value: "", label: "Sin proyecto" });
   });
 
   it("projects form changes into the view model", () => {
@@ -74,12 +81,67 @@ describe("QuickCapturePresenter", () => {
     presenter.setTitle(" Revisar propuesta ");
     presenter.setPriority(3);
     presenter.setDomain("work");
+    presenter.setProject("p1");
 
     expect(presenter.model.title).toBe(" Revisar propuesta ");
     expect(presenter.model.priority).toBe(3);
     expect(presenter.model.domain).toBe("work");
+    expect(presenter.model.projectId).toBe("p1");
     expect(presenter.model.canCreate).toBe(true);
     expect(presenter.model.priorityOptions.find((option) => option.value === 3)?.selected).toBe(true);
+  });
+
+  it("loads active projects and sends the selected project when creating", async () => {
+    const { presenter, gateway, projectsGateway } = build();
+    projectsGateway.projects = [
+      Project.from({
+        id: "p-active",
+        kind: "work",
+        outcome: "Client portal",
+        nextAction: "Wire selector",
+        focus: "Tasks",
+        clientId: "c1",
+        client: "Acme",
+        status: "active",
+        archivedAt: null,
+        createdAt: "2026-06-13T08:00:00.000Z",
+        updatedAt: "2026-06-13T09:00:00.000Z",
+      }),
+      Project.from({
+        id: "p-archived",
+        kind: "work",
+        outcome: "Old thing",
+        nextAction: "None",
+        focus: "Archive",
+        clientId: null,
+        client: null,
+        status: "archived",
+        archivedAt: "2026-06-13T10:00:00.000Z",
+        createdAt: "2026-06-12T08:00:00.000Z",
+        updatedAt: "2026-06-12T09:00:00.000Z",
+      }),
+    ];
+    vi.spyOn(gateway, "createTask").mockResolvedValue(Task.from(taskDto()));
+
+    presenter.start();
+    await flush();
+    presenter.setTitle(CONCRETE_TITLE);
+    presenter.setProject("p-active");
+    await presenter.create();
+
+    expect(projectsGateway.callsTo("listProjects")).toHaveLength(1);
+    expect(presenter.model.projectOptions).toEqual([
+      { value: "", label: "Sin proyecto" },
+      { value: "p-active", label: "Acme · Client portal" },
+    ]);
+    expect(gateway.createTask).toHaveBeenCalledWith({
+      title: CONCRETE_TITLE,
+      description: undefined,
+      priority: 2,
+      domain: undefined,
+      projectId: "p-active",
+    });
+    expect(presenter.model.projectId).toBe("");
   });
 
   it("creates a trimmed concrete task, reloads the store, selects it, and resets", async () => {
@@ -98,6 +160,7 @@ describe("QuickCapturePresenter", () => {
       description: undefined,
       priority: 3,
       domain: "work",
+      projectId: undefined,
     });
     expect(gateway.callsTo("listTasks").length).toBe(listCallsBefore + 1);
     expect(store.selectedId$.value).toBe("new-task");
@@ -186,6 +249,7 @@ describe("QuickCapturePresenter", () => {
         description: "Resultado esperado: inbox en cero\nSiguiente paso: archivar lo viejo",
         priority: 2,
         domain: undefined,
+        projectId: undefined,
       });
       expect(presenter.model.gate).toBeNull();
     });
@@ -203,6 +267,7 @@ describe("QuickCapturePresenter", () => {
         description: undefined,
         priority: 2,
         domain: undefined,
+        projectId: undefined,
       });
     });
 

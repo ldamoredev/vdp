@@ -2,8 +2,10 @@ export interface QuickCaptureViewModel {
   title: string;
   priority: number;
   domain: string;
+  projectId: string;
   priorityOptions: QuickCapturePriorityOptionVM[];
   domainOptions: QuickCaptureDomainOptionVM[];
+  projectOptions: QuickCaptureProjectOptionVM[];
   canCreate: boolean;
   isCreating: boolean;
   submitLabel: string;
@@ -12,6 +14,7 @@ export interface QuickCaptureViewModel {
   titleLabel: string;
   priorityLabel: string;
   domainLabel: string;
+  projectLabel: string;
   helperText: string;
   /** Non-null while the clarification gate is open for a too-vague title. */
   gate: ClarificationGateVM | null;
@@ -41,6 +44,11 @@ export interface QuickCapturePriorityOptionVM {
 }
 
 export interface QuickCaptureDomainOptionVM {
+  value: string;
+  label: string;
+}
+
+export interface QuickCaptureProjectOptionVM {
   value: string;
   label: string;
 }

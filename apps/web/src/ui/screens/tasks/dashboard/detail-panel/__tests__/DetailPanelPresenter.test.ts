@@ -2,8 +2,11 @@ import type { Task as TaskDto } from "@vdp/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
+import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
+import { Project } from "@/core/domain/projects/Project";
 import { Task } from "@/core/domain/tasks/Task";
 import type { TaskNote } from "@/core/domain/tasks/TaskNote";
 import { TasksEvents } from "@/ui/events/TasksEvents";
@@ -40,18 +43,19 @@ function note(overrides: Partial<TaskNote> = {}): TaskNote {
 
 async function build(tasks: TaskDto[], notes: TaskNote[] = []) {
   const gateway = new FakeTasksGateway();
+  const projectsGateway = new FakeProjectsGateway();
   mockList(gateway, tasks);
   mockDetails(gateway, tasks, notes);
-  const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } }).use(
-    new TasksModule(gateway),
-  );
+  const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } })
+    .use(new TasksModule(gateway))
+    .use(new ProjectsModule(projectsGateway));
   const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
   await store.load();
   const presenter = new DetailPanelPresenter(vi.fn(), store, core);
   presenter.init(undefined);
   presenter.start();
   await flush();
-  return { presenter, store, gateway };
+  return { presenter, store, gateway, projectsGateway };
 }
 
 function mockList(gateway: FakeTasksGateway, tasks: TaskDto[]) {
@@ -92,6 +96,7 @@ describe("DetailPanelPresenter", () => {
     expect(presenter.model.selectedTask?.statusLabel).toBe("Activa");
     expect(presenter.model.selectedTask?.description).toContain("Sin descripcion adicional");
     expect(presenter.model.selector.items.map((item) => item.id)).toEqual(["hot", "plain"]);
+    expect(presenter.model.projectAssignment.options[0]).toEqual({ value: "", label: "Sin proyecto" });
     expect(presenter.model.persistedSteps.items.map((item) => item.content)).toEqual(["- Abrir banco"]);
     expect(presenter.model.blockerNotes.items.map((item) => item.content)).toEqual(["Falta token"]);
     expect(presenter.model.contextNotes.items.map((item) => item.content)).toEqual(["Pagar antes de las 18"]);
@@ -116,6 +121,49 @@ describe("DetailPanelPresenter", () => {
     expect(store.selectedId$.value).toBe("other");
     expect(gateway.getTask).toHaveBeenCalledWith("other");
     expect(presenter.model.selector.items.find((item) => item.id === "other")?.selected).toBe(true);
+  });
+
+  it("loads projects and updates the selected task project assignment", async () => {
+    const { presenter, store, gateway, projectsGateway } = await build([
+      taskDto({ id: "hot", priority: 3, projectId: null }),
+    ]);
+    projectsGateway.projects = [
+      Project.from({
+        id: "p1",
+        kind: "work",
+        outcome: "Client portal",
+        nextAction: "Wire selector",
+        focus: "Tasks",
+        clientId: "c1",
+        client: "Acme",
+        status: "active",
+        archivedAt: null,
+        createdAt: "2026-06-13T08:00:00.000Z",
+        updatedAt: "2026-06-13T09:00:00.000Z",
+      }),
+    ];
+    vi.spyOn(gateway, "updateTask").mockResolvedValue(Task.from(taskDto({
+      id: "hot",
+      priority: 3,
+      projectId: "p1",
+      boardStatus: "backlog",
+      updatedAt: "2026-06-13T09:00:00.000Z",
+    })));
+    vi.spyOn(gateway, "listTasks").mockResolvedValue({
+      tasks: [Task.from(taskDto({ id: "hot", priority: 3, projectId: "p1" }))],
+      total: 1,
+    });
+
+    await presenter.reloadProjects();
+    await presenter.setProject("p1");
+
+    expect(presenter.model.projectAssignment.options).toEqual([
+      { value: "", label: "Sin proyecto" },
+      { value: "p1", label: "Acme · Client portal" },
+    ]);
+    expect(gateway.updateTask).toHaveBeenCalledWith("hot", { projectId: "p1" });
+    expect(store.selectedId$.value).toBe("hot");
+    expect(presenter.model.projectAssignment.projectId).toBe("p1");
   });
 
   it("updates the selected summary when the store reloads the same task with a newer state", async () => {

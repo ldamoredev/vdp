@@ -102,7 +102,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   /** Pull the day's ceremony state and the aggregated data concurrently, then stamp the open. */
   private async hydrate(): Promise<void> {
     const loadPromise = this.load();
-    let persisted: DailyReviewState | null = null;
+    let persisted: DailyReviewState | null;
     try {
       persisted = await this.core.execute(new GetDailyReviewState(this.today));
     } catch {

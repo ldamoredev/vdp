@@ -69,6 +69,24 @@ export function QuickCapture() {
             ))}
           </select>
         </div>
+
+        <div>
+          <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
+            {vm.projectLabel}
+          </div>
+          <select
+            value={vm.projectId}
+            onChange={(event) => presenter.setProject(event.target.value)}
+            className="glass-input w-full px-3 py-2 text-sm"
+            disabled={vm.isCreating}
+          >
+            {vm.projectOptions.map((option) => (
+              <option key={option.value || "none"} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <button type="submit" disabled={!vm.canCreate} className="btn-primary mt-5 w-full justify-center">

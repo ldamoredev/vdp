@@ -1,7 +1,9 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
 import type { Core } from "@/core/Core";
+import { ListProjects } from "@/core/app/projects/ListProjects";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
+import { sortProjects, type Project } from "@/core/domain/projects/Project";
 import {
   analyzeTaskDraft,
   buildClarifiedDescription,
@@ -13,6 +15,7 @@ import type {
   ClarificationGateVM,
   QuickCaptureDomainOptionVM,
   QuickCapturePriorityOptionVM,
+  QuickCaptureProjectOptionVM,
   QuickCaptureViewModel,
 } from "@/ui/models/tasks/QuickCaptureViewModel";
 import type { TasksDashboardStore } from "../TasksDashboardStore";
@@ -41,6 +44,8 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
   private title = "";
   private priority = DEFAULT_PRIORITY;
   private domain = "";
+  private projectId = "";
+  private projects: Project[] = [];
   private isCreating = false;
   private errorMessage: string | null = null;
   private analysis: TaskDraftAnalysis | null = null;
@@ -60,7 +65,9 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     return this.buildModel();
   }
 
-  start(): void {}
+  start(): void {
+    void this.loadProjects();
+  }
 
   stop(): void {}
 
@@ -78,6 +85,12 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
 
   setDomain(value: string): void {
     this.domain = value;
+    this.errorMessage = null;
+    this.refresh();
+  }
+
+  setProject(value: string): void {
+    this.projectId = value;
     this.errorMessage = null;
     this.refresh();
   }
@@ -148,6 +161,7 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
             : undefined,
           priority: this.priority,
           domain: this.domain || undefined,
+          projectId: this.projectId || undefined,
         }),
       );
       await this.store.load();
@@ -166,6 +180,7 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     this.title = "";
     this.priority = DEFAULT_PRIORITY;
     this.domain = "";
+    this.projectId = "";
     this.outcome = "";
     this.nextStep = "";
     this.gateOpen = false;
@@ -181,8 +196,10 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       title: this.title,
       priority: this.priority,
       domain: this.domain,
+      projectId: this.projectId,
       priorityOptions: [1, 2, 3].map((value) => this.priorityOptionVM(value)),
       domainOptions: DOMAIN_OPTIONS,
+      projectOptions: this.projectOptions(),
       canCreate: this.title.trim().length > 0 && !this.isCreating,
       isCreating: this.isCreating,
       submitLabel: this.isCreating ? "Agregando..." : "Agregar a hoy",
@@ -191,9 +208,25 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       titleLabel: "Captura rapida",
       priorityLabel: "Prioridad operativa",
       domainLabel: "Dominio",
+      projectLabel: "Proyecto",
       helperText: "La tarea entra directo en la cola de ejecucion y el chat la ve al instante.",
       gate: this.gateVM(),
     };
+  }
+
+  private async loadProjects(): Promise<void> {
+    try {
+      const projects = await this.core.execute(new ListProjects());
+      this.projects = sortProjects(projects).filter((project) => project.isActive);
+      if (this.projectId && !this.projects.some((project) => project.id === this.projectId)) {
+        this.projectId = "";
+      }
+      this.refresh();
+    } catch {
+      this.projects = [];
+      this.projectId = "";
+      this.refresh();
+    }
   }
 
   private gateVM(): ClarificationGateVM | null {
@@ -247,6 +280,20 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
       selected,
       className: selected ? this.selectedPriorityClass(value) : this.unselectedPriorityClass(),
     };
+  }
+
+  private projectOptions(): QuickCaptureProjectOptionVM[] {
+    return [
+      { value: "", label: "Sin proyecto" },
+      ...this.projects.map((project) => ({
+        value: project.id,
+        label: this.projectLabel(project),
+      })),
+    ];
+  }
+
+  private projectLabel(project: Project): string {
+    return project.client ? `${project.client} · ${project.outcome}` : project.outcome;
   }
 
   private selectedPriorityClass(value: number): string {
