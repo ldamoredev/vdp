@@ -32,6 +32,8 @@ A new table requires **all three**, or tests pass while prod breaks (or vice ver
 
 - Immutable snapshots; `fromSnapshot`/`toSnapshot` round-trip. Money per-currency. Dates via `common/base/time`.
 - Repository is an interface in `domain/`; the Drizzle impl is the only thing that knows tables.
+- If a use case references another module's aggregate by id, inject that module's repository interface and validate ownership (`getX(userId, id)` → 404) before persisting; see AGENTS.md "Synchronous Cross-Module Reads".
+- When replacing free text with a catalog FK, backfill in the same forward-only migration and keep the legacy column (see D3b `Client` / migration `0013`).
 
 ## Web variant (lighter — `core/domain/{module}`)
 

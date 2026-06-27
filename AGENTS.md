@@ -24,7 +24,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
-- `projects`: active D3a direction layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional client, and lifecycle; Tasks remain the only work-item store and carry optional `projectId` + board column.
+- `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
 
 Inactive domains:
 
@@ -39,7 +39,7 @@ Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks pro
 Owner-pending items (do not attempt from a local session):
 
 - Re-deploy production as a single Railway service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
-- Production has NOT yet run migrations `0001`–`0005`; they must be applied on the next deploy before the new features work there.
+- Production has NOT yet run all pending migrations through the latest generated migration in `server/src/migrations/`; they must be applied on the next deploy before the new features work there.
 
 ## Skills
 
@@ -166,7 +166,7 @@ The active migrations create these PostgreSQL schemas:
 
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
 - `tasks`: tasks, task notes, task embeddings, task insights.
-- `projects`: projects direction aggregate (`work|personal`) used by the project board; task rows link to it through nullable `project_id`.
+- `projects`: projects direction aggregate (`work|personal`) used by the project board, client catalog, and time entries for hours reporting; task rows link to projects through nullable `project_id`.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
 - `health`: habits, habit logs, counters, counter attempts, goals, mood check-ins, weight entries.
 - `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
@@ -309,6 +309,21 @@ Future cross-domain signals should follow the same pattern:
 - Run actions through CQBus commands/queries or reusable services, never direct DB writes. Side effects inside handlers are fire-and-forget with a `.catch`/try-catch + logger (the insight must land even if a follow-on action fails).
 - Insight metadata supports `actionHref`/`actionLabel` for deep links.
 - Tests on both sides: emission in the source module's unit tests, handling in the owning module's `*CrossDomainEventHandlers.test.ts`, and the full flow in an e2e that boots both modules (note: poll briefly — handler side effects are async).
+
+### Synchronous Cross-Module Reads
+
+Besides async event reactions, a module may read or validate another module's aggregate synchronously by injecting that module's repository **interface** via `repositories.get(OtherRepository)`. Live examples: Tasks validates `projectId` through Projects before creating or updating tasks; Projects validates and writes against Tasks for project-board assignment and time entries.
+
+Use this only for ownership validation or immediate writes that events cannot cover. Ownership cannot be validated later without accepting invalid state.
+
+Hard rules:
+
+- Import only the other domain's repository interface from `{domain}/domain/`; never import another module's Drizzle tables or concrete repository.
+- Scope every read by `userId` (`getX(userId, id)`) and translate misses to a 404 via `NotFoundHttpError` when the referenced aggregate is required. This preserves cross-user isolation.
+- Treat Tasks↔Projects as the only accepted strongly coupled pair. Do not expand this into a dependency tangle; watch for cycles before adding any synchronous read.
+- Prefer this to duplicating the other domain's data in the caller.
+
+Cross-user isolation tests are required for these flows; follow `server/src/modules/projects/__tests__/e2e/ProjectsAPI.e2e.test.ts` as the pattern.
 
 ## New Domain Gate
 

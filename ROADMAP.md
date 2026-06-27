@@ -21,7 +21,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3a (Project aggregate + task linking + board) shipped**; D3b/D3c remain unstarted.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3a (Project aggregate + task linking + board), D3b (client catalog + time tracking + hours report), and D3c (Task ↔ Project selector) shipped**; D3d remains unstarted.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -311,29 +311,44 @@ Resolves the gate in code and gives the structure everything else hangs off.
   renders the project's tasks grouped by column (reuses the Tasks read paths — no
   new card entity). Presenter unit tests, React-free.
 
-### D3b. Time tracking + hours report — NOT STARTED
+### D3b. Client catalog + time tracking + hours report — SHIPPED (2026-06-26)
 
 The owner's core value: log hours and report them to bosses / clients.
 
-- **Backend:** `TimeEntry` aggregate (project, optional task, date, minutes, note) +
-  repository + Drizzle impl + three synchronized DB changes + fake + test; new
-  forward-only migration. Log/Edit/Delete + a report query
-  (`GetProjectHoursReportQuery`) aggregating by project / week, scoped to the
-  authenticated owner. Currency-safe is N/A here, but keep minutes integer-safe.
-- **Client catalog prerequisite:** add a Projects-owned Client entity/ABM and replace
-  free-text project client entry with a selector. Preserve/migrate existing text
-  clients forward into the catalog. Reports should group by client identity, not
-  spelling.
-- **Web:** manual log entry on the project (and optionally on a task), plus a report
-  view per project / per week / per client, with an export (copy or CSV) for sending
-  to a boss / client. Project create/edit uses the client selector; Task create/edit
-  exposes a Project selector for work/project tasks. Presenter + ViewModel + unit
-  tests.
+- **Backend:** `Client` and `TimeEntry` aggregates with repositories, Drizzle impls,
+  fakes, and owner-scoped queries. `Project.clientId` is nullable and backed by the
+  catalog while preserving legacy free-text `client`.
+- **Migration:** forward-only migration `0013_eager_sister_grimm.sql` creates clients
+  and time entries, adds `projects.client_id`, backfills clients from legacy text,
+  and links projects to the catalog.
+- **CQBus/API:** client CRUD, time-entry log/list/update/delete, and
+  `GetProjectHoursReportQuery` grouped by client / project / week. Use cases validate
+  ownership of projects, tasks, and client ids.
+- **Web:** client manager, time tracking, and hours report presenters; project forms
+  use the client selector. Landing marks Projects active.
 
-### D3c. Cross-domain — NOT STARTED
+### D3c. Task ↔ Project selector — SHIPPED (2026-06-26)
+
+The other half of the Projects/Tasks boundary UX: Tasks remains the single work-item
+store, but task creation and task detail editing can attach a task to an existing
+active project.
+
+- **Backend/shared:** task create/update schemas accept optional `projectId` (and
+  tolerate `boardStatus` for existing board semantics). Tasks CQBus handlers validate
+  the project against the authenticated owner before persisting. Assigning from Tasks
+  defaults the board column to `backlog`; board movement remains owned by the project
+  board.
+- **Web:** quick capture loads active projects and sends the selected `projectId`.
+  The task detail panel exposes the same project selector and updates the selected
+  task through `UpdateTask`, then reloads the dashboard store.
+- **Tests:** shared schema coverage, Tasks app handler ownership tests, presenter
+  tests for both create/edit surfaces, and Projects+Tasks API E2E coverage including
+  cross-user isolation.
+
+### D3d. Cross-domain — NOT STARTED
 
 What keeps Work from being a siloed module competing with Toggl/Linear. Each is a
-candidate slice, sequenced after D3a/D3b land:
+candidate slice, sequenced after D3a/D3b/D3c land:
 
 - **`projects→wallet`:** a work/freelance project's tracked hours × rate → expected
   income, or register the income on invoicing. The reaction (a wallet entry) lives

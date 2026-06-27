@@ -36,6 +36,7 @@ Scaffolds a single backend use case in an existing `server/src/modules/{domain}`
 - Validate HTTP inputs with shared Zod schemas at the controller; validate LLM tool dates separately in agent tools.
 - Controllers validate request *shape* (Zod); the handler enforces transport-agnostic invariants that must hold for every caller (HTTP and agent alike) — e.g. file content-sniffing and size caps live in the handler, not the controller (see `UploadAttachmentCommand`).
 - Handlers depend on repository **interfaces** and real reusable services, never Drizzle tables directly.
+- If a use case references another module's aggregate by id, inject that module's repository interface and validate ownership (`getX(userId, id)` → 404) before persisting; see AGENTS.md "Synchronous Cross-Module Reads".
 - Use a reusable `services/` class only when it removes real duplication or owns domain orchestration used by multiple handlers/events/agents; otherwise keep the use case in the handler.
 - Register handlers in `{Domain}ModuleRuntime.registerHandlers()` — the single registration point for the API surface. Reusable `services/` collaborators are constructed as handler dependencies in the runtime, not through a separate lifecycle hook (the old `registerServices()` step no longer exists).
 - Queries read and return views/models; commands mutate and return `void` unless a caller needs the result immediately (e.g. complete-and-graduate flows).
