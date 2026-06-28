@@ -22,7 +22,7 @@ export class WalletInsightFactory {
                 taskId: payload.taskId,
                 taskTitle: payload.title,
                 scheduledDate: payload.scheduledDate,
-                actionHref: `/wallet?registrar-gasto=${encodeURIComponent(payload.title)}`,
+                actionHref: `/wallet?type=expense&description=${encodeURIComponent(payload.title)}`,
                 actionLabel: 'Registrar gasto',
             },
         };

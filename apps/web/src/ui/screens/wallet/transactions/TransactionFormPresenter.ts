@@ -15,6 +15,7 @@ import type {
   TransactionFormViewModel,
 } from "@/ui/models/wallet/TransactionsViewModel";
 import { walletScreenIntro } from "../wallet-copy";
+import type { WalletTransactionPrefill } from "./transaction-prefill";
 
 interface TransactionFormState {
   type: TransactionType;
@@ -25,13 +26,6 @@ interface TransactionFormState {
   description: string;
   date: string;
   tags: string;
-}
-
-export interface TransactionFormPrefill {
-  type?: TransactionType;
-  amount?: string;
-  currency?: Currency;
-  description?: string;
 }
 
 const TYPE_OPTIONS = [
@@ -72,7 +66,7 @@ function validateTransactionFields(fields: {
   return null;
 }
 
-function definedPrefill(prefill: TransactionFormPrefill): Partial<TransactionFormState> {
+function definedPrefill(prefill: WalletTransactionPrefill): Partial<TransactionFormState> {
   const result: Partial<TransactionFormState> = {};
   if (prefill.type !== undefined) result.type = prefill.type;
   if (prefill.amount !== undefined) result.amount = prefill.amount;
@@ -92,7 +86,7 @@ export class TransactionFormPresenter extends PresenterBase<TransactionFormViewM
   constructor(
     onChange: ChangeFunc,
     private readonly core: Core,
-    private readonly prefill: TransactionFormPrefill = {},
+    private readonly prefill: WalletTransactionPrefill = {},
   ) {
     super(onChange);
     this.form = { ...this.form, ...definedPrefill(prefill) };

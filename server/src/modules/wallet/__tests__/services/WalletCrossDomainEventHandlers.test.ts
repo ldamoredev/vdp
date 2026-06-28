@@ -38,7 +38,7 @@ describe('WalletCrossDomainEventHandlers', () => {
                     taskId: 'task-1',
                     taskTitle: 'Pagar el alquiler',
                     actionLabel: expect.any(String),
-                    actionHref: expect.stringContaining('Pagar'),
+                    actionHref: '/wallet?type=expense&description=Pagar%20el%20alquiler',
                 }),
             }),
         ]);

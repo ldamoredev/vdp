@@ -27,6 +27,7 @@ import { SanityStrip } from "../components/sanity-strip";
 import { WalletEmptyState } from "../components/wallet-empty-state";
 import { QuickAddExpenseSheet } from "../transactions/QuickAddExpenseSheet";
 import { EditTransactionSheet } from "../transactions/EditTransactionSheet";
+import { parseWalletTransactionPrefill } from "../transactions/transaction-prefill";
 import { useDashboardPresenter } from "./useDashboardPresenter";
 
 export function DashboardScreen() {
@@ -40,12 +41,16 @@ export function DashboardScreen() {
   // open the quick-add pre-filled with the completed task's title, then drop
   // the param so a reload or close doesn't re-open it.
   useEffect(() => {
-    const suggested = searchParams.get("registrar-gasto");
-    if (!suggested) return;
-    setPrefillDescription(suggested);
+    const prefill = parseWalletTransactionPrefill(searchParams);
+    if (prefill.type !== "expense" || !prefill.description) return;
+    setPrefillDescription(prefill.description);
     setQuickAddOpen(true);
     const next = new URLSearchParams(searchParams);
     next.delete("registrar-gasto");
+    next.delete("type");
+    next.delete("amount");
+    next.delete("currency");
+    next.delete("description");
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
