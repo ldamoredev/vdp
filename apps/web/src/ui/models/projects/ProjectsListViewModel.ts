@@ -26,6 +26,8 @@ export interface ProjectsListViewModel {
     nextAction: string;
     focus: string;
     clientId: string;
+    hourlyRate: string;
+    rateCurrency: "ARS" | "USD";
     isOpen: boolean;
     isSaving: boolean;
     canSubmit: boolean;

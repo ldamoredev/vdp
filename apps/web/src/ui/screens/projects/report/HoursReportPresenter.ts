@@ -3,7 +3,7 @@ import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 import type { Core } from "@/core/Core";
 import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
 import { formatMinutes, ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
-import { addLocalDaysISO, formatTaskDate, getTodayISO } from "@/lib/format";
+import { addLocalDaysISO, formatMoney, formatTaskDate, getTodayISO } from "@/lib/format";
 import type { HoursReportViewModel } from "@/ui/models/projects/HoursReportViewModel";
 
 export class HoursReportPresenter extends PresenterBase<HoursReportViewModel> {
@@ -75,13 +75,34 @@ export class HoursReportPresenter extends PresenterBase<HoursReportViewModel> {
       fromDate: this.fromDate,
       toDate: this.toDate,
       totalLabel: formatMinutes(this.report?.totalMinutes ?? 0),
+      incomeTotals: (this.report?.incomeTotals ?? []).map((income) => ({
+        currency: income.currency,
+        amountLabel: formatMoney(income.amount, income.currency),
+      })),
       rows: (this.report?.rows ?? []).map((row, index) => ({
         key: `${row.projectId}-${row.weekStart}-${index}`,
         projectOutcome: row.projectOutcome,
         clientName: row.clientName,
         weekLabel: `Semana del ${formatTaskDate(row.weekStart)}`,
         durationLabel: formatMinutes(row.minutes),
+        expectedIncomeLabel: row.expectedIncome
+          ? formatMoney(row.expectedIncome.amount, row.expectedIncome.currency)
+          : null,
+        registerIncomeHref: row.expectedIncome ? registerIncomeHref(row.projectOutcome, row.expectedIncome) : null,
       })),
     };
   }
+}
+
+function registerIncomeHref(
+  projectOutcome: string,
+  income: { amount: string; currency: "ARS" | "USD" },
+): string {
+  const params = new URLSearchParams({
+    type: "income",
+    amount: income.amount,
+    currency: income.currency,
+    description: projectOutcome,
+  });
+  return `/wallet/transactions/new?${params.toString()}`;
 }

@@ -71,6 +71,34 @@ export function ProjectsScreen() {
                 onChange={(value) => presenter.setNextAction(value)}
               />
               <Input label="Foco" value={vm.form.focus} onChange={(value) => presenter.setFocus(value)} />
+              <div className="grid gap-2 sm:grid-cols-[1fr_110px]">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
+                    Tarifa/hora
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={vm.form.hourlyRate}
+                    onChange={(event) => presenter.setHourlyRate(event.target.value)}
+                    className="min-h-11 w-full rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 text-sm font-data text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
+                    Moneda
+                  </span>
+                  <select
+                    value={vm.form.rateCurrency}
+                    onChange={(event) => presenter.setRateCurrency(event.target.value as "ARS" | "USD")}
+                    className="min-h-11 w-full rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                  >
+                    <option value="ARS">ARS</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </label>
+              </div>
               <label className="block">
                 <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
                   Cliente

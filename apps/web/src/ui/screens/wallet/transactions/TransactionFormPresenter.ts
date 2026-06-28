@@ -27,6 +27,13 @@ interface TransactionFormState {
   tags: string;
 }
 
+export interface TransactionFormPrefill {
+  type?: TransactionType;
+  amount?: string;
+  currency?: Currency;
+  description?: string;
+}
+
 const TYPE_OPTIONS = [
   { value: "expense", label: "Gasto", tone: "expense" },
   { value: "income", label: "Ingreso", tone: "income" },
@@ -65,6 +72,15 @@ function validateTransactionFields(fields: {
   return null;
 }
 
+function definedPrefill(prefill: TransactionFormPrefill): Partial<TransactionFormState> {
+  const result: Partial<TransactionFormState> = {};
+  if (prefill.type !== undefined) result.type = prefill.type;
+  if (prefill.amount !== undefined) result.amount = prefill.amount;
+  if (prefill.currency !== undefined) result.currency = prefill.currency;
+  if (prefill.description !== undefined) result.description = prefill.description;
+  return result;
+}
+
 export class TransactionFormPresenter extends PresenterBase<TransactionFormViewModel> {
   private accounts: Account[] = [];
   private categories: Category[] = [];
@@ -76,8 +92,10 @@ export class TransactionFormPresenter extends PresenterBase<TransactionFormViewM
   constructor(
     onChange: ChangeFunc,
     private readonly core: Core,
+    private readonly prefill: TransactionFormPrefill = {},
   ) {
     super(onChange);
+    this.form = { ...this.form, ...definedPrefill(prefill) };
   }
 
   protected initModel(): TransactionFormViewModel {
@@ -152,7 +170,14 @@ export class TransactionFormPresenter extends PresenterBase<TransactionFormViewM
       this.accounts = accounts;
       this.categories = categories;
       if (!this.form.accountId && accounts[0]) {
-        this.form = { ...this.form, accountId: accounts[0].id, currency: accounts[0].currency };
+        const defaultAccount = this.prefill.currency
+          ? accounts.find((account) => account.currency === this.prefill.currency) ?? accounts[0]
+          : accounts[0];
+        this.form = {
+          ...this.form,
+          accountId: defaultAccount.id,
+          currency: defaultAccount.currency,
+        };
       }
     } finally {
       this.refresh();

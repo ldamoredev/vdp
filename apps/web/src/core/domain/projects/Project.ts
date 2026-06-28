@@ -1,4 +1,4 @@
-import type { Project as ProjectDto, ProjectKind, ProjectStatus } from "@vdp/shared";
+import type { Currency, Project as ProjectDto, ProjectKind, ProjectStatus } from "@vdp/shared";
 
 export class Project {
   private constructor(
@@ -9,6 +9,8 @@ export class Project {
     readonly focus: string,
     readonly clientId: string | null,
     readonly client: string | null,
+    readonly hourlyRate: string | null,
+    readonly rateCurrency: Currency,
     readonly status: ProjectStatus,
     readonly archivedAt: string | null,
     readonly createdAt: string,
@@ -24,6 +26,8 @@ export class Project {
       dto.focus,
       dto.clientId ?? null,
       dto.client,
+      dto.hourlyRate,
+      dto.rateCurrency,
       dto.status,
       dto.archivedAt,
       dto.createdAt,

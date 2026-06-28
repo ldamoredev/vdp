@@ -1,4 +1,5 @@
 import type {
+  ProjectExpectedIncome,
   ProjectHoursReport as ProjectHoursReportDto,
   ProjectHoursReportRow,
   TimeEntry as TimeEntryDto,
@@ -35,11 +36,12 @@ export class ProjectHoursReport {
     readonly fromDate: string,
     readonly toDate: string,
     readonly totalMinutes: number,
+    readonly incomeTotals: ProjectExpectedIncome[],
     readonly rows: ProjectHoursReportRow[],
   ) {}
 
   static from(dto: ProjectHoursReportDto): ProjectHoursReport {
-    return new ProjectHoursReport(dto.fromDate, dto.toDate, dto.totalMinutes, dto.rows);
+    return new ProjectHoursReport(dto.fromDate, dto.toDate, dto.totalMinutes, dto.incomeTotals, dto.rows);
   }
 }
 

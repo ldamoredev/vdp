@@ -136,6 +136,8 @@ describe("DetailPanelPresenter", () => {
         focus: "Tasks",
         clientId: "c1",
         client: "Acme",
+        hourlyRate: null,
+        rateCurrency: "ARS",
         status: "active",
         archivedAt: null,
         createdAt: "2026-06-13T08:00:00.000Z",

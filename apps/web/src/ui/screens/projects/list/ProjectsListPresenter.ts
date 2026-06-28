@@ -14,6 +14,8 @@ type ProjectFormState = {
   nextAction: string;
   focus: string;
   clientId: string;
+  hourlyRate: string;
+  rateCurrency: "ARS" | "USD";
   isOpen: boolean;
   isSaving: boolean;
 };
@@ -30,6 +32,8 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     nextAction: "",
     focus: "",
     clientId: "",
+    hourlyRate: "",
+    rateCurrency: "ARS",
     isOpen: false,
     isSaving: false,
   };
@@ -92,6 +96,16 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     this.refresh();
   }
 
+  setHourlyRate(hourlyRate: string): void {
+    this.form.hourlyRate = hourlyRate;
+    this.refresh();
+  }
+
+  setRateCurrency(rateCurrency: "ARS" | "USD"): void {
+    this.form.rateCurrency = rateCurrency;
+    this.refresh();
+  }
+
   /** Re-reads the client catalog; used to keep the selector in sync with the client manager. */
   reloadClients(): Promise<void> {
     return this.loadClients();
@@ -108,6 +122,8 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
         nextAction: this.form.nextAction.trim(),
         focus: this.form.focus.trim(),
         clientId: this.form.clientId || null,
+        hourlyRate: this.form.hourlyRate.trim() || null,
+        rateCurrency: this.form.rateCurrency,
       }));
       this.selectedProjectId = project.id;
       this.form = {
@@ -116,6 +132,8 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
         nextAction: "",
         focus: "",
         clientId: "",
+        hourlyRate: "",
+        rateCurrency: "ARS",
         isOpen: false,
         isSaving: false,
       };
@@ -162,8 +180,16 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     return (
       this.form.outcome.trim().length > 0 &&
       this.form.nextAction.trim().length > 0 &&
-      this.form.focus.trim().length > 0
+      this.form.focus.trim().length > 0 &&
+      this.hasValidRate()
     );
+  }
+
+  private hasValidRate(): boolean {
+    const rate = this.form.hourlyRate.trim();
+    if (rate === "") return true;
+    const amount = Number(rate);
+    return Number.isFinite(amount) && amount > 0;
   }
 
   private refresh(): void {

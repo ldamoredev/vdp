@@ -1,4 +1,4 @@
-import type { ProjectKind, TaskBoardStatus } from "@vdp/shared";
+import type { Currency, ProjectKind, TaskBoardStatus } from "@vdp/shared";
 
 import type { Task } from "../tasks/Task";
 import type { Client } from "./Client";
@@ -12,6 +12,8 @@ export interface CreateProjectInput {
   focus: string;
   clientId?: string | null;
   client?: string | null;
+  hourlyRate?: string | null;
+  rateCurrency?: Currency;
 }
 
 export type UpdateProjectInput = Partial<CreateProjectInput>;

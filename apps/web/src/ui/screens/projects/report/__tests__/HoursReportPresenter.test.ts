@@ -28,7 +28,11 @@ describe("HoursReportPresenter", () => {
       projectOutcome: "Ship D3a",
       clientName: "Acme",
       durationLabel: "1h 30m",
+      expectedIncomeLabel: "US$ 150,00",
+      registerIncomeHref:
+        "/wallet/transactions/new?type=income&amount=150.00&currency=USD&description=Ship+D3a",
     });
+    expect(presenter.model.incomeTotals).toEqual([{ currency: "USD", amountLabel: "US$ 150,00" }]);
   });
 
   it("reloads with updated date filters", async () => {

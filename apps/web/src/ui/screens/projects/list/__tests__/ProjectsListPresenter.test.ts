@@ -27,6 +27,8 @@ describe("ProjectsListPresenter", () => {
         focus: "Old",
         clientId: null,
         client: null,
+        hourlyRate: null,
+        rateCurrency: "ARS",
         status: "archived",
         archivedAt: "2026-06-10T08:00:00.000Z",
         createdAt: "2026-06-10T08:00:00.000Z",
@@ -40,6 +42,8 @@ describe("ProjectsListPresenter", () => {
         focus: "Now",
         clientId: null,
         client: "Acme",
+        hourlyRate: null,
+        rateCurrency: "ARS",
         status: "active",
         archivedAt: null,
         createdAt: "2026-06-13T08:00:00.000Z",
@@ -73,6 +77,8 @@ describe("ProjectsListPresenter", () => {
     presenter.setNextAction("Create report");
     presenter.setFocus("Client visibility");
     presenter.setClientId("c1");
+    presenter.setHourlyRate("125.50");
+    presenter.setRateCurrency("USD");
     await presenter.createProject();
 
     expect(gateway.callsTo("createProject")[0].args[0]).toMatchObject({
@@ -81,6 +87,8 @@ describe("ProjectsListPresenter", () => {
       nextAction: "Create report",
       focus: "Client visibility",
       clientId: "c1",
+      hourlyRate: "125.50",
+      rateCurrency: "USD",
     });
     expect(presenter.model.selectedProjectId).toBe("created");
     expect(presenter.model.form.isOpen).toBe(false);

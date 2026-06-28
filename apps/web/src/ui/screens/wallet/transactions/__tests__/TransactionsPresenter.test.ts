@@ -213,6 +213,117 @@ describe("TransactionFormPresenter", () => {
       vi.useRealTimers();
     }
   });
+
+  it("pre-fills an income transaction from a project deep-link", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000-03:00"));
+    try {
+      const gateway = new FakeWalletGateway();
+      vi.spyOn(gateway, "getAccounts").mockResolvedValue([
+        account({ id: "cash", name: "Caja", currency: "ARS" }),
+        account({ id: "bank", name: "Banco", currency: "USD" }),
+      ]);
+      vi.spyOn(gateway, "getCategories").mockResolvedValue([
+        category({ id: "salary", name: "Sueldo", type: "income" }),
+      ]);
+      const createTransaction = vi.spyOn(gateway, "createTransaction");
+      const presenter = new TransactionFormPresenter(vi.fn(), buildCore(gateway), {
+        type: "income",
+        amount: "150.00",
+        currency: "USD",
+        description: "Ship D3a",
+      });
+      presenter.init(undefined);
+      presenter.start();
+      await flush();
+
+      expect(presenter.model.form).toMatchObject({
+        type: "income",
+        amount: "150.00",
+        accountId: "bank",
+        currency: "USD",
+        description: "Ship D3a",
+      });
+
+      await presenter.submit();
+
+      expect(createTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "income",
+          amount: "150.00",
+          accountId: "bank",
+          currency: "USD",
+          description: "Ship D3a",
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("falls back to the first account currency when the deep-link currency has no matching account", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000-03:00"));
+    try {
+      const gateway = new FakeWalletGateway();
+      vi.spyOn(gateway, "getAccounts").mockResolvedValue([account({ id: "cash", name: "Caja", currency: "ARS" })]);
+      vi.spyOn(gateway, "getCategories").mockResolvedValue([
+        category({ id: "salary", name: "Sueldo", type: "income" }),
+      ]);
+      const presenter = new TransactionFormPresenter(vi.fn(), buildCore(gateway), {
+        type: "income",
+        amount: "150.00",
+        currency: "USD",
+        description: "Ship D3a",
+      });
+      presenter.init(undefined);
+      presenter.start();
+      await flush();
+
+      expect(presenter.model.form).toMatchObject({
+        type: "income",
+        amount: "150.00",
+        accountId: "cash",
+        currency: "ARS",
+        description: "Ship D3a",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("defaults to the first account currency when there is no deep-link currency", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000-03:00"));
+    try {
+      const gateway = new FakeWalletGateway();
+      vi.spyOn(gateway, "getAccounts").mockResolvedValue([
+        account({ id: "bank", name: "Banco", currency: "USD" }),
+        account({ id: "cash", name: "Caja", currency: "ARS" }),
+      ]);
+      vi.spyOn(gateway, "getCategories").mockResolvedValue([
+        category({ id: "salary", name: "Sueldo", type: "income" }),
+      ]);
+      const presenter = new TransactionFormPresenter(vi.fn(), buildCore(gateway), {
+        type: "income",
+        amount: "150.00",
+        description: "Ship D3a",
+      });
+      presenter.init(undefined);
+      presenter.start();
+      await flush();
+
+      expect(presenter.model.form).toMatchObject({
+        type: "income",
+        amount: "150.00",
+        accountId: "bank",
+        currency: "USD",
+        description: "Ship D3a",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("QuickAddExpensePresenter", () => {

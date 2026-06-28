@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react";
+import { Link } from "react-router";
 
 import { StateCard } from "@/ui/primitives/state-card";
 import { useHoursReportPresenter } from "./useHoursReportPresenter";
@@ -63,12 +64,19 @@ export function HoursReportSection() {
           <StateCard size="sm" title="Sin horas en el rango" description="Ajustá las fechas o registrá tiempo." />
         ) : (
           <>
-            <p className="mb-3 font-data text-sm text-[var(--muted)]">Total del rango · {vm.totalLabel}</p>
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--muted)]">
+              <span className="font-data">Total del rango · {vm.totalLabel}</span>
+              {vm.incomeTotals.map((income) => (
+                <span key={income.currency} className="font-data">
+                  Ingreso esperado {income.currency} · {income.amountLabel}
+                </span>
+              ))}
+            </div>
             <ul className="space-y-1">
               {vm.rows.map((row) => (
                 <li
                   key={row.key}
-                  className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 py-2"
+                  className="flex flex-col gap-3 rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-[var(--foreground)]">{row.projectOutcome}</p>
@@ -77,7 +85,17 @@ export function HoursReportSection() {
                       {row.weekLabel}
                     </p>
                   </div>
-                  <span className="font-data text-sm text-[var(--foreground)]">{row.durationLabel}</span>
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                    <span className="font-data text-sm text-[var(--foreground)]">{row.durationLabel}</span>
+                    {row.expectedIncomeLabel ? (
+                      <span className="font-data text-sm text-[var(--foreground)]">{row.expectedIncomeLabel}</span>
+                    ) : null}
+                    {row.registerIncomeHref ? (
+                      <Link to={row.registerIncomeHref} className="btn-secondary min-h-9 text-xs">
+                        Registrar ingreso
+                      </Link>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>

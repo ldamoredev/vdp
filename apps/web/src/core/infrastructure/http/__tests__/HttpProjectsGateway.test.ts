@@ -70,6 +70,8 @@ function projectDto(overrides: Partial<ProjectDto> = {}): ProjectDto {
     focus: "Projects",
     clientId: "c1",
     client: "Acme",
+    hourlyRate: "100.00",
+    rateCurrency: "USD",
     status: "active",
     archivedAt: null,
     createdAt: "2026-06-13T08:00:00.000Z",
@@ -128,6 +130,7 @@ function hoursReportDto(overrides: Partial<ProjectHoursReportDto> = {}): Project
     fromDate: "2026-06-01",
     toDate: "2026-06-30",
     totalMinutes: 90,
+    incomeTotals: [{ amount: "150.00", currency: "USD" }],
     rows: [
       {
         clientId: "c1",
@@ -136,6 +139,7 @@ function hoursReportDto(overrides: Partial<ProjectHoursReportDto> = {}): Project
         projectOutcome: "Ship D3a",
         weekStart: "2026-06-08",
         minutes: 90,
+        expectedIncome: { amount: "150.00", currency: "USD" },
       },
     ],
     ...overrides,

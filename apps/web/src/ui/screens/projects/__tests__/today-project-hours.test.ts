@@ -18,6 +18,7 @@ describe("buildTodayProjectHoursVM", () => {
       fromDate: "2026-06-27",
       toDate: "2026-06-27",
       totalMinutes: 375,
+      incomeTotals: [],
       rows: [
         {
           clientId: null,
@@ -26,6 +27,7 @@ describe("buildTodayProjectHoursVM", () => {
           projectOutcome: "Ops",
           weekStart: "2026-06-22",
           minutes: 60,
+          expectedIncome: null,
         },
         {
           clientId: "c1",
@@ -34,6 +36,7 @@ describe("buildTodayProjectHoursVM", () => {
           projectOutcome: "Client portal",
           weekStart: "2026-06-22",
           minutes: 150,
+          expectedIncome: null,
         },
         {
           clientId: null,
@@ -42,6 +45,7 @@ describe("buildTodayProjectHoursVM", () => {
           projectOutcome: "Planning",
           weekStart: "2026-06-22",
           minutes: 90,
+          expectedIncome: null,
         },
         {
           clientId: null,
@@ -50,6 +54,7 @@ describe("buildTodayProjectHoursVM", () => {
           projectOutcome: "Ops",
           weekStart: "2026-06-22",
           minutes: 45,
+          expectedIncome: null,
         },
         {
           clientId: null,
@@ -58,6 +63,7 @@ describe("buildTodayProjectHoursVM", () => {
           projectOutcome: "Admin",
           weekStart: "2026-06-22",
           minutes: 30,
+          expectedIncome: null,
         },
       ],
     }));

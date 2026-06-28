@@ -57,6 +57,7 @@ function build() {
     fromDate: "2026-06-13",
     toDate: "2026-06-13",
     totalMinutes: 150,
+    incomeTotals: [],
     rows: [
       {
         clientId: "c1",
@@ -65,6 +66,7 @@ function build() {
         projectOutcome: "Client portal",
         weekStart: "2026-06-08",
         minutes: 120,
+        expectedIncome: null,
       },
       {
         clientId: null,
@@ -73,6 +75,7 @@ function build() {
         projectOutcome: "Planning",
         weekStart: "2026-06-08",
         minutes: 30,
+        expectedIncome: null,
       },
     ],
   }));
