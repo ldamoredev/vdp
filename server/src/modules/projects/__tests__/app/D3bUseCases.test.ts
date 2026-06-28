@@ -181,4 +181,48 @@ describe('D3b use cases', () => {
             { amount: '100.00', currency: 'USD' },
         ]);
     });
+
+    it('totals expected income from raw amounts before rounding', async () => {
+        const firstProject = await projects.createProject(userId, {
+            kind: 'work',
+            outcome: 'First ARS consulting',
+            nextAction: 'Log hours',
+            focus: 'D3d',
+            hourlyRate: '100.00',
+            rateCurrency: 'ARS',
+        });
+        const secondProject = await projects.createProject(userId, {
+            kind: 'work',
+            outcome: 'Second ARS consulting',
+            nextAction: 'Log hours',
+            focus: 'D3d',
+            hourlyRate: '100.00',
+            rateCurrency: 'ARS',
+        });
+        await timeEntries.createTimeEntry(userId, {
+            projectId: firstProject.id,
+            taskId: null,
+            date: '2026-06-18',
+            minutes: 20,
+            note: null,
+        });
+        await timeEntries.createTimeEntry(userId, {
+            projectId: secondProject.id,
+            taskId: null,
+            date: '2026-06-18',
+            minutes: 20,
+            note: null,
+        });
+
+        const report = await new GetProjectHoursReportQueryHandler(timeEntries, projects, clients)
+            .handle(new GetProjectHoursReportQuery({ fromDate: '2026-06-15', toDate: '2026-06-21' }), identity);
+
+        expect(report.rows.map((row) => row.expectedIncome)).toEqual([
+            { amount: '33.33', currency: 'ARS' },
+            { amount: '33.33', currency: 'ARS' },
+        ]);
+        expect(report.incomeTotals).toEqual([
+            { amount: '66.67', currency: 'ARS' },
+        ]);
+    });
 });

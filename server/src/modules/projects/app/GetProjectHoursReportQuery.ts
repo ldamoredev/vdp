@@ -85,29 +85,44 @@ implements RequestHandler<GetProjectHoursReportQuery, ProjectHoursReport> {
             fromDate: query.filters.fromDate,
             toDate: query.filters.toDate,
             totalMinutes: rows.reduce((sum, row) => sum + row.minutes, 0),
-            incomeTotals: incomeTotalsFor(rows),
+            incomeTotals: incomeTotalsFor(rows, projectById),
             rows,
         };
     }
 }
 
 function expectedIncomeFor(project: Project, minutes: number): ProjectExpectedIncome | null {
+    const rawIncome = rawExpectedIncomeFor(project, minutes);
+    if (!rawIncome) return null;
+    return {
+        amount: formatMoneyAmount(rawIncome.amount),
+        currency: rawIncome.currency,
+    };
+}
+
+function rawExpectedIncomeFor(project: Project, minutes: number): { amount: number; currency: ProjectRateCurrency } | null {
     if (!project.hourlyRate) return null;
     const hourlyRate = Number(project.hourlyRate);
     if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) return null;
     return {
-        amount: formatMoneyAmount((minutes / 60) * hourlyRate),
+        amount: (minutes / 60) * hourlyRate,
         currency: project.rateCurrency,
     };
 }
 
-function incomeTotalsFor(rows: ProjectHoursReportRow[]): ProjectExpectedIncome[] {
+function incomeTotalsFor(
+    rows: ProjectHoursReportRow[],
+    projectById: Map<string, Project>,
+): ProjectExpectedIncome[] {
     const totals = new Map<ProjectRateCurrency, number>();
     for (const row of rows) {
-        if (!row.expectedIncome) continue;
+        const project = projectById.get(row.projectId);
+        if (!project) continue;
+        const rawIncome = rawExpectedIncomeFor(project, row.minutes);
+        if (!rawIncome) continue;
         totals.set(
-            row.expectedIncome.currency,
-            (totals.get(row.expectedIncome.currency) ?? 0) + Number(row.expectedIncome.amount),
+            rawIncome.currency,
+            (totals.get(rawIncome.currency) ?? 0) + rawIncome.amount,
         );
     }
     return Array.from(totals.entries())
