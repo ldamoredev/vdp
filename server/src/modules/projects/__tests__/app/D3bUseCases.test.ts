@@ -113,6 +113,72 @@ describe('D3b use cases', () => {
             projectOutcome: 'Ship report',
             weekStart: '2026-06-15',
             minutes: 150,
+            expectedIncome: null,
         }]);
+        expect(report.incomeTotals).toEqual([]);
+    });
+
+    it('reports expected income per project and currency without mixing currencies', async () => {
+        const arsProject = await projects.createProject(userId, {
+            kind: 'work',
+            outcome: 'ARS consulting',
+            nextAction: 'Log hours',
+            focus: 'D3d',
+            hourlyRate: '10000.00',
+            rateCurrency: 'ARS',
+        });
+        const usdProject = await projects.createProject(userId, {
+            kind: 'work',
+            outcome: 'USD consulting',
+            nextAction: 'Log hours',
+            focus: 'D3d',
+            hourlyRate: '50.00',
+            rateCurrency: 'USD',
+        });
+        await timeEntries.createTimeEntry(userId, {
+            projectId: arsProject.id,
+            taskId: null,
+            date: '2026-06-18',
+            minutes: 90,
+            note: null,
+        });
+        await timeEntries.createTimeEntry(userId, {
+            projectId: usdProject.id,
+            taskId: null,
+            date: '2026-06-18',
+            minutes: 120,
+            note: null,
+        });
+        await timeEntries.createTimeEntry(userId, {
+            projectId: arsProject.id,
+            taskId: null,
+            date: '2026-06-19',
+            minutes: 30,
+            note: null,
+        });
+
+        const report = await new GetProjectHoursReportQueryHandler(timeEntries, projects, clients)
+            .handle(new GetProjectHoursReportQuery({ fromDate: '2026-06-15', toDate: '2026-06-21' }), identity);
+
+        expect(report.rows.map((row) => ({
+            projectOutcome: row.projectOutcome,
+            minutes: row.minutes,
+            expectedIncome: row.expectedIncome,
+        }))).toEqual([
+            {
+                projectOutcome: 'ARS consulting',
+                minutes: 120,
+                expectedIncome: { amount: '20000.00', currency: 'ARS' },
+            },
+            {
+                projectOutcome: 'USD consulting',
+                minutes: 120,
+                expectedIncome: { amount: '100.00', currency: 'USD' },
+            },
+        ]);
+        expect(report.incomeTotals).toEqual([
+            { amount: '20000.00', currency: 'ARS' },
+            { amount: '100.00', currency: 'USD' },
+        ]);
     });
 });

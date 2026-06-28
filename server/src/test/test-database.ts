@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS projects.projects (
     focus VARCHAR(160) NOT NULL,
     client_id UUID REFERENCES projects.clients(id) ON DELETE SET NULL,
     client VARCHAR(160),
+    hourly_rate NUMERIC(15, 2),
+    rate_currency VARCHAR(3) NOT NULL DEFAULT 'ARS',
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

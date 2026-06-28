@@ -21,6 +21,8 @@ export class DrizzleProjectRepository extends ProjectRepository {
                 focus: data.focus,
                 clientId: data.clientId ?? null,
                 client: data.client ?? null,
+                hourlyRate: data.hourlyRate ?? null,
+                rateCurrency: data.rateCurrency ?? 'ARS',
             })
             .returning();
 
@@ -58,6 +60,8 @@ export class DrizzleProjectRepository extends ProjectRepository {
                 focus: snapshot.focus,
                 clientId: snapshot.clientId,
                 client: snapshot.client,
+                hourlyRate: snapshot.hourlyRate,
+                rateCurrency: snapshot.rateCurrency,
                 status: snapshot.status,
                 archivedAt: snapshot.archivedAt,
                 updatedAt: snapshot.updatedAt,
@@ -77,6 +81,8 @@ export class DrizzleProjectRepository extends ProjectRepository {
             focus: row.focus,
             clientId: row.clientId,
             client: row.client,
+            hourlyRate: row.hourlyRate,
+            rateCurrency: row.rateCurrency,
             status: row.status,
             archivedAt: row.archivedAt,
             createdAt: row.createdAt,

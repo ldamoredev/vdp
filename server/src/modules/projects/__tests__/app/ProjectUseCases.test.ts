@@ -39,6 +39,8 @@ describe('Project use cases', () => {
                 nextAction: 'Map current spreadsheet',
                 focus: 'Make the first report useful',
                 clientId: client.id,
+                hourlyRate: '80.00',
+                rateCurrency: 'USD',
             }), identity);
 
         const listed = await new ListProjectsQueryHandler(projects).handle(new ListProjectsQuery(), identity);
@@ -46,6 +48,8 @@ describe('Project use cases', () => {
 
         expect(projects.lastCreateUserId).toBe(userId);
         expect(created.clientId).toBe(client.id);
+        expect(created.hourlyRate).toBe('80.00');
+        expect(created.rateCurrency).toBe('USD');
         expect(listed).toEqual([created]);
         expect(read).toEqual(created);
     });
@@ -64,6 +68,8 @@ describe('Project use cases', () => {
                 nextAction: 'Confirm truck',
                 focus: 'Execution',
                 client: null,
+                hourlyRate: '45000.00',
+                rateCurrency: 'ARS',
             }), identity);
 
         expect(updated).toMatchObject({
@@ -72,6 +78,8 @@ describe('Project use cases', () => {
             nextAction: 'Confirm truck',
             focus: 'Execution',
             client: null,
+            hourlyRate: '45000.00',
+            rateCurrency: 'ARS',
         });
     });
 

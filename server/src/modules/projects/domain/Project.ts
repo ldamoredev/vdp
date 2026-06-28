@@ -1,10 +1,13 @@
 export type ProjectKind = 'work' | 'personal';
 export type ProjectStatus = 'active' | 'archived';
+export type ProjectRateCurrency = 'ARS' | 'USD';
 
-type ProjectSnapshotLike = Omit<ProjectSnapshot, 'kind' | 'status' | 'clientId'> & {
+type ProjectSnapshotLike = Omit<ProjectSnapshot, 'kind' | 'status' | 'clientId' | 'hourlyRate' | 'rateCurrency'> & {
     kind: string;
     status: string;
     clientId?: string | null;
+    hourlyRate?: string | null;
+    rateCurrency?: string | null;
 };
 
 export class Project {
@@ -16,6 +19,8 @@ export class Project {
         public focus: string,
         public clientId: string | null,
         public client: string | null,
+        public hourlyRate: string | null,
+        public rateCurrency: ProjectRateCurrency,
         public status: ProjectStatus,
         public archivedAt: Date | null,
         public createdAt: Date,
@@ -29,6 +34,8 @@ export class Project {
         if (data.focus !== undefined) this.focus = data.focus;
         if (data.clientId !== undefined) this.clientId = data.clientId;
         if (data.client !== undefined) this.client = data.client;
+        if (data.hourlyRate !== undefined) this.hourlyRate = data.hourlyRate;
+        if (data.rateCurrency !== undefined) this.rateCurrency = data.rateCurrency;
         this.updatedAt = new Date();
     }
 
@@ -52,6 +59,8 @@ export class Project {
             focus: this.focus,
             clientId: this.clientId,
             client: this.client,
+            hourlyRate: this.hourlyRate,
+            rateCurrency: this.rateCurrency,
             status: this.status,
             archivedAt: this.archivedAt,
             createdAt: this.createdAt,
@@ -79,6 +88,16 @@ export class Project {
         }
     }
 
+    private static parseRateCurrency(currency: string): ProjectRateCurrency {
+        switch (currency) {
+            case 'ARS':
+            case 'USD':
+                return currency;
+            default:
+                throw new Error(`Invalid project rate currency: ${currency}`);
+        }
+    }
+
     static fromSnapshot(s: ProjectSnapshotLike): Project {
         return new Project(
             s.id,
@@ -88,6 +107,8 @@ export class Project {
             s.focus,
             s.clientId ?? null,
             s.client,
+            s.hourlyRate ?? null,
+            Project.parseRateCurrency(s.rateCurrency ?? 'ARS'),
             Project.parseStatus(s.status),
             s.archivedAt,
             s.createdAt,
@@ -103,6 +124,8 @@ export type ProjectUpdate = {
     focus?: string;
     clientId?: string | null;
     client?: string | null;
+    hourlyRate?: string | null;
+    rateCurrency?: ProjectRateCurrency;
 };
 
 export type ProjectSnapshot = {
@@ -113,6 +136,8 @@ export type ProjectSnapshot = {
     focus: string;
     clientId: string | null;
     client: string | null;
+    hourlyRate: string | null;
+    rateCurrency: ProjectRateCurrency;
     status: ProjectStatus;
     archivedAt: Date | null;
     createdAt: Date;

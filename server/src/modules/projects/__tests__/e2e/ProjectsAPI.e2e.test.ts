@@ -237,7 +237,11 @@ describe('Projects API — E2E', () => {
 
     it('manages clients and logs project hours', async () => {
         const client = await createClientAs(PRIMARY_TEST_USER.id);
-        const project = await createProjectAs(PRIMARY_TEST_USER.id, { clientId: client.id });
+        const project = await createProjectAs(PRIMARY_TEST_USER.id, {
+            clientId: client.id,
+            hourlyRate: '100.00',
+            rateCurrency: 'USD',
+        });
         const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Log implementation time');
         await testApp.app.inject({
             method: 'POST',
@@ -274,6 +278,7 @@ describe('Projects API — E2E', () => {
         expect(entries.json().entries).toHaveLength(1);
         expect(report.json()).toMatchObject({
             totalMinutes: 90,
+            incomeTotals: [{ amount: '150.00', currency: 'USD' }],
             rows: [{
                 clientId: client.id,
                 clientName: 'Acme',
@@ -281,6 +286,7 @@ describe('Projects API — E2E', () => {
                 projectOutcome: 'Ship D3a',
                 weekStart: '2026-06-15',
                 minutes: 90,
+                expectedIncome: { amount: '150.00', currency: 'USD' },
             }],
         });
     });
@@ -379,6 +385,6 @@ describe('Projects API — E2E', () => {
             headers: asUser(SECONDARY_TEST_USER.id),
         });
 
-        expect(report.json()).toMatchObject({ totalMinutes: 0, rows: [] });
+        expect(report.json()).toMatchObject({ totalMinutes: 0, incomeTotals: [], rows: [] });
     });
 });

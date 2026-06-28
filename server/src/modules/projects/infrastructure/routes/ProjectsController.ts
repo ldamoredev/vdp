@@ -37,7 +37,7 @@ import { UpdateTimeEntryCommand } from '../../app/UpdateTimeEntryCommand';
 
 type ProjectIdParams = z.infer<typeof projectIdParamsSchema>;
 type IdParams = z.infer<typeof idParamsSchema>;
-type CreateProjectBody = z.input<typeof createProjectSchema>;
+type CreateProjectBody = z.infer<typeof createProjectSchema>;
 type UpdateProjectBody = z.infer<typeof updateProjectSchema>;
 type AssignTaskBody = z.infer<typeof assignTaskToProjectSchema>;
 type CreateClientBody = z.infer<typeof createClientSchema>;

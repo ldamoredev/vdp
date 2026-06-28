@@ -20,6 +20,8 @@ describe('DrizzleProjectRepository', () => {
             nextAction: 'Create first project',
             focus: 'D3a',
             client: 'Acme',
+            hourlyRate: '150.00',
+            rateCurrency: 'USD',
         });
 
         const ownerView = await repo.getProject(userId, project.id);
@@ -29,6 +31,8 @@ describe('DrizzleProjectRepository', () => {
             id: project.id,
             kind: 'work',
             client: 'Acme',
+            hourlyRate: '150.00',
+            rateCurrency: 'USD',
             status: 'active',
         });
         expect(otherView).toBeNull();
@@ -68,5 +72,23 @@ describe('DrizzleProjectRepository', () => {
         const saved = await repo.getProject(userId, project.id);
         expect(saved?.status).toBe('archived');
         expect(saved?.archivedAt).toBeInstanceOf(Date);
+    });
+
+    it('saves hourly rate changes', async () => {
+        const project = await repo.createProject(userId, {
+            kind: 'work',
+            outcome: 'Billable work',
+            nextAction: 'Set rate',
+            focus: 'Revenue',
+        });
+
+        project.updateDirection({ hourlyRate: '42000.00', rateCurrency: 'ARS' });
+        await repo.save(userId, project);
+
+        const saved = await repo.getProject(userId, project.id);
+        expect(saved).toMatchObject({
+            hourlyRate: '42000.00',
+            rateCurrency: 'ARS',
+        });
     });
 });

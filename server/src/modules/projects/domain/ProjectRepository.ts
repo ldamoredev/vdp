@@ -1,4 +1,4 @@
-import { Project, type ProjectKind } from './Project';
+import { Project, type ProjectKind, type ProjectRateCurrency } from './Project';
 
 export type CreateProjectData = {
     readonly kind: ProjectKind;
@@ -7,6 +7,8 @@ export type CreateProjectData = {
     readonly focus: string;
     readonly clientId?: string | null;
     readonly client?: string | null;
+    readonly hourlyRate?: string | null;
+    readonly rateCurrency?: ProjectRateCurrency;
 };
 
 export type UpdateProjectData = Partial<CreateProjectData>;

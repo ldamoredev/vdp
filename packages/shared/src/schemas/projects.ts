@@ -5,6 +5,15 @@ export const projectKindEnum = z.enum(["work", "personal"]);
 export const projectStatusEnum = z.enum(["active", "archived"]);
 export const clientStatusEnum = z.enum(["active", "archived"]);
 export const taskBoardStatusEnum = z.enum(["backlog", "next", "doing", "done"]);
+export const projectRateCurrencyEnum = z.enum(["ARS", "USD"]);
+
+const hourlyRateSchema = z.union([
+  z.string(),
+  z.number().transform((value) => String(value)),
+]).refine((value) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount > 0;
+}, "Hourly rate must be positive");
 
 export const projectIdParamsSchema = idParamsSchema;
 
@@ -15,6 +24,8 @@ export const createProjectSchema = z.object({
   focus: z.string().min(1).max(160),
   clientId: z.string().uuid().nullable().optional(),
   client: z.string().min(1).max(160).nullable().optional(),
+  hourlyRate: hourlyRateSchema.nullable().optional(),
+  rateCurrency: projectRateCurrencyEnum.optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial().strict();

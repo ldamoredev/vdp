@@ -2,6 +2,7 @@ import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { ClientRepository } from '../domain/ClientRepository';
+import { Project, type ProjectRateCurrency } from '../domain/Project';
 import { ProjectRepository } from '../domain/ProjectRepository';
 import { TimeEntryRepository } from '../domain/TimeEntryRepository';
 
@@ -19,12 +20,19 @@ export type ProjectHoursReportRow = {
     readonly projectOutcome: string;
     readonly weekStart: string;
     readonly minutes: number;
+    readonly expectedIncome: ProjectExpectedIncome | null;
+};
+
+export type ProjectExpectedIncome = {
+    readonly amount: string;
+    readonly currency: ProjectRateCurrency;
 };
 
 export type ProjectHoursReport = {
     readonly fromDate: string;
     readonly toDate: string;
     readonly totalMinutes: number;
+    readonly incomeTotals: ProjectExpectedIncome[];
     readonly rows: ProjectHoursReportRow[];
 };
 
@@ -59,13 +67,15 @@ implements RequestHandler<GetProjectHoursReportQuery, ProjectHoursReport> {
             const weekStart = startOfWeek(entry.date);
             const key = `${project.clientId ?? ''}:${project.id}:${weekStart}`;
             const current = rowsByKey.get(key);
+            const nextMinutes = (current?.minutes ?? 0) + entry.minutes;
             rowsByKey.set(key, {
                 clientId: project.clientId,
                 clientName: client?.name ?? project.client,
                 projectId: project.id,
                 projectOutcome: project.outcome,
                 weekStart,
-                minutes: (current?.minutes ?? 0) + entry.minutes,
+                minutes: nextMinutes,
+                expectedIncome: expectedIncomeFor(project, nextMinutes),
             });
         }
 
@@ -75,9 +85,38 @@ implements RequestHandler<GetProjectHoursReportQuery, ProjectHoursReport> {
             fromDate: query.filters.fromDate,
             toDate: query.filters.toDate,
             totalMinutes: rows.reduce((sum, row) => sum + row.minutes, 0),
+            incomeTotals: incomeTotalsFor(rows),
             rows,
         };
     }
+}
+
+function expectedIncomeFor(project: Project, minutes: number): ProjectExpectedIncome | null {
+    if (!project.hourlyRate) return null;
+    const hourlyRate = Number(project.hourlyRate);
+    if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) return null;
+    return {
+        amount: formatMoneyAmount((minutes / 60) * hourlyRate),
+        currency: project.rateCurrency,
+    };
+}
+
+function incomeTotalsFor(rows: ProjectHoursReportRow[]): ProjectExpectedIncome[] {
+    const totals = new Map<ProjectRateCurrency, number>();
+    for (const row of rows) {
+        if (!row.expectedIncome) continue;
+        totals.set(
+            row.expectedIncome.currency,
+            (totals.get(row.expectedIncome.currency) ?? 0) + Number(row.expectedIncome.amount),
+        );
+    }
+    return Array.from(totals.entries())
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([currency, amount]) => ({ currency, amount: formatMoneyAmount(amount) }));
+}
+
+function formatMoneyAmount(amount: number): string {
+    return amount.toFixed(2);
 }
 
 function startOfWeek(date: string): string {

@@ -1,3 +1,5 @@
+import type { Currency } from "./common";
+
 export type ProjectKind = "work" | "personal";
 export type ProjectStatus = "active" | "archived";
 export type ClientStatus = "active" | "archived";
@@ -11,6 +13,8 @@ export interface Project {
   focus: string;
   clientId: string | null;
   client: string | null;
+  hourlyRate: string | null;
+  rateCurrency: Currency;
   status: ProjectStatus;
   archivedAt: string | null;
   createdAt: string;
@@ -44,11 +48,18 @@ export interface ProjectHoursReportRow {
   projectOutcome: string;
   weekStart: string;
   minutes: number;
+  expectedIncome: ProjectExpectedIncome | null;
+}
+
+export interface ProjectExpectedIncome {
+  amount: string;
+  currency: Currency;
 }
 
 export interface ProjectHoursReport {
   fromDate: string;
   toDate: string;
   totalMinutes: number;
+  incomeTotals: ProjectExpectedIncome[];
   rows: ProjectHoursReportRow[];
 }
