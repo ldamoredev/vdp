@@ -300,7 +300,7 @@ Live signals handled by Tasks (`CrossDomainEventHandlers`):
 
 Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
 
-- `tasks.task.completed` with a payment-intent title → `suggestion` insight offering to register the expense, deep-linked to a pre-filled quick-add (`?registrar-gasto=<title>`). Detection is the title heuristic in `wallet/services/payment-intent.ts`; the wallet never auto-writes the transaction (the amount is unknown — suggest, don't write).
+- `tasks.task.completed` with a payment-intent title → `suggestion` insight offering to register the expense, deep-linked to a pre-filled quick-add (`/wallet?type=expense&description=<title>`; the web parser still accepts legacy `registrar-gasto` links). Detection is the title heuristic in `wallet/services/payment-intent.ts`; the wallet never auto-writes the transaction (the amount is unknown — suggest, don't write).
 
 Read-time cross-domain surfaces:
 

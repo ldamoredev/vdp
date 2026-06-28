@@ -146,7 +146,9 @@ expense, deep-linked to a pre-filled quick-add. Verified in the owner's session
   imperative, first-person past; whole-word so "comprobar" ≠ "comprar").
 - **Suggest, never auto-write** (same principle as H1): the amount is unknown, so
   the wallet never creates the transaction — it offers, via
-  `?registrar-gasto=<title>` opening the quick-add pre-filled with the task title.
+  `/wallet?type=expense&description=<title>` opening the quick-add pre-filled with
+  the task title. The web parser still accepts the legacy `registrar-gasto` alias
+  for already-persisted insights.
 - Surface (owner decision): the live SSE toast was made actionable —
   `actionHref`/`actionLabel` now render as a button in `toast-container.tsx`. A
   durable surface (the suggestion is a 6s toast today, no persistent list since
