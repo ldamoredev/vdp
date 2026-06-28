@@ -9,7 +9,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Tasks | ✅ | ✅ | ✅ | Stable reference module; production-ready for personal daily use |
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
-| Projects | ✅ | ✅ | — | Active D3a direction layer; Tasks remain the only work-item store |
+| Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -21,7 +21,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3a (Project aggregate + task linking + board), D3b (client catalog + time tracking + hours report), and D3c (Task ↔ Project selector) shipped**; D3d remains unstarted.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -85,9 +85,9 @@ daily-task ↔ project boundary first, or the two cannibalize. Passes the New Do
 Gate; second domain, not People.
 Owner edit: Time/Hours load and report for track how much I spend time in a project to then inform it to my bosses/clients.
 
-**Status (June 2026): in progress.** The boundary gate is resolved (a Project owns
-an outcome, not a separate task store) and the work is sliced in the "D3: Activate
-Work / Projects" execution section below.
+**Status (June 2026): shipped.** The boundary gate is resolved (a Project owns an
+outcome, not a separate task store), and the shipped slices live in the "D3:
+Activate Work / Projects" execution section below.
 
 ### D4. Life Goals (Goals 2.0) — *decide, top layer* — strategic layer
 
@@ -259,7 +259,7 @@ The literal D2 ask: one daily surface with morning/evening phases by time of day
 Highest refactor/risk and arguably low value — two bridged screens already work.
 Last, and revisit whether it's worth doing after R1–R3.
 
-## D3: Activate Work / Projects (in progress — June 2026)
+## D3: Activate Work / Projects (COMPLETE — June 2026)
 
 Owner-directed promotion of D3 from candidate to active work. Same discipline as the
 Health and D1 series: one full-stack slice at a time, each shipping before the next.
@@ -345,15 +345,16 @@ active project.
   tests for both create/edit surfaces, and Projects+Tasks API E2E coverage including
   cross-user isolation.
 
-### D3d. Cross-domain — IN PROGRESS
+### D3d. Cross-domain — SHIPPED (2026-06-28)
 
-What keeps Work from being a siloed module competing with Toggl/Linear. Each is a
-candidate slice, sequenced after D3a/D3b/D3c land:
+What keeps Work from being a siloed module competing with Toggl/Linear. Both slices
+shipped after D3a/D3b/D3c:
 
-- **`projects→wallet`:** a work/freelance project's tracked hours × rate → expected
-  income, or register the income on invoicing. The reaction (a wallet entry) lives
-  in Wallet's cross-domain handlers, per the AGENTS.md "the module that owns the
-  reaction owns the subscriber" rule.
+- **`projects→wallet`: SHIPPED (2026-06-28).** Projects carry optional
+  `hourlyRate` + `rateCurrency`; the hours report computes expected income per
+  row and totals by currency (never mixing ARS/USD). The web report shows those
+  values with `.font-data` and deep-links to Wallet's transaction form pre-filled
+  as income. It is suggest-not-write: Wallet never auto-creates the transaction.
 - **`time→review`: SHIPPED (2026-06-27).** Home morning plan and Review evening close
   reuse `GetProjectHoursReportQuery` for `fromDate=toDate=today`, showing total
   project time plus a short per-project list. No backend query or migration was

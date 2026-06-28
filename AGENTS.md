@@ -24,7 +24,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
-- `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
+- `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, optional hourly rate/currency, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week, including expected income grouped by currency and a Wallet income deep link. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
 
 Inactive domains:
 
@@ -301,6 +301,10 @@ Live signals handled by Tasks (`CrossDomainEventHandlers`):
 Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
 
 - `tasks.task.completed` with a payment-intent title → `suggestion` insight offering to register the expense, deep-linked to a pre-filled quick-add (`?registrar-gasto=<title>`). Detection is the title heuristic in `wallet/services/payment-intent.ts`; the wallet never auto-writes the transaction (the amount is unknown — suggest, don't write).
+
+Read-time cross-domain surfaces:
+
+- `projects→wallet`: Projects hours reports compute expected income from project rates and logged minutes, grouped by currency (never sum ARS+USD), and link to Wallet's transaction form pre-filled as income. This is a read-time deep link, not an event; Wallet never auto-writes the transaction.
 
 Future cross-domain signals should follow the same pattern:
 
