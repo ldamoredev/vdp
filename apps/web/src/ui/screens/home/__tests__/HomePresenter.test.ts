@@ -10,10 +10,13 @@ import type {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { ObjectivesModule } from "@/core/app/objectives/ObjectivesModule";
+import { FakeObjectivesGateway } from "@/core/app/objectives/__tests__/fakes/FakeObjectivesGateway";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
 import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
+import { Objective } from "@/core/domain/objectives/Objective";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
@@ -144,6 +147,7 @@ function build() {
   const tasks = new FakeTasksGateway();
   const wallet = new FakeWalletGateway();
   const projects = new FakeProjectsGateway();
+  const objectives = new FakeObjectivesGateway();
   const getTodayStats = vi.spyOn(tasks, "getTodayStats").mockResolvedValue(stats());
   vi.spyOn(tasks, "listTasks").mockResolvedValue({
     tasks: [Task.from(taskDto())],
@@ -202,15 +206,16 @@ function build() {
   })
     .use(new TasksModule(tasks))
     .use(new WalletModule(wallet))
-    .use(new ProjectsModule(projects));
+    .use(new ProjectsModule(projects))
+    .use(new ObjectivesModule(objectives));
   const events = new TasksEvents();
   const presenter = new HomePresenter(vi.fn(), core, events);
   presenter.init(undefined);
-  return { presenter, tasks, wallet, projects, events, getTodayStats };
+  return { presenter, tasks, wallet, projects, objectives, events, getTodayStats };
 }
 
 async function flush() {
-  for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  for (let i = 0; i < 100; i += 1) await Promise.resolve();
 }
 
 describe("HomePresenter", () => {
@@ -252,6 +257,111 @@ describe("HomePresenter", () => {
       to: "2026-06-15",
     });
     expect(wallet.getTransactions).toHaveBeenCalledWith({ limit: "10" });
+    presenter.stop();
+  });
+
+  it("surfaces active objectives as the daily north", async () => {
+    const { presenter, objectives } = build();
+    objectives.objectives = [
+      Objective.from({
+        id: "active-manual",
+        title: "Leer 12 libros",
+        periodStart: "2026-01-01",
+        periodEnd: "2026-12-31",
+        metricSource: "manual",
+        metricTargetId: null,
+        target: 12,
+        unit: "libros",
+        manualValue: 3,
+        currency: null,
+        status: "active",
+        archivedAt: null,
+        achievedAt: null,
+        createdAt: "2026-06-01T10:00:00.000Z",
+        updatedAt: "2026-06-14T10:00:00.000Z",
+      }),
+      Objective.from({
+        id: "archived",
+        title: "Meta archivada",
+        periodStart: "2026-01-01",
+        periodEnd: "2026-12-31",
+        metricSource: "manual",
+        metricTargetId: null,
+        target: 10,
+        unit: "puntos",
+        manualValue: 10,
+        currency: null,
+        status: "archived",
+        archivedAt: "2026-06-14T10:00:00.000Z",
+        achievedAt: null,
+        createdAt: "2026-06-01T10:00:00.000Z",
+        updatedAt: "2026-06-15T10:00:00.000Z",
+      }),
+    ];
+
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.objectives).toMatchObject({
+      href: "/objectives",
+      countLabel: "1 activa",
+      items: [
+        {
+          id: "active-manual",
+          title: "Leer 12 libros",
+          sourceLabel: "Manual",
+          currentValueLabel: "3 libros",
+          targetValueLabel: "12 libros",
+          progressPercent: 25,
+          progressLabel: "25%",
+        },
+      ],
+    });
+    presenter.stop();
+  });
+
+  it("creates a task for today from an active objective", async () => {
+    const { presenter, objectives, tasks, events } = build();
+    objectives.objectives = [
+      Objective.from({
+        id: "active-manual",
+        title: "Leer 12 libros",
+        periodStart: "2026-01-01",
+        periodEnd: "2026-12-31",
+        metricSource: "manual",
+        metricTargetId: null,
+        target: 12,
+        unit: "libros",
+        manualValue: 3,
+        currency: null,
+        status: "active",
+        archivedAt: null,
+        achievedAt: null,
+        createdAt: "2026-06-01T10:00:00.000Z",
+        updatedAt: "2026-06-14T10:00:00.000Z",
+      }),
+    ];
+    const createTask = vi.spyOn(tasks, "createTask").mockResolvedValue(
+      Task.from(taskDto({ id: "objective-task", title: "Avanzar en: Leer 12 libros" })),
+    );
+    const emit = vi.spyOn(events, "emitTasksChanged");
+
+    presenter.start();
+    await flush();
+
+    const creation = presenter.createTaskForObjective("active-manual");
+
+    expect(presenter.model.objectives.items[0].isCreatingTask).toBe(true);
+
+    await creation;
+
+    expect(createTask).toHaveBeenCalledWith({
+      title: "Avanzar en: Leer 12 libros",
+      scheduledDate: "2026-06-15",
+      priority: 2,
+    });
+    expect(emit).toHaveBeenCalled();
+    expect(presenter.model.objectives.items[0].isCreatingTask).toBe(false);
     presenter.stop();
   });
 

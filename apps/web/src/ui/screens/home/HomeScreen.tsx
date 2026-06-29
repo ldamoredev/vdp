@@ -3,6 +3,7 @@ import { CrossDomainSignalsCard } from "@/ui/screens/home/components/cross-domai
 import { DailyRitualCard } from "@/ui/screens/home/components/daily-ritual-card";
 import { OnboardingModal } from "@/ui/screens/home/components/onboarding-modal";
 import { OperationalRhythmCard } from "@/ui/screens/home/components/operational-rhythm-card";
+import { ObjectivesNorthCard } from "@/ui/screens/home/components/objectives-north-card";
 import { TaskStatsRow } from "@/ui/screens/home/components/task-stats-row";
 import { TodayTasksCard } from "@/ui/screens/home/components/today-tasks-card";
 import { WalletSnapshotCard } from "@/ui/screens/home/components/wallet-snapshot-card";
@@ -91,6 +92,10 @@ export default function HomeScreen() {
         </div>
 
         <TaskStatsRow stats={model.stats} />
+        <ObjectivesNorthCard
+          model={model.objectives}
+          onCreateTask={(objectiveId) => void presenter.createTaskForObjective(objectiveId)}
+        />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">

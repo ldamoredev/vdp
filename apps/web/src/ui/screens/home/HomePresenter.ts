@@ -13,6 +13,8 @@ import type {
 } from "@/lib/api/types";
 
 import type { Core } from "@/core/Core";
+import { ListObjectives } from "@/core/app/objectives/ListObjectives";
+import { resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
 import { CarryOverAll } from "@/core/app/tasks/CarryOverAll";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
@@ -30,6 +32,7 @@ import { GetTransactions } from "@/core/app/wallet/GetTransactions";
 import { GetWalletStatsByCategory } from "@/core/app/wallet/GetWalletStatsByCategory";
 import { GetWalletStatsSummary } from "@/core/app/wallet/GetWalletStatsSummary";
 import type { Task } from "@/core/domain/tasks/Task";
+import { Objective, sortObjectives } from "@/core/domain/objectives/Objective";
 import type { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
 import type { WalletStatsSummary } from "@/core/domain/wallet/WalletStats";
@@ -37,6 +40,7 @@ import {
   formatDateShort,
   formatMoney,
   formatRelative,
+  formatTaskDate,
   addLocalDaysISO,
   getTodayISO,
   priorityBadge,
@@ -47,6 +51,7 @@ import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type {
   HomeInsightTone,
   HomeMorningPlanTaskViewModel,
+  HomeObjectiveViewModel,
   HomeRhythmTone,
   HomeSignalViewModel,
   HomeTodayTaskViewModel,
@@ -222,6 +227,23 @@ function formatPlanTime(value: string | null): string | null {
   });
 }
 
+function sourceLabel(source: Objective["metricSource"]): string {
+  return {
+    manual: "Manual",
+    projects_hours: "Horas de proyectos",
+    tasks_completed: "Tareas completadas",
+    wallet_savings: "Ahorro (Wallet)",
+    health_habit_completions: "Hábito (Health)",
+  }[source];
+}
+
+function formatObjectiveValue(value: number, unit: string): string {
+  const formatted = value.toLocaleString("es-AR", {
+    maximumFractionDigits: 1,
+  });
+  return `${formatted} ${unit}`;
+}
+
 export class HomePresenter extends PresenterBase<HomeViewModel> {
   private readonly today = getTodayISO();
   private readonly yesterday = addLocalDaysISO(this.today, -1);
@@ -238,6 +260,8 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   private reviewWalletTransactions: Transaction[] = [];
   private reviewWalletByCategory: CategoryStat[] = [];
   private projectHoursReport: ProjectHoursReport | null = null;
+  private objectives: Objective[] = [];
+  private objectiveValues = new Map<string, number>();
   private walletStats: WalletStatsSummary | null = null;
   private walletRecentTransactions: Transaction[] = [];
 
@@ -245,6 +269,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   private loadingWalletRecentTransactions = true;
   private newTaskTitle = "";
   private creatingTask = false;
+  private creatingObjectiveTaskIds = new Set<string>();
   private createTaskError: string | null = null;
   private confirmingCarryOvers = false;
   private savingFocus = false;
@@ -296,6 +321,28 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.createTaskError = "No se pudo agregar la tarea. Probá de nuevo.";
     } finally {
       this.creatingTask = false;
+      this.refresh();
+    }
+  }
+
+  async createTaskForObjective(objectiveId: string): Promise<void> {
+    if (this.creatingObjectiveTaskIds.has(objectiveId)) return;
+    const objective = this.objectives.find((candidate) => candidate.id === objectiveId);
+    if (!objective) return;
+
+    this.creatingObjectiveTaskIds.add(objectiveId);
+    this.refresh();
+
+    try {
+      await this.core.execute(new CreateTask({
+        title: `Avanzar en: ${objective.title}`,
+        scheduledDate: this.today,
+        priority: 2,
+      }));
+      await this.load();
+      await this.events.emitTasksChanged();
+    } finally {
+      this.creatingObjectiveTaskIds.delete(objectiveId);
       this.refresh();
     }
   }
@@ -384,6 +431,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         walletRecentTransactions,
         reviewState,
         projectHoursReport,
+        objectivesResult,
       ] = await Promise.all([
         this.core.execute(new GetTodayStats()),
         this.core.execute(new ListTasks({ scheduledDate: this.today, limit: "5" })),
@@ -405,6 +453,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         this.core.execute(new GetDailyReviewState(this.today)),
         this.core.execute(new GetHoursReport({ fromDate: this.today, toDate: this.today }))
           .catch(() => null),
+        this.loadObjectives().catch(() => ({ objectives: [], values: new Map<string, number>() })),
       ]);
 
       this.reviewState = mergePersistedDailyReviewState(
@@ -422,6 +471,8 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.reviewWalletTransactions = reviewWalletTransactions.transactions;
       this.reviewWalletByCategory = reviewWalletByCategory;
       this.projectHoursReport = projectHoursReport;
+      this.objectives = objectivesResult.objectives;
+      this.objectiveValues = objectivesResult.values;
       this.walletStats = walletStats;
       this.walletRecentTransactions = walletRecentTransactions.transactions;
     } catch {
@@ -437,6 +488,8 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.reviewWalletTransactions = [];
       this.reviewWalletByCategory = [];
       this.projectHoursReport = null;
+      this.objectives = [];
+      this.objectiveValues = new Map();
       this.walletStats = null;
       this.walletRecentTransactions = [];
     } finally {
@@ -498,6 +551,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         isCreating: this.creatingTask,
         createError: this.createTaskError,
       },
+      objectives: this.objectivesVM(),
       ritual: {
         morning: this.morningPlanVM(),
         statusLabel: this.reviewState.completedAt
@@ -579,6 +633,41 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     const focusTaskId = this.reviewState.focusTaskId;
     if (!focusTaskId) return null;
     return this.review?.allTasks.find((task) => task.id === focusTaskId) ?? null;
+  }
+
+  private async loadObjectives(): Promise<{ objectives: Objective[]; values: Map<string, number> }> {
+    const objectives = sortObjectives(await this.core.execute(new ListObjectives()))
+      .filter((objective) => objective.isActive);
+    const values = await Promise.all(
+      objectives.map(async (objective) => [objective.id, await resolveObjectiveCurrentValue(objective, this.core)] as const),
+    );
+    return { objectives, values: new Map(values) };
+  }
+
+  private objectivesVM() {
+    const items = this.objectives.slice(0, 3).map((objective) => this.objectiveVM(objective));
+    const count = this.objectives.length;
+    return {
+      href: "/objectives",
+      countLabel: `${count} activa${count === 1 ? "" : "s"}`,
+      items,
+    };
+  }
+
+  private objectiveVM(objective: Objective): HomeObjectiveViewModel {
+    const currentValue = this.objectiveValues.get(objective.id) ?? 0;
+    const progressPercent = Math.min(100, Math.max(0, Math.round((currentValue / objective.target) * 100)));
+    return {
+      id: objective.id,
+      title: objective.title,
+      periodLabel: `${formatTaskDate(objective.periodStart)} - ${formatTaskDate(objective.periodEnd)}`,
+      sourceLabel: sourceLabel(objective.metricSource),
+      currentValueLabel: formatObjectiveValue(currentValue, objective.unit),
+      targetValueLabel: formatObjectiveValue(objective.target, objective.unit),
+      progressPercent,
+      progressLabel: `${progressPercent}%`,
+      isCreatingTask: this.creatingObjectiveTaskIds.has(objective.id),
+    };
   }
 
   private taskVM(task: Task): HomeTodayTaskViewModel {

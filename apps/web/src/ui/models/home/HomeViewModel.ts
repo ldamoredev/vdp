@@ -122,12 +122,31 @@ export interface HomeRhythmViewModel {
   readonly domains: readonly HomeRhythmDomainViewModel[];
 }
 
+export interface HomeObjectiveViewModel {
+  readonly id: string;
+  readonly title: string;
+  readonly periodLabel: string;
+  readonly sourceLabel: string;
+  readonly currentValueLabel: string;
+  readonly targetValueLabel: string;
+  readonly progressPercent: number;
+  readonly progressLabel: string;
+  readonly isCreatingTask: boolean;
+}
+
+export interface HomeObjectivesViewModel {
+  readonly href: string;
+  readonly countLabel: string;
+  readonly items: readonly HomeObjectiveViewModel[];
+}
+
 export interface HomeViewModel {
   readonly title: string;
   readonly subtitle: string;
   readonly onlineLabel: string;
   readonly stats: HomeStatsViewModel;
   readonly todayTasks: HomeTodayTasksViewModel;
+  readonly objectives: HomeObjectivesViewModel;
   readonly ritual: HomeRitualViewModel;
   readonly wallet: HomeWalletSnapshotViewModel;
   readonly signals: readonly HomeSignalViewModel[];
