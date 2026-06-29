@@ -7,6 +7,7 @@ import { registerWalletRepositories } from './wallet/infrastructure/db/bindings'
 import { registerHealthRepositories } from './health/infrastructure/db/bindings';
 import { registerProjectsRepositories } from './projects/infrastructure/db/bindings';
 import { registerObjectivesRepositories } from './objectives/infrastructure/db/bindings';
+import { registerInboxRepositories } from './inbox/infrastructure/db/bindings';
 
 /**
  * Composes the repository bindings of every active module. Like
@@ -25,5 +26,6 @@ export function createDefaultRepositoryRegistry(db: Database): RepositoryRegistr
     registerHealthRepositories(registry, db);
     registerProjectsRepositories(registry, db);
     registerObjectivesRepositories(registry, db);
+    registerInboxRepositories(registry, db);
     return registry;
 }

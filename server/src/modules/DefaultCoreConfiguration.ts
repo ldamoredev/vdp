@@ -23,6 +23,7 @@ import { AuthContextStorage } from './common/http/AuthContextStorage';
 import { AuthModule } from './auth/AuthModule';
 import { ProjectsModule } from './projects/ProjectsModule';
 import { ObjectivesModule } from './objectives/ObjectivesModule';
+import { InboxModule } from './inbox/InboxModule';
 
 export class DefaultCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -49,6 +50,7 @@ export class DefaultCoreConfiguration implements CoreConfig {
             (context) => new HealthModule(context),
             (context) => new ProjectsModule(context),
             (context) => new ObjectivesModule(context),
+            (context) => new InboxModule(context),
         ];
     }
 }

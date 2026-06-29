@@ -8,6 +8,7 @@ export default defineConfig({
     "./src/modules/wallet/infrastructure/db/schema.ts",
     "./src/modules/projects/infrastructure/db/schema.ts",
     "./src/modules/objectives/infrastructure/db/schema.ts",
+    "./src/modules/inbox/infrastructure/db/schema.ts",
     "./src/modules/tasks/infrastructure/db/schema.ts",
     "./src/modules/tasks/infrastructure/db/embeddings-schema.ts",
     "./src/modules/health/infrastructure/db/schema.ts",

@@ -5,6 +5,7 @@ import * as agentSchema from '../modules/common/infrastructure/agents/schema';
 import * as walletSchema from '../modules/wallet/infrastructure/db/schema';
 import * as projectsSchema from '../modules/projects/infrastructure/db/schema';
 import * as objectivesSchema from '../modules/objectives/infrastructure/db/schema';
+import * as inboxSchema from '../modules/inbox/infrastructure/db/schema';
 import * as tasksSchema from '../modules/tasks/infrastructure/db/schema';
 import * as embeddingsSchema from '../modules/tasks/infrastructure/db/embeddings-schema';
 import { DEFAULT_TEST_USERS, TestUser } from './testUsers';
@@ -20,6 +21,7 @@ CREATE SCHEMA IF NOT EXISTS health;
 CREATE SCHEMA IF NOT EXISTS medical;
 CREATE SCHEMA IF NOT EXISTS projects;
 CREATE SCHEMA IF NOT EXISTS objectives;
+CREATE SCHEMA IF NOT EXISTS inbox;
 
 CREATE TABLE IF NOT EXISTS core.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -150,6 +152,18 @@ CREATE TABLE IF NOT EXISTS objectives.objectives (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS inbox.inbox_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    note TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    routed_to VARCHAR(40),
+    triaged_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -226,6 +240,8 @@ CREATE INDEX IF NOT EXISTS time_entries_task_idx ON projects.time_entries(task_i
 CREATE INDEX IF NOT EXISTS objectives_owner_user_idx ON objectives.objectives(owner_user_id);
 CREATE INDEX IF NOT EXISTS objectives_status_idx ON objectives.objectives(status);
 CREATE INDEX IF NOT EXISTS objectives_period_idx ON objectives.objectives(owner_user_id, period_start, period_end);
+CREATE INDEX IF NOT EXISTS inbox_items_owner_user_idx ON inbox.inbox_items(owner_user_id);
+CREATE INDEX IF NOT EXISTS inbox_items_owner_status_idx ON inbox.inbox_items(owner_user_id, status);
 CREATE INDEX IF NOT EXISTS task_notes_owner_user_idx ON tasks.task_notes(owner_user_id);
 CREATE INDEX IF NOT EXISTS task_notes_task_idx ON tasks.task_notes(task_id);
 CREATE INDEX IF NOT EXISTS task_insights_owner_created_idx ON tasks.task_insights(owner_user_id, created_at);
@@ -516,6 +532,7 @@ export class TestDatabase {
                 ...walletSchema,
                 ...projectsSchema,
                 ...objectivesSchema,
+                ...inboxSchema,
                 ...tasksSchema,
                 ...embeddingsSchema,
             },
@@ -555,6 +572,7 @@ export class TestDatabase {
                     tasks.task_insights,
                     tasks.daily_review_state,
                     tasks.tasks,
+                    inbox.inbox_items,
                     objectives.objectives,
                     projects.time_entries,
                     projects.projects,
@@ -626,6 +644,7 @@ export class TestDatabase {
             await client.query('DROP SCHEMA IF EXISTS wallet CASCADE');
             await client.query('DROP SCHEMA IF EXISTS projects CASCADE');
             await client.query('DROP SCHEMA IF EXISTS objectives CASCADE');
+            await client.query('DROP SCHEMA IF EXISTS inbox CASCADE');
         } finally {
             client.release();
         }

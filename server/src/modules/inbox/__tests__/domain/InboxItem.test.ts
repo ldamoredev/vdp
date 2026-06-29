@@ -1,0 +1,48 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import { InboxItem } from '../../domain/InboxItem';
+
+const baseSnapshot = {
+    id: 'i1',
+    ownerUserId: 'u1',
+    text: 'Comprar regalo de cumpleaños',
+    note: null,
+    status: 'pending',
+    routedTo: null,
+    triagedAt: null,
+    createdAt: new Date('2026-06-29T10:00:00.000Z'),
+    updatedAt: new Date('2026-06-29T10:00:00.000Z'),
+};
+
+describe('InboxItem', () => {
+    it('round-trips a snapshot and trims the text', () => {
+        const item = InboxItem.fromSnapshot({ ...baseSnapshot, text: '  hola  ' });
+
+        expect(item.toSnapshot()).toMatchObject({
+            id: 'i1',
+            text: 'hola',
+            status: 'pending',
+            routedTo: null,
+        });
+        expect(item.isPending()).toBe(true);
+    });
+
+    it('discards a pending item and stamps updatedAt', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+        const item = InboxItem.fromSnapshot(baseSnapshot);
+
+        item.discard();
+
+        expect(item.toSnapshot()).toMatchObject({
+            status: 'discarded',
+            updatedAt: new Date('2026-06-29T12:00:00.000Z'),
+        });
+        vi.useRealTimers();
+    });
+
+    it('rejects empty text and invalid status', () => {
+        expect(() => InboxItem.fromSnapshot({ ...baseSnapshot, text: '   ' })).toThrow(/text/i);
+        expect(() => InboxItem.fromSnapshot({ ...baseSnapshot, status: 'nope' })).toThrow(/status/i);
+    });
+});
