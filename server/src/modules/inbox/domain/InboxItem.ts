@@ -23,6 +23,15 @@ export class InboxItem {
         this.updatedAt = new Date();
     }
 
+    triage(routedTo: string): void {
+        const normalized = routedTo.trim();
+        if (!normalized) throw new Error('Inbox item triage target is required');
+        this.status = 'triaged';
+        this.routedTo = normalized;
+        this.triagedAt = new Date();
+        this.updatedAt = new Date();
+    }
+
     isPending(): boolean {
         return this.status === 'pending';
     }

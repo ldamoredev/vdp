@@ -57,6 +57,27 @@ describe('Inbox API — E2E', () => {
         expect(discarded.json().status).toBe('discarded');
     });
 
+    it('triages an item to a destination', async () => {
+        const created = await captureAs(PRIMARY_TEST_USER.id, 'Pagar la luz');
+        const id = created.json().id;
+
+        const triaged = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/inbox/${id}/triage`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { routedTo: 'wallet' },
+        });
+        expect(triaged.statusCode).toBe(200);
+        expect(triaged.json()).toMatchObject({ status: 'triaged', routedTo: 'wallet' });
+
+        const list = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/inbox',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(list.json().items.find((i: { id: string }) => i.id === id).status).toBe('triaged');
+    });
+
     it('rejects an empty capture', async () => {
         const response = await testApp.app.inject({
             method: 'POST',

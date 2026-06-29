@@ -41,6 +41,22 @@ describe('InboxItem', () => {
         vi.useRealTimers();
     });
 
+    it('triages a pending item, recording the destination and timestamp', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+        const item = InboxItem.fromSnapshot(baseSnapshot);
+
+        item.triage('wallet');
+
+        expect(item.toSnapshot()).toMatchObject({
+            status: 'triaged',
+            routedTo: 'wallet',
+            triagedAt: new Date('2026-06-29T12:00:00.000Z'),
+        });
+        expect(() => item.triage('   ')).toThrow(/target/i);
+        vi.useRealTimers();
+    });
+
     it('rejects empty text and invalid status', () => {
         expect(() => InboxItem.fromSnapshot({ ...baseSnapshot, text: '   ' })).toThrow(/text/i);
         expect(() => InboxItem.fromSnapshot({ ...baseSnapshot, status: 'nope' })).toThrow(/status/i);

@@ -1,4 +1,4 @@
-import { captureInboxItemSchema, inboxItemIdParamsSchema } from '@vdp/shared';
+import { captureInboxItemSchema, inboxItemIdParamsSchema, triageInboxItemSchema } from '@vdp/shared';
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
 
@@ -11,10 +11,12 @@ import { CaptureInboxItemCommand } from '../../app/CaptureInboxItemCommand';
 import { DiscardInboxItemCommand } from '../../app/DiscardInboxItemCommand';
 import { GetInboxItemQuery } from '../../app/GetInboxItemQuery';
 import { ListInboxItemsQuery } from '../../app/ListInboxItemsQuery';
+import { TriageInboxItemCommand } from '../../app/TriageInboxItemCommand';
 import { serializeInboxItem } from '../../app/serialize';
 
 type InboxItemIdParams = z.infer<typeof inboxItemIdParamsSchema>;
 type CaptureInboxItemBody = z.infer<typeof captureInboxItemSchema>;
+type TriageInboxItemBody = z.infer<typeof triageInboxItemSchema>;
 
 export class InboxController extends HttpController {
     readonly prefix = '/api/v1/inbox';
@@ -28,6 +30,7 @@ export class InboxController extends HttpController {
             .get('/', {}, this.listItems)
             .get('/:id', { params: inboxItemIdParamsSchema }, this.getItem)
             .post('/', { body: captureInboxItemSchema }, this.captureItem)
+            .post('/:id/triage', { params: inboxItemIdParamsSchema, body: triageInboxItemSchema }, this.triageItem)
             .post('/:id/discard', { params: inboxItemIdParamsSchema }, this.discardItem);
     }
 
@@ -64,6 +67,22 @@ export class InboxController extends HttpController {
             executionContextFromAuth(request.auth),
         );
         return sendCreated(reply, serializeInboxItem(item));
+    };
+
+    private readonly triageItem: RouteContextHandler<InboxItemIdParams, undefined, TriageInboxItemBody> = async ({
+        request,
+        params,
+        body,
+        reply,
+    }) => {
+        const item = assertFound(
+            await this.bus.execute(
+                new TriageInboxItemCommand(params!.id, body!.routedTo),
+                executionContextFromAuth(request.auth),
+            ),
+            'Inbox item not found',
+        );
+        return reply.send(serializeInboxItem(item));
     };
 
     private readonly discardItem: RouteContextHandler<InboxItemIdParams, undefined, undefined> = async ({

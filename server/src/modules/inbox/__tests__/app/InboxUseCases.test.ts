@@ -5,6 +5,7 @@ import { CaptureInboxItemCommand, CaptureInboxItemCommandHandler } from '../../a
 import { DiscardInboxItemCommand, DiscardInboxItemCommandHandler } from '../../app/DiscardInboxItemCommand';
 import { GetInboxItemQuery, GetInboxItemQueryHandler } from '../../app/GetInboxItemQuery';
 import { ListInboxItemsQuery, ListInboxItemsQueryHandler } from '../../app/ListInboxItemsQuery';
+import { TriageInboxItemCommand, TriageInboxItemCommandHandler } from '../../app/TriageInboxItemCommand';
 import { FakeInboxItemRepository } from '../fakes/FakeInboxItemRepository';
 
 const identity = new UserIdentity('user-1', 'test@example.com', 'Test', ['user']);
@@ -34,6 +35,17 @@ describe('Inbox use cases', () => {
         expect(discarded?.status).toBe('discarded');
     });
 
+    it('triages a captured item to a destination', async () => {
+        const items = new FakeInboxItemRepository();
+        const created = await new CaptureInboxItemCommandHandler(items)
+            .handle(new CaptureInboxItemCommand({ text: 'Pagar la luz' }), identity);
+
+        const triaged = await new TriageInboxItemCommandHandler(items)
+            .handle(new TriageInboxItemCommand(created.id, 'wallet'), identity);
+
+        expect(triaged).toMatchObject({ status: 'triaged', routedTo: 'wallet' });
+    });
+
     it('does not expose or discard another user inbox items', async () => {
         const items = new FakeInboxItemRepository();
         const created = await new CaptureInboxItemCommandHandler(items)
@@ -43,11 +55,14 @@ describe('Inbox use cases', () => {
             .handle(new GetInboxItemQuery(created.id), otherIdentity);
         const discarded = await new DiscardInboxItemCommandHandler(items)
             .handle(new DiscardInboxItemCommand(created.id), otherIdentity);
+        const triaged = await new TriageInboxItemCommandHandler(items)
+            .handle(new TriageInboxItemCommand(created.id, 'wallet'), otherIdentity);
         const otherList = await new ListInboxItemsQueryHandler(items)
             .handle(new ListInboxItemsQuery(), otherIdentity);
 
         expect(read).toBeNull();
         expect(discarded).toBeNull();
+        expect(triaged).toBeNull();
         expect(otherList).toEqual([]);
     });
 });
