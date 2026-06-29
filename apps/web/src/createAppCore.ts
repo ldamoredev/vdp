@@ -3,6 +3,7 @@ import { HealthModule } from "@/core/app/health/HealthModule";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
+import { ObjectivesModule } from "@/core/app/objectives/ObjectivesModule";
 
 /**
  * App composition root: builds the Core and registers every feature module's
@@ -16,5 +17,6 @@ export function createAppCore(options: AppCoreOptions = {}): Core {
     .use(new HealthModule())
     .use(new TasksModule())
     .use(new WalletModule())
-    .use(new ProjectsModule());
+    .use(new ProjectsModule())
+    .use(new ObjectivesModule());
 }

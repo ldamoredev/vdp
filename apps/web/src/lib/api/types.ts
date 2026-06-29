@@ -52,4 +52,8 @@ export type {
   GoalOverview,
   GoalsOverviewResponse,
   GraduateGoalResponse,
+  // Objectives
+  ObjectiveMetricSource,
+  ObjectiveStatus,
+  Objective,
 } from "@vdp/shared";

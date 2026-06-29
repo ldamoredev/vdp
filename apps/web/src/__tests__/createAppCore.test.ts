@@ -6,6 +6,7 @@ import { ListTasks } from "@/core/app/tasks/ListTasks";
 import { GetAccounts } from "@/core/app/wallet/GetAccounts";
 import { GetMedicalRecords } from "@/core/app/health/medical/GetMedicalRecords";
 import { ListProjects } from "@/core/app/projects/ListProjects";
+import { ListObjectives } from "@/core/app/objectives/ListObjectives";
 import { createAppCore } from "@/createAppCore";
 
 /**
@@ -69,6 +70,15 @@ describe("createAppCore", () => {
     const core = createAppCore();
 
     const result = await core.execute(new ListProjects());
+
+    expect(result).toEqual([]);
+  });
+
+  it("registers the objectives handlers on the bus", async () => {
+    stubFetchOk({ objectives: [] });
+    const core = createAppCore();
+
+    const result = await core.execute(new ListObjectives());
 
     expect(result).toEqual([]);
   });

@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Stethoscope,
   Dumbbell,
+  Target,
   Users,
   Briefcase,
   FolderKanban,
@@ -21,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type DomainKey = "tasks" | "wallet" | "health" | "projects" | "people" | "work" | "study";
+export type DomainKey = "tasks" | "wallet" | "health" | "projects" | "objectives" | "people" | "work" | "study";
 
 export interface NavItem {
   href: string;
@@ -126,6 +127,21 @@ export const domains: DomainConfig[] = [
     aiDescription: "Sin agente en D3a.",
     navItems: [
       { href: "/projects", label: "Proyectos", icon: LayoutDashboard },
+    ],
+  },
+  {
+    key: "objectives",
+    label: "Metas",
+    subtitle: "Objetivos",
+    icon: Target,
+    iconLetter: "M",
+    agentEndpoint: null,
+    chatPlaceholder: "Planificá una meta...",
+    chatWelcome: "Metas todavía no tiene agente propio",
+    chatDescription: "El progreso se compone desde métricas reales de otros módulos.",
+    aiDescription: "Sin agente en D4a.",
+    navItems: [
+      { href: "/objectives", label: "Metas", icon: LayoutDashboard },
     ],
   },
   {
