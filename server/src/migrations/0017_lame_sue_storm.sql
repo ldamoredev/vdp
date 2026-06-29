@@ -1,0 +1,1 @@
+ALTER TABLE "objectives"."objectives" ADD COLUMN "metric_target_id" varchar(120);

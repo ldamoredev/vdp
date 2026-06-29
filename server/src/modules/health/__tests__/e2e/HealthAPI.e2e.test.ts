@@ -66,6 +66,15 @@ async function listHabits(userId: string) {
     return { status: response.statusCode, body: response.json() };
 }
 
+async function getHabitCompletions(userId: string, habitId: string, from: string, to: string) {
+    const response = await testApp.app.inject({
+        method: 'GET',
+        url: `/api/v1/health/habits/${habitId}/completions?from=${from}&to=${to}`,
+        headers: asUser(userId),
+    });
+    return { status: response.statusCode, body: response.json() };
+}
+
 function currentWeekDatesUpToToday(count: number): string[] {
     const today = new Date();
     const daysSinceMonday = (today.getDay() + 6) % 7;
@@ -145,6 +154,37 @@ describe('Health API — E2E', () => {
             bestStreak: 3,
             totalCompletions: 3,
         });
+    });
+
+    it('counts habit completions by requested period and owner', async () => {
+        const created = await createHabit(PRIMARY_TEST_USER.id, 'Meditar');
+        const habitId = created.body.id;
+
+        await completeHabit(PRIMARY_TEST_USER.id, habitId, '2026-06-01');
+        await completeHabit(PRIMARY_TEST_USER.id, habitId, '2026-06-10');
+        await completeHabit(PRIMARY_TEST_USER.id, habitId, '2026-07-01');
+
+        const completions = await getHabitCompletions(
+            PRIMARY_TEST_USER.id,
+            habitId,
+            '2026-06-01',
+            '2026-06-30',
+        );
+        const otherUser = await getHabitCompletions(
+            SECONDARY_TEST_USER.id,
+            habitId,
+            '2026-06-01',
+            '2026-06-30',
+        );
+
+        expect(completions.status).toBe(200);
+        expect(completions.body).toEqual({
+            habitId,
+            from: '2026-06-01',
+            to: '2026-06-30',
+            count: 2,
+        });
+        expect(otherUser.status).toBe(404);
     });
 
     it('supports weekly cadence habits with current-week progress', async () => {

@@ -13,6 +13,7 @@ export const objectives = objectivesSchema.table(
         periodStart: date('period_start').notNull(),
         periodEnd: date('period_end').notNull(),
         metricSource: varchar('metric_source', { length: 40 }).notNull(),
+        metricTargetId: varchar('metric_target_id', { length: 120 }),
         target: decimal('target', { precision: 15, scale: 2 }).notNull(),
         unit: varchar('unit', { length: 24 }).notNull(),
         manualValue: decimal('manual_value', { precision: 15, scale: 2 }),

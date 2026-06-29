@@ -9,6 +9,7 @@ const baseSnapshot = {
     periodStart: '2026-07-01',
     periodEnd: '2026-09-30',
     metricSource: 'projects_hours',
+    metricTargetId: null,
     target: 120,
     unit: 'h',
     manualValue: null,
@@ -51,6 +52,7 @@ describe('Objective', () => {
             periodStart: '2026-01-01',
             periodEnd: '2026-12-31',
             metricSource: 'manual',
+            metricTargetId: null,
             target: 50,
             unit: 'sesiones',
             manualValue: 7,
@@ -69,6 +71,32 @@ describe('Objective', () => {
             status: 'active',
             updatedAt: new Date('2026-06-28T12:00:00.000Z'),
         });
+    });
+
+    it('stores a target id for health habit completions and clears it for other metrics', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));
+        const objective = Objective.fromSnapshot({
+            ...baseSnapshot,
+            metricSource: 'health_habit_completions',
+            metricTargetId: 'habit-1',
+            unit: 'veces',
+        });
+
+        objective.update({ metricSource: 'manual', unit: 'puntos', manualValue: 3 });
+
+        expect(objective.toSnapshot()).toMatchObject({
+            metricSource: 'manual',
+            metricTargetId: null,
+            manualValue: 3,
+            updatedAt: new Date('2026-06-28T12:00:00.000Z'),
+        });
+        expect(() => Objective.fromSnapshot({
+            ...baseSnapshot,
+            metricSource: 'health_habit_completions',
+            unit: 'veces',
+            metricTargetId: null,
+        })).toThrow(/target/i);
     });
 
     it('stores currency for wallet savings and clears it for non-currency metrics', () => {

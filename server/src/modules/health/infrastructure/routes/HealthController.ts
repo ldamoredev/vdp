@@ -4,6 +4,7 @@ import {
     createGoalSchema,
     createHabitSchema,
     graduateGoalSchema,
+    habitCompletionsQuerySchema,
     habitIdParamsSchema,
     habitLogSchema,
     moodCheckInSchema,
@@ -28,6 +29,7 @@ import { CreateHabitCommand } from '../../app/CreateHabitCommand';
 import { DropGoalCommand } from '../../app/DropGoalCommand';
 import { GetCountersOverviewQuery } from '../../app/GetCountersOverviewQuery';
 import { GetGoalsOverviewQuery } from '../../app/GetGoalsOverviewQuery';
+import { GetHabitCompletionsQuery } from '../../app/GetHabitCompletionsQuery';
 import { GetHabitsOverviewQuery } from '../../app/GetHabitsOverviewQuery';
 import { GetMoodCheckInsQuery } from '../../app/GetMoodCheckInsQuery';
 import { GetWeightTrendQuery } from '../../app/GetWeightTrendQuery';
@@ -40,6 +42,7 @@ import { UncompleteHabitDayCommand } from '../../app/UncompleteHabitDayCommand';
 type HabitIdParams = z.infer<typeof habitIdParamsSchema>;
 type CreateHabitBody = z.input<typeof createHabitSchema>;
 type HabitLogBody = z.infer<typeof habitLogSchema>;
+type HabitCompletionsQuery = z.infer<typeof habitCompletionsQuerySchema>;
 type CreateCounterBody = z.input<typeof createCounterSchema>;
 type CounterRelapseBody = z.infer<typeof counterRelapseSchema>;
 type CreateGoalBody = z.input<typeof createGoalSchema>;
@@ -63,6 +66,7 @@ export class HealthController extends HttpController {
             .post('/habits/:id/complete', { params: habitIdParamsSchema, body: habitLogSchema.default({}) }, this.completeHabit)
             .post('/habits/:id/uncomplete', { params: habitIdParamsSchema, body: habitLogSchema.default({}) }, this.uncompleteHabit)
             .post('/habits/:id/archive', { params: habitIdParamsSchema }, this.archiveHabit)
+            .get('/habits/:id/completions', { params: habitIdParamsSchema, query: habitCompletionsQuerySchema }, this.getHabitCompletions)
             .get('/counters', {}, this.listCounters)
             .post('/counters', { body: createCounterSchema }, this.createCounter)
             .post('/counters/:id/relapse', { params: habitIdParamsSchema, body: counterRelapseSchema.default({}) }, this.relapseCounter)
@@ -222,6 +226,20 @@ export class HealthController extends HttpController {
         reply,
     }) => {
         return reply.send(await this.bus.execute(new GetHabitsOverviewQuery(), executionContextFromAuth(request.auth)));
+    };
+
+    private readonly getHabitCompletions: RouteContextHandler<HabitIdParams, HabitCompletionsQuery, undefined> = async ({
+        request,
+        params,
+        query,
+        reply,
+    }) => {
+        return reply.send(
+            await this.bus.execute(
+                new GetHabitCompletionsQuery(params!.id, query!.from, query!.to),
+                executionContextFromAuth(request.auth),
+            ),
+        );
     };
 
     private readonly createHabit: RouteContextHandler<undefined, undefined, CreateHabitBody> = async ({

@@ -1,13 +1,20 @@
-export type ObjectiveMetricSource = 'manual' | 'projects_hours' | 'tasks_completed' | 'wallet_savings';
+export type ObjectiveMetricSource =
+    | 'manual'
+    | 'projects_hours'
+    | 'tasks_completed'
+    | 'wallet_savings'
+    | 'health_habit_completions';
 export type ObjectiveStatus = 'active' | 'archived' | 'achieved';
 export type ObjectiveCurrency = 'ARS' | 'USD';
 
 const CURRENCY_SCOPED_SOURCES: readonly ObjectiveMetricSource[] = ['wallet_savings'];
+const TARGETED_SOURCES: readonly ObjectiveMetricSource[] = ['health_habit_completions'];
 
-type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status' | 'currency'> & {
+type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status' | 'currency' | 'metricTargetId'> & {
     metricSource: string;
     status: string;
     currency?: string | null;
+    metricTargetId?: string | null;
 };
 
 export class Objective {
@@ -18,6 +25,7 @@ export class Objective {
         public periodStart: string,
         public periodEnd: string,
         public metricSource: ObjectiveMetricSource,
+        public metricTargetId: string | null,
         public target: number,
         public unit: string,
         public manualValue: number | null,
@@ -37,6 +45,7 @@ export class Objective {
         if (data.title !== undefined) this.title = data.title;
         if (data.periodStart !== undefined) this.periodStart = data.periodStart;
         if (data.periodEnd !== undefined) this.periodEnd = data.periodEnd;
+        const previousMetricSource = this.metricSource;
         if (data.metricSource !== undefined) this.metricSource = data.metricSource;
         if (data.target !== undefined) this.target = Objective.assertPositiveTarget(data.target);
         if (data.unit !== undefined) this.unit = Objective.assertNonEmptyUnit(data.unit);
@@ -44,6 +53,10 @@ export class Objective {
         if (this.metricSource !== 'manual') this.manualValue = null;
         const nextCurrency = data.currency !== undefined ? data.currency : this.currency;
         this.currency = Objective.resolveCurrency(this.metricSource, nextCurrency);
+        const nextMetricTargetId = data.metricTargetId !== undefined
+            ? data.metricTargetId
+            : previousMetricSource === this.metricSource ? this.metricTargetId : null;
+        this.metricTargetId = Objective.resolveMetricTargetId(this.metricSource, nextMetricTargetId);
         this.updatedAt = new Date();
     }
 
@@ -73,6 +86,7 @@ export class Objective {
             periodStart: this.periodStart,
             periodEnd: this.periodEnd,
             metricSource: this.metricSource,
+            metricTargetId: this.metricTargetId,
             target: this.target,
             unit: this.unit,
             manualValue: this.manualValue,
@@ -95,6 +109,7 @@ export class Objective {
             s.periodStart,
             s.periodEnd,
             metricSource,
+            Objective.resolveMetricTargetId(metricSource, s.metricTargetId ?? null),
             Objective.assertPositiveTarget(s.target),
             Objective.assertNonEmptyUnit(s.unit),
             metricSource === 'manual' ? s.manualValue : null,
@@ -132,6 +147,7 @@ export class Objective {
             case 'projects_hours':
             case 'tasks_completed':
             case 'wallet_savings':
+            case 'health_habit_completions':
                 return metricSource;
             default:
                 throw new Error(`Invalid objective metric source: ${metricSource}`);
@@ -159,6 +175,18 @@ export class Objective {
         }
     }
 
+    private static resolveMetricTargetId(
+        source: ObjectiveMetricSource,
+        metricTargetId: string | null,
+    ): string | null {
+        if (!TARGETED_SOURCES.includes(source)) return null;
+        const normalized = metricTargetId?.trim();
+        if (!normalized) {
+            throw new Error('Objective metric target is required for this metric source');
+        }
+        return normalized;
+    }
+
     private static parseStatus(status: string): ObjectiveStatus {
         switch (status) {
             case 'active':
@@ -176,6 +204,7 @@ export type ObjectiveUpdate = {
     periodStart?: string;
     periodEnd?: string;
     metricSource?: ObjectiveMetricSource;
+    metricTargetId?: string | null;
     target?: number;
     unit?: string;
     manualValue?: number | null;
@@ -189,6 +218,7 @@ export type ObjectiveSnapshot = {
     periodStart: string;
     periodEnd: string;
     metricSource: ObjectiveMetricSource;
+    metricTargetId: string | null;
     target: number;
     unit: string;
     manualValue: number | null;

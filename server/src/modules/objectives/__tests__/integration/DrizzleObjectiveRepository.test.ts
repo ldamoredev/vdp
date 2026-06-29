@@ -59,6 +59,27 @@ describe('DrizzleObjectiveRepository', () => {
         });
     });
 
+    it('persists a health habit metric target', async () => {
+        const objective = await repo.createObjective(userId, {
+            title: 'Meditar 20 veces',
+            periodStart: '2026-07-01',
+            periodEnd: '2026-09-30',
+            metricSource: 'health_habit_completions',
+            metricTargetId: 'habit-1',
+            target: 20,
+            unit: 'veces',
+        });
+
+        const saved = await repo.getObjective(userId, objective.id);
+
+        expect(saved).toMatchObject({
+            metricSource: 'health_habit_completions',
+            metricTargetId: 'habit-1',
+            manualValue: null,
+            currency: null,
+        });
+    });
+
     it('lists objectives for one owner only', async () => {
         await repo.createObjective(userId, {
             title: 'Owner objective',

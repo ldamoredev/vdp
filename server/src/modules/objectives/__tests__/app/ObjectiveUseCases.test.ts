@@ -103,6 +103,27 @@ describe('Objective use cases', () => {
         });
     });
 
+    it('creates health habit completion objectives with a metric target', async () => {
+        const created = await new CreateObjectiveCommandHandler(objectives)
+            .handle(new CreateObjectiveCommand({
+                title: 'Meditar 20 veces',
+                periodStart: '2026-07-01',
+                periodEnd: '2026-09-30',
+                metricSource: 'health_habit_completions',
+                metricTargetId: 'habit-1',
+                target: 20,
+                unit: 'veces',
+            }), identity);
+
+        expect(created).toMatchObject({
+            title: 'Meditar 20 veces',
+            metricSource: 'health_habit_completions',
+            metricTargetId: 'habit-1',
+            manualValue: null,
+            currency: null,
+        });
+    });
+
     it('archives an objective', async () => {
         const objective = await objectives.createObjective(userId, {
             title: 'Archive me',

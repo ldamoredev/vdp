@@ -31,6 +31,13 @@ export interface HabitsOverviewResponse {
   date: string;
 }
 
+export interface HabitCompletionsResponse {
+  habitId: string;
+  from: string;
+  to: string;
+  count: number;
+}
+
 // ─── Counters ("days since") ─────────────────────────────
 
 export interface Counter {

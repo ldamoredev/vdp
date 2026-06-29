@@ -1,4 +1,9 @@
-export type ObjectiveMetricSource = "manual" | "projects_hours" | "tasks_completed" | "wallet_savings";
+export type ObjectiveMetricSource =
+  | "manual"
+  | "projects_hours"
+  | "tasks_completed"
+  | "wallet_savings"
+  | "health_habit_completions";
 export type ObjectiveStatus = "active" | "archived" | "achieved";
 export type ObjectiveCurrency = "ARS" | "USD";
 
@@ -8,6 +13,7 @@ export interface Objective {
   periodStart: string;
   periodEnd: string;
   metricSource: ObjectiveMetricSource;
+  metricTargetId: string | null;
   target: number;
   unit: string;
   manualValue: number | null;

@@ -71,6 +71,30 @@ describe("createObjectiveSchema", () => {
     })).toThrow(/currency/i);
   });
 
+  it("requires a target habit for health habit completions metric bindings", () => {
+    expect(createObjectiveSchema.parse({
+      title: "Meditar 20 veces",
+      periodStart: "2026-07-01",
+      periodEnd: "2026-09-30",
+      metricSource: "health_habit_completions",
+      metricTargetId: "habit-1",
+      target: 20,
+      unit: "veces",
+    })).toMatchObject({
+      metricSource: "health_habit_completions",
+      metricTargetId: "habit-1",
+    });
+
+    expect(() => createObjectiveSchema.parse({
+      title: "Meditar sin hábito",
+      periodStart: "2026-07-01",
+      periodEnd: "2026-09-30",
+      metricSource: "health_habit_completions",
+      target: 20,
+      unit: "veces",
+    })).toThrow(/target/i);
+  });
+
   it("rejects invalid periods and non-positive targets", () => {
     expect(() => createObjectiveSchema.parse({
       title: "Rango roto",
@@ -103,6 +127,17 @@ describe("updateObjectiveSchema", () => {
       currency: "ARS",
     });
     expect(() => updateObjectiveSchema.parse({ metricSource: "wallet_savings" })).toThrow(/currency/i);
+  });
+
+  it("requires a target when changing to health habit completions", () => {
+    expect(updateObjectiveSchema.parse({
+      metricSource: "health_habit_completions",
+      metricTargetId: "habit-1",
+    })).toEqual({
+      metricSource: "health_habit_completions",
+      metricTargetId: "habit-1",
+    });
+    expect(() => updateObjectiveSchema.parse({ metricSource: "health_habit_completions" })).toThrow(/target/i);
   });
 
   it("rejects partial period updates", () => {

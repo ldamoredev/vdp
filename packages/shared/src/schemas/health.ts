@@ -28,6 +28,14 @@ export const habitLogSchema = z.object({
   date: optionalLocalDateStringSchema, // YYYY-MM-DD, defaults to today
 });
 
+export const habitCompletionsQuerySchema = z.object({
+  from: localDateStringSchema,
+  to: localDateStringSchema,
+}).refine((value) => value.to >= value.from, {
+  message: "to must be on or after from",
+  path: ["to"],
+});
+
 // ─── Counters ("days since") ─────────────────────────────
 export const createCounterSchema = z.object({
   name: z.string().trim().min(1).max(100),

@@ -10,6 +10,7 @@ export function serializeObjective(objective: Objective): ObjectiveDto {
         periodStart: snapshot.periodStart,
         periodEnd: snapshot.periodEnd,
         metricSource: snapshot.metricSource,
+        metricTargetId: snapshot.metricTargetId,
         target: snapshot.target,
         unit: snapshot.unit,
         manualValue: snapshot.manualValue,

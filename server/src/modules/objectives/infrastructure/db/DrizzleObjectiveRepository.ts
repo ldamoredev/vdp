@@ -19,6 +19,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
                 periodStart: data.periodStart,
                 periodEnd: data.periodEnd,
                 metricSource: data.metricSource,
+                metricTargetId: data.metricSource === 'health_habit_completions' ? data.metricTargetId ?? null : null,
                 target: String(data.target),
                 unit: data.unit,
                 manualValue: data.metricSource === 'manual' && data.manualValue !== undefined
@@ -60,6 +61,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
                 periodStart: snapshot.periodStart,
                 periodEnd: snapshot.periodEnd,
                 metricSource: snapshot.metricSource,
+                metricTargetId: snapshot.metricTargetId,
                 target: String(snapshot.target),
                 unit: snapshot.unit,
                 manualValue: snapshot.manualValue === null ? null : String(snapshot.manualValue),
@@ -83,6 +85,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
             periodStart: row.periodStart,
             periodEnd: row.periodEnd,
             metricSource: row.metricSource,
+            metricTargetId: row.metricTargetId,
             target: Number(row.target),
             unit: row.unit,
             manualValue: row.manualValue === null ? null : Number(row.manualValue),

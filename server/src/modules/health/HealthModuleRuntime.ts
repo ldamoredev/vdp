@@ -11,6 +11,7 @@ import { CreateHabitCommand, CreateHabitCommandHandler } from './app/CreateHabit
 import { DropGoalCommand, DropGoalCommandHandler } from './app/DropGoalCommand';
 import { GetCountersOverviewQuery, GetCountersOverviewQueryHandler } from './app/GetCountersOverviewQuery';
 import { GetGoalsOverviewQuery, GetGoalsOverviewQueryHandler } from './app/GetGoalsOverviewQuery';
+import { GetHabitCompletionsQuery, GetHabitCompletionsQueryHandler } from './app/GetHabitCompletionsQuery';
 import { GetHabitsOverviewQuery, GetHabitsOverviewQueryHandler } from './app/GetHabitsOverviewQuery';
 import { GetMoodCheckInsQuery, GetMoodCheckInsQueryHandler } from './app/GetMoodCheckInsQuery';
 import { GetWeightTrendQuery, GetWeightTrendQueryHandler } from './app/GetWeightTrendQuery';
@@ -43,6 +44,9 @@ export class HealthModuleRuntime {
     registerHandlers(): void {
         this.deps.bus.registerHandler(GetHabitsOverviewQuery, () =>
             new GetHabitsOverviewQueryHandler(this.habitRepository()),
+        );
+        this.deps.bus.registerHandler(GetHabitCompletionsQuery, () =>
+            new GetHabitCompletionsQueryHandler(this.habitRepository()),
         );
 
         this.deps.bus.registerHandler(CreateHabitCommand, () =>

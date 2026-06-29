@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS objectives.objectives (
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
     metric_source VARCHAR(40) NOT NULL,
+    metric_target_id VARCHAR(120),
     target NUMERIC(15, 2) NOT NULL,
     unit VARCHAR(24) NOT NULL,
     manual_value NUMERIC(15, 2),

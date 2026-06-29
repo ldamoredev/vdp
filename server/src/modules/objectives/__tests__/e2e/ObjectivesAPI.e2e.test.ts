@@ -129,6 +129,31 @@ describe('Objectives API — E2E', () => {
         expect(otherUserAttempt.statusCode).toBe(404);
     });
 
+    it('creates a health habit completion objective with a metric target', async () => {
+        const response = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/objectives',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: {
+                title: 'Meditar 20 veces',
+                periodStart: '2026-07-01',
+                periodEnd: '2026-09-30',
+                metricSource: 'health_habit_completions',
+                metricTargetId: 'habit-1',
+                target: 20,
+                unit: 'veces',
+            },
+        });
+
+        expect(response.statusCode).toBe(201);
+        expect(response.json()).toMatchObject({
+            metricSource: 'health_habit_completions',
+            metricTargetId: 'habit-1',
+            manualValue: null,
+            currency: null,
+        });
+    });
+
     it('rejects invalid create payloads', async () => {
         const response = await testApp.app.inject({
             method: 'POST',

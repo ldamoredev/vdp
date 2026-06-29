@@ -5,6 +5,7 @@ export type CreateObjectiveData = {
     readonly periodStart: string;
     readonly periodEnd: string;
     readonly metricSource: ObjectiveMetricSource;
+    readonly metricTargetId?: string | null;
     readonly target: number;
     readonly unit: string;
     readonly manualValue?: number | null;

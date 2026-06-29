@@ -18,6 +18,7 @@ export class FakeObjectiveRepository extends ObjectiveRepository {
             periodStart: data.periodStart,
             periodEnd: data.periodEnd,
             metricSource: data.metricSource,
+            metricTargetId: data.metricSource === 'health_habit_completions' ? data.metricTargetId ?? null : null,
             target: data.target,
             unit: data.unit,
             manualValue: data.metricSource === 'manual' ? data.manualValue ?? null : null,
