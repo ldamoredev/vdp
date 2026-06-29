@@ -56,4 +56,7 @@ export type {
   ObjectiveMetricSource,
   ObjectiveStatus,
   Objective,
+  // Inbox
+  InboxItemStatus,
+  InboxItem,
 } from "@vdp/shared";

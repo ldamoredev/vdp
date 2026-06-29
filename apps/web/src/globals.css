@@ -332,6 +332,12 @@
   --accent-glow: rgba(236, 72, 153, 0.15);
 }
 
+.domain-inbox {
+  --accent: #F59E0B;
+  --accent-secondary: #B45309;
+  --accent-glow: rgba(245, 158, 11, 0.15);
+}
+
 .domain-people {
   --accent: #A855F7;
   --accent-secondary: #9333EA;
@@ -379,6 +385,12 @@
   --accent: #DB2777;
   --accent-secondary: #BE185D;
   --accent-glow: rgba(219, 39, 119, 0.12);
+}
+
+[data-theme="light"] .domain-inbox {
+  --accent: #D97706;
+  --accent-secondary: #B45309;
+  --accent-glow: rgba(217, 119, 6, 0.12);
 }
 
 [data-theme="light"] .domain-people {

@@ -14,6 +14,7 @@ import {
   Stethoscope,
   Dumbbell,
   Target,
+  Inbox,
   Users,
   Briefcase,
   FolderKanban,
@@ -22,7 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type DomainKey = "tasks" | "wallet" | "health" | "projects" | "objectives" | "people" | "work" | "study";
+export type DomainKey = "tasks" | "wallet" | "health" | "projects" | "objectives" | "inbox" | "people" | "work" | "study";
 
 export interface NavItem {
   href: string;
@@ -142,6 +143,21 @@ export const domains: DomainConfig[] = [
     aiDescription: "Sin agente en D4a.",
     navItems: [
       { href: "/objectives", label: "Metas", icon: LayoutDashboard },
+    ],
+  },
+  {
+    key: "inbox",
+    label: "Bandeja",
+    subtitle: "Inbox",
+    icon: Inbox,
+    iconLetter: "B",
+    agentEndpoint: null,
+    chatPlaceholder: "Capturá algo...",
+    chatWelcome: "La bandeja todavía no tiene agente propio",
+    chatDescription: "Capturá cualquier cosa y triala a un módulo después.",
+    aiDescription: "Sin agente en D5a.",
+    navItems: [
+      { href: "/inbox", label: "Bandeja", icon: LayoutDashboard },
     ],
   },
   {

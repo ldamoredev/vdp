@@ -10,6 +10,7 @@ import { MedicalScreen } from "@/ui/screens/health/medical/MedicalScreen";
 import LandingScreen from "@/ui/screens/landing/LandingScreen";
 import LoginScreen from "@/ui/screens/login/LoginScreen";
 import { ObjectivesScreen } from "@/ui/screens/objectives/ObjectivesScreen";
+import { InboxScreen } from "@/ui/screens/inbox/InboxScreen";
 import { PeopleScreen } from "@/ui/screens/people/PeopleScreen";
 import { ProjectsScreen } from "@/ui/screens/projects/ProjectsScreen";
 import ReviewScreen from "@/ui/screens/review/ReviewScreen";
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
           { path: "/review", element: <ReviewScreen /> },
           { path: "/settings", element: <SettingsScreen /> },
           { path: "/objectives", element: <ObjectivesScreen /> },
+          { path: "/inbox", element: <InboxScreen /> },
           { path: "/people", element: <PeopleScreen /> },
           { path: "/projects", element: <ProjectsScreen /> },
           { path: "/work", element: <WorkScreen /> },
