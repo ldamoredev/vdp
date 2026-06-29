@@ -51,6 +51,20 @@ export class FakeInboxGateway implements InboxGateway {
     return item;
   }
 
+  async triageItem(id: string, routedTo: string): Promise<InboxItem> {
+    this.record("triageItem", id, routedTo);
+    const current = this.items.find((item) => item.id === id) ?? InboxItem.from(dto({ id }));
+    const item = InboxItem.from(dto({
+      id,
+      text: current.text,
+      note: current.note,
+      status: "triaged",
+      routedTo,
+    }));
+    this.items = this.items.map((candidate) => (candidate.id === id ? item : candidate));
+    return item;
+  }
+
   async discardItem(id: string): Promise<InboxItem> {
     this.record("discardItem", id);
     const current = this.items.find((item) => item.id === id) ?? InboxItem.from(dto({ id }));

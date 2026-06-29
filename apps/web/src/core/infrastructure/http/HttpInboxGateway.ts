@@ -19,6 +19,11 @@ export class HttpInboxGateway implements InboxGateway {
     return InboxItem.from(body);
   }
 
+  async triageItem(id: string, routedTo: string): Promise<InboxItem> {
+    const { body } = await this.http.post<InboxItemDto>(`${P}/${id}/triage`, { routedTo });
+    return InboxItem.from(body);
+  }
+
   async discardItem(id: string): Promise<InboxItem> {
     const { body } = await this.http.post<InboxItemDto>(`${P}/${id}/discard`, {});
     return InboxItem.from(body);

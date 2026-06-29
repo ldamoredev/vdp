@@ -57,8 +57,10 @@ export class QuickCapturePresenter extends PresenterBase<QuickCaptureViewModel> 
     onChange: ChangeFunc,
     private readonly store: TasksDashboardStore,
     private readonly core: Core,
+    initialTitle = "",
   ) {
     super(onChange);
+    this.title = initialTitle;
   }
 
   protected initModel(): QuickCaptureViewModel {

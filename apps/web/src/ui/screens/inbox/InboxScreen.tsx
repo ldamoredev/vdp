@@ -1,4 +1,5 @@
 import { Inbox, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router";
 
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
@@ -6,6 +7,7 @@ import { useInboxPresenter } from "./useInboxPresenter";
 
 export function InboxScreen() {
   const presenter = useInboxPresenter();
+  const navigate = useNavigate();
   const vm = presenter.model;
 
   return (
@@ -59,20 +61,38 @@ export function InboxScreen() {
             {vm.items.map((item) => (
               <li
                 key={item.id}
-                className="flex items-start justify-between gap-3 rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 py-2"
+                className="rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 py-2"
               >
-                <div className="min-w-0">
-                  <p className="whitespace-pre-wrap break-words text-sm text-[var(--foreground)]">{item.text}</p>
-                  <p className="mt-1 font-data text-[11px] text-[var(--muted)]">{item.capturedLabel}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="whitespace-pre-wrap break-words text-sm text-[var(--foreground)]">{item.text}</p>
+                    <p className="mt-1 font-data text-[11px] text-[var(--muted)]">{item.capturedLabel}</p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Descartar"
+                    onClick={() => void presenter.discard(item.id)}
+                    className="btn-secondary min-h-9 text-xs"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  aria-label="Descartar"
-                  onClick={() => void presenter.discard(item.id)}
-                  className="btn-secondary min-h-9 text-xs"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-[var(--muted)]">Triar a</span>
+                  {item.triageTargets.map((target) => (
+                    <button
+                      key={target.routedTo}
+                      type="button"
+                      onClick={async () => {
+                        await presenter.triage(item.id, target.routedTo);
+                        navigate(target.href);
+                      }}
+                      className="btn-secondary min-h-8 text-xs"
+                    >
+                      {target.label}
+                    </button>
+                  ))}
+                </div>
               </li>
             ))}
           </ul>

@@ -4,9 +4,10 @@ import type { Core } from "@/core/Core";
 import { CaptureInboxItem } from "@/core/app/inbox/CaptureInboxItem";
 import { DiscardInboxItem } from "@/core/app/inbox/DiscardInboxItem";
 import { ListInboxItems } from "@/core/app/inbox/ListInboxItems";
+import { TriageInboxItem } from "@/core/app/inbox/TriageInboxItem";
 import { InboxItem, pendingInboxItems } from "@/core/domain/inbox/InboxItem";
 import { formatTaskDate } from "@/lib/format";
-import type { InboxViewModel } from "@/ui/models/inbox/InboxViewModel";
+import type { InboxTriageTargetVM, InboxViewModel } from "@/ui/models/inbox/InboxViewModel";
 
 export class InboxPresenter extends PresenterBase<InboxViewModel> {
   private items: InboxItem[] = [];
@@ -47,6 +48,16 @@ export class InboxPresenter extends PresenterBase<InboxViewModel> {
       this.error = "No pudimos capturar la nota.";
     } finally {
       this.isSaving = false;
+      this.refresh();
+    }
+  }
+
+  async triage(id: string, routedTo: string): Promise<void> {
+    try {
+      await this.core.execute(new TriageInboxItem(id, routedTo));
+      await this.load();
+    } catch {
+      this.error = "No pudimos triar la nota.";
       this.refresh();
     }
   }
@@ -97,7 +108,20 @@ export class InboxPresenter extends PresenterBase<InboxViewModel> {
         text: item.text,
         note: item.note,
         capturedLabel: formatTaskDate(item.createdAt.slice(0, 10)),
+        triageTargets: triageTargetsFor(item.text),
       })),
     };
   }
+}
+
+function triageTargetsFor(text: string): InboxTriageTargetVM[] {
+  const encoded = encodeURIComponent(text);
+  return [
+    { routedTo: "tasks", label: "Tarea", href: `/tasks?capturar=${encoded}` },
+    {
+      routedTo: "wallet",
+      label: "Gasto",
+      href: `/wallet/transactions/new?type=expense&description=${encoded}`,
+    },
+  ];
 }

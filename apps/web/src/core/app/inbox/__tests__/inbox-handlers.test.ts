@@ -6,6 +6,7 @@ import { CaptureInboxItem } from "../CaptureInboxItem";
 import { DiscardInboxItem } from "../DiscardInboxItem";
 import { InboxModule } from "../InboxModule";
 import { ListInboxItems } from "../ListInboxItems";
+import { TriageInboxItem } from "../TriageInboxItem";
 import { FakeInboxGateway } from "./fakes/FakeInboxGateway";
 
 function coreWith(gateway: FakeInboxGateway): Core {
@@ -31,9 +32,11 @@ describe("inbox handlers (dispatched through the bus)", () => {
     const core = coreWith(gateway);
 
     const captured = await core.execute(new CaptureInboxItem({ text: "Comprar pan" }));
+    await core.execute(new TriageInboxItem(captured.id, "tasks"));
     await core.execute(new DiscardInboxItem(captured.id));
 
     expect(gateway.callsTo("captureItem")[0].args).toEqual([{ text: "Comprar pan" }]);
+    expect(gateway.callsTo("triageItem")[0].args).toEqual([captured.id, "tasks"]);
     expect(gateway.callsTo("discardItem")[0].args).toEqual([captured.id]);
     expect(captured).toBeInstanceOf(InboxItem);
   });

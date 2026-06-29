@@ -57,6 +57,17 @@ function defer<T>() {
 }
 
 describe("QuickCapturePresenter", () => {
+  it("prefills the title from an initial value (inbox triage deep-link)", () => {
+    const core = new Core({ httpClient: {} as never, loggingSink: { debug: vi.fn(), error: vi.fn() } })
+      .use(new TasksModule(new FakeTasksGateway()))
+      .use(new ProjectsModule(new FakeProjectsGateway()));
+    const store = new TasksDashboardStore(core, new TasksEvents(), "2026-06-13");
+    const presenter = new QuickCapturePresenter(vi.fn(), store, core, "Pagar la luz");
+    presenter.init(undefined);
+
+    expect(presenter.model.title).toBe("Pagar la luz");
+  });
+
   it("starts with an empty form and Spanish labels", () => {
     const { presenter } = build();
 

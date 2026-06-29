@@ -62,6 +62,32 @@ describe("InboxPresenter", () => {
     expect(gateway.callsTo("captureItem")).toHaveLength(0);
   });
 
+  it("exposes triage targets with prefilled deep-links", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.items = [];
+    await gateway.captureItem({ text: "Pagar la luz" });
+    const presenter = await mountedPresenter(gateway);
+
+    const targets = presenter.model.items[0].triageTargets;
+    expect(targets.map((t) => t.routedTo)).toEqual(["tasks", "wallet"]);
+    expect(targets.find((t) => t.routedTo === "tasks")?.href).toBe("/tasks?capturar=Pagar%20la%20luz");
+    expect(targets.find((t) => t.routedTo === "wallet")?.href).toBe(
+      "/wallet/transactions/new?type=expense&description=Pagar%20la%20luz",
+    );
+  });
+
+  it("triages an item and removes it from the pending queue", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.items = [];
+    const captured = await gateway.captureItem({ text: "Pagar la luz" });
+    const presenter = await mountedPresenter(gateway);
+
+    await presenter.triage(captured.id, "wallet");
+
+    expect(gateway.callsTo("triageItem")[0].args).toEqual([captured.id, "wallet"]);
+    expect(presenter.model.pendingCount).toBe(0);
+  });
+
   it("discards an item through the gateway", async () => {
     const gateway = new FakeInboxGateway();
     gateway.items = [];
