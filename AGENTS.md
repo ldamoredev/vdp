@@ -25,7 +25,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
 - `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, optional hourly rate/currency, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week, including expected income grouped by currency and a Wallet income deep link. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
-- `objectives`: active Life Goals / "Metas" strategic layer — objectives own explicit `periodStart`/`periodEnd`, metric binding (`manual`, `projects_hours`, or `tasks_completed`), numeric target/unit, nullable manual progress, and lifecycle (`active|archived|achieved`). Backend persists objectives and the idempotent `active→achieved` command; the web presenter computes progress read-time through the metric-source catalog, with `projects_hours` reusing Projects `GetHoursReport` and `tasks_completed` reusing Tasks `GetTasksByDomain`.
+- `objectives`: active Life Goals / "Metas" strategic layer — objectives own explicit `periodStart`/`periodEnd`, metric binding (`manual`, `projects_hours`, `tasks_completed`, or per-currency `wallet_savings`), numeric target/unit, nullable manual progress, optional currency, and lifecycle (`active|archived|achieved`). Backend persists objectives and the idempotent `active→achieved` command; the web presenter computes progress read-time through the metric-source catalog, with `projects_hours` reusing Projects `GetHoursReport`, `tasks_completed` reusing Tasks `GetTasksByDomain`, and `wallet_savings` reusing Wallet savings goals filtered by objective currency.
 
 Inactive domains:
 
@@ -35,7 +35,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. D4a shipped the Objectives / Metas strategic layer with manual and Projects-hours progress; D4b shipped lazy achieved detection plus completed-tasks progress; D4c remains not started. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. D4a shipped the Objectives / Metas strategic layer with manual and Projects-hours progress; D4b shipped lazy achieved detection plus completed-tasks and Wallet-savings progress; D4c remains not started. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -168,7 +168,7 @@ The active migrations create these PostgreSQL schemas:
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
 - `tasks`: tasks, task notes, task embeddings, task insights.
 - `projects`: projects direction aggregate (`work|personal`) used by the project board, client catalog, and time entries for hours reporting; task rows link to projects through nullable `project_id`.
-- `objectives`: Life Goals objectives with explicit periods, typed metric source, target/unit, manual value, and lifecycle. Progress is computed read-time in the web presenter, not in backend SQL; achieved status is persisted lazily when read-time progress reaches the target.
+- `objectives`: Life Goals objectives with explicit periods, typed metric source, target/unit, manual value, optional currency, and lifecycle. Progress is computed read-time in the web presenter, not in backend SQL; achieved status is persisted lazily when read-time progress reaches the target.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
 - `health`: habits, habit logs, counters, counter attempts, goals, mood check-ins, weight entries.
 - `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
@@ -309,6 +309,7 @@ Read-time cross-domain surfaces:
 - `projects→wallet`: Projects hours reports compute expected income from project rates and logged minutes, grouped by currency (never sum ARS+USD), and link to Wallet's transaction form pre-filled as income. This is a read-time deep link, not an event; Wallet never auto-writes the transaction.
 - `objectives→projects`: Objectives progress for `projects_hours` is computed in the web presenter by calling Projects `GetHoursReport` for the objective period and using `totalMinutes / 60`. The Objectives backend does not read Projects.
 - `objectives→tasks`: Objectives progress for `tasks_completed` is computed in the web presenter by calling Tasks `GetTasksByDomain` for the objective period and summing domain counts. The Objectives backend does not read Tasks.
+- `objectives→wallet`: Objectives progress for `wallet_savings` is computed in the web presenter by calling Wallet `GetSavings` and summing savings goals that match the objective currency. The Objectives backend does not read Wallet, and money is never summed across currencies.
 
 Future cross-domain signals should follow the same pattern:
 

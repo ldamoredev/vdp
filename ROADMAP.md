@@ -10,7 +10,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
-| Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, and completed-tasks read-time progress |
+| Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -22,7 +22,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) in progress** — D4a shipped with Objective CRUD plus manual and Projects-hours progress; D4b shipped achieved detection plus completed-tasks progress.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) in progress** — D4a shipped with Objective CRUD plus manual and Projects-hours progress; D4b shipped achieved detection plus completed-tasks and Wallet-savings progress.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -99,9 +99,9 @@ existing primitive); risk is it turns decorative if not wired to real metrics.
 
 **Status (June 2026): in progress.** D4a shipped the real Objective aggregate and
 one live metric (`projects_hours`) so the layer is not decorative. D4b added
-persisted lazy-on-load achieved detection and a second composed metric,
-`tasks_completed`. D4c remains not started and is recorded in the "D4: Life Goals"
-execution section below.
+persisted lazy-on-load achieved detection plus composed `tasks_completed` and
+per-currency `wallet_savings` metrics. D4c remains not started and is recorded in
+the "D4: Life Goals" execution section below.
 
 ### D5. Universal inbox + triage — *capture* — enhancer
 
@@ -385,8 +385,9 @@ slice therefore shipped with one real cross-module metric, not a manual-only she
    objective and metric binding only. Progress is computed by the web presenter via
    a typed metric-source catalog over the frontend CQBus.
 4. **Metric bindings are typed.** `metricSource + target + unit` lives on the
-   aggregate. D4b supports `manual`, `projects_hours`, and `tasks_completed`;
-   future wallet sources must stay per-currency and never sum ARS+USD.
+   aggregate. D4b supports `manual`, `projects_hours`, `tasks_completed`, and
+   per-currency `wallet_savings`; wallet sources must stay per-currency and never
+   sum ARS+USD.
 
 ### D4a. Objective aggregate + CRUD + one live metric — SHIPPED (2026-06-29)
 
@@ -415,8 +416,12 @@ slice therefore shipped with one real cross-module metric, not a manual-only she
   presenter through Tasks `GetTasksByDomain({ from, to })` and summed across
   domains for the objective period. It is non-monetary, so no currency dimension
   or migration was needed.
-- **Deferred:** wallet/health metric sources remain future slices. Any wallet
-  source must introduce explicit objective currency and stay per-currency.
+- **Wallet savings metric:** added `wallet_savings` with explicit objective
+  currency persisted on the aggregate (forward-only migration `0016`). The web
+  presenter composes Wallet `GetSavings`, filters by objective currency, and sums
+  savings contributions only — not account balances or income. The form and cards
+  explain the source and link to `/wallet/savings`.
+- **Deferred:** health metric sources remain future slices.
 
 ### D4c. Surface objectives on /home — NOT STARTED
 
