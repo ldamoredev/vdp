@@ -2,6 +2,7 @@ import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 import type { ObjectiveMetricSource } from "@vdp/shared";
 
 import type { Core } from "@/core/Core";
+import { GetHabitsOverview } from "@/core/app/health/GetHabitsOverview";
 import { ArchiveObjective } from "@/core/app/objectives/ArchiveObjective";
 import { CreateObjective } from "@/core/app/objectives/CreateObjective";
 import { ListObjectives } from "@/core/app/objectives/ListObjectives";
@@ -24,17 +25,20 @@ type ObjectiveFormState = {
   unit: string;
   manualValue: string;
   currency: "ARS" | "USD";
+  metricTargetId: string;
 };
 
 const metricSourceOptions = [
   { value: "projects_hours" as const, label: "Horas de proyectos" },
   { value: "tasks_completed" as const, label: "Tareas completadas" },
   { value: "wallet_savings" as const, label: "Ahorro (Wallet)" },
+  { value: "health_habit_completions" as const, label: "Hábito (Health)" },
   { value: "manual" as const, label: "Manual" },
 ];
 
 export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
   private objectives: Objective[] = [];
+  private habitOptions: { value: string; label: string }[] = [];
   private currentValues = new Map<string, number>();
   private isLoading = true;
   private error: string | null = null;
@@ -75,6 +79,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       unit: objective.unit,
       manualValue: objective.manualValue === null ? "" : String(objective.manualValue),
       currency: objective.currency ?? "ARS",
+      metricTargetId: objective.metricTargetId ?? "",
     };
     this.refresh();
   }
@@ -127,6 +132,16 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       this.form.unit = this.form.currency;
       this.form.manualValue = "";
     }
+    if (metricSource === "health_habit_completions") {
+      this.form.unit = "veces";
+      this.form.manualValue = "";
+      this.form.metricTargetId ||= this.habitOptions[0]?.value ?? "";
+    }
+    this.refresh();
+  }
+
+  setMetricTarget(metricTargetId: string): void {
+    this.form.metricTargetId = metricTargetId;
     this.refresh();
   }
 
@@ -170,6 +185,9 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       currency: objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped
         ? this.form.currency
         : null,
+      metricTargetId: objectiveMetricSourceCatalog[this.form.metricSource].isTargeted
+        ? this.form.metricTargetId
+        : null,
     };
     try {
       if (this.form.editingId) {
@@ -200,13 +218,23 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
     this.isLoading = true;
     this.refresh();
     try {
-      const objectives = sortObjectives(await this.core.execute(new ListObjectives()));
+      const [objectives, habitsOverview] = await Promise.all([
+        this.core.execute(new ListObjectives()),
+        this.core.execute(new GetHabitsOverview()),
+      ]);
+      this.habitOptions = habitsOverview.habits
+        .filter((habit) => habit.archivedAt === null)
+        .map((habit) => ({
+          value: habit.id,
+          label: `${habit.emoji ? `${habit.emoji} ` : ""}${habit.name}`,
+        }));
+      const sortedObjectives = sortObjectives(objectives);
       const values = await Promise.all(
-        objectives.map(async (objective) => [objective.id, await resolveObjectiveCurrentValue(objective, this.core)] as const),
+        sortedObjectives.map(async (objective) => [objective.id, await resolveObjectiveCurrentValue(objective, this.core)] as const),
       );
       const currentValues = new Map(values);
       this.objectives = sortObjectives(await Promise.all(
-        objectives.map((objective) =>
+        sortedObjectives.map((objective) =>
           this.markAchievedIfReached(objective, currentValues.get(objective.id) ?? 0),
         ),
       ));
@@ -233,7 +261,9 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       this.form.unit.trim().length > 0 &&
       (this.form.metricSource !== "manual" || (Number.isFinite(manualValue) && manualValue >= 0)) &&
       (!objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped ||
-        this.form.currency === "ARS" || this.form.currency === "USD")
+        this.form.currency === "ARS" || this.form.currency === "USD") &&
+      (!objectiveMetricSourceCatalog[this.form.metricSource].isTargeted ||
+        this.form.metricTargetId.trim().length > 0)
     );
   }
 
@@ -261,6 +291,8 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
         ...this.form,
         isEditing: this.form.editingId !== null,
         isCurrencyScoped: objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped,
+        isMetricTargetRequired: objectiveMetricSourceCatalog[this.form.metricSource].isTargeted,
+        metricTargetOptions: this.habitOptions,
         canSubmit: this.canSubmit() && !this.form.isSaving,
         submitLabel: this.form.editingId ? "Guardar" : "Crear",
       },
@@ -300,6 +332,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       unit: "h",
       manualValue: "",
       currency: "ARS",
+      metricTargetId: "",
       ...overrides,
     };
   }
@@ -311,6 +344,7 @@ function sourceLabel(source: ObjectiveMetricSource): string {
     projects_hours: "Horas de proyectos",
     tasks_completed: "Tareas completadas",
     wallet_savings: "Ahorro (Wallet)",
+    health_habit_completions: "Hábito (Health)",
   }[source];
 }
 

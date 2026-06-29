@@ -12,6 +12,7 @@ import { CreateHabit } from "../CreateHabit";
 import { DropGoal } from "../DropGoal";
 import { GetCountersOverview } from "../GetCountersOverview";
 import { GetGoalsOverview } from "../GetGoalsOverview";
+import { GetHabitCompletions } from "../GetHabitCompletions";
 import { GetHabitsOverview } from "../GetHabitsOverview";
 import { GetMoodCheckIns } from "../GetMoodCheckIns";
 import { GetWeightTrend } from "../GetWeightTrend";
@@ -37,6 +38,20 @@ describe("health handlers (dispatched through the bus)", () => {
       const result = await coreWith(gateway).execute(new GetHabitsOverview());
       expect(gateway.callsTo("listHabits")).toHaveLength(1);
       expect(result.date).toBe("2026-06-13");
+    });
+
+    it("GetHabitCompletions forwards the habit and period", async () => {
+      const gateway = new FakeHealthGateway();
+      const result = await coreWith(gateway).execute(new GetHabitCompletions({
+        habitId: "h1",
+        from: "2026-06-01",
+        to: "2026-06-30",
+      }));
+
+      expect(gateway.callsTo("getHabitCompletions")[0].args).toEqual([
+        { habitId: "h1", from: "2026-06-01", to: "2026-06-30" },
+      ]);
+      expect(result.count).toBe(0);
     });
 
     it("CreateHabit forwards the input", async () => {

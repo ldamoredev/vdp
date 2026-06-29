@@ -3,6 +3,7 @@ import type {
   CountersOverviewResponse,
   GoalOverview,
   GoalsOverviewResponse,
+  HabitCompletionsResponse,
   HabitsOverviewResponse,
   MoodCheckIn,
   MoodCheckInsResponse,
@@ -16,6 +17,7 @@ import type {
   CreateCounterInput,
   CreateGoalInput,
   CreateHabitInput,
+  GetHabitCompletionsInput,
   GoalsOverview,
   GraduateGoalInput,
   HabitsOverview,
@@ -36,6 +38,14 @@ export class HttpHealthGateway implements HealthGateway {
   async listHabits(): Promise<HabitsOverview> {
     const { body } = await this.http.get<HabitsOverviewResponse>("/health/habits");
     return { habits: body.habits, date: body.date };
+  }
+
+  async getHabitCompletions(input: GetHabitCompletionsInput): Promise<HabitCompletionsResponse> {
+    const query = `from=${encodeURIComponent(input.from)}&to=${encodeURIComponent(input.to)}`;
+    const { body } = await this.http.get<HabitCompletionsResponse>(
+      `/health/habits/${input.habitId}/completions?${query}`,
+    );
+    return body;
   }
 
   async createHabit(input: CreateHabitInput): Promise<void> {

@@ -7,6 +7,7 @@ export interface CreateObjectiveInput {
   periodStart: string;
   periodEnd: string;
   metricSource: ObjectiveMetricSource;
+  metricTargetId?: string | null;
   target: number;
   unit: string;
   manualValue?: number | null;

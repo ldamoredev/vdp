@@ -20,6 +20,11 @@ export interface ObjectiveMetricSourceOptionVM {
   label: string;
 }
 
+export interface ObjectiveMetricTargetOptionVM {
+  value: string;
+  label: string;
+}
+
 export interface ObjectiveFormVM {
   isOpen: boolean;
   isEditing: boolean;
@@ -32,7 +37,10 @@ export interface ObjectiveFormVM {
   unit: string;
   manualValue: string;
   currency: "ARS" | "USD";
+  metricTargetId: string;
+  metricTargetOptions: ObjectiveMetricTargetOptionVM[];
   isCurrencyScoped: boolean;
+  isMetricTargetRequired: boolean;
   canSubmit: boolean;
   submitLabel: string;
 }

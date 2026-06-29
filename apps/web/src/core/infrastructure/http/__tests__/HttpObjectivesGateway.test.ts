@@ -59,6 +59,7 @@ function objectiveDto(overrides: Partial<ObjectiveDto> = {}): ObjectiveDto {
     periodStart: "2026-07-01",
     periodEnd: "2026-09-30",
     metricSource: "projects_hours",
+    metricTargetId: null,
     target: 120,
     unit: "h",
     manualValue: null,

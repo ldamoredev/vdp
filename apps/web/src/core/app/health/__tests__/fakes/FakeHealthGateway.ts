@@ -1,4 +1,4 @@
-import type { GoalOverview, MoodCheckIn, WeightEntry } from "@vdp/shared";
+import type { GoalOverview, HabitCompletionsResponse, MoodCheckIn, WeightEntry } from "@vdp/shared";
 
 import { Goal } from "../../../../domain/health/Goal";
 import type {
@@ -6,6 +6,7 @@ import type {
   CreateCounterInput,
   CreateGoalInput,
   CreateHabitInput,
+  GetHabitCompletionsInput,
   GoalsOverview,
   GraduateGoalInput,
   HabitsOverview,
@@ -42,6 +43,8 @@ const emptyGoalDto: GoalOverview = {
 export class FakeHealthGateway implements HealthGateway {
   readonly calls: RecordedCall[] = [];
   completeGoalResult = Goal.from(emptyGoalDto);
+  habitsOverview: HabitsOverview = { habits: [], date: "2026-06-13" };
+  habitCompletionCounts = new Map<string, number>();
   private moodCheckIns: MoodCheckIn[] = [];
   private weightEntries: WeightEntry[] = [];
 
@@ -55,7 +58,16 @@ export class FakeHealthGateway implements HealthGateway {
 
   async listHabits(): Promise<HabitsOverview> {
     this.record("listHabits");
-    return { habits: [], date: "2026-06-13" };
+    return this.habitsOverview;
+  }
+  async getHabitCompletions(input: GetHabitCompletionsInput): Promise<HabitCompletionsResponse> {
+    this.record("getHabitCompletions", input);
+    return {
+      habitId: input.habitId,
+      from: input.from,
+      to: input.to,
+      count: this.habitCompletionCounts.get(input.habitId) ?? 0,
+    };
   }
   async createHabit(input: CreateHabitInput): Promise<void> {
     this.record("createHabit", input);

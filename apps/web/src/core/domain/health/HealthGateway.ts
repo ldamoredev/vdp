@@ -1,7 +1,7 @@
 import type { Counter } from "./Counter";
 import type { Goal } from "./Goal";
 import type { Habit } from "./Habit";
-import type { HabitCadence, MoodCheckIn, MoodCheckInsResponse, WeightEntry } from "@vdp/shared";
+import type { HabitCadence, HabitCompletionsResponse, MoodCheckIn, MoodCheckInsResponse, WeightEntry } from "@vdp/shared";
 import type { WeightTrend } from "./Weight";
 
 export interface CreateHabitInput {
@@ -9,6 +9,12 @@ export interface CreateHabitInput {
   emoji?: string | null;
   cadence?: HabitCadence;
   weeklyTarget?: number | null;
+}
+
+export interface GetHabitCompletionsInput {
+  habitId: string;
+  from: string;
+  to: string;
 }
 
 export interface CreateCounterInput {
@@ -70,6 +76,7 @@ export type WeightTrendOverview = WeightTrend;
  */
 export interface HealthGateway {
   listHabits(): Promise<HabitsOverview>;
+  getHabitCompletions(input: GetHabitCompletionsInput): Promise<HabitCompletionsResponse>;
   createHabit(input: CreateHabitInput): Promise<void>;
   completeHabit(habitId: string, date?: string): Promise<void>;
   uncompleteHabit(habitId: string, date?: string): Promise<void>;

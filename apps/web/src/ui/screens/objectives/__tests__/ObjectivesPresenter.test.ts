@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
+import { HealthModule } from "@/core/app/health/HealthModule";
+import { FakeHealthGateway } from "@/core/app/health/__tests__/fakes/FakeHealthGateway";
 import { ObjectivesModule } from "@/core/app/objectives/ObjectivesModule";
 import { FakeObjectivesGateway } from "@/core/app/objectives/__tests__/fakes/FakeObjectivesGateway";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
@@ -19,6 +21,7 @@ function coreWith(
   projects = new FakeProjectsGateway(),
   tasks = new FakeTasksGateway(),
   wallet = new FakeWalletGateway(),
+  health = new FakeHealthGateway(),
 ): Core {
   return new Core({
     httpClient: {} as never,
@@ -27,7 +30,8 @@ function coreWith(
     .use(new ObjectivesModule(objectives))
     .use(new ProjectsModule(projects))
     .use(new TasksModule(tasks))
-    .use(new WalletModule(wallet));
+    .use(new WalletModule(wallet))
+    .use(new HealthModule(health));
 }
 
 function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}): Objective {
@@ -37,6 +41,7 @@ function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}
     periodStart: "2026-01-01",
     periodEnd: "2026-12-31",
     metricSource: "manual",
+    metricTargetId: null,
     target: 10,
     unit: "puntos",
     manualValue: 4,
@@ -125,6 +130,79 @@ describe("ObjectivesPresenter", () => {
       metricSource: "wallet_savings",
       currency: "USD",
       unit: "USD",
+    });
+  });
+
+  it("computes a specific health habit completions progress and saves its target", async () => {
+    const objectives = new FakeObjectivesGateway();
+    const health = new FakeHealthGateway();
+    health.habitsOverview = {
+      date: "2026-06-13",
+      habits: [
+        {
+          id: "habit-1",
+          name: "Meditar",
+          emoji: null,
+          cadence: "daily",
+          weeklyTarget: null,
+          archivedAt: null,
+          createdAt: "2026-06-01T00:00:00.000Z",
+          updatedAt: "2026-06-01T00:00:00.000Z",
+          completedToday: false,
+          periodCompletions: 0,
+          periodTarget: 1,
+          streak: 0,
+          bestStreak: 0,
+          totalCompletions: 0,
+          lastCompletedDate: null,
+        },
+      ],
+    };
+    health.habitCompletionCounts.set("habit-1", 7);
+    objectives.objectives = [
+      objective({
+        id: "habit-objective",
+        title: "Meditar 20 veces",
+        metricSource: "health_habit_completions",
+        metricTargetId: "habit-1",
+        target: 20,
+        unit: "veces",
+        manualValue: null,
+        periodStart: "2026-07-01",
+        periodEnd: "2026-09-30",
+      }),
+    ];
+    const presenter = new ObjectivesPresenter(
+      vi.fn(),
+      coreWith(objectives, new FakeProjectsGateway(), new FakeTasksGateway(), new FakeWalletGateway(), health),
+    );
+
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    expect(health.callsTo("getHabitCompletions")[0].args[0]).toEqual({
+      habitId: "habit-1",
+      from: "2026-07-01",
+      to: "2026-09-30",
+    });
+    expect(presenter.model.objectives[0]).toMatchObject({
+      sourceLabel: "Hábito (Health)",
+      currentValueLabel: "7 veces",
+      targetValueLabel: "20 veces",
+      progressPercent: 35,
+    });
+
+    presenter.openCreateForm();
+    presenter.setMetricSource("health_habit_completions");
+    presenter.setTitle("Meditar trimestral");
+    presenter.setTarget("20");
+    await presenter.saveForm();
+
+    expect(objectives.callsTo("createObjective")[0].args[0]).toMatchObject({
+      metricSource: "health_habit_completions",
+      metricTargetId: "habit-1",
+      unit: "veces",
     });
   });
 

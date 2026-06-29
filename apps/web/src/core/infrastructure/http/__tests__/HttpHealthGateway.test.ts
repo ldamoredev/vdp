@@ -2,6 +2,7 @@ import { HttpClient, HttpMethods, HttpRequest, HttpResponse } from "@nbottarini/
 import type {
   GoalOverview,
   GoalsOverviewResponse,
+  HabitCompletionsResponse,
   HabitsOverviewResponse,
   MoodCheckInsResponse,
   WeightTrendResponse,
@@ -91,6 +92,30 @@ describe("HttpHealthGateway", () => {
     expect(result.date).toBe("2026-06-13");
     expect(result.habits[0].id).toBe("h1");
     expect(http.calls[0]).toMatchObject({ method: "GET", url: "/health/habits" });
+  });
+
+  it("gets habit completions for a date range", async () => {
+    const body: HabitCompletionsResponse = {
+      habitId: "h1",
+      from: "2026-06-01",
+      to: "2026-06-30",
+      count: 6,
+    };
+    const http = new FakeHttpClient({
+      "GET /health/habits/h1/completions?from=2026-06-01&to=2026-06-30": body,
+    });
+
+    const result = await new HttpHealthGateway(http).getHabitCompletions({
+      habitId: "h1",
+      from: "2026-06-01",
+      to: "2026-06-30",
+    });
+
+    expect(result).toEqual(body);
+    expect(http.calls[0]).toMatchObject({
+      method: "GET",
+      url: "/health/habits/h1/completions?from=2026-06-01&to=2026-06-30",
+    });
   });
 
   it("maps goal DTOs into rich Goal models on list", async () => {

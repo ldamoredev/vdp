@@ -106,6 +106,30 @@ export function ObjectivesScreen() {
             </label>
           )}
 
+          {vm.form.isMetricTargetRequired && (
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
+                Hábito
+              </span>
+              <select
+                value={vm.form.metricTargetId}
+                onChange={(event) => presenter.setMetricTarget(event.target.value)}
+                disabled={vm.form.metricTargetOptions.length === 0}
+                className="min-h-11 w-full rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] disabled:opacity-60"
+              >
+                {vm.form.metricTargetOptions.length === 0 ? (
+                  <option value="">Sin hábitos activos</option>
+                ) : (
+                  vm.form.metricTargetOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+          )}
+
           {vm.form.metricSource === "wallet_savings" && (
             <WalletSavingsHint />
           )}

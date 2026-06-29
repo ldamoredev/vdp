@@ -14,6 +14,7 @@ import { CreateHabit, CreateHabitHandler } from "./CreateHabit";
 import { DropGoal, DropGoalHandler } from "./DropGoal";
 import { GetCountersOverview, GetCountersOverviewHandler } from "./GetCountersOverview";
 import { GetGoalsOverview, GetGoalsOverviewHandler } from "./GetGoalsOverview";
+import { GetHabitCompletions, GetHabitCompletionsHandler } from "./GetHabitCompletions";
 import { GetHabitsOverview, GetHabitsOverviewHandler } from "./GetHabitsOverview";
 import { GetMoodCheckIns, GetMoodCheckInsHandler } from "./GetMoodCheckIns";
 import { GetWeightTrend, GetWeightTrendHandler } from "./GetWeightTrend";
@@ -46,6 +47,7 @@ export class HealthModule implements CoreModule {
     const medicalGateway = this.medicalGateway ?? new HttpMedicalGateway(core.httpClient);
 
     core.bus.registerHandler(GetHabitsOverview, () => new GetHabitsOverviewHandler(gateway));
+    core.bus.registerHandler(GetHabitCompletions, () => new GetHabitCompletionsHandler(gateway));
     core.bus.registerHandler(CreateHabit, () => new CreateHabitHandler(gateway));
     core.bus.registerHandler(CompleteHabit, () => new CompleteHabitHandler(gateway));
     core.bus.registerHandler(UncompleteHabit, () => new UncompleteHabitHandler(gateway));
