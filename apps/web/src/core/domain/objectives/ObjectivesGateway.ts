@@ -20,4 +20,5 @@ export interface ObjectivesGateway {
   createObjective(input: CreateObjectiveInput): Promise<Objective>;
   updateObjective(id: string, input: UpdateObjectiveInput): Promise<Objective>;
   archiveObjective(id: string): Promise<Objective>;
+  markObjectiveAchieved(id: string): Promise<Objective>;
 }

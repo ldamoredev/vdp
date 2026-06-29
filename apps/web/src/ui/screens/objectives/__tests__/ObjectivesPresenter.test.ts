@@ -5,18 +5,25 @@ import { ObjectivesModule } from "@/core/app/objectives/ObjectivesModule";
 import { FakeObjectivesGateway } from "@/core/app/objectives/__tests__/fakes/FakeObjectivesGateway";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
 import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
+import { TasksModule } from "@/core/app/tasks/TasksModule";
+import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { Objective } from "@/core/domain/objectives/Objective";
 import { ObjectivesPresenter } from "../ObjectivesPresenter";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-function coreWith(objectives: FakeObjectivesGateway, projects = new FakeProjectsGateway()): Core {
+function coreWith(
+  objectives: FakeObjectivesGateway,
+  projects = new FakeProjectsGateway(),
+  tasks = new FakeTasksGateway(),
+): Core {
   return new Core({
     httpClient: {} as never,
     loggingSink: { debug: vi.fn(), error: vi.fn() },
   })
     .use(new ObjectivesModule(objectives))
-    .use(new ProjectsModule(projects));
+    .use(new ProjectsModule(projects))
+    .use(new TasksModule(tasks));
 }
 
 function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}): Objective {
@@ -90,6 +97,90 @@ describe("ObjectivesPresenter", () => {
       targetValueLabel: "3 h",
       progressPercent: 50,
       progressLabel: "50%",
+    });
+  });
+
+  it("marks active objectives achieved on load when progress reaches the target", async () => {
+    const objectives = new FakeObjectivesGateway();
+    objectives.objectives = [
+      objective({
+        id: "achieve-me",
+        target: 10,
+        manualValue: 12,
+        status: "active",
+      }),
+    ];
+    const presenter = new ObjectivesPresenter(vi.fn(), coreWith(objectives));
+
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+    await flush();
+
+    expect(objectives.callsTo("markObjectiveAchieved")[0].args).toEqual(["achieve-me"]);
+    expect(presenter.model.objectives[0]).toMatchObject({
+      statusLabel: "Lograda",
+      progressPercent: 100,
+      progressLabel: "100%",
+      isAchieved: true,
+    });
+  });
+
+  it("does not mark already achieved objectives again", async () => {
+    const objectives = new FakeObjectivesGateway();
+    objectives.objectives = [
+      objective({
+        id: "already-achieved",
+        target: 10,
+        manualValue: 12,
+        status: "achieved",
+        achievedAt: "2026-06-28T12:00:00.000Z",
+      }),
+    ];
+    const presenter = new ObjectivesPresenter(vi.fn(), coreWith(objectives));
+
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    expect(objectives.callsTo("markObjectiveAchieved")).toHaveLength(0);
+    expect(presenter.model.objectives[0].statusLabel).toBe("Lograda");
+  });
+
+  it("computes completed tasks progress through the metric catalog", async () => {
+    const objectives = new FakeObjectivesGateway();
+    const tasks = new FakeTasksGateway();
+    tasks.domainStats = [
+      { domain: "work", count: 2 },
+      { domain: "health", count: 1 },
+    ];
+    objectives.objectives = [
+      objective({
+        id: "tasks",
+        title: "Completar tareas",
+        metricSource: "tasks_completed",
+        target: 6,
+        unit: "tareas",
+        manualValue: null,
+        periodStart: "2026-07-01",
+        periodEnd: "2026-09-30",
+      }),
+    ];
+    const presenter = new ObjectivesPresenter(vi.fn(), coreWith(objectives, new FakeProjectsGateway(), tasks));
+
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    expect(tasks.callsTo("getByDomain")[0].args[0]).toEqual({
+      from: "2026-07-01",
+      to: "2026-09-30",
+    });
+    expect(presenter.model.objectives[0]).toMatchObject({
+      sourceLabel: "Tareas completadas",
+      currentValueLabel: "3 tareas",
+      targetValueLabel: "6 tareas",
+      progressPercent: 50,
     });
   });
 

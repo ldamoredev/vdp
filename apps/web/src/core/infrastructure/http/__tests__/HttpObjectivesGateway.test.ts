@@ -105,14 +105,19 @@ describe("HttpObjectivesGateway", () => {
     expect(http.calls[1]).toMatchObject({ method: "PUT", url: "/objectives/o1", body: { manualValue: 5 } });
   });
 
-  it("archives an objective", async () => {
+  it("marks an objective achieved and archives an objective", async () => {
     const http = new FakeHttpClient({
+      "POST /objectives/o1/achieve": objectiveDto({ status: "achieved", achievedAt: "2026-06-28T12:00:00.000Z" }),
       "POST /objectives/o1/archive": objectiveDto({ status: "archived", archivedAt: "2026-06-28T12:00:00.000Z" }),
     });
 
-    const objective = await new HttpObjectivesGateway(http).archiveObjective("o1");
+    const gateway = new HttpObjectivesGateway(http);
+    const achieved = await gateway.markObjectiveAchieved("o1");
+    const objective = await gateway.archiveObjective("o1");
 
+    expect(achieved.status).toBe("achieved");
     expect(objective.status).toBe("archived");
-    expect(http.calls[0]).toMatchObject({ method: "POST", url: "/objectives/o1/archive", body: {} });
+    expect(http.calls[0]).toMatchObject({ method: "POST", url: "/objectives/o1/achieve", body: {} });
+    expect(http.calls[1]).toMatchObject({ method: "POST", url: "/objectives/o1/archive", body: {} });
   });
 });

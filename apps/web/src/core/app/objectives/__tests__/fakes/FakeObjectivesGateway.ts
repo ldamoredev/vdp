@@ -106,4 +106,26 @@ export class FakeObjectivesGateway implements ObjectivesGateway {
     this.objectives = this.objectives.map((candidate) => (candidate.id === id ? objective : candidate));
     return objective;
   }
+
+  async markObjectiveAchieved(id: string): Promise<Objective> {
+    this.record("markObjectiveAchieved", id);
+    const current = this.objectives.find((objective) => objective.id === id) ?? Objective.from(objectiveDto);
+    const objective = Objective.from({
+      id,
+      title: current.title,
+      periodStart: current.periodStart,
+      periodEnd: current.periodEnd,
+      metricSource: current.metricSource,
+      target: current.target,
+      unit: current.unit,
+      manualValue: current.manualValue,
+      status: "achieved",
+      archivedAt: current.archivedAt,
+      achievedAt: current.achievedAt ?? "2026-06-28T12:00:00.000Z",
+      createdAt: current.createdAt,
+      updatedAt: "2026-06-28T12:00:00.000Z",
+    });
+    this.objectives = this.objectives.map((candidate) => (candidate.id === id ? objective : candidate));
+    return objective;
+  }
 }

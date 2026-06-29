@@ -6,6 +6,7 @@ import { ArchiveObjective } from "../ArchiveObjective";
 import { CreateObjective } from "../CreateObjective";
 import { GetObjective } from "../GetObjective";
 import { ListObjectives } from "../ListObjectives";
+import { MarkObjectiveAchieved } from "../MarkObjectiveAchieved";
 import { ObjectivesModule } from "../ObjectivesModule";
 import { UpdateObjective } from "../UpdateObjective";
 import { FakeObjectivesGateway } from "./fakes/FakeObjectivesGateway";
@@ -45,10 +46,13 @@ describe("objectives handlers (dispatched through the bus)", () => {
       manualValue: 2,
     }));
     await core.execute(new UpdateObjective("o1", { manualValue: 5 }));
+    const achieved = await core.execute(new MarkObjectiveAchieved("o1"));
     const archived = await core.execute(new ArchiveObjective("o1"));
 
     expect(gateway.callsTo("createObjective")[0].args[0]).toMatchObject({ title: "Leer 12 libros" });
     expect(gateway.callsTo("updateObjective")[0].args).toEqual(["o1", { manualValue: 5 }]);
+    expect(gateway.callsTo("markObjectiveAchieved")[0].args).toEqual(["o1"]);
+    expect(achieved.status).toBe("achieved");
     expect(gateway.callsTo("archiveObjective")[0].args).toEqual(["o1"]);
     expect(archived.status).toBe("archived");
   });

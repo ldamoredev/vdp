@@ -5,6 +5,7 @@ import { ArchiveObjective, ArchiveObjectiveHandler } from "./ArchiveObjective";
 import { CreateObjective, CreateObjectiveHandler } from "./CreateObjective";
 import { GetObjective, GetObjectiveHandler } from "./GetObjective";
 import { ListObjectives, ListObjectivesHandler } from "./ListObjectives";
+import { MarkObjectiveAchieved, MarkObjectiveAchievedHandler } from "./MarkObjectiveAchieved";
 import { UpdateObjective, UpdateObjectiveHandler } from "./UpdateObjective";
 
 export class ObjectivesModule implements CoreModule {
@@ -18,5 +19,6 @@ export class ObjectivesModule implements CoreModule {
     core.bus.registerHandler(CreateObjective, () => new CreateObjectiveHandler(gateway));
     core.bus.registerHandler(UpdateObjective, () => new UpdateObjectiveHandler(gateway));
     core.bus.registerHandler(ArchiveObjective, () => new ArchiveObjectiveHandler(gateway));
+    core.bus.registerHandler(MarkObjectiveAchieved, () => new MarkObjectiveAchievedHandler(gateway));
   }
 }

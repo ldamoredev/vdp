@@ -56,6 +56,7 @@ const sampleNote: TaskNote = {
  */
 export class FakeTasksGateway implements TasksGateway {
   readonly calls: RecordedCall[] = [];
+  domainStats: DomainStat[] = [];
 
   private record(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
@@ -151,7 +152,7 @@ export class FakeTasksGateway implements TasksGateway {
   }
   async getByDomain(params?: Record<string, string>): Promise<DomainStat[]> {
     this.record("getByDomain", params);
-    return [];
+    return this.domainStats;
   }
   async getCarryOverRate(days?: number): Promise<CarryOverRateResponse> {
     this.record("getCarryOverRate", days);

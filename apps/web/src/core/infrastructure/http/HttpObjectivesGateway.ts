@@ -37,4 +37,9 @@ export class HttpObjectivesGateway implements ObjectivesGateway {
     const { body } = await this.http.post<ObjectiveDto>(`${P}/${id}/archive`, {});
     return Objective.from(body);
   }
+
+  async markObjectiveAchieved(id: string): Promise<Objective> {
+    const { body } = await this.http.post<ObjectiveDto>(`${P}/${id}/achieve`, {});
+    return Objective.from(body);
+  }
 }

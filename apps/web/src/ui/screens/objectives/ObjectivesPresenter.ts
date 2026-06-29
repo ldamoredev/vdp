@@ -5,6 +5,7 @@ import type { Core } from "@/core/Core";
 import { ArchiveObjective } from "@/core/app/objectives/ArchiveObjective";
 import { CreateObjective } from "@/core/app/objectives/CreateObjective";
 import { ListObjectives } from "@/core/app/objectives/ListObjectives";
+import { MarkObjectiveAchieved } from "@/core/app/objectives/MarkObjectiveAchieved";
 import { resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { UpdateObjective } from "@/core/app/objectives/UpdateObjective";
 import { Objective, sortObjectives } from "@/core/domain/objectives/Objective";
@@ -26,6 +27,7 @@ type ObjectiveFormState = {
 
 const metricSourceOptions = [
   { value: "projects_hours" as const, label: "Horas de proyectos" },
+  { value: "tasks_completed" as const, label: "Tareas completadas" },
   { value: "manual" as const, label: "Manual" },
 ];
 
@@ -114,6 +116,10 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       this.form.unit = "h";
       this.form.manualValue = "";
     }
+    if (metricSource === "tasks_completed") {
+      this.form.unit = "tareas";
+      this.form.manualValue = "";
+    }
     this.refresh();
   }
 
@@ -180,8 +186,13 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       const values = await Promise.all(
         objectives.map(async (objective) => [objective.id, await resolveObjectiveCurrentValue(objective, this.core)] as const),
       );
-      this.objectives = objectives;
-      this.currentValues = new Map(values);
+      const currentValues = new Map(values);
+      this.objectives = sortObjectives(await Promise.all(
+        objectives.map((objective) =>
+          this.markAchievedIfReached(objective, currentValues.get(objective.id) ?? 0),
+        ),
+      ));
+      this.currentValues = currentValues;
       this.error = null;
     } catch {
       this.error = "No pudimos cargar tus metas.";
@@ -204,6 +215,16 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       this.form.unit.trim().length > 0 &&
       (this.form.metricSource !== "manual" || (Number.isFinite(manualValue) && manualValue >= 0))
     );
+  }
+
+  private async markAchievedIfReached(objective: Objective, currentValue: number): Promise<Objective> {
+    if (!objective.isActive || currentValue < objective.target) return objective;
+    try {
+      return await this.core.execute(new MarkObjectiveAchieved(objective.id));
+    } catch (error) {
+      console.error("No pudimos marcar la meta como lograda.", error);
+      return objective;
+    }
   }
 
   private refresh(): void {
@@ -262,7 +283,11 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
 }
 
 function sourceLabel(source: ObjectiveMetricSource): string {
-  return source === "projects_hours" ? "Horas de proyectos" : "Manual";
+  return {
+    manual: "Manual",
+    projects_hours: "Horas de proyectos",
+    tasks_completed: "Tareas completadas",
+  }[source];
 }
 
 function statusLabel(status: Objective["status"]): string {
