@@ -1,4 +1,4 @@
-export type ObjectiveMetricSource = "manual" | "projects_hours";
+export type ObjectiveMetricSource = "manual" | "projects_hours" | "tasks_completed";
 export type ObjectiveStatus = "active" | "archived" | "achieved";
 
 export interface Objective {

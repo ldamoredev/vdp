@@ -104,6 +104,31 @@ describe('Objectives API — E2E', () => {
         expect(update.statusCode).toBe(404);
     });
 
+    it('marks an objective achieved and keeps ownership isolated', async () => {
+        const objective = await createObjectiveAs(PRIMARY_TEST_USER.id, {
+            metricSource: 'manual',
+            target: 10,
+            unit: 'puntos',
+            manualValue: 10,
+        });
+
+        const achieved = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/objectives/${objective.id}/achieve`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const otherUserAttempt = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/objectives/${objective.id}/achieve`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(achieved.statusCode).toBe(200);
+        expect(achieved.json()).toMatchObject({ id: objective.id, status: 'achieved' });
+        expect(achieved.json().achievedAt).toBeTypeOf('string');
+        expect(otherUserAttempt.statusCode).toBe(404);
+    });
+
     it('rejects invalid create payloads', async () => {
         const response = await testApp.app.inject({
             method: 'POST',

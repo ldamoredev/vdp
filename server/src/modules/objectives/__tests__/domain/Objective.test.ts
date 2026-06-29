@@ -88,4 +88,23 @@ describe('Objective', () => {
             updatedAt: new Date('2026-06-28T12:00:00.000Z'),
         });
     });
+
+    it('does not mark archived objectives achieved', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));
+        const objective = Objective.fromSnapshot({
+            ...baseSnapshot,
+            status: 'archived',
+            archivedAt: new Date('2026-06-28T11:00:00.000Z'),
+        });
+
+        objective.markAchieved();
+
+        expect(objective.toSnapshot()).toMatchObject({
+            status: 'archived',
+            archivedAt: new Date('2026-06-28T11:00:00.000Z'),
+            achievedAt: null,
+            updatedAt: new Date('2026-06-28T10:00:00.000Z'),
+        });
+    });
 });

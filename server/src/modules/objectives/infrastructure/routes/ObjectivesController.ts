@@ -11,6 +11,7 @@ import { ArchiveObjectiveCommand } from '../../app/ArchiveObjectiveCommand';
 import { CreateObjectiveCommand } from '../../app/CreateObjectiveCommand';
 import { GetObjectiveQuery } from '../../app/GetObjectiveQuery';
 import { ListObjectivesQuery } from '../../app/ListObjectivesQuery';
+import { MarkObjectiveAchievedCommand } from '../../app/MarkObjectiveAchievedCommand';
 import { serializeObjective } from '../../app/serialize';
 import { UpdateObjectiveCommand } from '../../app/UpdateObjectiveCommand';
 
@@ -31,6 +32,7 @@ export class ObjectivesController extends HttpController {
             .get('/:id', { params: objectiveIdParamsSchema }, this.getObjective)
             .post('/', { body: createObjectiveSchema }, this.createObjective)
             .put('/:id', { params: objectiveIdParamsSchema, body: updateObjectiveSchema }, this.updateObjective)
+            .post('/:id/achieve', { params: objectiveIdParamsSchema }, this.markObjectiveAchieved)
             .post('/:id/archive', { params: objectiveIdParamsSchema }, this.archiveObjective);
     }
 
@@ -93,6 +95,18 @@ export class ObjectivesController extends HttpController {
         const objective = assertFound(
             await this.bus.execute(new ArchiveObjectiveCommand(params!.id), executionContextFromAuth(request.auth)),
             'Objective not found',
+        );
+        return reply.send(serializeObjective(objective));
+    };
+
+    private readonly markObjectiveAchieved: RouteContextHandler<ObjectiveIdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const objective = await this.bus.execute(
+            new MarkObjectiveAchievedCommand(params!.id),
+            executionContextFromAuth(request.auth),
         );
         return reply.send(serializeObjective(objective));
     };

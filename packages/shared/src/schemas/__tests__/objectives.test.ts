@@ -33,6 +33,20 @@ describe("createObjectiveSchema", () => {
     });
   });
 
+  it("accepts completed tasks metric bindings", () => {
+    expect(createObjectiveSchema.parse({
+      title: "Completar tareas clave",
+      periodStart: "2026-07-01",
+      periodEnd: "2026-09-30",
+      metricSource: "tasks_completed",
+      target: 30,
+      unit: "tareas",
+    })).toMatchObject({
+      metricSource: "tasks_completed",
+      target: 30,
+    });
+  });
+
   it("rejects invalid periods and non-positive targets", () => {
     expect(() => createObjectiveSchema.parse({
       title: "Rango roto",

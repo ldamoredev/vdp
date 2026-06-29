@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { idParamsSchema, localDateStringSchema } from "./common";
 
-export const objectiveMetricSourceEnum = z.enum(["manual", "projects_hours"]);
+export const objectiveMetricSourceEnum = z.enum(["manual", "projects_hours", "tasks_completed"]);
 export const objectiveStatusEnum = z.enum(["active", "archived", "achieved"]);
 export const objectiveIdParamsSchema = idParamsSchema;
 

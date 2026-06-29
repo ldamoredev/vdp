@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UserIdentity } from '../../../common/app/auth/UserIdentity';
+import { NotFoundHttpError } from '../../../common/http/errors';
 import { ArchiveObjectiveCommand, ArchiveObjectiveCommandHandler } from '../../app/ArchiveObjectiveCommand';
 import { CreateObjectiveCommand, CreateObjectiveCommandHandler } from '../../app/CreateObjectiveCommand';
 import { GetObjectiveQuery, GetObjectiveQueryHandler } from '../../app/GetObjectiveQuery';
 import { ListObjectivesQuery, ListObjectivesQueryHandler } from '../../app/ListObjectivesQuery';
+import { MarkObjectiveAchievedCommand, MarkObjectiveAchievedCommandHandler } from '../../app/MarkObjectiveAchievedCommand';
 import { UpdateObjectiveCommand, UpdateObjectiveCommandHandler } from '../../app/UpdateObjectiveCommand';
 import { FakeObjectiveRepository } from '../fakes/FakeObjectiveRepository';
 
@@ -100,6 +102,32 @@ describe('Objective use cases', () => {
         });
     });
 
+    it('marks an objective achieved idempotently', async () => {
+        const objective = await objectives.createObjective(userId, {
+            title: 'Reach target',
+            periodStart: '2026-07-01',
+            periodEnd: '2026-09-30',
+            metricSource: 'manual',
+            target: 10,
+            unit: 'puntos',
+            manualValue: 10,
+        });
+        const handler = new MarkObjectiveAchievedCommandHandler(objectives);
+
+        const achieved = await handler.handle(new MarkObjectiveAchievedCommand(objective.id), identity);
+        const achievedAgain = await handler.handle(new MarkObjectiveAchievedCommand(objective.id), identity);
+
+        expect(achieved).toMatchObject({
+            id: objective.id,
+            status: 'achieved',
+            achievedAt: new Date('2026-06-28T12:00:00.000Z'),
+        });
+        expect(achievedAgain.toSnapshot()).toMatchObject({
+            status: 'achieved',
+            achievedAt: new Date('2026-06-28T12:00:00.000Z'),
+        });
+    });
+
     it('does not expose another users objectives', async () => {
         const objective = await objectives.createObjective(userId, {
             title: 'Private objective',
@@ -118,5 +146,22 @@ describe('Objective use cases', () => {
 
         expect(read).toBeNull();
         expect(listed).toEqual([]);
+    });
+
+    it('does not mark another users objective achieved', async () => {
+        const objective = await objectives.createObjective(userId, {
+            title: 'Private target',
+            periodStart: '2026-07-01',
+            periodEnd: '2026-09-30',
+            metricSource: 'manual',
+            target: 10,
+            unit: 'puntos',
+            manualValue: 10,
+        });
+
+        await expect(
+            new MarkObjectiveAchievedCommandHandler(objectives)
+                .handle(new MarkObjectiveAchievedCommand(objective.id), otherIdentity),
+        ).rejects.toBeInstanceOf(NotFoundHttpError);
     });
 });

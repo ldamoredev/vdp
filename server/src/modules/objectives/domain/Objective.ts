@@ -1,4 +1,4 @@
-export type ObjectiveMetricSource = 'manual' | 'projects_hours';
+export type ObjectiveMetricSource = 'manual' | 'projects_hours' | 'tasks_completed';
 export type ObjectiveStatus = 'active' | 'archived' | 'achieved';
 
 type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status'> & {
@@ -41,7 +41,7 @@ export class Objective {
     }
 
     markAchieved(): void {
-        if (this.status === 'achieved') return;
+        if (this.status !== 'active') return;
         this.status = 'achieved';
         this.achievedAt = new Date();
         this.updatedAt = new Date();
@@ -121,6 +121,7 @@ export class Objective {
         switch (metricSource) {
             case 'manual':
             case 'projects_hours':
+            case 'tasks_completed':
                 return metricSource;
             default:
                 throw new Error(`Invalid objective metric source: ${metricSource}`);
