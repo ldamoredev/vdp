@@ -22,7 +22,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) in progress** — D4a shipped with Objective CRUD plus manual and Projects-hours progress; D4b shipped achieved detection plus completed-tasks and Wallet-savings progress.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -97,11 +97,14 @@ Health already has deadline goals + goal→habit graduation. Lift that primitive
 health/wallet/tasks — the "north" the day-to-day ladders up to. Cheap (reuses an
 existing primitive); risk is it turns decorative if not wired to real metrics.
 
-**Status (June 2026): in progress.** D4a shipped the real Objective aggregate and
-one live metric (`projects_hours`) so the layer is not decorative. D4b added
-persisted lazy-on-load achieved detection plus composed `tasks_completed` and
-per-currency `wallet_savings` metrics. D4c remains not started and is recorded in
-the "D4: Life Goals" execution section below.
+**Status (June 2026): shipped through D4d.** D4a shipped the real Objective
+aggregate and one live metric (`projects_hours`) so the layer is not decorative.
+D4b added persisted lazy-on-load achieved detection plus composed
+`tasks_completed` and per-currency `wallet_savings` metrics. D4c surfaces
+objectives on Home as the daily north and can create a simple task for today from
+an objective. D4d tracks completions for one selected Health habit. Strong
+objective↔task/focus linkage and broader Health metric sources remain future
+slices.
 
 ### D5. Universal inbox + triage — *capture* — enhancer
 
@@ -369,7 +372,7 @@ shipped after D3a/D3b/D3c:
   project time plus a short per-project list. No backend query or migration was
   added for this slice.
 
-## D4: Life Goals (in progress — June 2026)
+## D4: Life Goals (COMPLETE for D4a-D4d — June 2026)
 
 Owner-directed promotion of D4 from candidate to active work. The product risk is
 explicit: a strategic goals layer is useless if it becomes decorative. The first
@@ -385,8 +388,9 @@ slice therefore shipped with one real cross-module metric, not a manual-only she
    objective and metric binding only. Progress is computed by the web presenter via
    a typed metric-source catalog over the frontend CQBus.
 4. **Metric bindings are typed.** `metricSource + target + unit` lives on the
-   aggregate. D4b supports `manual`, `projects_hours`, `tasks_completed`, and
-   per-currency `wallet_savings`; wallet sources must stay per-currency and never
+   aggregate. Current sources support `manual`, `projects_hours`,
+   `tasks_completed`, per-currency `wallet_savings`, and targeted
+   `health_habit_completions`; wallet sources must stay per-currency and never
    sum ARS+USD.
 
 ### D4a. Objective aggregate + CRUD + one live metric — SHIPPED (2026-06-29)
@@ -421,12 +425,42 @@ slice therefore shipped with one real cross-module metric, not a manual-only she
   presenter composes Wallet `GetSavings`, filters by objective currency, and sums
   savings contributions only — not account balances or income. The form and cards
   explain the source and link to `/wallet/savings`.
-- **Deferred:** health metric sources remain future slices.
+- **Accepted limitation (owner decision — option A, 2026-06-29):** unlike the other
+  four sources, `wallet_savings` is **not period-scoped** — it sums the *current*
+  amount of matching savings goals regardless of the objective's
+  `periodStart`/`periodEnd`, so the period is informational for this source. Kept
+  as-is on purpose: savings are inherently cumulative, and period-scoping would need
+  a contributions-in-range query that does not exist today. The form/card hint
+  discloses that progress comes from Ahorros in that currency.
+- **Deferred:** broader Health metric sources remain future slices.
 
-### D4c. Surface objectives on /home — NOT STARTED
+### D4c. Surface objectives on /home — SHIPPED (2026-06-29)
 
-Show top objectives and progress as the daily "north" on Home; optionally link an
-objective to the day's focus / next action so daily execution ladders up.
+Home now shows active objectives as the daily "north": the presenter loads
+Objectives through the frontend CQBus, computes read-time progress through the
+same metric-source catalog as `/objectives`, and exposes a compact card with up to
+three active objectives plus a link to Metas.
+
+- **Simple next action:** each visible objective can create a task scheduled for
+  today with the title `Avanzar en: <meta>`. This is intentionally not a persisted
+  objective↔task relationship.
+- **Deferred:** strong objective-to-task/focus linking and broader Health metric
+  sources.
+
+### D4d. Health habit completions metric source — SHIPPED (2026-06-29)
+
+Objectives can now bind progress to one specific Health habit through
+`health_habit_completions` + `metricTargetId`. Health exposes
+`GET /api/v1/health/habits/:id/completions?from&to`, scoped to the authenticated
+owner, and the web metric catalog calls it for the objective period. The
+Objectives backend still only persists the binding; it does not read Health.
+
+- **Web form:** selecting "Hábito (Health)" shows active habits from Health and
+  saves the selected habit id. Progress cards show completions as `veces`.
+- **Persistence:** new nullable `metric_target_id` column on
+  `objectives.objectives` via migration `0017_lame_sue_storm.sql`.
+- **Tests:** shared schema coverage, Health query unit/e2e, Objectives domain/
+  use-case/integration/e2e, web Health gateway/handler, and Objectives presenter.
 
 ## Data Constraint
 
