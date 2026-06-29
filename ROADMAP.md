@@ -11,6 +11,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
+| Inbox | ✅ | ✅ | — | D5a shipped: frictionless capture + pending queue (Bandeja); triage routing (D5b) not started |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -22,7 +23,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage) planned** — slice breakdown (D5a–D5c) in the D5 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): D5a shipped** — frictionless capture + pending queue; D5b/D5c (triage routing + heuristic) not started. Slice breakdown in the D5 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -112,8 +113,8 @@ Capture anything from anywhere (thought, expense, symptom, person) → triage in
 right module. Net-new but cheap, feeds every module. A multiplier on the capture
 habit, not a headline direction.
 
-**Status (June 2026): promoted to a planned execution (owner-directed).** Decisions
-and slice breakdown in the "D5: Universal Inbox + Triage" execution section below.
+**Status (June 2026): D5a shipped; D5b/D5c not started.** Decisions and slice
+breakdown in the "D5: Universal Inbox + Triage" execution section below.
 
 ### D6. Proactive agent (not a prettier chat) — *decide + learn* — enhancer
 
@@ -497,23 +498,28 @@ siloed surface.
    the D1a `payment-intent.ts` heuristic style. LLM-powered auto-classification waits
    for a provider — it folds in with R3/D6 when one exists.
 
-### D5a. Inbox capture + queue — NOT STARTED
+### D5a. Inbox capture + queue — SHIPPED (2026-06-29)
 
 The capture half — useful on its own (a frictionless "dump anything" list) before
 routing exists.
 
-- **Backend (new module):** `InboxItem` rich entity (text, note, status, routedTo,
-  timestamps) + repository port + Drizzle impl + the three synchronized DB changes +
-  fake + test; new forward-only migration; new `inbox` schema. CQBus
-  Capture/List/Get/Discard handlers; thin HTTP controller under `/api/v1/inbox`;
-  owner-scoped with cross-user isolation. Register in `DefaultCoreConfiguration` +
-  `DefaultRepositories`.
+- **Backend (new module `inbox`):** `InboxItem` rich entity (text, note, status,
+  `routedTo`, `triagedAt`, timestamps — the `routedTo`/`triagedAt` columns ship now,
+  unused, so D5b adds the triage command without a second migration) + repository
+  port + Drizzle impl + the three synchronized DB changes + fake; new `inbox` schema
+  and forward-only migration `0018_windy_tinkerer.sql`. CQBus Capture/List/Get/Discard
+  handlers; thin HTTP controller under `/api/v1/inbox`; owner-scoped with cross-user
+  isolation. Registered in `DefaultCoreConfiguration` + `DefaultRepositories`.
 - **Shared:** Zod schemas + cross-package types in `@vdp/shared` (status enum,
-  capture/list shapes).
-- **Web (the mirror):** `InboxGateway` + HTTP impl, use cases in an `InboxModule`
-  registered in `createAppCore`; an `/inbox` screen with a frictionless capture box
-  (one field, submit) and a pending list with discard. Page registered in
-  `navigation.ts`. Presenter + ViewModel + React-free tests.
+  capture shape).
+- **Web (the mirror):** `InboxGateway` + HTTP impl, `CaptureInboxItem` /
+  `ListInboxItems` / `DiscardInboxItem` use cases in an `InboxModule` registered in
+  `createAppCore`; an `/inbox` ("Bandeja") screen with a frictionless capture box
+  (one textarea, submit) and a pending list with discard. Page registered in
+  `navigation.ts` + `routes.tsx`. Presenter + ViewModel + React-free tests.
+- **Tests:** backend domain/use-case unit, Drizzle integration, Inbox API e2e with
+  cross-user isolation; web domain/handler/HTTP gateway/presenter, and
+  `createAppCore` wiring coverage.
 
 ### D5b. Triage routing — NOT STARTED
 
