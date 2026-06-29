@@ -7,6 +7,7 @@ export default defineConfig({
     "./src/modules/common/infrastructure/agents/schema.ts",
     "./src/modules/wallet/infrastructure/db/schema.ts",
     "./src/modules/projects/infrastructure/db/schema.ts",
+    "./src/modules/objectives/infrastructure/db/schema.ts",
     "./src/modules/tasks/infrastructure/db/schema.ts",
     "./src/modules/tasks/infrastructure/db/embeddings-schema.ts",
     "./src/modules/health/infrastructure/db/schema.ts",
