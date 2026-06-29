@@ -179,6 +179,9 @@
   --cyan-soft-bg: rgba(6, 182, 212, 0.15);
   --cyan-soft-text: #22D3EE;
   --cyan-soft-border: rgba(6, 182, 212, 0.2);
+  --pink-soft-bg: rgba(236, 72, 153, 0.15);
+  --pink-soft-text: #F472B6;
+  --pink-soft-border: rgba(236, 72, 153, 0.2);
   --red-soft-bg: rgba(239, 68, 68, 0.12);
   --red-soft-text: #F87171;
   --red-soft-border: rgba(239, 68, 68, 0.2);

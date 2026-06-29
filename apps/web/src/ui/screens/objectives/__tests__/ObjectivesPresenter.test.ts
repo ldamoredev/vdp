@@ -7,6 +7,8 @@ import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
 import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakeProjectsGateway";
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
+import { WalletModule } from "@/core/app/wallet/WalletModule";
+import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { Objective } from "@/core/domain/objectives/Objective";
 import { ObjectivesPresenter } from "../ObjectivesPresenter";
 
@@ -16,6 +18,7 @@ function coreWith(
   objectives: FakeObjectivesGateway,
   projects = new FakeProjectsGateway(),
   tasks = new FakeTasksGateway(),
+  wallet = new FakeWalletGateway(),
 ): Core {
   return new Core({
     httpClient: {} as never,
@@ -23,7 +26,8 @@ function coreWith(
   })
     .use(new ObjectivesModule(objectives))
     .use(new ProjectsModule(projects))
-    .use(new TasksModule(tasks));
+    .use(new TasksModule(tasks))
+    .use(new WalletModule(wallet));
 }
 
 function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}): Objective {
@@ -36,6 +40,7 @@ function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}
     target: 10,
     unit: "puntos",
     manualValue: 4,
+    currency: null,
     status: "active",
     archivedAt: null,
     achievedAt: null,
@@ -97,6 +102,56 @@ describe("ObjectivesPresenter", () => {
       targetValueLabel: "3 h",
       progressPercent: 50,
       progressLabel: "50%",
+    });
+  });
+
+  it("sends currency when creating a wallet savings objective", async () => {
+    const objectives = new FakeObjectivesGateway();
+    objectives.objectives = [];
+    const presenter = new ObjectivesPresenter(vi.fn(), coreWith(objectives));
+
+    presenter.init(undefined);
+    presenter.openCreateForm();
+    presenter.setTitle("Ahorrar USD");
+    presenter.setMetricSource("wallet_savings");
+    presenter.setCurrency("USD");
+    presenter.setTarget("1500");
+
+    expect(presenter.model.form.isCurrencyScoped).toBe(true);
+
+    await presenter.saveForm();
+
+    expect(objectives.callsTo("createObjective")[0].args[0]).toMatchObject({
+      metricSource: "wallet_savings",
+      currency: "USD",
+      unit: "USD",
+    });
+  });
+
+  it("flags wallet savings objectives so the card can explain the progress source", async () => {
+    const objectives = new FakeObjectivesGateway();
+    objectives.objectives = [
+      objective({
+        id: "savings",
+        title: "Ahorrar para vacaciones",
+        metricSource: "wallet_savings",
+        target: 1000,
+        unit: "ARS",
+        manualValue: null,
+        currency: "ARS",
+      }),
+    ];
+    const presenter = new ObjectivesPresenter(vi.fn(), coreWith(objectives));
+
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    expect(presenter.model.objectives[0]).toMatchObject({
+      sourceLabel: "Ahorro (Wallet)",
+      currentValueLabel: "250 ARS",
+      targetValueLabel: "1.000 ARS",
+      tracksSavings: true,
     });
   });
 

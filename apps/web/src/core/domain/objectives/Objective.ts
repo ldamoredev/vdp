@@ -1,5 +1,6 @@
 import type {
   Objective as ObjectiveDto,
+  ObjectiveCurrency,
   ObjectiveMetricSource,
   ObjectiveStatus,
 } from "@vdp/shared";
@@ -14,6 +15,7 @@ export class Objective {
     readonly target: number,
     readonly unit: string,
     readonly manualValue: number | null,
+    readonly currency: ObjectiveCurrency | null,
     readonly status: ObjectiveStatus,
     readonly archivedAt: string | null,
     readonly achievedAt: string | null,
@@ -31,6 +33,7 @@ export class Objective {
       dto.target,
       dto.unit,
       dto.manualValue,
+      dto.currency,
       dto.status,
       dto.archivedAt,
       dto.achievedAt,

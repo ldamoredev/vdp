@@ -12,6 +12,7 @@ function objective(overrides: Partial<Parameters<typeof Objective.from>[0]> = {}
     target: 120,
     unit: "h",
     manualValue: null,
+    currency: null,
     status: "active",
     archivedAt: null,
     achievedAt: null,

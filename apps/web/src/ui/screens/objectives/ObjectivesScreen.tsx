@@ -1,4 +1,5 @@
 import { Archive, CalendarDays, Pencil, Plus, Target } from "lucide-react";
+import { Link } from "react-router";
 
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
@@ -89,6 +90,26 @@ export function ObjectivesScreen() {
             />
           )}
 
+          {vm.form.isCurrencyScoped && (
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
+                Moneda
+              </span>
+              <select
+                value={vm.form.currency}
+                onChange={(event) => presenter.setCurrency(event.target.value as "ARS" | "USD")}
+                className="min-h-11 w-full rounded-[var(--radius-sm)] border border-[var(--divider)] bg-[var(--card)] px-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+              >
+                <option value="ARS">ARS</option>
+                <option value="USD">USD</option>
+              </select>
+            </label>
+          )}
+
+          {vm.form.metricSource === "wallet_savings" && (
+            <WalletSavingsHint />
+          )}
+
           <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={!vm.form.canSubmit} className="btn-primary">
               {vm.form.submitLabel}
@@ -164,6 +185,9 @@ export function ObjectivesScreen() {
                     style={{ width: `${objective.progressPercent}%` }}
                   />
                 </div>
+                {objective.tracksSavings && (
+                  <WalletSavingsHint className="mt-3 border-l-2 border-[var(--accent)] pl-3" />
+                )}
               </div>
             </article>
           ))}
@@ -203,4 +227,16 @@ function Input({
 
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <Input label={label} type="date" value={value} onChange={onChange} />;
+}
+
+function WalletSavingsHint({ className = "" }: { className?: string }) {
+  return (
+    <p className={`text-xs leading-relaxed text-[var(--muted)] ${className}`}>
+      El progreso se llena con tus{" "}
+      <Link to="/wallet/savings" className="font-medium text-[var(--accent)] underline-offset-2 hover:underline">
+        Ahorros
+      </Link>{" "}
+      en esta moneda — no con ingresos ni con el saldo de tus cuentas. Creá un ahorro y cargá aportes para verlo avanzar.
+    </p>
+  );
 }

@@ -3,6 +3,7 @@ import type { ObjectiveMetricSource } from "@vdp/shared";
 import type { Core } from "../../Core";
 import { GetHoursReport } from "../projects/GetHoursReport";
 import { GetTasksByDomain } from "../tasks/GetTasksByDomain";
+import { GetSavings } from "../wallet/GetSavings";
 import type { Objective } from "../../domain/objectives/Objective";
 
 export interface ObjectiveMetricSourceDefinition {
@@ -39,6 +40,17 @@ export const objectiveMetricSourceCatalog: Record<ObjectiveMetricSource, Objecti
         to: objective.periodEnd,
       }));
       return stats.reduce((total, stat) => total + stat.count, 0);
+    },
+  },
+  wallet_savings: {
+    source: "wallet_savings",
+    isCurrencyScoped: true,
+    async getCurrentValue(objective, core) {
+      if (!objective.currency) return 0;
+      const savings = await core.execute(new GetSavings());
+      return savings
+        .filter((goal) => goal.currency === objective.currency)
+        .reduce((total, goal) => total + goal.current, 0);
     },
   },
 };

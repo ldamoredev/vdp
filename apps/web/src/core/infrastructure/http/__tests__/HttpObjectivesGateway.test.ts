@@ -62,6 +62,7 @@ function objectiveDto(overrides: Partial<ObjectiveDto> = {}): ObjectiveDto {
     target: 120,
     unit: "h",
     manualValue: null,
+    currency: null,
     status: "active",
     archivedAt: null,
     achievedAt: null,

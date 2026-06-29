@@ -6,7 +6,7 @@ import { ArchiveObjective } from "@/core/app/objectives/ArchiveObjective";
 import { CreateObjective } from "@/core/app/objectives/CreateObjective";
 import { ListObjectives } from "@/core/app/objectives/ListObjectives";
 import { MarkObjectiveAchieved } from "@/core/app/objectives/MarkObjectiveAchieved";
-import { resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
+import { objectiveMetricSourceCatalog, resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { UpdateObjective } from "@/core/app/objectives/UpdateObjective";
 import { Objective, sortObjectives } from "@/core/domain/objectives/Objective";
 import { formatTaskDate, getTodayISO } from "@/lib/format";
@@ -23,11 +23,13 @@ type ObjectiveFormState = {
   target: string;
   unit: string;
   manualValue: string;
+  currency: "ARS" | "USD";
 };
 
 const metricSourceOptions = [
   { value: "projects_hours" as const, label: "Horas de proyectos" },
   { value: "tasks_completed" as const, label: "Tareas completadas" },
+  { value: "wallet_savings" as const, label: "Ahorro (Wallet)" },
   { value: "manual" as const, label: "Manual" },
 ];
 
@@ -72,6 +74,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       target: String(objective.target),
       unit: objective.unit,
       manualValue: objective.manualValue === null ? "" : String(objective.manualValue),
+      currency: objective.currency ?? "ARS",
     };
     this.refresh();
   }
@@ -120,6 +123,18 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       this.form.unit = "tareas";
       this.form.manualValue = "";
     }
+    if (metricSource === "wallet_savings") {
+      this.form.unit = this.form.currency;
+      this.form.manualValue = "";
+    }
+    this.refresh();
+  }
+
+  setCurrency(currency: "ARS" | "USD"): void {
+    this.form.currency = currency;
+    if (objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped) {
+      this.form.unit = currency;
+    }
     this.refresh();
   }
 
@@ -151,6 +166,9 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       unit: this.form.unit.trim(),
       manualValue: this.form.metricSource === "manual" && this.form.manualValue.trim() !== ""
         ? Number(this.form.manualValue)
+        : null,
+      currency: objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped
+        ? this.form.currency
         : null,
     };
     try {
@@ -213,7 +231,9 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       Number.isFinite(target) &&
       target > 0 &&
       this.form.unit.trim().length > 0 &&
-      (this.form.metricSource !== "manual" || (Number.isFinite(manualValue) && manualValue >= 0))
+      (this.form.metricSource !== "manual" || (Number.isFinite(manualValue) && manualValue >= 0)) &&
+      (!objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped ||
+        this.form.currency === "ARS" || this.form.currency === "USD")
     );
   }
 
@@ -240,6 +260,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       form: {
         ...this.form,
         isEditing: this.form.editingId !== null,
+        isCurrencyScoped: objectiveMetricSourceCatalog[this.form.metricSource].isCurrencyScoped,
         canSubmit: this.canSubmit() && !this.form.isSaving,
         submitLabel: this.form.editingId ? "Guardar" : "Crear",
       },
@@ -261,6 +282,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       progressLabel: `${progressPercent}%`,
       isArchived: objective.status === "archived",
       isAchieved: objective.status === "achieved",
+      tracksSavings: objective.metricSource === "wallet_savings",
     };
   }
 
@@ -277,6 +299,7 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
       target: "",
       unit: "h",
       manualValue: "",
+      currency: "ARS",
       ...overrides,
     };
   }
@@ -287,6 +310,7 @@ function sourceLabel(source: ObjectiveMetricSource): string {
     manual: "Manual",
     projects_hours: "Horas de proyectos",
     tasks_completed: "Tareas completadas",
+    wallet_savings: "Ahorro (Wallet)",
   }[source];
 }
 

@@ -47,6 +47,17 @@ const modules = [
     ready: true,
   },
   {
+    key: "objectives",
+    name: "Metas",
+    description: "Objetivos de vida con progreso real y foco estratégico",
+    href: "/objectives",
+    iconLetter: "M",
+    softBg: "var(--pink-soft-bg)",
+    softText: "var(--pink-soft-text)",
+    softBorder: "var(--pink-soft-border)",
+    ready: true,
+  },
+  {
     key: "people",
     name: "People",
     description: "Cuidá tus relaciones, no pierdas el hilo de nadie",

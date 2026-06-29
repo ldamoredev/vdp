@@ -12,6 +12,7 @@ export interface ObjectiveItemVM {
   progressLabel: string;
   isArchived: boolean;
   isAchieved: boolean;
+  tracksSavings: boolean;
 }
 
 export interface ObjectiveMetricSourceOptionVM {
@@ -30,6 +31,8 @@ export interface ObjectiveFormVM {
   target: string;
   unit: string;
   manualValue: string;
+  currency: "ARS" | "USD";
+  isCurrencyScoped: boolean;
   canSubmit: boolean;
   submitLabel: string;
 }

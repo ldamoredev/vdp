@@ -1,4 +1,4 @@
-import type { ObjectiveMetricSource } from "@vdp/shared";
+import type { ObjectiveCurrency, ObjectiveMetricSource } from "@vdp/shared";
 
 import type { Objective } from "./Objective";
 
@@ -10,6 +10,7 @@ export interface CreateObjectiveInput {
   target: number;
   unit: string;
   manualValue?: number | null;
+  currency?: ObjectiveCurrency | null;
 }
 
 export type UpdateObjectiveInput = Partial<CreateObjectiveInput>;
