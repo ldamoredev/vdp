@@ -25,6 +25,7 @@ Active backend modules are registered in `server/src/modules/DefaultCoreConfigur
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
 - `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, optional hourly rate/currency, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week, including expected income grouped by currency and a Wallet income deep link. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
+- `objectives`: active Life Goals / "Metas" strategic layer — objectives own explicit `periodStart`/`periodEnd`, metric binding (`manual` or `projects_hours` in D4a), numeric target/unit, nullable manual progress, and lifecycle (`active|archived|achieved`). Backend persists objectives only; the web presenter computes progress read-time through the metric-source catalog, with `projects_hours` reusing Projects `GetHoursReport`.
 
 Inactive domains:
 
@@ -34,7 +35,7 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
+Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. D4a shipped the Objectives / Metas strategic layer with manual and Projects-hours progress; D4b/D4c remain not started. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -167,6 +168,7 @@ The active migrations create these PostgreSQL schemas:
 - `core`: users, sessions, audit logs, agent conversations, agent messages.
 - `tasks`: tasks, task notes, task embeddings, task insights.
 - `projects`: projects direction aggregate (`work|personal`) used by the project board, client catalog, and time entries for hours reporting; task rows link to projects through nullable `project_id`.
+- `objectives`: Life Goals objectives with explicit periods, typed metric source, target/unit, manual value, and lifecycle. D4a progress is computed read-time in the web presenter, not in backend SQL.
 - `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
 - `health`: habits, habit logs, counters, counter attempts, goals, mood check-ins, weight entries.
 - `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
@@ -261,7 +263,7 @@ Import direction rules:
 - `ui/` may import `core/` (via `useCore()`/the bus), `lib/`, and `@vdp/shared`. A screen owns its own presenter/VM; cross-section coordination goes through `ui/events`, never by reaching into another screen's internals.
 - `routes.tsx` and entrypoints may import anything.
 
-Migration status: **health, tasks, wallet, projects** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
+Migration status: **health, tasks, wallet, projects, objectives** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
 
 API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 
@@ -305,6 +307,7 @@ Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
 Read-time cross-domain surfaces:
 
 - `projects→wallet`: Projects hours reports compute expected income from project rates and logged minutes, grouped by currency (never sum ARS+USD), and link to Wallet's transaction form pre-filled as income. This is a read-time deep link, not an event; Wallet never auto-writes the transaction.
+- `objectives→projects`: Objectives progress for `projects_hours` is computed in the web presenter by calling Projects `GetHoursReport` for the objective period and using `totalMinutes / 60`. The Objectives backend does not read Projects.
 
 Future cross-domain signals should follow the same pattern:
 

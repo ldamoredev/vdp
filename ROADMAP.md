@@ -10,6 +10,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
+| Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with manual progress and Projects-hours read-time progress |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -21,7 +22,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) in progress** — D4a shipped with Objective CRUD plus manual and Projects-hours progress.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -95,6 +96,10 @@ Health already has deadline goals + goal→habit graduation. Lift that primitive
 **cross-module layer**: quarterly/annual objectives pulling metrics from
 health/wallet/tasks — the "north" the day-to-day ladders up to. Cheap (reuses an
 existing primitive); risk is it turns decorative if not wired to real metrics.
+
+**Status (June 2026): in progress.** D4a shipped the real Objective aggregate and
+one live metric (`projects_hours`) so the layer is not decorative. D4b/D4c remain
+not started and are recorded in the "D4: Life Goals" execution section below.
 
 ### D5. Universal inbox + triage — *capture* — enhancer
 
@@ -361,6 +366,53 @@ shipped after D3a/D3b/D3c:
   reuse `GetProjectHoursReportQuery` for `fromDate=toDate=today`, showing total
   project time plus a short per-project list. No backend query or migration was
   added for this slice.
+
+## D4: Life Goals (in progress — June 2026)
+
+Owner-directed promotion of D4 from candidate to active work. The product risk is
+explicit: a strategic goals layer is useless if it becomes decorative. The first
+slice therefore shipped with one real cross-module metric, not a manual-only shell.
+
+**Decisions closed for D4 (2026-06-28).**
+
+1. **New module: `objectives`.** It does not reuse Health `Goal`; Health goals remain
+   health-scoped. UI labels are Spanish ("Metas" / "Objetivos de vida").
+2. **Explicit periods.** Objectives store `periodStart` and `periodEnd` ISO dates,
+   rather than deriving quarter/year from labels.
+3. **Progress is read-time web composition.** The Objectives backend persists the
+   objective and metric binding only. Progress is computed by the web presenter via
+   a typed metric-source catalog over the frontend CQBus.
+4. **Metric bindings are typed.** `metricSource + target + unit` lives on the
+   aggregate. D4a supports `manual` and `projects_hours`; wallet sources in D4b
+   must stay per-currency and never sum ARS+USD.
+
+### D4a. Objective aggregate + CRUD + one live metric — SHIPPED (2026-06-29)
+
+- **Backend/shared:** `Objective` rich entity (`periodStart`, `periodEnd`,
+  `metricSource`, `target`, `unit`, nullable `manualValue`, lifecycle status) +
+  repository port, Drizzle implementation, fake repository, CQBus
+  Create/Get/List/Update/Archive handlers, thin HTTP controller under
+  `/api/v1/objectives`, shared Zod schemas/types, new `objectives` schema, and
+  forward-only migration `0015_odd_brother_voodoo.sql`.
+- **Web:** `ObjectivesModule` mirrors the backend use cases; `/objectives` shows
+  Metas with progress bars, Spanish labels, period presets (current quarter/year),
+  create/edit/archive flows, and a typed metric-source catalog. `manual` progress
+  reads `manualValue`; `projects_hours` calls Projects `GetHoursReport` for the
+  objective period and converts `totalMinutes / 60`.
+- **Tests:** backend domain/use-case unit tests, shared schema tests, Drizzle repo
+  integration, Objectives API e2e with cross-user isolation, web domain/handler/
+  HTTP gateway/presenter tests, and `createAppCore` wiring coverage.
+
+### D4b. Expand metric-source catalog — NOT STARTED
+
+Add wallet sources (total savings / category spend, always per-currency), tasks
+sources (completed in period), and health sources (weight / health-goal progress).
+Add period helpers and achieved detection.
+
+### D4c. Surface objectives on /home — NOT STARTED
+
+Show top objectives and progress as the daily "north" on Home; optionally link an
+objective to the day's focus / next action so daily execution ladders up.
 
 ## Data Constraint
 

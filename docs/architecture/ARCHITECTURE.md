@@ -70,7 +70,7 @@ There is **no scheduler/cron**. Two patterns: (1) **write-time detection** on a 
 
 ### Database
 
-PostgreSQL schemas: `core` (users, sessions, audit, agent conversations/messages), `tasks`, `projects`, `wallet`, `health`. Adding a table needs **three synchronized changes**: Drizzle schema (`{domain}/infrastructure/db/schema.ts`) + `pnpm db:generate`; the `SETUP_SQL` snapshot in `server/src/test/test-database.ts`; and the `TRUNCATE` list in the same file. Don't edit committed migrations — generate a new one.
+PostgreSQL schemas: `core` (users, sessions, audit, agent conversations/messages), `tasks`, `projects`, `objectives`, `wallet`, `health`. Adding a table needs **three synchronized changes**: Drizzle schema (`{domain}/infrastructure/db/schema.ts`) + `pnpm db:generate`; the `SETUP_SQL` snapshot in `server/src/test/test-database.ts`; and the `TRUNCATE` list in the same file. Don't edit committed migrations — generate a new one.
 
 ---
 
@@ -84,7 +84,7 @@ A Vite SPA that mirrors the backend module pattern with **presenters + a command
 main.tsx          Entry: mounts <WebApp/> under React StrictMode.
 WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
 routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
-createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).
+createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).use(ObjectivesModule).
 CoreProvider.tsx  Exposes the Core via context (useCore()).
 
 core/             NO React anywhere under here (grep/lint enforced).
@@ -130,7 +130,7 @@ View → `presenter.method()` → `core.execute(new SomeCommand(...))` → CQBus
 
 | Module | State |
 |---|---|
-| health, tasks, wallet, projects | **Fully migrated** — core/ + presenters, no React Query. |
+| health, tasks, wallet, projects, objectives | **Fully migrated** — core/ + presenters, no React Query. |
 | people, study, work | Moved to `ui/screens/*` with a **presenter returning mock data** (no backend yet — swap the presenter when one exists). |
 | home, review, login, landing, settings | **Legacy, relocated as-is** under `ui/screens/*` — still React Query / plain components, not yet on the presenter pattern. |
 | shell / chat | Legacy; `QueryClientProvider` stays app-wide in `lib/providers.tsx` for the not-yet-migrated modules. |
