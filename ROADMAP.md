@@ -11,7 +11,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
-| Inbox | ✅ | ✅ | — | D5a shipped: frictionless capture + pending queue (Bandeja); triage routing (D5b) not started |
+| Inbox | ✅ | ✅ | — | D5a+D5b shipped: frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; heuristic suggestion (D5c) optional |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -23,7 +23,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): D5a shipped** — frictionless capture + pending queue; D5b/D5c (triage routing + heuristic) not started. Slice breakdown in the D5 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): D5a + D5b shipped** — frictionless capture + pending queue + triage routing to Tasks/Wallet via prefilled deep-links; D5c (heuristic suggestion) optional. Slice breakdown in the D5 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -113,8 +113,9 @@ Capture anything from anywhere (thought, expense, symptom, person) → triage in
 right module. Net-new but cheap, feeds every module. A multiplier on the capture
 habit, not a headline direction.
 
-**Status (June 2026): D5a shipped; D5b/D5c not started.** Decisions and slice
-breakdown in the "D5: Universal Inbox + Triage" execution section below.
+**Status (June 2026): D5a + D5b shipped; D5c (optional heuristic) not started.**
+Decisions and slice breakdown in the "D5: Universal Inbox + Triage" execution section
+below.
 
 ### D6. Proactive agent (not a prettier chat) — *decide + learn* — enhancer
 
@@ -521,21 +522,27 @@ routing exists.
   cross-user isolation; web domain/handler/HTTP gateway/presenter, and
   `createAppCore` wiring coverage.
 
-### D5b. Triage routing — NOT STARTED
+### D5b. Triage routing — SHIPPED (2026-06-29)
 
 Route a pending item into the right module via prefilled deep-links; mark it triaged.
 
-- **Web:** each pending item exposes triage actions to the highest-value destinations
-  — Task (Tasks quick-add prefilled with the text), Wallet expense/income (the
-  existing `/wallet/transactions/new?type&amount&currency&description` prefill), and
-  Health (note/symptom). Taking an action marks the item `triaged` with `routedTo` and
-  navigates to the prefilled create surface (suggest-not-write; if the owner abandons
-  the form the item stays triaged and is reopenable).
-- **Prefill gaps:** Tasks and Wallet already accept prefill params; add narrow,
-  reusable prefill params to any destination create surface that lacks them (e.g.
-  Health). Projects/Objectives destinations can follow if they prove valuable.
-- **Tests:** presenter tests for the routing actions + status transition; assert the
-  deep-link targets/params.
+- **Backend:** `InboxItem.triage(routedTo)` (pending→triaged, stamps `routedTo` +
+  `triagedAt` — no migration; D5a reserved the columns). `TriageInboxItemCommand` +
+  `POST /api/v1/inbox/:id/triage`, owner-scoped with cross-user isolation. Shared
+  `triageInboxItemSchema`.
+- **Web:** each pending item shows triage buttons per destination. Clicking runs
+  `TriageInboxItem(id, routedTo)` (marks triaged + reloads) and then navigates to the
+  prefilled create surface. Two destinations shipped: **Tarea**
+  (`/tasks?capturar=<text>`) and **Gasto**
+  (`/wallet/transactions/new?type=expense&description=<text>`). Suggest-not-write — the
+  inbox never creates the target entity; it routes and the owner confirms.
+- **Prefill:** Wallet already accepted prefill params (D1a/D4b
+  `parseWalletTransactionPrefill`). Added a narrow `?capturar=<text>` prefill to the
+  Tasks quick-capture (optional `initialTitle` on `QuickCapturePresenter`). Health and
+  Projects/Objectives destinations are deferred — Health has no clean free-text capture
+  surface (medical stays private), so it needs a dedicated surface before routing there.
+- **Tests:** domain triage transition, use-case + e2e with cross-user isolation, web
+  presenter triage targets/transition, and the Tasks quick-capture prefill.
 
 ### D5c. Heuristic triage suggestion (deterministic, no LLM) — NOT STARTED (optional)
 
