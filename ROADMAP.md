@@ -22,7 +22,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage) planned** — slice breakdown (D5a–D5c) in the D5 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -111,6 +111,9 @@ slices.
 Capture anything from anywhere (thought, expense, symptom, person) → triage into the
 right module. Net-new but cheap, feeds every module. A multiplier on the capture
 habit, not a headline direction.
+
+**Status (June 2026): promoted to a planned execution (owner-directed).** Decisions
+and slice breakdown in the "D5: Universal Inbox + Triage" execution section below.
 
 ### D6. Proactive agent (not a prettier chat) — *decide + learn* — enhancer
 
@@ -461,6 +464,84 @@ Objectives backend still only persists the binding; it does not read Health.
   `objectives.objectives` via migration `0017_lame_sue_storm.sql`.
 - **Tests:** shared schema coverage, Health query unit/e2e, Objectives domain/
   use-case/integration/e2e, web Health gateway/handler, and Objectives presenter.
+
+## D5: Universal Inbox + Triage (PLANNED — June 2026)
+
+Owner-directed promotion of D5 from candidate to a planned execution. Same discipline
+as the prior tracks: one full-stack slice at a time, each shipping before the next.
+D5 is an **enhancer, not a headline** — it repairs the *capture* stage by driving its
+cost to zero: dump anything now, decide where it belongs later (*triage*), instead of
+forcing a module choice at capture time. It feeds every module without adding a
+siloed surface.
+
+**Decisions to lock before implementing (gate).** Settled, not to be re-litigated:
+
+1. **New lightweight module `inbox`, aggregate `InboxItem`.** Raw captured text +
+   optional note, `status` (`pending | triaged | discarded`), `routedTo` (which
+   module it became — audit only, not an FK), timestamps. Passes the New Domain Gate.
+   UI label Spanish ("Bandeja" / "Inbox").
+2. **Capture is frictionless and untyped.** One text field, no required type or
+   destination — the point is to *not* decide at capture time. Type/destination is
+   chosen at triage.
+3. **Boundary vs. existing quick-adds (anti-cannibalization).** The per-module
+   quick-adds (Tasks quick capture, Wallet quick expense) stay for when the owner
+   already knows the type; the inbox is for *undecided* captures. Document this so the
+   two don't compete — same discipline as the Tasks↔Projects gate.
+4. **Triage routes via deep-link/prefill to existing create surfaces — the inbox
+   never writes into other modules.** It is not a write-hub: triaging opens the target
+   module's create form pre-filled with the captured text (suggest-not-write, the
+   D1a/D4 pattern), then marks the item `triaged` with `routedTo`. The inbox owns only
+   `InboxItem`s; no backend coupling to other modules' write paths, no cross-module FK.
+5. **No LLM.** Triage is manual (the owner picks the destination). An optional
+   deterministic keyword heuristic may *suggest* a likely destination (D5c), reusing
+   the D1a `payment-intent.ts` heuristic style. LLM-powered auto-classification waits
+   for a provider — it folds in with R3/D6 when one exists.
+
+### D5a. Inbox capture + queue — NOT STARTED
+
+The capture half — useful on its own (a frictionless "dump anything" list) before
+routing exists.
+
+- **Backend (new module):** `InboxItem` rich entity (text, note, status, routedTo,
+  timestamps) + repository port + Drizzle impl + the three synchronized DB changes +
+  fake + test; new forward-only migration; new `inbox` schema. CQBus
+  Capture/List/Get/Discard handlers; thin HTTP controller under `/api/v1/inbox`;
+  owner-scoped with cross-user isolation. Register in `DefaultCoreConfiguration` +
+  `DefaultRepositories`.
+- **Shared:** Zod schemas + cross-package types in `@vdp/shared` (status enum,
+  capture/list shapes).
+- **Web (the mirror):** `InboxGateway` + HTTP impl, use cases in an `InboxModule`
+  registered in `createAppCore`; an `/inbox` screen with a frictionless capture box
+  (one field, submit) and a pending list with discard. Page registered in
+  `navigation.ts`. Presenter + ViewModel + React-free tests.
+
+### D5b. Triage routing — NOT STARTED
+
+Route a pending item into the right module via prefilled deep-links; mark it triaged.
+
+- **Web:** each pending item exposes triage actions to the highest-value destinations
+  — Task (Tasks quick-add prefilled with the text), Wallet expense/income (the
+  existing `/wallet/transactions/new?type&amount&currency&description` prefill), and
+  Health (note/symptom). Taking an action marks the item `triaged` with `routedTo` and
+  navigates to the prefilled create surface (suggest-not-write; if the owner abandons
+  the form the item stays triaged and is reopenable).
+- **Prefill gaps:** Tasks and Wallet already accept prefill params; add narrow,
+  reusable prefill params to any destination create surface that lacks them (e.g.
+  Health). Projects/Objectives destinations can follow if they prove valuable.
+- **Tests:** presenter tests for the routing actions + status transition; assert the
+  deep-link targets/params.
+
+### D5c. Heuristic triage suggestion (deterministic, no LLM) — NOT STARTED (optional)
+
+Suggest the likely destination per pending item without an LLM, so triage is one
+click.
+
+- A keyword heuristic (money words → Wallet, payment-intent verbs → task/expense,
+  symptom/body words → Health) suggests a destination chip per item, reusing the
+  `wallet/services/payment-intent.ts` style. Pure, deterministic, unit-tested. The
+  owner accepts the suggestion or picks another — it never auto-routes.
+- **Deferred to a provider:** LLM-powered classification (free-text understanding,
+  higher accuracy) waits until an LLM provider exists, folding in with R3/D6.
 
 ## Data Constraint
 
