@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS objectives.objectives (
     target NUMERIC(15, 2) NOT NULL,
     unit VARCHAR(24) NOT NULL,
     manual_value NUMERIC(15, 2),
+    currency VARCHAR(3),
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     archived_at TIMESTAMPTZ,
     achieved_at TIMESTAMPTZ,

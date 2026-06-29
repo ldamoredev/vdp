@@ -1,0 +1,1 @@
+ALTER TABLE "objectives"."objectives" ADD COLUMN "currency" varchar(3);

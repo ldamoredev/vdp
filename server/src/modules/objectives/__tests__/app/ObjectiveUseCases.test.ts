@@ -49,6 +49,7 @@ describe('Objective use cases', () => {
             title: '120 horas estratégicas',
             metricSource: 'projects_hours',
             manualValue: null,
+            currency: null,
             status: 'active',
         });
         expect(listed).toEqual([created]);
@@ -79,6 +80,26 @@ describe('Objective use cases', () => {
             target: 20,
             manualValue: 8,
             ownerUserId: userId,
+        });
+    });
+
+    it('creates wallet savings objectives with currency', async () => {
+        const created = await new CreateObjectiveCommandHandler(objectives)
+            .handle(new CreateObjectiveCommand({
+                title: 'Ahorrar USD',
+                periodStart: '2026-07-01',
+                periodEnd: '2026-09-30',
+                metricSource: 'wallet_savings',
+                target: 1500,
+                unit: 'USD',
+                currency: 'USD',
+            }), identity);
+
+        expect(created).toMatchObject({
+            title: 'Ahorrar USD',
+            metricSource: 'wallet_savings',
+            manualValue: null,
+            currency: 'USD',
         });
     });
 

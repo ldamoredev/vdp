@@ -1,9 +1,13 @@
-export type ObjectiveMetricSource = 'manual' | 'projects_hours' | 'tasks_completed';
+export type ObjectiveMetricSource = 'manual' | 'projects_hours' | 'tasks_completed' | 'wallet_savings';
 export type ObjectiveStatus = 'active' | 'archived' | 'achieved';
+export type ObjectiveCurrency = 'ARS' | 'USD';
 
-type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status'> & {
+const CURRENCY_SCOPED_SOURCES: readonly ObjectiveMetricSource[] = ['wallet_savings'];
+
+type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status' | 'currency'> & {
     metricSource: string;
     status: string;
+    currency?: string | null;
 };
 
 export class Objective {
@@ -17,6 +21,7 @@ export class Objective {
         public target: number,
         public unit: string,
         public manualValue: number | null,
+        public currency: ObjectiveCurrency | null,
         public status: ObjectiveStatus,
         public archivedAt: Date | null,
         public achievedAt: Date | null,
@@ -37,6 +42,8 @@ export class Objective {
         if (data.unit !== undefined) this.unit = Objective.assertNonEmptyUnit(data.unit);
         if (data.manualValue !== undefined) this.manualValue = data.manualValue;
         if (this.metricSource !== 'manual') this.manualValue = null;
+        const nextCurrency = data.currency !== undefined ? data.currency : this.currency;
+        this.currency = Objective.resolveCurrency(this.metricSource, nextCurrency);
         this.updatedAt = new Date();
     }
 
@@ -69,6 +76,7 @@ export class Objective {
             target: this.target,
             unit: this.unit,
             manualValue: this.manualValue,
+            currency: this.currency,
             status: this.status,
             archivedAt: this.archivedAt,
             achievedAt: this.achievedAt,
@@ -90,6 +98,7 @@ export class Objective {
             Objective.assertPositiveTarget(s.target),
             Objective.assertNonEmptyUnit(s.unit),
             metricSource === 'manual' ? s.manualValue : null,
+            Objective.resolveCurrency(metricSource, s.currency ?? null),
             Objective.parseStatus(s.status),
             s.archivedAt,
             s.achievedAt,
@@ -122,9 +131,31 @@ export class Objective {
             case 'manual':
             case 'projects_hours':
             case 'tasks_completed':
+            case 'wallet_savings':
                 return metricSource;
             default:
                 throw new Error(`Invalid objective metric source: ${metricSource}`);
+        }
+    }
+
+    private static resolveCurrency(
+        source: ObjectiveMetricSource,
+        currency: string | null,
+    ): ObjectiveCurrency | null {
+        if (!CURRENCY_SCOPED_SOURCES.includes(source)) return null;
+        if (currency === null) {
+            throw new Error('Objective currency is required for this metric source');
+        }
+        return Objective.parseCurrency(currency);
+    }
+
+    private static parseCurrency(currency: string): ObjectiveCurrency {
+        switch (currency) {
+            case 'ARS':
+            case 'USD':
+                return currency;
+            default:
+                throw new Error(`Invalid objective currency: ${currency}`);
         }
     }
 
@@ -148,6 +179,7 @@ export type ObjectiveUpdate = {
     target?: number;
     unit?: string;
     manualValue?: number | null;
+    currency?: ObjectiveCurrency | null;
 };
 
 export type ObjectiveSnapshot = {
@@ -160,6 +192,7 @@ export type ObjectiveSnapshot = {
     target: number;
     unit: string;
     manualValue: number | null;
+    currency: ObjectiveCurrency | null;
     status: ObjectiveStatus;
     archivedAt: Date | null;
     achievedAt: Date | null;

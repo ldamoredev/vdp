@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { idParamsSchema, localDateStringSchema } from "./common";
 
-export const objectiveMetricSourceEnum = z.enum(["manual", "projects_hours", "tasks_completed"]);
+export const objectiveMetricSourceEnum = z.enum(["manual", "projects_hours", "tasks_completed", "wallet_savings"]);
 export const objectiveStatusEnum = z.enum(["active", "archived", "achieved"]);
+export const objectiveCurrencyEnum = z.enum(["ARS", "USD"]);
 export const objectiveIdParamsSchema = idParamsSchema;
+
+const CURRENCY_SCOPED_SOURCES: readonly z.infer<typeof objectiveMetricSourceEnum>[] = ["wallet_savings"];
+
+function isCurrencyScopedSource(source: z.infer<typeof objectiveMetricSourceEnum>): boolean {
+  return CURRENCY_SCOPED_SOURCES.includes(source);
+}
 
 const numericMetricSchema = z.union([
   z.number(),
@@ -21,12 +28,18 @@ const objectiveInputSchema = z.object({
   target: positiveMetricSchema,
   unit: z.string().min(1).max(24),
   manualValue: nonNegativeMetricSchema.nullable().optional(),
+  currency: objectiveCurrencyEnum.nullable().optional(),
 });
 
-export const createObjectiveSchema = objectiveInputSchema.refine((value) => value.periodEnd >= value.periodStart, {
-  message: "Period end must be on or after period start",
-  path: ["periodEnd"],
-});
+export const createObjectiveSchema = objectiveInputSchema
+  .refine((value) => value.periodEnd >= value.periodStart, {
+    message: "Period end must be on or after period start",
+    path: ["periodEnd"],
+  })
+  .refine((value) => !isCurrencyScopedSource(value.metricSource) || value.currency != null, {
+    message: "Currency is required for this metric source",
+    path: ["currency"],
+  });
 
 export const updateObjectiveSchema = objectiveInputSchema.partial().strict()
   .refine((value) => (value.periodStart === undefined) === (value.periodEnd === undefined), {
@@ -39,4 +52,11 @@ export const updateObjectiveSchema = objectiveInputSchema.partial().strict()
   }, {
     message: "Period end must be on or after period start",
     path: ["periodEnd"],
+  })
+  .refine((value) => {
+    if (value.metricSource === undefined || !isCurrencyScopedSource(value.metricSource)) return true;
+    return value.currency != null;
+  }, {
+    message: "Currency is required for this metric source",
+    path: ["currency"],
   });

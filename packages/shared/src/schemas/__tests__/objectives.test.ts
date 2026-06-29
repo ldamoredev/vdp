@@ -47,6 +47,30 @@ describe("createObjectiveSchema", () => {
     });
   });
 
+  it("requires currency for wallet savings metric bindings", () => {
+    expect(createObjectiveSchema.parse({
+      title: "Ahorrar para el viaje",
+      periodStart: "2026-07-01",
+      periodEnd: "2026-09-30",
+      metricSource: "wallet_savings",
+      target: 1500,
+      unit: "USD",
+      currency: "USD",
+    })).toMatchObject({
+      metricSource: "wallet_savings",
+      currency: "USD",
+    });
+
+    expect(() => createObjectiveSchema.parse({
+      title: "Ahorrar sin moneda",
+      periodStart: "2026-07-01",
+      periodEnd: "2026-09-30",
+      metricSource: "wallet_savings",
+      target: 1500,
+      unit: "USD",
+    })).toThrow(/currency/i);
+  });
+
   it("rejects invalid periods and non-positive targets", () => {
     expect(() => createObjectiveSchema.parse({
       title: "Rango roto",
@@ -71,6 +95,14 @@ describe("createObjectiveSchema", () => {
 describe("updateObjectiveSchema", () => {
   it("allows partial updates including manual progress", () => {
     expect(updateObjectiveSchema.parse({ manualValue: 7 })).toEqual({ manualValue: 7 });
+  });
+
+  it("requires currency when changing to a wallet savings source", () => {
+    expect(updateObjectiveSchema.parse({ metricSource: "wallet_savings", currency: "ARS" })).toEqual({
+      metricSource: "wallet_savings",
+      currency: "ARS",
+    });
+    expect(() => updateObjectiveSchema.parse({ metricSource: "wallet_savings" })).toThrow(/currency/i);
   });
 
   it("rejects partial period updates", () => {

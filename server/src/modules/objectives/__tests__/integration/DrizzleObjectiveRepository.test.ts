@@ -33,9 +33,30 @@ describe('DrizzleObjectiveRepository', () => {
             metricSource: 'projects_hours',
             target: 120,
             manualValue: null,
+            currency: null,
             status: 'active',
         });
         expect(otherView).toBeNull();
+    });
+
+    it('persists wallet savings currency', async () => {
+        const objective = await repo.createObjective(userId, {
+            title: 'Ahorro en USD',
+            periodStart: '2026-07-01',
+            periodEnd: '2026-09-30',
+            metricSource: 'wallet_savings',
+            target: 1500,
+            unit: 'USD',
+            currency: 'USD',
+        });
+
+        const saved = await repo.getObjective(userId, objective.id);
+
+        expect(saved).toMatchObject({
+            metricSource: 'wallet_savings',
+            manualValue: null,
+            currency: 'USD',
+        });
     });
 
     it('lists objectives for one owner only', async () => {

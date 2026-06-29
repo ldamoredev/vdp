@@ -12,6 +12,7 @@ const baseSnapshot = {
     target: 120,
     unit: 'h',
     manualValue: null,
+    currency: null,
     status: 'active',
     archivedAt: null,
     achievedAt: null,
@@ -53,6 +54,7 @@ describe('Objective', () => {
             target: 50,
             unit: 'sesiones',
             manualValue: 7,
+            currency: null,
         });
 
         expect(objective.toSnapshot()).toMatchObject({
@@ -63,9 +65,36 @@ describe('Objective', () => {
             target: 50,
             unit: 'sesiones',
             manualValue: 7,
+            currency: null,
             status: 'active',
             updatedAt: new Date('2026-06-28T12:00:00.000Z'),
         });
+    });
+
+    it('stores currency for wallet savings and clears it for non-currency metrics', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));
+        const objective = Objective.fromSnapshot({
+            ...baseSnapshot,
+            metricSource: 'wallet_savings',
+            unit: 'USD',
+            currency: 'USD',
+        });
+
+        objective.update({ metricSource: 'tasks_completed', unit: 'tareas' });
+
+        expect(objective.toSnapshot()).toMatchObject({
+            metricSource: 'tasks_completed',
+            unit: 'tareas',
+            currency: null,
+            updatedAt: new Date('2026-06-28T12:00:00.000Z'),
+        });
+        expect(() => Objective.fromSnapshot({
+            ...baseSnapshot,
+            metricSource: 'wallet_savings',
+            unit: 'ARS',
+            currency: null,
+        })).toThrow(/currency/i);
     });
 
     it('marks achieved and archives with timestamps', () => {

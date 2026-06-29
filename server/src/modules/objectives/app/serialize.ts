@@ -13,6 +13,7 @@ export function serializeObjective(objective: Objective): ObjectiveDto {
         target: snapshot.target,
         unit: snapshot.unit,
         manualValue: snapshot.manualValue,
+        currency: snapshot.currency,
         status: snapshot.status,
         archivedAt: snapshot.archivedAt?.toISOString() ?? null,
         achievedAt: snapshot.achievedAt?.toISOString() ?? null,

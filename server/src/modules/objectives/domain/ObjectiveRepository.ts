@@ -1,4 +1,4 @@
-import { Objective, type ObjectiveMetricSource, type ObjectiveUpdate } from './Objective';
+import { Objective, type ObjectiveCurrency, type ObjectiveMetricSource, type ObjectiveUpdate } from './Objective';
 
 export type CreateObjectiveData = {
     readonly title: string;
@@ -8,6 +8,7 @@ export type CreateObjectiveData = {
     readonly target: number;
     readonly unit: string;
     readonly manualValue?: number | null;
+    readonly currency?: ObjectiveCurrency | null;
 };
 
 export type UpdateObjectiveData = ObjectiveUpdate;
