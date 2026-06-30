@@ -21,12 +21,15 @@ vi.mock("@/ui/primitives/theme-toggle", () => ({
 import LandingScreen from "../LandingScreen";
 
 describe("LandingScreen", () => {
-  it("shows Metas as an active module", () => {
+  it("shows Metas and Bandeja as active modules", () => {
     const markup = renderToStaticMarkup(createElement(LandingScreen));
 
     expect(markup).toContain("Metas");
     expect(markup).toContain("Objetivos de vida");
     expect(markup).toContain('href="/objectives"');
-    expect(markup).toContain("5</span>");
+    expect(markup).toContain("Bandeja");
+    expect(markup).toContain("Capturá ideas");
+    expect(markup).toContain('href="/inbox"');
+    expect(markup).toContain("6</span>");
   });
 });

@@ -58,6 +58,17 @@ const modules = [
     ready: true,
   },
   {
+    key: "inbox",
+    name: "Bandeja",
+    description: "Capturá ideas, pendientes y gastos sueltos para triarlos después",
+    href: "/inbox",
+    iconLetter: "B",
+    softBg: "var(--amber-soft-bg)",
+    softText: "var(--amber-soft-text)",
+    softBorder: "var(--amber-soft-border)",
+    ready: true,
+  },
+  {
     key: "people",
     name: "People",
     description: "Cuidá tus relaciones, no pierdas el hilo de nadie",

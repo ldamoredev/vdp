@@ -98,11 +98,6 @@ export function InboxScreen() {
           </ul>
         </section>
       )}
-
-      <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-        <Inbox size={14} />
-        <span>El triage hacia cada módulo llega en D5b.</span>
-      </div>
     </ModulePage>
   );
 }
