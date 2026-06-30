@@ -1,4 +1,23 @@
-import { DailyReviewStateRecord, DailyReviewStateRepository } from '../../domain/DailyReviewStateRepository';
+import {
+    DailyReviewBriefSurface,
+    DailyReviewStateRecord,
+    DailyReviewStateRepository,
+} from '../../domain/DailyReviewStateRepository';
+
+function emptyRecord(date: string): DailyReviewStateRecord {
+    return {
+        date,
+        acknowledgedSignalIds: [],
+        watchedCategoryIds: [],
+        note: '',
+        openedAt: null,
+        completedAt: null,
+        focusTaskId: null,
+        plannedAt: null,
+        morningBriefRequestedAt: null,
+        eveningBriefRequestedAt: null,
+    };
+}
 
 export class FakeDailyReviewStateRepository extends DailyReviewStateRepository {
     private store = new Map<string, DailyReviewStateRecord>();
@@ -15,5 +34,18 @@ export class FakeDailyReviewStateRepository extends DailyReviewStateRepository {
         const saved = { ...state };
         this.store.set(this.key(userId, state.date), saved);
         return { ...saved };
+    }
+
+    async markBriefRequested(
+        userId: string,
+        date: string,
+        surface: DailyReviewBriefSurface,
+    ): Promise<DailyReviewStateRecord> {
+        const key = this.key(userId, date);
+        const current = this.store.get(key) ?? emptyRecord(date);
+        const field = surface === 'morning' ? 'morningBriefRequestedAt' : 'eveningBriefRequestedAt';
+        const updated = { ...current, [field]: current[field] ?? new Date().toISOString() };
+        this.store.set(key, updated);
+        return { ...updated };
     }
 }

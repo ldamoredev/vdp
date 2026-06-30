@@ -793,6 +793,36 @@ describe('Tasks API — E2E', () => {
         });
     });
 
+    describe('POST /api/v1/tasks/review/brief-requested', () => {
+        it('marks a brief surface requested and is idempotent on a second call', async () => {
+            const today = todayISO();
+
+            const first = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/review/brief-requested',
+                payload: { date: today, surface: 'morning' },
+            });
+            expect(first.statusCode).toBe(200);
+            expect(first.json().morningBriefRequestedAt).toBeTruthy();
+            expect(first.json().eveningBriefRequestedAt).toBeNull();
+
+            const second = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/review/brief-requested',
+                payload: { date: today, surface: 'morning' },
+            });
+            expect(second.json().morningBriefRequestedAt).toBe(first.json().morningBriefRequestedAt);
+
+            const evening = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/review/brief-requested',
+                payload: { date: today, surface: 'evening' },
+            });
+            expect(evening.json().morningBriefRequestedAt).toBe(first.json().morningBriefRequestedAt);
+            expect(evening.json().eveningBriefRequestedAt).toBeTruthy();
+        });
+    });
+
     // ─── Validation & lifecycle errors ─────────────
 
     describe('Validation guards', () => {

@@ -274,6 +274,38 @@ describe("HomePresenter", () => {
     expect(synthesisBriefStore.getState().home).toBeNull();
   });
 
+  it("reflects whether today's morning brief was already requested (D6a)", async () => {
+    const { presenter } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().homeBriefRequested).toBe(false);
+    presenter.stop();
+  });
+
+  it("flags the morning brief as already requested when the server says so (D6a)", async () => {
+    const { presenter, tasks } = build();
+    tasks.reviewState = {
+      date: "2026-06-15",
+      acknowledgedSignalIds: [],
+      watchedCategoryIds: [],
+      note: "",
+      openedAt: null,
+      completedAt: null,
+      focusTaskId: null,
+      plannedAt: null,
+      morningBriefRequestedAt: "2026-06-15T07:00:00.000Z",
+      eveningBriefRequestedAt: null,
+    };
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().homeBriefRequested).toBe(true);
+    presenter.stop();
+  });
+
   it("surfaces active objectives as the daily north", async () => {
     const { presenter, objectives } = build();
     objectives.objectives = [

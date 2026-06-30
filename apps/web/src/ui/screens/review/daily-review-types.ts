@@ -25,6 +25,8 @@ export interface DailyReviewState {
   completedAt: string | null;
   focusTaskId: string | null;
   plannedAt: string | null;
+  morningBriefRequestedAt: string | null;
+  eveningBriefRequestedAt: string | null;
 }
 
 export type WalletReviewSignalKind =

@@ -25,6 +25,16 @@ export const saveDailyReviewStateSchema = z.object({
   completedAt: z.string().datetime().nullable().default(null),
   focusTaskId: z.string().uuid().nullable().default(null),
   plannedAt: z.string().datetime().nullable().default(null),
+  morningBriefRequestedAt: z.string().datetime().nullable().default(null),
+  eveningBriefRequestedAt: z.string().datetime().nullable().default(null),
+});
+
+// D6a: narrow write, idempotent — never touches the rest of the ritual state.
+export const dailyReviewBriefSurfaceEnum = z.enum(["morning", "evening"]);
+
+export const markDailyReviewBriefRequestedSchema = z.object({
+  date: localDateStringSchema,
+  surface: dailyReviewBriefSurfaceEnum,
 });
 
 // ─── Tasks ──────────────────────────────────────────────

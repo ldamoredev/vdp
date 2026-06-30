@@ -1,7 +1,11 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { Database } from '../../../common/base/db/Database';
-import { DailyReviewStateRecord, DailyReviewStateRepository } from '../../domain/DailyReviewStateRepository';
+import {
+    DailyReviewBriefSurface,
+    DailyReviewStateRecord,
+    DailyReviewStateRepository,
+} from '../../domain/DailyReviewStateRepository';
 import { dailyReviewState } from './schema';
 
 type Row = typeof dailyReviewState.$inferSelect;
@@ -16,6 +20,8 @@ function toRecord(row: Row): DailyReviewStateRecord {
         completedAt: row.completedAt ? row.completedAt.toISOString() : null,
         focusTaskId: row.focusTaskId,
         plannedAt: row.plannedAt ? row.plannedAt.toISOString() : null,
+        morningBriefRequestedAt: row.morningBriefRequestedAt ? row.morningBriefRequestedAt.toISOString() : null,
+        eveningBriefRequestedAt: row.eveningBriefRequestedAt ? row.eveningBriefRequestedAt.toISOString() : null,
     };
 }
 
@@ -41,6 +47,8 @@ export class DrizzleDailyReviewStateRepository extends DailyReviewStateRepositor
             completedAt: state.completedAt ? new Date(state.completedAt) : null,
             focusTaskId: state.focusTaskId,
             plannedAt: state.plannedAt ? new Date(state.plannedAt) : null,
+            morningBriefRequestedAt: state.morningBriefRequestedAt ? new Date(state.morningBriefRequestedAt) : null,
+            eveningBriefRequestedAt: state.eveningBriefRequestedAt ? new Date(state.eveningBriefRequestedAt) : null,
             updatedAt: new Date(),
         };
         const [row] = await this.db.query
@@ -49,6 +57,31 @@ export class DrizzleDailyReviewStateRepository extends DailyReviewStateRepositor
             .onConflictDoUpdate({
                 target: [dailyReviewState.ownerUserId, dailyReviewState.date],
                 set: values,
+            })
+            .returning();
+        return toRecord(row);
+    }
+
+    async markBriefRequested(
+        userId: string,
+        date: string,
+        surface: DailyReviewBriefSurface,
+    ): Promise<DailyReviewStateRecord> {
+        const column = surface === 'morning'
+            ? dailyReviewState.morningBriefRequestedAt
+            : dailyReviewState.eveningBriefRequestedAt;
+        const now = new Date();
+        const insertValues = surface === 'morning'
+            ? { ownerUserId: userId, date, morningBriefRequestedAt: now }
+            : { ownerUserId: userId, date, eveningBriefRequestedAt: now };
+
+        const [row] = await this.db.query
+            .insert(dailyReviewState)
+            .values(insertValues)
+            .onConflictDoUpdate({
+                target: [dailyReviewState.ownerUserId, dailyReviewState.date],
+                // COALESCE: never overwrites an already-set timestamp, idempotent at the DB level too.
+                set: { [surface === 'morning' ? 'morningBriefRequestedAt' : 'eveningBriefRequestedAt']: sql`coalesce(${column}, ${now})` },
             })
             .returning();
         return toRecord(row);

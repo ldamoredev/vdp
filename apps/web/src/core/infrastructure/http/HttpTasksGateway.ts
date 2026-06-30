@@ -111,6 +111,11 @@ export class HttpTasksGateway implements TasksGateway {
     return body;
   }
 
+  async markBriefRequested(date: string, surface: "morning" | "evening"): Promise<DailyReviewState> {
+    const { body } = await this.http.post<DailyReviewState>("/tasks/review/brief-requested", { date, surface });
+    return body;
+  }
+
   async getRecentInsights(limit = 5): Promise<TaskInsight[]> {
     const { body } = await this.http.get<{ insights: TaskInsight[] }>(
       withQuery("/tasks/insights", { limit }),

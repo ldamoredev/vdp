@@ -17,6 +17,8 @@ export function createEmptyDailyReviewState(date: string): DailyReviewState {
     completedAt: null,
     focusTaskId: null,
     plannedAt: null,
+    morningBriefRequestedAt: null,
+    eveningBriefRequestedAt: null,
   };
 }
 
@@ -53,5 +55,13 @@ export function mergePersistedDailyReviewState(
       typeof persisted.plannedAt === "string" || persisted.plannedAt === null
         ? (persisted.plannedAt ?? base.plannedAt)
         : base.plannedAt,
+    morningBriefRequestedAt:
+      typeof persisted.morningBriefRequestedAt === "string" || persisted.morningBriefRequestedAt === null
+        ? (persisted.morningBriefRequestedAt ?? base.morningBriefRequestedAt)
+        : base.morningBriefRequestedAt,
+    eveningBriefRequestedAt:
+      typeof persisted.eveningBriefRequestedAt === "string" || persisted.eveningBriefRequestedAt === null
+        ? (persisted.eveningBriefRequestedAt ?? base.eveningBriefRequestedAt)
+        : base.eveningBriefRequestedAt,
   };
 }

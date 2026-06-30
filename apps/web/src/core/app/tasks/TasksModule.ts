@@ -9,6 +9,7 @@ import { CompleteTask, CompleteTaskHandler } from "./CompleteTask";
 import { CreateTask, CreateTaskHandler } from "./CreateTask";
 import { DeleteTask, DeleteTaskHandler } from "./DeleteTask";
 import { GetDailyReviewState, GetDailyReviewStateHandler } from "./GetDailyReviewState";
+import { MarkDailyReviewBriefRequested, MarkDailyReviewBriefRequestedHandler } from "./MarkDailyReviewBriefRequested";
 import { SaveDailyReviewState, SaveDailyReviewStateHandler } from "./SaveDailyReviewState";
 import { DiscardTask, DiscardTaskHandler } from "./DiscardTask";
 import { GetCarryOverRate, GetCarryOverRateHandler } from "./GetCarryOverRate";
@@ -50,6 +51,7 @@ export class TasksModule implements CoreModule {
     core.bus.registerHandler(GetTaskReview, () => new GetTaskReviewHandler(gateway));
     core.bus.registerHandler(GetDailyReviewState, () => new GetDailyReviewStateHandler(gateway));
     core.bus.registerHandler(SaveDailyReviewState, () => new SaveDailyReviewStateHandler(gateway));
+    core.bus.registerHandler(MarkDailyReviewBriefRequested, () => new MarkDailyReviewBriefRequestedHandler(gateway));
     core.bus.registerHandler(GetRecentInsights, () => new GetRecentInsightsHandler(gateway));
     core.bus.registerHandler(ListTaskNotes, () => new ListTaskNotesHandler(gateway));
     core.bus.registerHandler(AddTaskNote, () => new AddTaskNoteHandler(gateway));

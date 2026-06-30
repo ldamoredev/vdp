@@ -125,6 +125,10 @@ The agent layer is excellent but reactive and per-domain. Make it proactive: mor
 brief, weekly prep, "you left X pending". Pairs naturally with D2 (it is the brain of
 the command center). Respects the medical-no-LLM rule.
 
+**Status (June 2026): in progress — D6a shipped.** Builds directly on R3a/R3b
+(the brief mechanism) and D5c (the lazy-once-per-period pattern). Gate decisions and
+slice breakdown in the "D6: Proactive Agent" execution section below.
+
 ### Recommended sequence (owner decides)
 
 > **D1 (cross-domain density) + D2 ("Today" command center with agent) as one push
@@ -681,6 +685,118 @@ self-contained slice (Inbox only, vs. D6's broader proactive-agent surface).
 - **Verified:** automated only. Manual confirmation (capture a task-shaped and a
   money-shaped note, reload the Bandeja, see the matching button highlight without
   clicking anything) is the remaining step.
+
+## D6: Proactive Agent (in progress — June 2026)
+
+Owner-directed continuation straight from R3b/D5c: the LLM provider is live and proven,
+so D6 turns the agent from reactive to proactive. The literal ROADMAP ask — morning
+brief, weekly prep, "you left X pending" — is now scoped against what actually exists
+in the codebase, not against a generic SaaS notion of "proactive."
+
+**Gate decisions (settled 2026-06-30, not to be re-litigated when implementing):**
+
+1. **No new scheduler/cron infrastructure.** The server has none today — not even for
+   Wallet's recurring transactions, which D1c deliberately solved with a lazy
+   materialize-on-load instead of a background job. There is also no push/email
+   channel: the only "live while disconnected" delivery is SSE, which requires an open
+   connection. A real cron job would therefore have nowhere to deliver its output
+   except "wait for the next time the owner opens the app" — functionally identical to
+   triggering lazily on that next open. So D6 reuses the **lazy, once-per-period,
+   persisted** pattern already proven in D5c (Inbox suggestions) and D1c (recurring
+   transactions): compute on the first relevant load of a new period, persist so it
+   isn't recomputed, skip on every later load that period. If the owner doesn't open
+   the app, nothing fires — same as today.
+2. **The brief mechanism doesn't change, only its trigger.** R3b already gave Tasks an
+   agent that authors a brief from its own tools given a fixed prompt. D6a's only job
+   is to fire that same prompt **automatically** instead of waiting for the
+   "✨ Redactar con IA" click — the button stays as the manual override/regenerate path.
+3. **Per-day ritual state is the right home for the gating flag**, not a new table.
+   `daily_review_state` (R1) already tracks per-`(owner_user_id, date)` ritual
+   timestamps (`openedAt`, `completedAt`, `plannedAt` from R2) — morning/evening brief
+   "already requested today" timestamps belong there, mirroring exactly how R2 added
+   `focusTaskId`/`plannedAt` to the same row instead of opening a second table.
+4. **"You left X pending" reuses the existing TaskInsight system**, not a new
+   notification channel. `TaskInsightFactory` already has event-driven, persisted,
+   SSE-pushed insights for exactly this shape (`taskStuck` — postponed N times;
+   `tasksOverloaded` — high carry-over rate). D6c's job is to fold these into the
+   now-automatic brief's voice, not invent a parallel mechanism.
+5. **Medical stays out**, same rule as every prior track.
+
+### D6a. Morning/evening brief becomes automatic (once per day) — SHIPPED (2026-06-30)
+
+Promotes R3b from a manual click to "already there" the first time the owner opens
+`/home` or `/review` each day, while staying inside Groq's free-tier rate limits by
+firing at most once per surface per day.
+
+- **Backend:** `morning_brief_requested_at` / `evening_brief_requested_at` (nullable
+  timestamps) added to `daily_review_state` — forward-only migration
+  `0020_abnormal_purple_man.sql`, mirroring R2's `planned_at` addition to the same
+  table (also added to the e2e test-DB bootstrap SQL, the third sync point D5c
+  already flagged). **Not** written through the existing full-state
+  `SaveDailyReviewState` path — that always round-trips the *entire* ritual record
+  from a single owning presenter (Home/Review), and `ChatPanel` is a second,
+  independent writer that could otherwise clobber `note`/`acknowledgedSignalIds`/
+  `focusTaskId` with stale values. Instead, a new narrow, idempotent command —
+  `MarkDailyReviewBriefRequestedCommand` / `POST /tasks/review/brief-requested` —
+  upserts via `COALESCE(existing, NOW())` so it only ever sets its own timestamp
+  once, never touching the rest of the row. Mirrors the
+  `TriageInboxItem`/`SuggestInboxItemDestination` "small, targeted mutation" style
+  from D5b/D5c rather than the "send the whole blob" style.
+- **Web:** `synthesisBriefStore` (R3a) gained `homeBriefRequested` /
+  `reviewBriefRequested`, **defaulting to `true`** — until `HomePresenter`/
+  `ReviewPresenter` prove otherwise for *today* from their already-loaded
+  `reviewState`, `ChatPanel` must assume the brief was already requested, so it can
+  never auto-fire before real data has loaded. The actual gate decision was pulled
+  out into a pure, directly-tested function (`ui/chat/auto-brief-gate.ts`,
+  `shouldAutoFireBrief`) rather than left inline in the component, since mounting
+  `ChatPanel` for a test would need CoreProvider/router/Tasks-events/network mocks
+  for marginal benefit.
+- **`ChatPanel`** fires the existing `HOME_BRIEF_PROMPT`/`REVIEW_BRIEF_PROMPT` (R3b)
+  automatically — same Tasks-only, same `stream.sendMessage` pipeline — runs even
+  while the panel is visually closed (the component is always mounted, just
+  returns `null`), so the conversation is already there by the time the owner opens
+  it. A `useRef` same-render guard protects against React dev-mode's double-invoke;
+  the persisted flag is the real once-per-day guard. The manual "✨ Redactar con IA"
+  button (R3b) is unchanged — it's the regenerate/"wasn't on Tasks the first time
+  today" fallback.
+- No change to the brief-authoring system prompt itself (R3b's `## Brief del día`
+  section is reused as-is).
+- **Tests:** backend repository/handler idempotency tests, e2e route + cross-user
+  isolation; web `daily-review-storage` field round-trip, `HomePresenter`/
+  `ReviewPresenter` tests asserting the store flag reflects `reviewState`, and a
+  dedicated `auto-brief-gate.test.ts` covering every gate branch. Full backend
+  suite green (418 unit + 65 integration + 126 e2e) and web suite green (559
+  tests); both `apps/web` and `server` `tsc --noEmit` clean.
+- **Verified:** automated only. Manual confirmation (open `/home` for the first
+  time today, see the brief arrive without clicking; reopen later the same day and
+  confirm no second Groq call; same independently for `/review`) is the remaining
+  step.
+
+### D6b. Weekly prep — NOT STARTED
+
+A week-ahead (Monday morning) or week-review (Sunday evening) framing, same mechanism
+as D6a but weekly cadence and reusing the Tasks agent's existing `get_weekly_summary`
+tool (already described in `system-prompt.ts`'s "## Resumen semanal" section) instead
+of `get_today_stats`/`get_end_of_day_review`.
+
+- New `weekly_prep_requested_at` (or a `(year, week)` key) likely needs its own small
+  state, since `daily_review_state` is keyed per-day, not per-week — exact shape to
+  settle at implementation time, but same "persist once per period" gate as D6a.
+- A third trigger phrase + a small addition to `## Brief del día` (or a sibling
+  section) telling the agent to compose the weekly version from `get_weekly_summary`
+  when asked.
+
+### D6c. "You left X pending" folded into the brief — NOT STARTED
+
+Makes the now-automatic brief actively call out aged, un-acted-on items across domains
+instead of only reading like a status readout.
+
+- Read-time only: have the brief-authoring instructions explicitly reference
+  `get_insights` results (already surfaced — `taskStuck`/`tasksOverloaded` cover most
+  of "you left X pending" today) and phrase them as a nudge, not just list them.
+- Evaluate whether any *new* insight types are worth adding (e.g. an aged,
+  uncategorized Wallet transaction) only after D6a/D6b ship and the owner has lived
+  with the automatic brief — avoid inventing nudges nobody asked for.
 
 ## Data Constraint
 

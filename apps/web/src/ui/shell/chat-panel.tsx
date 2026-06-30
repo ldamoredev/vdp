@@ -3,12 +3,16 @@ import { useLocation } from "react-router";
 import { Bot, Send, Sparkles, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
+import { useCore } from "@/CoreProvider";
+import { MarkDailyReviewBriefRequested } from "@/core/app/tasks/MarkDailyReviewBriefRequested";
+import { getTodayISO } from "@/lib/format";
 import { useIsMobile } from "@/lib/use-breakpoint";
 import { domainHasAgent, domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
-import { useSynthesisBrief } from "@/lib/synthesis-brief-store";
+import { synthesisBriefStore, useSynthesisBrief, useSynthesisBriefRequested } from "@/lib/synthesis-brief-store";
 import { useTasksEvents } from "@/TasksEventsProvider";
+import { shouldAutoFireBrief } from "@/ui/chat/auto-brief-gate";
 import { ChatHeader } from "@/ui/chat/chat-header";
 import { ConversationList } from "@/ui/chat/conversation-list";
 import { MessageBubble } from "@/ui/chat/message-bubble";
@@ -32,7 +36,9 @@ export function ChatPanel() {
   const isOpen = useChatOpen();
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
+  const core = useCore();
   const synthesisBrief = useSynthesisBrief(pathname);
+  const briefAlreadyRequested = useSynthesisBriefRequested(pathname);
   const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
   // Outside a domain (home, review, settings) the chat stays available with a
@@ -69,6 +75,53 @@ export function ChatPanel() {
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
+
+  // D6a: auto-fire the R3b brief once per day per surface, instead of waiting
+  // for the manual click. Runs even while the panel is visually closed (this
+  // component is always mounted) so the conversation is already there by the
+  // time the owner opens it. firedRef is a same-render guard against React's
+  // dev-mode double-invoke; briefAlreadyRequested (persisted server-side) is
+  // the real once-per-day guard.
+  const firedRef = useRef(false);
+  useEffect(() => {
+    firedRef.current = false;
+  }, [pathname]);
+
+  useEffect(() => {
+    const surface = shouldAutoFireBrief({
+      pathname,
+      domainKey,
+      hasDomainAgent: !!domainWithAgent,
+      agentChatEnabled: agentChat.enabled,
+      briefAlreadyRequested,
+      isLoadingHistory: chat.isLoadingHistory,
+      hasMessages: chat.messages.length > 0,
+      isStreaming: stream.isStreaming,
+      alreadyFiredThisMount: firedRef.current,
+    });
+    if (!surface || !domainWithAgent) return;
+
+    firedRef.current = true;
+    void stream.sendMessage(
+      surface === "morning" ? HOME_BRIEF_PROMPT : REVIEW_BRIEF_PROMPT,
+      domainWithAgent.agentEndpoint,
+      chat.conversationId,
+    );
+    if (surface === "morning") synthesisBriefStore.setHomeBriefRequested(true);
+    else synthesisBriefStore.setReviewBriefRequested(true);
+    void core.execute(new MarkDailyReviewBriefRequested(getTodayISO(), surface)).catch(() => {});
+  }, [
+    pathname,
+    domainKey,
+    domainWithAgent,
+    agentChat.enabled,
+    briefAlreadyRequested,
+    chat.isLoadingHistory,
+    chat.messages.length,
+    chat.conversationId,
+    stream,
+    core,
+  ]);
 
   function handleNewConversation() {
     chat.startNewConversation();

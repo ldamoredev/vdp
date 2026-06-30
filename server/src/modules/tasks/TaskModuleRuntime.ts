@@ -13,6 +13,10 @@ import { GetCarryOverRateQuery, GetCarryOverRateQueryHandler } from './app/GetCa
 import { GetCompletionByDomainQuery, GetCompletionByDomainQueryHandler } from './app/GetCompletionByDomainQuery';
 import { GetEndOfDayReviewQuery, GetEndOfDayReviewQueryHandler } from './app/GetEndOfDayReviewQuery';
 import { GetDailyReviewStateQuery, GetDailyReviewStateQueryHandler } from './app/GetDailyReviewStateQuery';
+import {
+    MarkDailyReviewBriefRequestedCommand,
+    MarkDailyReviewBriefRequestedCommandHandler,
+} from './app/MarkDailyReviewBriefRequestedCommand';
 import { SaveDailyReviewStateCommand, SaveDailyReviewStateCommandHandler } from './app/SaveDailyReviewStateCommand';
 import { GetPlanningContextQuery, GetPlanningContextQueryHandler } from './app/GetPlanningContextQuery';
 import { GetTaskQuery, GetTaskQueryHandler } from './app/GetTaskQuery';
@@ -107,6 +111,9 @@ export class TaskModuleRuntime {
         );
         this.deps.bus.registerHandler(SaveDailyReviewStateCommand, () =>
             new SaveDailyReviewStateCommandHandler(this.dailyReviewStateRepository(), this.taskRepository()),
+        );
+        this.deps.bus.registerHandler(MarkDailyReviewBriefRequestedCommand, () =>
+            new MarkDailyReviewBriefRequestedCommandHandler(this.dailyReviewStateRepository()),
         );
         this.deps.bus.registerHandler(GetTodayStatsQuery, () =>
             new GetTodayStatsQueryHandler(this.taskRepository()),

@@ -14,6 +14,8 @@ describe("mergePersistedDailyReviewState", () => {
       note: "Mirar gastos chicos",
       focusTaskId: "focus-1",
       plannedAt: "2026-04-10T09:00:00.000Z",
+      morningBriefRequestedAt: "2026-04-10T07:00:00.000Z",
+      eveningBriefRequestedAt: null,
     });
 
     expect(result.acknowledgedSignalIds).toEqual(["wallet:uncategorized"]);
@@ -21,5 +23,14 @@ describe("mergePersistedDailyReviewState", () => {
     expect(result.note).toBe("Mirar gastos chicos");
     expect(result.focusTaskId).toBe("focus-1");
     expect(result.plannedAt).toBe("2026-04-10T09:00:00.000Z");
+    expect(result.morningBriefRequestedAt).toBe("2026-04-10T07:00:00.000Z");
+    expect(result.eveningBriefRequestedAt).toBeNull();
+  });
+
+  it("defaults both brief-requested fields to null for a fresh state", () => {
+    const empty = createEmptyDailyReviewState("2026-04-10");
+
+    expect(empty.morningBriefRequestedAt).toBeNull();
+    expect(empty.eveningBriefRequestedAt).toBeNull();
   });
 });

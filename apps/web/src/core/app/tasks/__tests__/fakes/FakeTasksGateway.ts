@@ -130,6 +130,24 @@ export class FakeTasksGateway implements TasksGateway {
     this.reviewState = state;
     return state;
   }
+  async markBriefRequested(date: string, surface: "morning" | "evening"): Promise<DailyReviewState> {
+    this.record("markBriefRequested", date, surface);
+    const current: DailyReviewState = this.reviewState ?? {
+      date,
+      acknowledgedSignalIds: [],
+      watchedCategoryIds: [],
+      note: "",
+      openedAt: null,
+      completedAt: null,
+      focusTaskId: null,
+      plannedAt: null,
+      morningBriefRequestedAt: null,
+      eveningBriefRequestedAt: null,
+    };
+    const field = surface === "morning" ? "morningBriefRequestedAt" : "eveningBriefRequestedAt";
+    this.reviewState = { ...current, [field]: current[field] ?? new Date().toISOString() };
+    return this.reviewState;
+  }
   async getRecentInsights(limit?: number): Promise<TaskInsight[]> {
     this.record("getRecentInsights", limit);
     return [];

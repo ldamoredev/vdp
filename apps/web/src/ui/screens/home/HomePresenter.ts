@@ -506,6 +506,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     const model = this.buildModel();
     this.updateModel(model);
     synthesisBriefStore.setHomeBrief(buildHomeAgentBrief(model));
+    synthesisBriefStore.setHomeBriefRequested(this.reviewState.morningBriefRequestedAt !== null);
   }
 
   private buildModel(): HomeViewModel {

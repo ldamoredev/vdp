@@ -11,6 +11,7 @@ import { DeleteTask } from "../DeleteTask";
 import { DiscardTask } from "../DiscardTask";
 import { GetCarryOverRate } from "../GetCarryOverRate";
 import { GetDailyReviewState } from "../GetDailyReviewState";
+import { MarkDailyReviewBriefRequested } from "../MarkDailyReviewBriefRequested";
 import { GetRecentInsights } from "../GetRecentInsights";
 import { SaveDailyReviewState } from "../SaveDailyReviewState";
 import { GetTask } from "../GetTask";
@@ -133,6 +134,8 @@ describe("tasks handlers (dispatched through the bus)", () => {
         completedAt: null,
         focusTaskId: "task-focus",
         plannedAt: "2026-06-13T09:00:00.000Z",
+        morningBriefRequestedAt: null,
+        eveningBriefRequestedAt: null,
       };
 
       const saved = await core.execute(new SaveDailyReviewState(state));
@@ -142,6 +145,16 @@ describe("tasks handlers (dispatched through the bus)", () => {
       const loaded = await core.execute(new GetDailyReviewState("2026-06-13"));
       expect(gateway.callsTo("getReviewState")[0].args).toEqual(["2026-06-13"]);
       expect(loaded).toEqual(state);
+    });
+
+    it("routes mark-brief-requested through the gateway", async () => {
+      const gateway = new FakeTasksGateway();
+      const core = coreWith(gateway);
+
+      const result = await core.execute(new MarkDailyReviewBriefRequested("2026-06-13", "morning"));
+
+      expect(gateway.callsTo("markBriefRequested")[0].args).toEqual(["2026-06-13", "morning"]);
+      expect(result.morningBriefRequestedAt).toBeTruthy();
     });
 
     it("returns null when no review state has been persisted for the day", async () => {

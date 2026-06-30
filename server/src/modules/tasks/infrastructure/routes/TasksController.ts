@@ -4,6 +4,7 @@ import {
     createTaskNoteSchema,
     createTaskSchema,
     domainStatsFiltersSchema,
+    markDailyReviewBriefRequestedSchema,
     reviewFiltersSchema,
     reviewStateQuerySchema,
     saveDailyReviewStateSchema,
@@ -37,6 +38,7 @@ import { GetCarryOverRateQuery } from '../../app/GetCarryOverRateQuery';
 import { GetCompletionByDomainQuery } from '../../app/GetCompletionByDomainQuery';
 import { GetEndOfDayReviewQuery } from '../../app/GetEndOfDayReviewQuery';
 import { GetDailyReviewStateQuery } from '../../app/GetDailyReviewStateQuery';
+import { MarkDailyReviewBriefRequestedCommand } from '../../app/MarkDailyReviewBriefRequestedCommand';
 import { SaveDailyReviewStateCommand } from '../../app/SaveDailyReviewStateCommand';
 import { GetTaskQuery } from '../../app/GetTaskQuery';
 import { GetTasksQuery } from '../../app/GetTasksQuery';
@@ -55,6 +57,7 @@ type CreateTaskNoteBody = z.input<typeof createTaskNoteSchema>;
 type ReviewFilters = z.infer<typeof reviewFiltersSchema>;
 type ReviewStateQuery = z.infer<typeof reviewStateQuerySchema>;
 type SaveReviewStateBody = z.infer<typeof saveDailyReviewStateSchema>;
+type MarkBriefRequestedBody = z.infer<typeof markDailyReviewBriefRequestedSchema>;
 type TrendFilters = z.input<typeof trendFiltersSchema>;
 type DomainStatsFilters = z.infer<typeof domainStatsFiltersSchema>;
 
@@ -102,7 +105,8 @@ export class TasksController extends HttpController {
         routes
             .get('/review', { query: reviewFiltersSchema }, this.getReview)
             .get('/review/state', { query: reviewStateQuerySchema }, this.getReviewState)
-            .put('/review/state', { body: saveDailyReviewStateSchema }, this.saveReviewState);
+            .put('/review/state', { body: saveDailyReviewStateSchema }, this.saveReviewState)
+            .post('/review/brief-requested', { body: markDailyReviewBriefRequestedSchema }, this.markBriefRequested);
     }
 
     private registerStatsRoutes(routes: RouteRegister): void {
@@ -292,6 +296,18 @@ export class TasksController extends HttpController {
     }) => {
         const result = await this.bus.execute(
             new SaveDailyReviewStateCommand(body!),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send(result);
+    };
+
+    private readonly markBriefRequested: RouteContextHandler<undefined, undefined, MarkBriefRequestedBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        const result = await this.bus.execute(
+            new MarkDailyReviewBriefRequestedCommand(body!.date, body!.surface),
             executionContextFromAuth(request.auth),
         );
         return reply.send(result);

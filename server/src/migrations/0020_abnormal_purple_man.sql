@@ -1,0 +1,2 @@
+ALTER TABLE "tasks"."daily_review_state" ADD COLUMN "morning_brief_requested_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "tasks"."daily_review_state" ADD COLUMN "evening_brief_requested_at" timestamp with time zone;

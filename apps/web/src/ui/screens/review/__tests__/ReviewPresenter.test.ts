@@ -198,4 +198,36 @@ describe("ReviewPresenter", () => {
 
     expect(synthesisBriefStore.getState().review).toBeNull();
   });
+
+  it("reflects whether today's evening brief was already requested (D6a)", async () => {
+    const { presenter } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().reviewBriefRequested).toBe(false);
+    presenter.stop();
+  });
+
+  it("flags the evening brief as already requested when the server says so (D6a)", async () => {
+    const { presenter, tasks } = build();
+    tasks.reviewState = {
+      date: "2026-06-13",
+      acknowledgedSignalIds: [],
+      watchedCategoryIds: [],
+      note: "",
+      openedAt: null,
+      completedAt: null,
+      focusTaskId: null,
+      plannedAt: null,
+      morningBriefRequestedAt: null,
+      eveningBriefRequestedAt: "2026-06-13T20:00:00.000Z",
+    };
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().reviewBriefRequested).toBe(true);
+    presenter.stop();
+  });
 });

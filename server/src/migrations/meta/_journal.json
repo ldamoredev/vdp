@@ -141,6 +141,13 @@
       "when": 1782851824006,
       "tag": "0019_wandering_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1782856195086,
+      "tag": "0020_abnormal_purple_man",
+      "breakpoints": true
     }
   ]
 }

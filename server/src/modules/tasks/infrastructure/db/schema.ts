@@ -111,6 +111,8 @@ export const dailyReviewState = tasksSchema.table(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     focusTaskId: uuid("focus_task_id").references(() => tasks.id, { onDelete: 'set null' }),
     plannedAt: timestamp("planned_at", { withTimezone: true }),
+    morningBriefRequestedAt: timestamp("morning_brief_requested_at", { withTimezone: true }),
+    eveningBriefRequestedAt: timestamp("evening_brief_requested_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

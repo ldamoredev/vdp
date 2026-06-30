@@ -4,6 +4,7 @@ import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { ALL_TEST_USERS, PRIMARY_TEST_USER, SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
+import { todayISO } from '../../../common/base/time/dates';
 import { ScriptedAgentProvider, withScriptedProvider } from './ScriptedAgentProvider';
 
 const testDb = new TestDatabase();
@@ -243,6 +244,25 @@ describe('Tasks API — Cross-user isolation', () => {
 
         expect(response.statusCode).toBe(422);
         expect(response.json()).toMatchObject({ error: 'DOMAIN_ERROR', message: 'Focus task not found' });
+    });
+
+    it('keeps brief-requested timestamps isolated per user for the same date', async () => {
+        const date = todayISO();
+
+        await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/tasks/review/brief-requested',
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { date, surface: 'morning' },
+        });
+
+        const secondaryGet = await testApp.app.inject({
+            method: 'GET',
+            url: `/api/v1/tasks/review/state?date=${date}`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(secondaryGet.json()).toBeNull();
     });
 
     it('derives the agent tool user from the request, not another user', async () => {

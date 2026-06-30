@@ -288,6 +288,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
     const model = this.buildModel();
     this.updateModel(model);
     synthesisBriefStore.setReviewBrief(buildReviewAgentBrief(model));
+    synthesisBriefStore.setReviewBriefRequested(this.reviewState.eveningBriefRequestedAt !== null);
   }
 
   private buildModel(): ReviewViewModel {
