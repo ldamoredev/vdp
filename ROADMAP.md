@@ -11,7 +11,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
-| Inbox | ✅ | ✅ | — | Active (D5 closed): frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; smart suggestion (D5c) parked behind an LLM provider |
+| Inbox | ✅ | ✅ | — | Active (D5 closed): frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; smart suggestion (D5c) up next, unblocked now that an LLM provider is live |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -261,7 +261,7 @@ today's focus) — the morning mirror of the close.
   lets the owner choose today's focus, and persists the plan server-side. The
   evening `/review` summary reads the same state and shows the morning focus.
 
-### R3. Proactive agent brief on the synthesis surfaces — PLANNED (unblocked 2026-06-29)
+### R3. Proactive agent brief on the synthesis surfaces — R3a + R3b shipped (2026-06-30)
 
 The chat is available on `/home` and `/review` but passive: it opens as an empty box.
 Seed it with a proactive day brief (tasks, focus, spend alerts, streaks, objective
@@ -290,32 +290,72 @@ config switch, no code change). With a live chat, R3 becomes worth shipping.
    those existing read-time results into a short message — same presenter-composition
    pattern, no new heavy queries.
 
-### R3a. Deterministic day brief seeded into the chat — NOT STARTED
+### R3a. Deterministic day brief seeded into the chat — SHIPPED (2026-06-30)
 
 Make the synthesis-surface chat proactive instead of an empty box.
 
-- **Web:** compose a short brief (≈3–6 lines) from the cross-domain queries `/home`
-  and `/review` already run (today's tasks/focus + carry-overs, wallet spend signals,
-  health streaks, objective progress), and render it as the chat panel's opening
-  assistant message on those two surfaces, phrased per surface. The chat stays **live**
-  (LLM) so follow-ups work and the agent can act via its tools. Confirm the exact
-  injection point in the global chat shell at implementation.
-- **Backend:** none expected — reuse existing queries. Add a thin compose query only if
-  the brief needs data no surface already fetches.
-- **Verification:** with the provider wired, the brief renders on open and a follow-up
-  message gets a real tool-using response; medical never appears in the brief or the
-  agent context.
+- **Web only, no backend change** — composes from the `HomeViewModel`/`ReviewViewModel`
+  each presenter already builds, so no new query was added. `home-agent-brief.ts` /
+  `review-agent-brief.ts` are pure functions (`buildHomeAgentBrief`,
+  `buildReviewAgentBrief`) producing a ≈3–6 line Spanish brief, phrased per surface:
+  `/home` forward-looking (today's focus or carry-overs, top signals, an in-progress
+  objective, wallet/insight counts to watch), `/review` backward-looking (close
+  progress, undecided tasks, wallet signals, mood/energy).
+- **Handoff to the shell:** `ChatPanel` lives outside the Home/Review presenter tree
+  (sibling to `<Outlet/>` in `domain-layout.tsx`), so the brief crosses via a small
+  global store — `synthesis-brief-store.ts`, same `createStore` pattern as the
+  existing `chat-store.ts`. Each presenter writes its brief on `refresh()` and clears
+  it on `stop()`; `ChatPanel` reads `useSynthesisBrief(pathname)` and renders it as a
+  synthetic opening `MessageBubble` (`/home` and `/review` are not in the domain
+  registry, so the chat there already falls back to a user-selectable domain agent —
+  the brief seeds whichever one is selected). The synthetic message is render-only:
+  never pushed into `chat.messages` state, never sent to the backend — no agent/prompt
+  change, so follow-ups are unaffected.
+- **Tests:** pure unit tests for both brief composers (incl. a guard that nothing
+  medical/private ever appears, structurally guaranteed since neither ViewModel
+  carries that data), plus presenter-level tests asserting the store is seeded on load
+  and cleared on `stop()`. Full web suite green (541 tests) and `tsc --noEmit` clean.
+- **Verified:** automated (typecheck + unit suite). Live-browser confirmation (open
+  `/home`/`/review` with Groq live, see the brief render, send a follow-up) is the
+  remaining manual step — needs local infra + an owner login this session
+  deliberately didn't touch.
 
-### R3b. LLM-authored brief + actionable follow-ups — NOT STARTED (folds into D6)
+### R3b. LLM-authored brief + actionable follow-ups — SHIPPED for the agreed scope (2026-06-30)
 
-Richer version once R3a is live and the provider is stable.
+Richer version once R3a is live and the provider is stable. Scoped down with the owner
+before implementing: **Tasks agent only** (not Wallet/Health — smaller surface, and
+Tasks already has the tools a daily brief needs), **manual trigger** (a button, not an
+automatic call on every `/home`/`/review` open — keeps Groq free-tier quota under the
+owner's control), and **no new tools this slice** (reschedule/register-expense already
+worked via R3a's live chat; a `capture_to_inbox` tool is deferred to D6).
 
-- The agent authors the brief from a context tool (prioritization/phrasing in natural
-  language) instead of the template, and its tools can act on what it surfaces
-  (reschedule a task, capture to inbox, register an expense). This is the bridge into
-  D6 (the full proactive agent: morning brief job, weekly prep, "you left X pending").
-- Keep R3a's deterministic brief as the fallback when the LLM is unavailable or
-  rate-limited.
+- **Backend:** one new `## Brief del día` section in
+  `tasks/infrastructure/agent/system-prompt.ts`, next to the existing "Review de fin de
+  día" section — no new tool, no new CQBus query, no migration. It instructs the agent
+  to compose a natural, prioritized 3-6 line brief (not a raw data dump) using tools it
+  already has: `get_today_stats` + `get_insights` for the start-of-day framing,
+  `get_end_of_day_review` + `get_insights` for end-of-day, `get_wallet_context` only
+  when something financial is worth flagging.
+- **Web:** `apps/web/src/ui/chat/use-chat-stream.ts` exposes a new `sendMessage(text,
+  agentEndpoint, conversationId)`, extracted from `handleSubmit` (which is now a thin
+  wrapper) so a fixed string can be sent without going through the input box. A
+  "✨ Redactar con IA" button renders under the R3a template bubble — only when the
+  selected agent is Tasks — and sends a fixed, surface-specific prompt (forward framing
+  on `/home`, backward on `/review`) through the same chat pipeline as any typed
+  message. No new persistence path: the click is a normal chat turn, so R3a's instant
+  template is what's seen until the owner opts in, and stays the fallback if Groq
+  errors or rate-limits (existing `sendError` UI).
+- **Tests:** `use-chat-stream.ts` is a pure extraction (existing
+  `chat-stream-reducer.test.ts` covers the shared event handling); the system-prompt
+  change has no dedicated test, consistent with the repo's existing convention for that
+  file (`TasksSystemPrompt.test.ts` only guards the per-chat date-rebuild rule, not
+  prompt copy). Full web suite green (541 tests), both `apps/web` and `server`
+  `tsc --noEmit` clean.
+- **Verified:** automated only (typecheck + unit suite). Live confirmation (click the
+  button on `/home` and `/review`, read the authored brief, confirm the button is
+  absent on Wallet/Health) is the remaining manual step.
+- **Deferred to D6:** automatic/silent triggering, Wallet/Health brief support, and the
+  `capture_to_inbox` tool for follow-up actions.
 
 ### R4. Unify /home + /review into one "Today" surface — NOT STARTED (maybe skip)
 
@@ -591,15 +631,20 @@ Route a pending item into the right module via prefilled deep-links; mark it tri
 - **Tests:** domain triage transition, use-case + e2e with cross-user isolation, web
   presenter triage targets/transition, and the Tasks quick-capture prefill.
 
-### D5c. Smart triage suggestion — PARKED behind an LLM provider
+### D5c. Smart triage suggestion — NEXT (unblocked 2026-06-30)
 
 D5 was closed without D5c. The deterministic keyword heuristic (money words → Wallet,
 payment-intent verbs → task/expense, symptom/body words → Health, reusing the
 `wallet/services/payment-intent.ts` style) is low value next to a real classifier and
-would mostly be thrown away once an LLM exists. So smart triage is parked with D6 and
+would mostly be thrown away once an LLM exists. So smart triage was parked with D6 and
 R3: when an LLM provider is wired, the agent classifies the captured text and suggests
 a destination (the owner still confirms — never auto-routes). Until then, manual triage
 (D5b) is the shipped experience.
+
+**Unblocked 2026-06-30.** Same provider unlock as R3 (Groq, `AGENT_PROVIDER=openai-compatible`,
+confirmed live end-to-end through R3a/R3b). Owner chose to pick this up next, ahead of D6 —
+smaller and self-contained (Inbox only) versus D6's broader proactive-agent surface. Not yet
+planned in slices; that happens at implementation time.
 
 ## Data Constraint
 

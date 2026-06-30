@@ -22,9 +22,11 @@ import type { Category } from "@/core/domain/wallet/Category";
 import type { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import type { Transaction } from "@/core/domain/wallet/Transaction";
 import { formatDate, getTodayISO } from "@/lib/format";
+import { synthesisBriefStore } from "@/lib/synthesis-brief-store";
 import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type { ReviewViewModel } from "@/ui/models/review/ReviewViewModel";
 import { buildTodayProjectHoursVM } from "@/ui/screens/projects/today-project-hours";
+import { buildReviewAgentBrief } from "./review-agent-brief";
 import {
   buildDailyReviewProgress,
   buildMorningReviewSummary,
@@ -101,6 +103,7 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   stop(): void {
     this.events.tasksChanged.unsubscribe(this);
     this.flushPersist();
+    synthesisBriefStore.clearReviewBrief();
   }
 
   /** Pull the day's ceremony state and the aggregated data concurrently, then stamp the open. */
@@ -282,7 +285,9 @@ export class ReviewPresenter extends PresenterBase<ReviewViewModel> {
   }
 
   private refresh(): void {
-    this.updateModel(this.buildModel());
+    const model = this.buildModel();
+    this.updateModel(model);
+    synthesisBriefStore.setReviewBrief(buildReviewAgentBrief(model));
   }
 
   private buildModel(): ReviewViewModel {

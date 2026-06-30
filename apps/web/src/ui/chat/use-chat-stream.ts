@@ -27,17 +27,25 @@ export function useChatStream(args: {
 
   useEffect(() => stop, [stop]);
 
-  async function handleSubmit(
+  function handleSubmit(
     e: React.FormEvent,
     agentEndpoint: string,
     conversationId?: string,
   ) {
     e.preventDefault();
-    if (!input.trim() || isStreaming) return;
+    return sendMessage(input.trim(), agentEndpoint, conversationId);
+  }
 
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: input.trim() };
+  async function sendMessage(
+    text: string,
+    agentEndpoint: string,
+    conversationId?: string,
+  ) {
+    if (!text.trim() || isStreaming) return;
+
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text.trim() };
     const assistantId = (Date.now() + 1).toString();
-    const userInput = input.trim();
+    const userInput = text.trim();
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -125,5 +133,6 @@ export function useChatStream(args: {
     sendError,
     stop,
     handleSubmit,
+    sendMessage,
   };
 }

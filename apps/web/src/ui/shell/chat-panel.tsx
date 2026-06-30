@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
-import { Bot, Send, Square } from "lucide-react";
+import { Bot, Send, Sparkles, Square } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
 import { useIsMobile } from "@/lib/use-breakpoint";
 import { domainHasAgent, domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
+import { useSynthesisBrief } from "@/lib/synthesis-brief-store";
 import { useTasksEvents } from "@/TasksEventsProvider";
 import { ChatHeader } from "@/ui/chat/chat-header";
 import { ConversationList } from "@/ui/chat/conversation-list";
@@ -18,12 +19,20 @@ function getAgentBasePath(endpoint: string) {
   return endpoint.replace(/\/chat$/, "");
 }
 
+// R3b: Tasks-only fixed prompts that trigger the agent-authored brief —
+// see "## Brief del día" in the Tasks system prompt.
+const HOME_BRIEF_PROMPT =
+  "Redactá mi brief de inicio del día: priorizá foco, pendientes y señales en 3 a 6 líneas, sin relleno.";
+const REVIEW_BRIEF_PROMPT =
+  "Redactá mi brief de cierre del día: priorizá qué se resolvió, qué quedó pendiente y señales relevantes, en 3 a 6 líneas, sin relleno.";
+
 const enabledDomains = domains.filter((d) => !d.disabled && domainHasAgent(d));
 
 export function ChatPanel() {
   const isOpen = useChatOpen();
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
+  const synthesisBrief = useSynthesisBrief(pathname);
   const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
   // Outside a domain (home, review, settings) the chat stays available with a
@@ -134,7 +143,32 @@ export function ChatPanel() {
           );
         })()}
 
-        {domainChatEnabled && chat.messages.length === 0 && !chat.isLoadingHistory && (
+        {domainChatEnabled && chat.messages.length === 0 && !chat.isLoadingHistory && synthesisBrief && (
+          <>
+            <MessageBubble
+              message={{ id: "synthesis-brief", role: "assistant", content: synthesisBrief }}
+            />
+            {domainKey === "tasks" && domainWithAgent && (
+              <button
+                type="button"
+                onClick={() =>
+                  void stream.sendMessage(
+                    pathname === "/home" ? HOME_BRIEF_PROMPT : REVIEW_BRIEF_PROMPT,
+                    domainWithAgent.agentEndpoint,
+                    chat.conversationId,
+                  )
+                }
+                disabled={stream.isStreaming}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-[var(--accent)] bg-[var(--hover-overlay)] hover:bg-[var(--hover-overlay-strong)] transition-all disabled:opacity-40 w-fit"
+              >
+                <Sparkles size={12} />
+                Redactar con IA
+              </button>
+            )}
+          </>
+        )}
+
+        {domainChatEnabled && chat.messages.length === 0 && !chat.isLoadingHistory && !synthesisBrief && (
           <div className="text-center py-16 animate-fade-in">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"

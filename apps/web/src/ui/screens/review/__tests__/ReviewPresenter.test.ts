@@ -11,6 +11,7 @@ import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletGateway";
 import { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
+import { synthesisBriefStore } from "@/lib/synthesis-brief-store";
 import { TasksEvents } from "@/ui/events/TasksEvents";
 import { ReviewPresenter } from "../ReviewPresenter";
 
@@ -183,5 +184,18 @@ describe("ReviewPresenter", () => {
     expect(presenter.model.mood.isSaving).toBe(false);
     expect(presenter.model.mood.selectedMood).toBeNull();
     presenter.stop();
+  });
+
+  it("seeds the review brief into the synthesis store on load and clears it on stop", async () => {
+    const { presenter } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().review).toContain("Cierre de hoy");
+
+    presenter.stop();
+
+    expect(synthesisBriefStore.getState().review).toBeNull();
   });
 });

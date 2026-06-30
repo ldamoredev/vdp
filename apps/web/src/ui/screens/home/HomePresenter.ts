@@ -47,6 +47,7 @@ import {
   priorityLabel,
 } from "@/lib/format";
 import { getDomainConfig } from "@/lib/navigation";
+import { synthesisBriefStore } from "@/lib/synthesis-brief-store";
 import type { TasksEvents } from "@/ui/events/TasksEvents";
 import type {
   HomeInsightTone,
@@ -70,6 +71,7 @@ import {
 } from "@/ui/screens/review/daily-review-storage";
 import type { DailyReviewState } from "@/ui/screens/review/daily-review-types";
 import { buildTodayProjectHoursVM } from "@/ui/screens/projects/today-project-hours";
+import { buildHomeAgentBrief } from "@/ui/screens/home/home-agent-brief";
 
 function formatInsightDate(value: string): string {
   const date = new Date(value);
@@ -296,6 +298,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
 
   stop(): void {
     this.events.tasksChanged.unsubscribe(this);
+    synthesisBriefStore.clearHomeBrief();
   }
 
   setNewTaskTitle(title: string): void {
@@ -500,7 +503,9 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   }
 
   private refresh(): void {
-    this.updateModel(this.buildModel());
+    const model = this.buildModel();
+    this.updateModel(model);
+    synthesisBriefStore.setHomeBrief(buildHomeAgentBrief(model));
   }
 
   private buildModel(): HomeViewModel {

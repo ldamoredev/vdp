@@ -22,6 +22,7 @@ import { FakeWalletGateway } from "@/core/app/wallet/__tests__/fakes/FakeWalletG
 import { ProjectHoursReport } from "@/core/domain/projects/TimeEntry";
 import { Task } from "@/core/domain/tasks/Task";
 import { Transaction } from "@/core/domain/wallet/Transaction";
+import { synthesisBriefStore } from "@/lib/synthesis-brief-store";
 import { TasksEvents } from "@/ui/events/TasksEvents";
 import { HomePresenter } from "../HomePresenter";
 
@@ -258,6 +259,19 @@ describe("HomePresenter", () => {
     });
     expect(wallet.getTransactions).toHaveBeenCalledWith({ limit: "10" });
     presenter.stop();
+  });
+
+  it("seeds the home brief into the synthesis store on load and clears it on stop", async () => {
+    const { presenter } = build();
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().home).toBeTruthy();
+
+    presenter.stop();
+
+    expect(synthesisBriefStore.getState().home).toBeNull();
   });
 
   it("surfaces active objectives as the daily north", async () => {
