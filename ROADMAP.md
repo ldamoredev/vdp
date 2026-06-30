@@ -11,7 +11,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
-| Inbox | ✅ | ✅ | — | D5a+D5b shipped: frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; heuristic suggestion (D5c) optional |
+| Inbox | ✅ | ✅ | — | Active (D5 closed): frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; smart suggestion (D5c) parked behind an LLM provider |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -23,7 +23,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): D5a + D5b shipped** — frictionless capture + pending queue + triage routing to Tasks/Wallet via prefilled deep-links; D5c (heuristic suggestion) optional. Slice breakdown in the D5 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): CLOSED** — D5a (capture + queue) + D5b (triage routing to Tasks/Wallet via prefilled deep-links) shipped; D5c (smart suggestion) parked behind an LLM provider. Slice breakdown in the D5 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -113,7 +113,9 @@ Capture anything from anywhere (thought, expense, symptom, person) → triage in
 right module. Net-new but cheap, feeds every module. A multiplier on the capture
 habit, not a headline direction.
 
-**Status (June 2026): D5a + D5b shipped; D5c (optional heuristic) not started.**
+**Status (June 2026): CLOSED.** D5a + D5b shipped (capture + queue + triage routing).
+D5c (smart suggestion) was deliberately not pursued — the deterministic heuristic is
+low value next to an LLM classifier, so it is parked with D6 behind an LLM provider.
 Decisions and slice breakdown in the "D5: Universal Inbox + Triage" execution section
 below.
 
@@ -259,16 +261,61 @@ today's focus) — the morning mirror of the close.
   lets the owner choose today's focus, and persists the plan server-side. The
   evening `/review` summary reads the same state and shows the morning focus.
 
-### R3. Proactive agent brief on the synthesis surfaces — PAUSED (2026-06-25)
+### R3. Proactive agent brief on the synthesis surfaces — PLANNED (unblocked 2026-06-29)
 
-The chat is available on `/home` and `/review` but passive. Open it with a one-line
-day brief (tasks, spend alerts, streaks) so the agent participates in the *decide*
-stage. Folds in part of D6.
+The chat is available on `/home` and `/review` but passive: it opens as an empty box.
+Seed it with a proactive day brief (tasks, focus, spend alerts, streaks, objective
+progress) so the agent participates in the *decide* stage. Folds in part of D6.
 
-**Paused 2026-06-25:** there is no LLM provider configured in DEV or PROD today, so
-the agent layer this slice activates is dead end-to-end. Even a determinístic brief
-would ship into a surface whose chat can't respond, so R3 waits until a provider
-exists. Revisit when the owner wires an LLM provider (local or hosted).
+**Unblocked 2026-06-29.** R3 was paused (2026-06-25) because no LLM provider was
+configured, so the chat the brief leans on was dead end-to-end. An LLM provider is now
+being wired (Groq free tier to start, likely Claude later — it's an `AGENT_PROVIDER`
+config switch, no code change). With a live chat, R3 becomes worth shipping.
+
+**Gate decisions (settled, not to be re-litigated):**
+
+1. **Deterministic brief, live chat.** The brief *content* is composed
+   deterministically from existing cross-domain queries — reliable, instant, free, and
+   it degrades gracefully if the LLM rate-limits (Groq free tier will). The LLM unlock
+   is the *conversation*: the brief seeds the chat's opening message and the owner can
+   ask follow-ups and act through the agent's existing tools. (R3b can later let the
+   LLM author the brief itself.)
+2. **Per-surface phrasing.** `/home` is forward-looking (today's focus, carry-overs,
+   signals to act on); `/review` is backward-looking (today's close: completed, spend,
+   streaks, what's still pending).
+3. **Medical stays out.** The brief composes only non-medical signals and the agent has
+   no medical tools — no regression of the medical-no-LLM rule.
+4. **Reuse, don't rebuild.** `/home` and `/review` already compute most of this
+   (cross-domain signals, queues, stats, focus, objective progress). The brief composes
+   those existing read-time results into a short message — same presenter-composition
+   pattern, no new heavy queries.
+
+### R3a. Deterministic day brief seeded into the chat — NOT STARTED
+
+Make the synthesis-surface chat proactive instead of an empty box.
+
+- **Web:** compose a short brief (≈3–6 lines) from the cross-domain queries `/home`
+  and `/review` already run (today's tasks/focus + carry-overs, wallet spend signals,
+  health streaks, objective progress), and render it as the chat panel's opening
+  assistant message on those two surfaces, phrased per surface. The chat stays **live**
+  (LLM) so follow-ups work and the agent can act via its tools. Confirm the exact
+  injection point in the global chat shell at implementation.
+- **Backend:** none expected — reuse existing queries. Add a thin compose query only if
+  the brief needs data no surface already fetches.
+- **Verification:** with the provider wired, the brief renders on open and a follow-up
+  message gets a real tool-using response; medical never appears in the brief or the
+  agent context.
+
+### R3b. LLM-authored brief + actionable follow-ups — NOT STARTED (folds into D6)
+
+Richer version once R3a is live and the provider is stable.
+
+- The agent authors the brief from a context tool (prioritization/phrasing in natural
+  language) instead of the template, and its tools can act on what it surfaces
+  (reschedule a task, capture to inbox, register an expense). This is the bridge into
+  D6 (the full proactive agent: morning brief job, weekly prep, "you left X pending").
+- Keep R3a's deterministic brief as the fallback when the LLM is unavailable or
+  rate-limited.
 
 ### R4. Unify /home + /review into one "Today" surface — NOT STARTED (maybe skip)
 
@@ -467,7 +514,7 @@ Objectives backend still only persists the binding; it does not read Health.
 - **Tests:** shared schema coverage, Health query unit/e2e, Objectives domain/
   use-case/integration/e2e, web Health gateway/handler, and Objectives presenter.
 
-## D5: Universal Inbox + Triage (PLANNED — June 2026)
+## D5: Universal Inbox + Triage (COMPLETE — June 2026)
 
 Owner-directed promotion of D5 from candidate to a planned execution. Same discipline
 as the prior tracks: one full-stack slice at a time, each shipping before the next.
@@ -544,17 +591,15 @@ Route a pending item into the right module via prefilled deep-links; mark it tri
 - **Tests:** domain triage transition, use-case + e2e with cross-user isolation, web
   presenter triage targets/transition, and the Tasks quick-capture prefill.
 
-### D5c. Heuristic triage suggestion (deterministic, no LLM) — NOT STARTED (optional)
+### D5c. Smart triage suggestion — PARKED behind an LLM provider
 
-Suggest the likely destination per pending item without an LLM, so triage is one
-click.
-
-- A keyword heuristic (money words → Wallet, payment-intent verbs → task/expense,
-  symptom/body words → Health) suggests a destination chip per item, reusing the
-  `wallet/services/payment-intent.ts` style. Pure, deterministic, unit-tested. The
-  owner accepts the suggestion or picks another — it never auto-routes.
-- **Deferred to a provider:** LLM-powered classification (free-text understanding,
-  higher accuracy) waits until an LLM provider exists, folding in with R3/D6.
+D5 was closed without D5c. The deterministic keyword heuristic (money words → Wallet,
+payment-intent verbs → task/expense, symptom/body words → Health, reusing the
+`wallet/services/payment-intent.ts` style) is low value next to a real classifier and
+would mostly be thrown away once an LLM exists. So smart triage is parked with D6 and
+R3: when an LLM provider is wired, the agent classifies the captured text and suggests
+a destination (the owner still confirms — never auto-routes). Until then, manual triage
+(D5b) is the shipped experience.
 
 ## Data Constraint
 
