@@ -6,6 +6,7 @@ import { CaptureInboxItem } from "../CaptureInboxItem";
 import { DiscardInboxItem } from "../DiscardInboxItem";
 import { InboxModule } from "../InboxModule";
 import { ListInboxItems } from "../ListInboxItems";
+import { SuggestInboxItemDestination } from "../SuggestInboxItemDestination";
 import { TriageInboxItem } from "../TriageInboxItem";
 import { FakeInboxGateway } from "./fakes/FakeInboxGateway";
 
@@ -39,5 +40,16 @@ describe("inbox handlers (dispatched through the bus)", () => {
     expect(gateway.callsTo("triageItem")[0].args).toEqual([captured.id, "tasks"]);
     expect(gateway.callsTo("discardItem")[0].args).toEqual([captured.id]);
     expect(captured).toBeInstanceOf(InboxItem);
+  });
+
+  it("routes the suggest-destination command through the gateway", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.suggestionToReturn = "wallet";
+    const core = coreWith(gateway);
+
+    const suggested = await core.execute(new SuggestInboxItemDestination("i1"));
+
+    expect(gateway.callsTo("suggestDestination")[0].args).toEqual(["i1"]);
+    expect(suggested.suggestedDestination).toBe("wallet");
   });
 });

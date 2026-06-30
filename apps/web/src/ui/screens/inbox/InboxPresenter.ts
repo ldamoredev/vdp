@@ -4,6 +4,7 @@ import type { Core } from "@/core/Core";
 import { CaptureInboxItem } from "@/core/app/inbox/CaptureInboxItem";
 import { DiscardInboxItem } from "@/core/app/inbox/DiscardInboxItem";
 import { ListInboxItems } from "@/core/app/inbox/ListInboxItems";
+import { SuggestInboxItemDestination } from "@/core/app/inbox/SuggestInboxItemDestination";
 import { TriageInboxItem } from "@/core/app/inbox/TriageInboxItem";
 import { InboxItem, pendingInboxItems } from "@/core/domain/inbox/InboxItem";
 import { formatTaskDate } from "@/lib/format";
@@ -76,13 +77,24 @@ export class InboxPresenter extends PresenterBase<InboxViewModel> {
     this.isLoading = true;
     this.refresh();
     try {
-      this.items = await this.core.execute(new ListInboxItems());
+      const items = await this.core.execute(new ListInboxItems());
+      this.items = await Promise.all(items.map((item) => this.suggestIfNeeded(item)));
       this.error = null;
     } catch {
       this.error = "No pudimos cargar tu bandeja.";
     } finally {
       this.isLoading = false;
       this.refresh();
+    }
+  }
+
+  /** Lazy, persisted-once suggestion: same shape as Objectives' achieved detection. */
+  private async suggestIfNeeded(item: InboxItem): Promise<InboxItem> {
+    if (!item.isPending || item.suggestedAt !== null) return item;
+    try {
+      return await this.core.execute(new SuggestInboxItemDestination(item.id));
+    } catch {
+      return item;
     }
   }
 
@@ -108,20 +120,26 @@ export class InboxPresenter extends PresenterBase<InboxViewModel> {
         text: item.text,
         note: item.note,
         capturedLabel: formatTaskDate(item.createdAt.slice(0, 10)),
-        triageTargets: triageTargetsFor(item.text),
+        triageTargets: triageTargetsFor(item.text, item.suggestedDestination),
       })),
     };
   }
 }
 
-function triageTargetsFor(text: string): InboxTriageTargetVM[] {
+function triageTargetsFor(text: string, suggestedDestination: string | null): InboxTriageTargetVM[] {
   const encoded = encodeURIComponent(text);
   return [
-    { routedTo: "tasks", label: "Tarea", href: `/tasks?capturar=${encoded}` },
+    {
+      routedTo: "tasks",
+      label: "Tarea",
+      href: `/tasks?capturar=${encoded}`,
+      suggested: suggestedDestination === "tasks",
+    },
     {
       routedTo: "wallet",
       label: "Gasto",
       href: `/wallet/transactions/new?type=expense&description=${encoded}`,
+      suggested: suggestedDestination === "wallet",
     },
   ];
 }

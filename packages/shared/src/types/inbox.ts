@@ -7,6 +7,8 @@ export interface InboxItem {
   status: InboxItemStatus;
   routedTo: string | null;
   triagedAt: string | null;
+  suggestedDestination: string | null;
+  suggestedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

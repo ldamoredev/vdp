@@ -99,4 +99,42 @@ describe("InboxPresenter", () => {
     expect(gateway.callsTo("discardItem")[0].args).toEqual([captured.id]);
     expect(presenter.model.pendingCount).toBe(0);
   });
+
+  it("requests a suggestion on load for a pending item without one yet, and highlights the match", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.items = [];
+    gateway.suggestionToReturn = "wallet";
+    const captured = await gateway.captureItem({ text: "Pagar la luz" });
+
+    const presenter = await mountedPresenter(gateway);
+
+    expect(gateway.callsTo("suggestDestination")[0].args).toEqual([captured.id]);
+    const targets = presenter.model.items[0].triageTargets;
+    expect(targets.find((t) => t.routedTo === "wallet")?.suggested).toBe(true);
+    expect(targets.find((t) => t.routedTo === "tasks")?.suggested).toBe(false);
+  });
+
+  it("does not re-request a suggestion for an item that already has one", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.items = [];
+    const captured = await gateway.captureItem({ text: "Pagar la luz" });
+    await gateway.suggestDestination(captured.id);
+
+    await mountedPresenter(gateway);
+
+    expect(gateway.callsTo("suggestDestination")).toHaveLength(1);
+  });
+
+  it("stays silent when the suggestion request fails", async () => {
+    const gateway = new FakeInboxGateway();
+    gateway.items = [];
+    await gateway.captureItem({ text: "Pagar la luz" });
+    gateway.suggestDestination = async () => {
+      throw new Error("rate limited");
+    };
+
+    const presenter = await mountedPresenter(gateway);
+
+    expect(presenter.model.items).toHaveLength(1);
+  });
 });

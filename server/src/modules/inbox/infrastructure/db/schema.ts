@@ -14,6 +14,8 @@ export const inboxItems = inboxSchema.table(
         status: varchar('status', { length: 20 }).notNull().default('pending'),
         routedTo: varchar('routed_to', { length: 40 }),
         triagedAt: timestamp('triaged_at', { withTimezone: true }),
+        suggestedDestination: varchar('suggested_destination', { length: 40 }),
+        suggestedAt: timestamp('suggested_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     },

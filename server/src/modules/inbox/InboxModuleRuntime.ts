@@ -3,6 +3,10 @@ import { CaptureInboxItemCommand, CaptureInboxItemCommandHandler } from './app/C
 import { DiscardInboxItemCommand, DiscardInboxItemCommandHandler } from './app/DiscardInboxItemCommand';
 import { GetInboxItemQuery, GetInboxItemQueryHandler } from './app/GetInboxItemQuery';
 import { ListInboxItemsQuery, ListInboxItemsQueryHandler } from './app/ListInboxItemsQuery';
+import {
+    SuggestInboxItemDestinationCommand,
+    SuggestInboxItemDestinationCommandHandler,
+} from './app/SuggestInboxItemDestinationCommand';
 import { TriageInboxItemCommand, TriageInboxItemCommandHandler } from './app/TriageInboxItemCommand';
 import { InboxItemRepository } from './domain/InboxItemRepository';
 import { InboxController } from './infrastructure/routes/InboxController';
@@ -25,6 +29,9 @@ export class InboxModuleRuntime {
         );
         this.deps.bus.registerHandler(TriageInboxItemCommand, () =>
             new TriageInboxItemCommandHandler(this.inboxItemRepository()),
+        );
+        this.deps.bus.registerHandler(SuggestInboxItemDestinationCommand, () =>
+            new SuggestInboxItemDestinationCommandHandler(this.inboxItemRepository(), this.deps.agentProvider),
         );
     }
 

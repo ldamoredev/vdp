@@ -18,6 +18,8 @@ export class FakeInboxItemRepository extends InboxItemRepository {
             status: 'pending',
             routedTo: null,
             triagedAt: null,
+            suggestedDestination: null,
+            suggestedAt: null,
             createdAt: now,
             updatedAt: now,
         });

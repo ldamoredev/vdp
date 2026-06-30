@@ -13,6 +13,8 @@ export class InboxItem {
         public status: InboxItemStatus,
         public routedTo: string | null,
         public triagedAt: Date | null,
+        public suggestedDestination: string | null,
+        public suggestedAt: Date | null,
         public readonly createdAt: Date,
         public updatedAt: Date,
     ) {}
@@ -32,6 +34,13 @@ export class InboxItem {
         this.updatedAt = new Date();
     }
 
+    suggestDestination(destination: string | null): void {
+        if (this.status !== 'pending') return;
+        this.suggestedDestination = destination;
+        this.suggestedAt = new Date();
+        this.updatedAt = new Date();
+    }
+
     isPending(): boolean {
         return this.status === 'pending';
     }
@@ -45,6 +54,8 @@ export class InboxItem {
             status: this.status,
             routedTo: this.routedTo,
             triagedAt: this.triagedAt,
+            suggestedDestination: this.suggestedDestination,
+            suggestedAt: this.suggestedAt,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };
@@ -59,6 +70,8 @@ export class InboxItem {
             InboxItem.parseStatus(s.status),
             s.routedTo,
             s.triagedAt,
+            s.suggestedDestination,
+            s.suggestedAt,
             s.createdAt,
             s.updatedAt,
         );
@@ -90,6 +103,8 @@ export type InboxItemSnapshot = {
     status: InboxItemStatus;
     routedTo: string | null;
     triagedAt: Date | null;
+    suggestedDestination: string | null;
+    suggestedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 };

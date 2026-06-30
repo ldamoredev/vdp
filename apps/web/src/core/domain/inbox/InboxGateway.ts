@@ -10,4 +10,5 @@ export interface InboxGateway {
   captureItem(input: CaptureInboxItemInput): Promise<InboxItem>;
   triageItem(id: string, routedTo: string): Promise<InboxItem>;
   discardItem(id: string): Promise<InboxItem>;
+  suggestDestination(id: string): Promise<InboxItem>;
 }

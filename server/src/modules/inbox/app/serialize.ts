@@ -11,6 +11,8 @@ export function serializeInboxItem(item: InboxItem): InboxItemDto {
         status: snapshot.status,
         routedTo: snapshot.routedTo,
         triagedAt: snapshot.triagedAt?.toISOString() ?? null,
+        suggestedDestination: snapshot.suggestedDestination,
+        suggestedAt: snapshot.suggestedAt?.toISOString() ?? null,
         createdAt: snapshot.createdAt.toISOString(),
         updatedAt: snapshot.updatedAt.toISOString(),
     };

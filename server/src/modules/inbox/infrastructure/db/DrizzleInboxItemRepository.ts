@@ -53,6 +53,8 @@ export class DrizzleInboxItemRepository extends InboxItemRepository {
                 status: snapshot.status,
                 routedTo: snapshot.routedTo,
                 triagedAt: snapshot.triagedAt,
+                suggestedDestination: snapshot.suggestedDestination,
+                suggestedAt: snapshot.suggestedAt,
                 updatedAt: snapshot.updatedAt,
             })
             .where(and(eq(inboxItems.id, snapshot.id), eq(inboxItems.ownerUserId, userId)))
@@ -70,6 +72,8 @@ export class DrizzleInboxItemRepository extends InboxItemRepository {
             status: row.status,
             routedTo: row.routedTo,
             triagedAt: row.triagedAt,
+            suggestedDestination: row.suggestedDestination,
+            suggestedAt: row.suggestedAt,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
         });

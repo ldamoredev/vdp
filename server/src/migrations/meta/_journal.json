@@ -134,6 +134,13 @@
       "when": 1782765592017,
       "tag": "0018_windy_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782851824006,
+      "tag": "0019_wandering_leper_queen",
+      "breakpoints": true
     }
   ]
 }

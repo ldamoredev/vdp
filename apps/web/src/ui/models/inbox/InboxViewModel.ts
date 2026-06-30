@@ -2,6 +2,7 @@ export interface InboxTriageTargetVM {
   routedTo: string;
   label: string;
   href: string;
+  suggested: boolean;
 }
 
 export interface InboxItemVM {

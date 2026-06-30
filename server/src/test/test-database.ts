@@ -160,6 +160,8 @@ CREATE TABLE IF NOT EXISTS inbox.inbox_items (
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     routed_to VARCHAR(40),
     triaged_at TIMESTAMPTZ,
+    suggested_destination VARCHAR(40),
+    suggested_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

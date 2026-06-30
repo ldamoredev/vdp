@@ -11,7 +11,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
 | Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
-| Inbox | ✅ | ✅ | — | Active (D5 closed): frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links; smart suggestion (D5c) up next, unblocked now that an LLM provider is live |
+| Inbox | ✅ | ✅ | — | Active (D5 closed): frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links + LLM-powered smart triage suggestion (D5c, never auto-routes) |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |
 | Study | — | Disabled demo page | — | Inactive |
@@ -631,20 +631,56 @@ Route a pending item into the right module via prefilled deep-links; mark it tri
 - **Tests:** domain triage transition, use-case + e2e with cross-user isolation, web
   presenter triage targets/transition, and the Tasks quick-capture prefill.
 
-### D5c. Smart triage suggestion — NEXT (unblocked 2026-06-30)
+### D5c. Smart triage suggestion — SHIPPED (2026-06-30)
 
 D5 was closed without D5c. The deterministic keyword heuristic (money words → Wallet,
 payment-intent verbs → task/expense, symptom/body words → Health, reusing the
 `wallet/services/payment-intent.ts` style) is low value next to a real classifier and
 would mostly be thrown away once an LLM exists. So smart triage was parked with D6 and
 R3: when an LLM provider is wired, the agent classifies the captured text and suggests
-a destination (the owner still confirms — never auto-routes). Until then, manual triage
-(D5b) is the shipped experience.
+a destination (the owner still confirms — never auto-routes).
 
-**Unblocked 2026-06-30.** Same provider unlock as R3 (Groq, `AGENT_PROVIDER=openai-compatible`,
-confirmed live end-to-end through R3a/R3b). Owner chose to pick this up next, ahead of D6 —
-smaller and self-contained (Inbox only) versus D6's broader proactive-agent surface. Not yet
-planned in slices; that happens at implementation time.
+Unblocked by the same provider as R3 (Groq, `AGENT_PROVIDER=openai-compatible`,
+confirmed live end-to-end through R3a/R3b). Picked up ahead of D6 as the smaller,
+self-contained slice (Inbox only, vs. D6's broader proactive-agent surface).
+
+- **Backend:** `InboxItem` gains `suggestedDestination` + `suggestedAt` (both nullable,
+  forward-only migration `0019_wandering_leper_queen.sql`, also added to the hand-rolled
+  e2e test-DB bootstrap in `test/test-database.ts` — the third synchronized-DB-change
+  spot this repo has, easy to miss). `suggestedAt` is a separate column from
+  `suggestedDestination` on purpose: a `null` destination is ambiguous between "not
+  classified yet" and "classified, nothing matched," so the timestamp alone marks
+  "already tried" and gates re-classification.
+- **Classification is a plain one-shot function, not a new agent.** New
+  `inbox/services/classify-destination.ts` calls `AgentProvider.generate()` directly —
+  no tools, no conversation, no `BaseAgent`/chat-loop/persistence — with a short system
+  prompt asking for exactly one word (`tasks`/`wallet`/`none`), parsed defensively
+  (substring match) and wrapped in try/catch so a Groq error or rate-limit never breaks
+  the Bandeja (`destination: null`, suggestion just doesn't show). This is the first
+  one-shot (non-chat) LLM call pattern in the codebase.
+- **`SuggestInboxItemDestinationCommand`** (new CQBus command, `POST
+  /api/v1/inbox/:id/suggest`) is idempotent: a no-op once `suggestedAt` is set or the
+  item left `pending`, so the LLM is called at most once per captured item, ever.
+- **Trigger (owner decision):** automatic, lazy on load — `InboxPresenter` requests a
+  suggestion for any pending item missing one as part of `load()`, mirroring
+  `ObjectivesPresenter`'s lazy "achieved" detection (compute, persist best-effort, skip
+  next time). Differs from R3b's manual-button choice because a suggestion is cached
+  forever per item, while R3b's brief has no caching — same cost-control instinct,
+  different mechanism because the shapes differ.
+- **Never auto-routes:** the suggestion only highlights the matching triage button
+  (`btn-primary` instead of `btn-secondary`); routing still requires the owner's
+  explicit click through the existing `TriageInboxItem` flow, unchanged.
+- **Tests:** domain guard (`suggestDestination()` only applies to `pending` items),
+  `classify-destination` unit tests (label parsing + never-throws), handler idempotency
+  test with a stub `AgentProvider`, e2e route + cross-user isolation (with a
+  deterministic stub provider swapped into the inbox e2e `TestCoreConfiguration` so the
+  suite doesn't depend on a real LLM), and a web presenter test for the lazy-trigger/
+  skip-if-suggested/silent-on-failure behavor. Full backend suite green (416 unit + 65
+  integration + 124 e2e) and web suite green (543 tests); both `apps/web` and `server`
+  `tsc --noEmit` clean.
+- **Verified:** automated only. Manual confirmation (capture a task-shaped and a
+  money-shaped note, reload the Bandeja, see the matching button highlight without
+  clicking anything) is the remaining step.
 
 ## Data Constraint
 

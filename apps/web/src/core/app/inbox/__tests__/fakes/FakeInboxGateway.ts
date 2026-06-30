@@ -16,6 +16,8 @@ function dto(overrides: Partial<InboxItemDto> = {}): InboxItemDto {
     status: "pending",
     routedTo: null,
     triagedAt: null,
+    suggestedDestination: null,
+    suggestedAt: null,
     createdAt: "2026-06-29T10:00:00.000Z",
     updatedAt: "2026-06-29T10:00:00.000Z",
     ...overrides,
@@ -25,6 +27,8 @@ function dto(overrides: Partial<InboxItemDto> = {}): InboxItemDto {
 export class FakeInboxGateway implements InboxGateway {
   readonly calls: RecordedCall[] = [];
   items: InboxItem[] = [InboxItem.from(dto())];
+  /** What suggestDestination() resolves to next, like the LLM classifier would. */
+  suggestionToReturn: "tasks" | "wallet" | null = null;
   private sequence = 0;
 
   private record(method: string, ...args: unknown[]) {
@@ -73,6 +77,23 @@ export class FakeInboxGateway implements InboxGateway {
       text: current.text,
       note: current.note,
       status: "discarded",
+    }));
+    this.items = this.items.map((candidate) => (candidate.id === id ? item : candidate));
+    return item;
+  }
+
+  async suggestDestination(id: string): Promise<InboxItem> {
+    this.record("suggestDestination", id);
+    const current = this.items.find((item) => item.id === id) ?? InboxItem.from(dto({ id }));
+    const item = InboxItem.from(dto({
+      id,
+      text: current.text,
+      note: current.note,
+      status: current.status,
+      routedTo: current.routedTo,
+      triagedAt: current.triagedAt,
+      suggestedDestination: this.suggestionToReturn,
+      suggestedAt: "2026-06-30T10:00:00.000Z",
     }));
     this.items = this.items.map((candidate) => (candidate.id === id ? item : candidate));
     return item;

@@ -10,6 +10,8 @@ const baseSnapshot = {
     status: 'pending',
     routedTo: null,
     triagedAt: null,
+    suggestedDestination: null,
+    suggestedAt: null,
     createdAt: new Date('2026-06-29T10:00:00.000Z'),
     updatedAt: new Date('2026-06-29T10:00:00.000Z'),
 };
@@ -55,6 +57,34 @@ describe('InboxItem', () => {
         });
         expect(() => item.triage('   ')).toThrow(/target/i);
         vi.useRealTimers();
+    });
+
+    it('suggests a destination for a pending item, recording the timestamp', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-29T12:00:00.000Z'));
+        const item = InboxItem.fromSnapshot(baseSnapshot);
+
+        item.suggestDestination('tasks');
+
+        expect(item.toSnapshot()).toMatchObject({
+            status: 'pending',
+            suggestedDestination: 'tasks',
+            suggestedAt: new Date('2026-06-29T12:00:00.000Z'),
+        });
+        vi.useRealTimers();
+    });
+
+    it('does not suggest a destination once the item left pending', () => {
+        const item = InboxItem.fromSnapshot(baseSnapshot);
+        item.discard();
+
+        item.suggestDestination('wallet');
+
+        expect(item.toSnapshot()).toMatchObject({
+            status: 'discarded',
+            suggestedDestination: null,
+            suggestedAt: null,
+        });
     });
 
     it('rejects empty text and invalid status', () => {

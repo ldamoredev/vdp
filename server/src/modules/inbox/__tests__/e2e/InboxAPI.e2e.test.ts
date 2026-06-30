@@ -78,6 +78,40 @@ describe('Inbox API — E2E', () => {
         expect(list.json().items.find((i: { id: string }) => i.id === id).status).toBe('triaged');
     });
 
+    it('suggests a destination for a pending item and is idempotent', async () => {
+        const created = await captureAs(PRIMARY_TEST_USER.id, 'Pagar la luz');
+        const id = created.json().id;
+
+        const suggested = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/inbox/${id}/suggest`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(suggested.statusCode).toBe(200);
+        expect(suggested.json()).toMatchObject({ status: 'pending', suggestedDestination: 'wallet' });
+        expect(suggested.json().suggestedAt).toBeTruthy();
+
+        const secondCall = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/inbox/${id}/suggest`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        expect(secondCall.json().suggestedAt).toBe(suggested.json().suggestedAt);
+    });
+
+    it('does not suggest a destination for another user item', async () => {
+        const created = await captureAs(PRIMARY_TEST_USER.id, 'Privado');
+        const id = created.json().id;
+
+        const response = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/inbox/${id}/suggest`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        expect(response.statusCode).toBe(404);
+    });
+
     it('rejects an empty capture', async () => {
         const response = await testApp.app.inject({
             method: 'POST',

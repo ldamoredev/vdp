@@ -11,6 +11,7 @@ import { CaptureInboxItemCommand } from '../../app/CaptureInboxItemCommand';
 import { DiscardInboxItemCommand } from '../../app/DiscardInboxItemCommand';
 import { GetInboxItemQuery } from '../../app/GetInboxItemQuery';
 import { ListInboxItemsQuery } from '../../app/ListInboxItemsQuery';
+import { SuggestInboxItemDestinationCommand } from '../../app/SuggestInboxItemDestinationCommand';
 import { TriageInboxItemCommand } from '../../app/TriageInboxItemCommand';
 import { serializeInboxItem } from '../../app/serialize';
 
@@ -31,7 +32,8 @@ export class InboxController extends HttpController {
             .get('/:id', { params: inboxItemIdParamsSchema }, this.getItem)
             .post('/', { body: captureInboxItemSchema }, this.captureItem)
             .post('/:id/triage', { params: inboxItemIdParamsSchema, body: triageInboxItemSchema }, this.triageItem)
-            .post('/:id/discard', { params: inboxItemIdParamsSchema }, this.discardItem);
+            .post('/:id/discard', { params: inboxItemIdParamsSchema }, this.discardItem)
+            .post('/:id/suggest', { params: inboxItemIdParamsSchema }, this.suggestDestination);
     }
 
     private readonly listItems: RouteContextHandler<undefined, undefined, undefined> = async ({
@@ -92,6 +94,21 @@ export class InboxController extends HttpController {
     }) => {
         const item = assertFound(
             await this.bus.execute(new DiscardInboxItemCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Inbox item not found',
+        );
+        return reply.send(serializeInboxItem(item));
+    };
+
+    private readonly suggestDestination: RouteContextHandler<InboxItemIdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const item = assertFound(
+            await this.bus.execute(
+                new SuggestInboxItemDestinationCommand(params!.id),
+                executionContextFromAuth(request.auth),
+            ),
             'Inbox item not found',
         );
         return reply.send(serializeInboxItem(item));

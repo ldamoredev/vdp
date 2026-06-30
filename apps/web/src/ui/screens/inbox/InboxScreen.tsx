@@ -87,7 +87,7 @@ export function InboxScreen() {
                         await presenter.triage(item.id, target.routedTo);
                         navigate(target.href);
                       }}
-                      className="btn-secondary min-h-8 text-xs"
+                      className={target.suggested ? "btn-primary min-h-8 text-xs" : "btn-secondary min-h-8 text-xs"}
                     >
                       {target.label}
                     </button>

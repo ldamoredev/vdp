@@ -8,6 +8,8 @@ export class InboxItem {
     readonly status: InboxItemStatus,
     readonly routedTo: string | null,
     readonly triagedAt: string | null,
+    readonly suggestedDestination: string | null,
+    readonly suggestedAt: string | null,
     readonly createdAt: string,
     readonly updatedAt: string,
   ) {}
@@ -20,6 +22,8 @@ export class InboxItem {
       dto.status,
       dto.routedTo,
       dto.triagedAt,
+      dto.suggestedDestination,
+      dto.suggestedAt,
       dto.createdAt,
       dto.updatedAt,
     );

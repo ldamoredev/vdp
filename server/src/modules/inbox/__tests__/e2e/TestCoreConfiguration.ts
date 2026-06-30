@@ -12,7 +12,7 @@ import { TraceService } from '../../../common/base/observability/trace/TraceServ
 import { createDefaultRepositoryRegistry } from '../../../DefaultRepositories';
 import { Database } from '../../../common/base/db/Database';
 import { AgentProvider } from '../../../common/base/agents/providers/AgentProvider';
-import { OllamaAgentProvider } from '../../../common/base/agents/providers/OllamaAgentProvider';
+import { AgentProviderResponse } from '../../../common/base/agents/providers/types';
 import { EmbeddingProvider } from '../../../common/base/embeddings/EmbeddingProvider';
 import { NoOpEmbeddingProvider } from '../../../common/base/embeddings/NoOpEmbeddingProvider';
 import { DomainModuleFactory } from '../../../common/base/modules/DomainModuleFactory';
@@ -21,6 +21,16 @@ import { NoOpLogger } from '../../../common/infrastructure/observability/logging
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { TEST_DATABASE_CONNECTION_STRING } from '../../../../test/test-database';
 import { InboxModule } from '../../InboxModule';
+
+/** Deterministic stand-in: e2e coverage exercises the route/idempotency, not real classification. */
+class DeterministicAgentProvider implements AgentProvider {
+    readonly name = 'deterministic-test';
+    readonly defaultModel = 'deterministic-test-model';
+
+    async generate(): Promise<AgentProviderResponse> {
+        return { text: 'wallet', toolCalls: [], stopReason: 'end_turn' };
+    }
+}
 
 export class TestCoreConfiguration implements CoreConfig {
     repositoryProvider: RepositoryProvider;
@@ -37,7 +47,7 @@ export class TestCoreConfiguration implements CoreConfig {
         this.repositoryProvider = createDefaultRepositoryRegistry(new Database(TEST_DATABASE_CONNECTION_STRING));
         this.llmTraceService = new NoOpLangfuseLLMTraceService();
         this.traceService = new NoOpOpenTelemetryService();
-        this.agentProvider = new OllamaAgentProvider();
+        this.agentProvider = new DeterministicAgentProvider();
         this.embeddingProvider = new NoOpEmbeddingProvider();
         this.authContextStorage = new AuthContextStorage();
         this.moduleFactories = [
