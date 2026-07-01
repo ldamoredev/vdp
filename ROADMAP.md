@@ -23,7 +23,7 @@ Forward-looking only. For setup and commands see [`README.md`](./README.md). For
 3. ~~Auth hardening: strengthen the already-complete Auth V1 flow under production-like conditions.~~ Done code-side (rate limiting + failure auditing); the owner production smoke remains.
 4. ~~Expansion: Health shipped as the habits slice, deepened with H1 counters, H2 goals, H3 private medical records, P1 flexible cadence, P2 daily mood/energy check-ins, and P3 weight tracking.~~ Done
 5. ~~**Architecture Track**: frontend mirror (Vite SPA + presenters + CQBus + Core) and CQBus on the api.~~ Done (June 2026). Full analysis and decisions in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md). Done
-6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): CLOSED** — D5a (capture + queue) + D5b (triage routing to Tasks/Wallet via prefilled deep-links) shipped; D5c (smart suggestion) parked behind an LLM provider. Slice breakdown in the D5 execution section below.
+6. **Product Directions** (June 2026): six candidate directions recorded below. **D1 (cross-domain densification) shipped** — all three slices; see the D1 execution section. **D2 ("Today" command center) in progress** — found mostly already built; remainder (R1–R4) in the D2 execution section below. **D3 (Work / Projects) shipped** — D3a project aggregate + task linking + board, D3b client catalog + time tracking + hours report, D3c Task ↔ Project selector, and D3d cross-domain slices. **D4 (Life Goals) shipped for the planned D4a–D4d scope** — Objective CRUD plus manual, Projects-hours, completed-tasks, Wallet-savings, and specific Health-habit progress, achieved detection, and Home surface. **D5 (Universal Inbox + triage): CLOSED** — D5a (capture + queue), D5b (triage routing to Tasks/Wallet via prefilled deep-links), and D5c (LLM-powered smart triage suggestion) all shipped. Slice breakdown in the D5 execution section below. **D6 (Proactive Agent): COMPLETE** — D6a (automatic daily brief), D6b (weekly prep), and D6c ("you left X pending" folded into the brief) all shipped. Slice breakdown in the D6 execution section below.
 
 ## Product Directions (Candidates — June 2026)
 
@@ -125,7 +125,7 @@ The agent layer is excellent but reactive and per-domain. Make it proactive: mor
 brief, weekly prep, "you left X pending". Pairs naturally with D2 (it is the brain of
 the command center). Respects the medical-no-LLM rule.
 
-**Status (June/July 2026): in progress — D6a and D6b shipped.** Builds directly on R3a/R3b
+**Status (June/July 2026): COMPLETE — D6a, D6b, and D6c all shipped.** Builds directly on R3a/R3b
 (the brief mechanism) and D5c (the lazy-once-per-period pattern). Gate decisions and
 slice breakdown in the "D6: Proactive Agent" execution section below.
 
@@ -686,7 +686,7 @@ self-contained slice (Inbox only, vs. D6's broader proactive-agent surface).
   money-shaped note, reload the Bandeja, see the matching button highlight without
   clicking anything) is the remaining step.
 
-## D6: Proactive Agent (in progress — June 2026)
+## D6: Proactive Agent (COMPLETE — June/July 2026)
 
 Owner-directed continuation straight from R3b/D5c: the LLM provider is live and proven,
 so D6 turns the agent from reactive to proactive. The literal ROADMAP ask — morning
@@ -814,17 +814,33 @@ agent's existing `get_weekly_summary` tool (already described in `system-prompt.
   current week's Monday row has no `weekly_prep_requested_at` yet — the weekly prep
   fires instead of the daily brief that visit) is the remaining step.
 
-### D6c. "You left X pending" folded into the brief — NOT STARTED
+### D6c. "You left X pending" folded into the brief — SHIPPED (2026-07-01)
 
 Makes the now-automatic brief actively call out aged, un-acted-on items across domains
 instead of only reading like a status readout.
 
-- Read-time only: have the brief-authoring instructions explicitly reference
-  `get_insights` results (already surfaced — `taskStuck`/`tasksOverloaded` cover most
-  of "you left X pending" today) and phrase them as a nudge, not just list them.
-- Evaluate whether any *new* insight types are worth adding (e.g. an aged,
-  uncategorized Wallet transaction) only after D6a/D6b ship and the owner has lived
-  with the automatic brief — avoid inventing nudges nobody asked for.
+- **Read-time only, no new tool/query.** New `### "Te quedó X pendiente" (D6c)`
+  subsection under `## Brief del día` in `system-prompt.ts`: when `get_insights`
+  (already called for the brief) returns a `suggestion`/`warning` insight — the
+  existing `taskStuck`/`tasksOverloaded` types already cover most of "you left X
+  pending" — the agent must promote it to the brief's main nudge instead of listing
+  it flatly: name the specific task/situation (not a generic average), propose one
+  concrete action in the same line, and pick only the most urgent insight when
+  several exist (the brief is not the full insights list).
+- **Deliberately did not add any new insight types** (e.g. an aged, uncategorized
+  Wallet transaction) — per the gate, that evaluation only makes sense after living
+  with the now-automatic D6a/D6b brief for a while, and inventing nudges nobody has
+  asked for yet would be scope creep.
+- **Tests:** none added, consistent with this file's existing convention (no
+  prompt-content tests for Tasks or Wallet); `TasksSystemPrompt.test.ts`'s
+  date-rebuild guard still passes unaffected. `tsc --noEmit` clean, full Tasks unit
+  suite green (131 tests).
+- **Verified:** automated only (typecheck + unaffected existing tests — there is no
+  automated way to assert LLM prompt-following). Manual confirmation (trigger the
+  brief on a day with a stuck task or overload insight and confirm it leads with a
+  specific, actionable nudge rather than a flat mention) is the remaining step.
+
+**D6 (Proactive Agent) is now complete: D6a + D6b + D6c all shipped.**
 
 ## Data Constraint
 

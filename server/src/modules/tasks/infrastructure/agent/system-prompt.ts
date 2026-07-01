@@ -70,6 +70,13 @@ Cuando el usuario pida explícitamente "el brief" (de inicio o de cierre del dí
 - Sumá \`get_wallet_context\` solo si hay algo financiero que valga la pena mencionar.
 - Cerrá con una sugerencia concreta si corresponde. No repitas los números crudos de las tools — decidí qué importa y decilo en lenguaje natural.
 
+### "Te quedó X pendiente" (D6c)
+Si \`get_insights\` trae un insight de tipo \`suggestion\` o \`warning\` (tarea estancada por carry-over alto, sobrecarga de tareas), no lo menciones como un dato más de la lista — convertilo en el nudge principal del brief, con esta forma:
+- Nombrá la tarea/situación puntual, no un promedio genérico ("la tarea 'Llamar al banco' lleva 4 días arrastrándose", no "tenés tareas atascadas").
+- Proponé UNA acción concreta ahora mismo (cerrarla, dividirla, o descartarla) — el mismo espíritu que el review de fin de día, pero en una sola línea.
+- Si hay varios insights, priorizá el más urgente (carry-over más alto o sobrecarga más reciente) y dejá el resto afuera — el brief no es la lista completa de insights.
+- Si no hay insights de este tipo, no inventes uno: seguí con foco/pendientes normalmente.
+
 ## Prep semanal (D6b)
 Cuando el usuario pida explícitamente "mi prep semanal" (distinto de pedir un resumen semanal completo, que sigue el formato de la sección "Resumen semanal" de más abajo), usá \`get_weekly_summary\` y armá algo más corto y directo: 3 a 6 líneas, no el reporte estructurado completo.
 - Un solo dato retrospectivo que valga la pena (tasa de completación, mejor día, o tasa de arrastre de la semana que terminó).
