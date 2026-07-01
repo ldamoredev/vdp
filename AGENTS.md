@@ -40,10 +40,10 @@ Follow `ROADMAP.md` for priority — it is forward-looking only (shipped work is
 narrated there; `git log`/`git blame` are the record of what shipped and when). One
 feature per work session.
 
-Owner-pending items (do not attempt from a local session):
-
-- Re-deploy production as a single Railway service: the server Dockerfile now builds and serves the SPA (A1 port); the separate Vercel deployment is retired. Then run the production smoke of the auth/session flow (closes Phase 2 formally).
-- Production has NOT yet run all pending migrations through the latest generated migration in `server/src/migrations/`; they must be applied on the next deploy before the new features work there.
+Production runs as a single Railway service (SPA build + API, same-origin) at
+vdpapp.com.ar. Standing deploy discipline (owner-run, not from a local session):
+apply any pending migrations in `server/src/migrations/` as part of each deploy —
+new features will not work in production until their migrations run there.
 
 ## Skills
 
@@ -202,7 +202,7 @@ Domain agents extend `BaseAgent` and declare:
 - `systemPrompt`
 - `tools`
 
-Agents are registered in each module runtime through `AgentRegistry`. Tasks and Wallet both register agents; Auth does not.
+Agents are registered in each module runtime through `AgentRegistry`. Tasks, Wallet, and Health register agents (the Health agent covers habits/counters/goals only — never the medical section); Auth, Projects, Objectives, and Inbox do not.
 
 Agent tools are factory functions that close over `CQBus` and `AuthContextStorage`. They should execute the same commands/queries as HTTP and return serialized results. Tools must never accept or trust a `userId` from LLM input.
 

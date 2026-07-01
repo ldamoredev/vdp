@@ -430,7 +430,7 @@ Active PostgreSQL schemas, one per domain module:
 - `core` — users, sessions, audit logs, agent_conversations, agent_messages, file_blobs
 - `tasks` — tasks, task_notes, task_embeddings, task_insights, daily_review_state
 - `wallet` — accounts, categories, transactions, savings, investments, exchange rates, recurring transactions, wallet_insights
-- `health` — habits, counters, goals, weight_entries, mood_check_ins
+- `health` — habits, habit_logs, counters, counter_attempts, goals, weight_entries, mood_check_ins
 - `medical` — private medical records + attachments (no agent, by design)
 - `projects` — projects, clients, time_entries
 - `objectives` — objectives ("Metas")
@@ -444,6 +444,8 @@ Migrations managed by Drizzle Kit in `server/src/migrations/`.
 |------|---------|
 | `README.md` | This file — setup, commands, env, API reference |
 | `AGENTS.md` | Agent, architecture, safety, and verification source of truth |
+| `CLAUDE.md` | Thin Claude Code layer over `AGENTS.md` (skills, working agreement, quickstart) |
 | `ROADMAP.md` | Forward-looking priorities and gating rules for new domains |
+| `docs/architecture/ARCHITECTURE.md` | System shape, layers, data flow, and per-module procedures |
 | `server/.env.example` | Server environment template |
 | `apps/web/.env.example` | Web environment template |

@@ -13,7 +13,7 @@ verification guidance see [`AGENTS.md`](./AGENTS.md).
 | Wallet | ✅ | ✅ | ✅ | Active; newer than Tasks, lighter frontend coverage |
 | Health | ✅ | ✅ | ✅ | Active: habits, counters, goals, weight trend, daily mood/energy check-ins, and private medical records section; medical has no agent by design |
 | Projects | ✅ | ✅ | — | Active direction, board, client catalog, time tracking, hours report, and expected-income link to Wallet |
-| Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, and Wallet-savings read-time progress |
+| Objectives | ✅ | ✅ | — | Active Life Goals layer: quarterly/annual objectives with achieved detection plus manual, Projects-hours, completed-tasks, Wallet-savings, and Health-habit-completions read-time progress |
 | Inbox | ✅ | ✅ | — | Active: frictionless capture + pending queue (Bandeja) + triage routing to Tasks/Wallet via prefilled deep-links + LLM-powered smart triage suggestion (never auto-routes) |
 | People | — | Disabled demo page | — | Inactive |
 | Work | — | Disabled demo page | — | Inactive |

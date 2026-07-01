@@ -6,7 +6,8 @@ verification. Read it before making changes; do not restate or fork its rules he
 If a doc drifts from `AGENTS.md`, fix `AGENTS.md` first, then reconcile.
 
 Priorities live in [`ROADMAP.md`](./ROADMAP.md) (forward-looking only). Setup and
-commands live in [`README.md`](./README.md).
+commands live in [`README.md`](./README.md). System shape and per-module procedures
+live in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
 
 ## Working agreement (short form)
 

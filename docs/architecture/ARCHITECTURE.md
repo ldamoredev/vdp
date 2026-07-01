@@ -70,7 +70,7 @@ There is **no scheduler/cron**. Two patterns: (1) **write-time detection** on a 
 
 ### Database
 
-PostgreSQL schemas: `core` (users, sessions, audit, agent conversations/messages), `tasks`, `projects`, `objectives`, `wallet`, `health`. Adding a table needs **three synchronized changes**: Drizzle schema (`{domain}/infrastructure/db/schema.ts`) + `pnpm db:generate`; the `SETUP_SQL` snapshot in `server/src/test/test-database.ts`; and the `TRUNCATE` list in the same file. Don't edit committed migrations — generate a new one.
+PostgreSQL schemas: `core` (users, sessions, audit, agent conversations/messages), `tasks`, `projects`, `objectives`, `inbox`, `wallet`, `health`, and `medical` (owned by the Health medical section, not a standalone module). Adding a table needs **three synchronized changes**: Drizzle schema (`{domain}/infrastructure/db/schema.ts`) + `pnpm db:generate`; the `SETUP_SQL` snapshot in `server/src/test/test-database.ts`; and the `TRUNCATE` list in the same file. Don't edit committed migrations — generate a new one.
 
 ---
 
@@ -84,7 +84,7 @@ A Vite SPA that mirrors the backend module pattern with **presenters + a command
 main.tsx          Entry: mounts <WebApp/> under React StrictMode.
 WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
 routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
-createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).use(ObjectivesModule).
+createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).use(ObjectivesModule).use(InboxModule).
 CoreProvider.tsx  Exposes the Core via context (useCore()).
 
 core/             NO React anywhere under here (grep/lint enforced).
@@ -126,11 +126,11 @@ View → `presenter.method()` → `core.execute(new SomeCommand(...))` → CQBus
 
 `ui/events/{Module}Events.ts` — a `@nbottarini/observable` channel per signal, React-free, shared through a small context provider. The emitter presenter fires the signal; subscribers reload in `start()`. Create a channel **only when a real dependency exists** (YAGNI). The chat shell bridges agent mutations to presenters this way (`ui/chat/tasks-chat-sync-bridge.ts` emits `tasksChanged`), replacing the old React-Query cache surgery — marked temporary until the shell/chat migrates.
 
-### Migration status (June 2026)
+### Migration status (July 2026)
 
 | Module | State |
 |---|---|
-| health, tasks, wallet, projects, objectives | **Fully migrated** — core/ + presenters, no React Query. |
+| health, tasks, wallet, projects, objectives, inbox | **Fully migrated** — core/ + presenters, no React Query. |
 | people, study, work | Moved to `ui/screens/*` with a **presenter returning mock data** (no backend yet — swap the presenter when one exists). |
 | home, review, login, landing, settings | **Legacy, relocated as-is** under `ui/screens/*` — still React Query / plain components, not yet on the presenter pattern. |
 | shell / chat | Legacy; `QueryClientProvider` stays app-wide in `lib/providers.tsx` for the not-yet-migrated modules. |
@@ -152,13 +152,22 @@ Stack is Vite + React 19 + react-router 7 + Tailwind v4 + lucide-react (no Shadc
 
 ## 6. Cross-domain behavior
 
-Live signals are emitted as domain events from the source module and handled by **Tasks** in `tasks/services/CrossDomainEventHandlers.ts`:
+Live signals are emitted as domain events from the source module and handled by the module that **owns the reaction's output** (most reactions create tasks, so most subscribers live in Tasks — but the direction is not Tasks-only).
+
+Handled by Tasks (`tasks/services/CrossDomainEventHandlers.ts`):
 
 - `wallet.spending.spike` → high-priority review task + warning insight.
 - `health.habit.streak_broken` → recovery task + warning insight.
 - `health.habit.milestone` / `health.counter.milestone` → achievement insight.
+- `health.goal.deadline_approaching` → decision task + warning insight.
 
-New signals follow the same shape: emit from the source, subscribe in the handler, run actions through CQBus commands/queries or reusable services (task creation is fire-and-forget with `.catch`), tests on both sides.
+Handled by Wallet (`wallet/services/WalletCrossDomainEventHandlers.ts`):
+
+- `tasks.task.completed` with a payment-intent title → suggestion insight deep-linked to a pre-filled expense form (suggest, don't write).
+
+There are also **read-time** cross-domain surfaces (no events): Objectives progress is computed in the web presenter over Projects/Tasks/Wallet/Health queries, and Projects hours reports deep-link expected income into Wallet — full list in `AGENTS.md` §Cross-Domain Behavior.
+
+New signals follow the same shape: emit from the source, subscribe in the reaction-owning module's handler, run actions through CQBus commands/queries or reusable services (side effects are fire-and-forget with `.catch`), tests on both sides.
 
 ---
 
