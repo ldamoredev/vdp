@@ -2,12 +2,9 @@
 
 A modular personal AI operating system.
 
-Current active scope in the repository:
-
-- `Tasks`
-- `Wallet`
-
-The long-term product vision still includes `Health`, `People`, `Work`, and `Study`, but those domains are not currently verified as active backend modules.
+Active domains: `Tasks`, `Wallet`, `Health`, `Projects`, `Objectives`, `Inbox`. See
+[`ROADMAP.md`](./ROADMAP.md)'s Scope Snapshot for current per-domain backend/frontend/
+agent status. `People`, `Work`, and `Study` exist only as disabled demo pages.
 
 ## Production
 
@@ -41,9 +38,6 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 |---------|-------------|
 | `pnpm dev` | Start all dev servers (Turbo) |
 | `pnpm build` | Build all packages (Turbo) |
-| `pnpm infra:start` | Start local Postgres + Redis + Jaeger |
-| `pnpm infra:stop` | Stop local infrastructure |
-| `pnpm infra:reset` | Reset infrastructure (destroy volumes + restart) |
 | `pnpm db:generate` | Generate Drizzle migrations |
 | `pnpm db:migrate` | Run Drizzle migrations |
 | `pnpm db:studio` | Open Drizzle Studio |
@@ -86,7 +80,10 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 
 - Node.js 24 (`nvm use` reads `.nvmrc`)
 - pnpm 11.5.2 (`corepack enable && corepack prepare pnpm@11.5.2 --activate`)
-- Docker (for Postgres 16 + pgvector)
+- A PostgreSQL 16+ instance with the `pgvector` extension enabled, however you run it
+  (a local install, a single `docker run pgvector/pgvector:pg16` container, or a
+  hosted instance). There is no bundled dev-infra orchestration — just point
+  `DATABASE_URL` at it.
 
 ### Quick Start
 
@@ -94,26 +91,22 @@ Monorepo managed with **pnpm workspaces** + **Turborepo**.
 # 1. Install dependencies
 pnpm install
 
-# 2. Start local infrastructure (Postgres + Redis + Jaeger)
-pnpm infra:start
-
-# 3. Copy env files
+# 2. Copy env files
 cp server/.env.example server/.env
 cp apps/web/.env.example apps/web/.env.local
 
-# 4. Set DATABASE_URL in server/.env
+# 3. Set DATABASE_URL in server/.env to your Postgres instance
 # DATABASE_URL=postgresql://vdp:vdp@localhost:5432/vdp
 
-# 5. Run migrations
+# 4. Run migrations
 pnpm db:migrate
 
-# 6. Start dev servers
+# 5. Start dev servers
 pnpm dev
 ```
 
 - Frontend: http://localhost:3000
 - Backend: http://localhost:4000
-- Jaeger UI: http://localhost:16686
 
 <!-- AUTO-GENERATED:ENV -->
 ## Environment Variables
@@ -277,28 +270,23 @@ pnpm --filter @vdp/server db:test:down
 
 ## Infrastructure
 
-### Local Docker Services
-
-```bash
-pnpm infra:start   # Starts all services
-pnpm infra:stop    # Stops all services
-pnpm infra:reset   # Destroys volumes + restarts
-```
-
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| Postgres | `pgvector/pgvector:pg16` | 5432 | Main database with vector support |
-| Redis | `redis:7` | 6379 | Cache (future use) |
-| Jaeger | `jaegertracing/all-in-one` | 16686 (UI), 4318 (OTLP) | Distributed tracing |
+There is no dev-infra orchestration (no docker-compose, no Redis, no Jaeger) — the app
+processes run directly (`pnpm dev`), and the only external dependency is a single
+PostgreSQL instance (see Local Setup above). Distributed tracing (OpenTelemetry/OTLP)
+and Langfuse are optional and off by default; see the Observability variables above
+if you want to point them at your own collector.
 
 ### Database Schema
 
-Three active PostgreSQL schemas:
-- `core` — users, sessions, audit logs, agent_conversations, agent_messages tables
-- `tasks` — tasks, task_notes, task_embeddings tables
-- `wallet` — accounts, categories, transactions, savings, investments, exchange rates tables
-
-`health` has a scaffold schema file, but it is not part of the active migration yet.
+Active PostgreSQL schemas, one per domain module:
+- `core` — users, sessions, audit logs, agent_conversations, agent_messages, file_blobs
+- `tasks` — tasks, task_notes, task_embeddings, task_insights, daily_review_state
+- `wallet` — accounts, categories, transactions, savings, investments, exchange rates, recurring transactions, wallet_insights
+- `health` — habits, counters, goals, weight_entries, mood_check_ins
+- `medical` — private medical records + attachments (no agent, by design)
+- `projects` — projects, clients, time_entries
+- `objectives` — objectives ("Metas")
+- `inbox` — inbox_items ("Bandeja")
 
 Migrations managed by Drizzle Kit in `server/src/migrations/`.
 

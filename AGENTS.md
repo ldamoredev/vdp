@@ -21,12 +21,12 @@ The repo uses pnpm workspaces and Turborepo. The current package manager is pinn
 Active backend modules are registered in `server/src/modules/DefaultCoreConfiguration.ts`:
 
 - `auth`: first-party users, email/password login, failed-login rate limiting, server-managed sessions, audit logs, profile/security routes, request auth context middleware.
-- `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation.
+- `tasks`: backend, frontend, and agent are stable. Use this as the reference implementation. The Tasks agent is proactive: it auto-authors a daily brief (morning on `/home`, evening on `/review`) and a weekly prep on the first `/home` visit of each ISO week, each gated to fire once per period via `daily_review_state`; stuck-task/overload insights are folded into the brief as a concrete nudge instead of a flat mention.
 - `wallet`: backend, frontend, and agent are active. Frontend coverage is lighter than `tasks`.
 - `health`: active — habits with daily or x-times-per-week cadence (per-day completion, daily/weekly streaks, archive), "days since" abstinence counters, goals with optional target weight, body-weight trend tracking, daily mood/energy check-ins inside the review ritual, and the private medical archive section with structured records plus file attachments through `FileStorage`. Backend and frontend for weight; backend, frontend, and agent for health habits/counters/goals; no medical agent by design, because medical data must not be exposed to LLM tools without an explicit owner decision.
 - `projects`: active direction + project operations layer — projects own `kind` (`work|personal`), outcome, next action, focus, optional catalog `clientId` plus legacy client text, optional hourly rate/currency, and lifecycle; clients are a Projects-owned catalog; time entries log minutes by project with optional task linkage and hours reporting by client/project/week, including expected income grouped by currency and a Wallet income deep link. Tasks remain the only work-item store and carry optional `projectId` + board column; task create/detail editing can assign a project, defaulting the board column to `backlog`.
 - `objectives`: active Life Goals / "Metas" strategic layer — objectives own explicit `periodStart`/`periodEnd`, metric binding (`manual`, `projects_hours`, `tasks_completed`, per-currency `wallet_savings`, or targeted `health_habit_completions`), optional `metricTargetId`, numeric target/unit, nullable manual progress, optional currency, and lifecycle (`active|archived|achieved`). Backend persists objectives and the idempotent `active→achieved` command; the web presenter computes progress read-time through the metric-source catalog, with `projects_hours` reusing Projects `GetHoursReport`, `tasks_completed` reusing Tasks `GetTasksByDomain`, `wallet_savings` reusing Wallet savings goals filtered by objective currency, and `health_habit_completions` reusing Health habit completion counts for a selected habit and objective period.
-- `inbox`: "Bandeja" — a frictionless universal capture queue (D5a) with triage routing (D5b). `InboxItem` owns raw `text` + optional `note`, `status` (`pending|triaged|discarded`), and `routedTo`/`triagedAt` (stamped on triage). CQBus Capture/List/Get/Triage/Discard; thin HTTP under `/api/v1/inbox`; owner-scoped. By design the inbox never reads or writes other modules: triage marks the item `triaged` with `routedTo` (audit only) and the web navigates to the destination's existing create surface pre-filled via deep-link (Tasks `?capturar=`, Wallet `?type=expense&description=`). Suggest-not-write — the target entity is created by the owner on that surface, not by the inbox.
+- `inbox`: "Bandeja" — a frictionless universal capture queue with triage routing. `InboxItem` owns raw `text` + optional `note`, `status` (`pending|triaged|discarded`), `routedTo`/`triagedAt` (stamped on triage), and `suggestedDestination`/`suggestedAt` (a one-shot LLM classification computed lazily on load and cached forever per item). CQBus Capture/List/Get/Triage/Discard/SuggestDestination; thin HTTP under `/api/v1/inbox`; owner-scoped. By design the inbox never reads or writes other modules: triage marks the item `triaged` with `routedTo` (audit only) and the web navigates to the destination's existing create surface pre-filled via deep-link (Tasks `?capturar=`, Wallet `?type=expense&description=`), highlighting the suggested one. Suggest-not-write — the target entity is created by the owner on that surface, not by the inbox, and routing always requires the owner's explicit click.
 
 Inactive domains:
 
@@ -36,7 +36,9 @@ Do not treat inactive domains as real product surfaces until they pass the full 
 
 ## Current Sequencing
 
-Follow `ROADMAP.md` for priority. Phases 0–3 are complete (recovery, Tasks production-readiness, auth hardening code-side, Health habits slice). Phase 4 shipped H1 counters, H2 goals, H3 medical records, P1 flexible habit cadence, P2 daily mood/energy check-ins, and P3 weight tracking. D4a shipped the Objectives / Metas strategic layer with manual and Projects-hours progress; D4b shipped lazy achieved detection plus completed-tasks and Wallet-savings progress; D4c surfaced active objectives on Home as the daily north and can create a simple task for today from an objective; the first Health metric source (`health_habit_completions`) shipped as a targeted habit binding. The Architecture Track is complete: A1 Vite port, A2 Health pilot, A3/A4 skills, A5 frontend migration, and A6 CQBus on the api — every active domain exposes HTTP through CQBus, and the legacy `ServiceProvider` bridge plus its dead `registerServices` lifecycle hook are deleted from the common core. One feature per work session.
+Follow `ROADMAP.md` for priority — it is forward-looking only (shipped work is not
+narrated there; `git log`/`git blame` are the record of what shipped and when). One
+feature per work session.
 
 Owner-pending items (do not attempt from a local session):
 
@@ -58,11 +60,11 @@ The skills:
 ## Working Agreement (how sessions run)
 
 - Work directly on `main`. Never create branches or PRs unless the owner asks.
-- One ROADMAP feature per session, in the Phase 4 order. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs), verify, then STOP and summarize for the owner.
+- One ROADMAP feature per session, in `ROADMAP.md`'s order. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs), verify, then STOP and summarize for the owner.
 - Do not commit until the owner explicitly says so. When they do: split into logical commits (backend / frontend / docs), imperative messages explaining the why, then push to `main`.
-- After shipping a feature, mark it in `ROADMAP.md` (SHIPPED + strikethrough in the order line) and reconcile this file if runtime status changed.
+- `ROADMAP.md` is forward-looking only: it tracks what's left, not a history of what shipped. Once a feature ships, remove or condense its entry instead of accumulating a SHIPPED write-up — the commit history and code are the record of how and when something landed.
 - Local verification before claiming done, then a manual browser smoke against the real app. Clean up any smoke data you created in the dev DB afterwards.
-- Dev infrastructure quirks: `pnpm infra:start` fails because port 5432 is taken; the real dev Postgres is the `vdp-postgres-dev` container on port 55432 (`docker start vdp-postgres-dev`), credentials `vdp:vdp`, database `vdp`. Run migrations with `DATABASE_URL='postgresql://vdp:vdp@localhost:55432/vdp' pnpm db:migrate` from `server/`.
+- Dev infrastructure: no docker-compose, no Redis, no Jaeger — the app processes run directly via `pnpm dev`/`tsx`/Vite. The only piece of local infra is Postgres: the real dev database is the `vdp-postgres-dev` docker container on port 55432 (`docker start vdp-postgres-dev`), credentials `vdp:vdp`, database `vdp`. Run migrations with `DATABASE_URL='postgresql://vdp:vdp@localhost:55432/vdp' pnpm db:migrate` from `server/`. The test suite (`db:test:up`/`test:integration`/`test:e2e`) uses a separate, ephemeral Postgres-only container via `docker-compose.test.yml` — unrelated to the dev database above.
 
 ## Commands
 
@@ -71,11 +73,6 @@ The skills:
 pnpm dev
 pnpm --filter @vdp/server dev
 pnpm --filter @vdp/web dev
-
-# Infrastructure
-pnpm infra:start
-pnpm infra:stop
-pnpm infra:reset
 
 # Database
 pnpm db:generate
