@@ -16,8 +16,15 @@ function emptyRecord(date: string): DailyReviewStateRecord {
         plannedAt: null,
         morningBriefRequestedAt: null,
         eveningBriefRequestedAt: null,
+        weeklyPrepRequestedAt: null,
     };
 }
+
+const BRIEF_SURFACE_FIELD = {
+    morning: 'morningBriefRequestedAt',
+    evening: 'eveningBriefRequestedAt',
+    weekly: 'weeklyPrepRequestedAt',
+} as const satisfies Record<DailyReviewBriefSurface, keyof DailyReviewStateRecord>;
 
 export class FakeDailyReviewStateRepository extends DailyReviewStateRepository {
     private store = new Map<string, DailyReviewStateRecord>();
@@ -43,7 +50,7 @@ export class FakeDailyReviewStateRepository extends DailyReviewStateRepository {
     ): Promise<DailyReviewStateRecord> {
         const key = this.key(userId, date);
         const current = this.store.get(key) ?? emptyRecord(date);
-        const field = surface === 'morning' ? 'morningBriefRequestedAt' : 'eveningBriefRequestedAt';
+        const field = BRIEF_SURFACE_FIELD[surface];
         const updated = { ...current, [field]: current[field] ?? new Date().toISOString() };
         this.store.set(key, updated);
         return { ...updated };

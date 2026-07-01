@@ -2,6 +2,7 @@ import { HttpClient } from "@nbottarini/abstract-http-client";
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
+  DailyReviewBriefSurface,
   DailyReviewState,
   DomainStat,
   Task as TaskDto,
@@ -111,7 +112,7 @@ export class HttpTasksGateway implements TasksGateway {
     return body;
   }
 
-  async markBriefRequested(date: string, surface: "morning" | "evening"): Promise<DailyReviewState> {
+  async markBriefRequested(date: string, surface: DailyReviewBriefSurface): Promise<DailyReviewState> {
     const { body } = await this.http.post<DailyReviewState>("/tasks/review/brief-requested", { date, surface });
     return body;
   }

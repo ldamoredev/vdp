@@ -43,6 +43,7 @@ import {
   formatTaskDate,
   addLocalDaysISO,
   getTodayISO,
+  getWeekStartISO,
   priorityBadge,
   priorityLabel,
 } from "@/lib/format";
@@ -249,7 +250,11 @@ function formatObjectiveValue(value: number, unit: string): string {
 export class HomePresenter extends PresenterBase<HomeViewModel> {
   private readonly today = getTodayISO();
   private readonly yesterday = addLocalDaysISO(this.today, -1);
+  private readonly weekStart = getWeekStartISO(this.today);
   private reviewState: DailyReviewState = createEmptyDailyReviewState(this.today);
+  // D6b: null until load() resolves; distinct from reviewState since it may be a
+  // different (Monday-dated) row when today isn't Monday.
+  private weeklyPrepRequestedAt: string | null = null;
 
   private taskStats: TaskStats | null = null;
   private todayTasks: Task[] = [];
@@ -433,6 +438,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         walletStats,
         walletRecentTransactions,
         reviewState,
+        weeklyReviewState,
         projectHoursReport,
         objectivesResult,
       ] = await Promise.all([
@@ -454,6 +460,11 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         this.core.execute(new GetWalletStatsSummary()),
         this.core.execute(new GetTransactions({ limit: "10" })),
         this.core.execute(new GetDailyReviewState(this.today)),
+        // D6b: the weekly-prep flag lives on the Monday-dated row; only fetch a
+        // second row when today isn't Monday (reviewState above already covers it).
+        this.weekStart === this.today
+          ? Promise.resolve(null)
+          : this.core.execute(new GetDailyReviewState(this.weekStart)).catch(() => null),
         this.core.execute(new GetHoursReport({ fromDate: this.today, toDate: this.today }))
           .catch(() => null),
         this.loadObjectives().catch(() => ({ objectives: [], values: new Map<string, number>() })),
@@ -463,6 +474,9 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
         createEmptyDailyReviewState(this.today),
         reviewState,
       );
+      this.weeklyPrepRequestedAt = this.weekStart === this.today
+        ? this.reviewState.weeklyPrepRequestedAt
+        : (weeklyReviewState?.weeklyPrepRequestedAt ?? null);
       this.taskStats = taskStats;
       this.todayTasks = todayTasks.tasks;
       this.review = review;
@@ -480,6 +494,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.walletRecentTransactions = walletRecentTransactions.transactions;
     } catch {
       this.reviewState = createEmptyDailyReviewState(this.today);
+      this.weeklyPrepRequestedAt = null;
       this.taskStats = null;
       this.todayTasks = [];
       this.review = null;
@@ -507,6 +522,7 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     this.updateModel(model);
     synthesisBriefStore.setHomeBrief(buildHomeAgentBrief(model));
     synthesisBriefStore.setHomeBriefRequested(this.reviewState.morningBriefRequestedAt !== null);
+    synthesisBriefStore.setWeeklyBriefRequested(this.weeklyPrepRequestedAt !== null);
   }
 
   private buildModel(): HomeViewModel {

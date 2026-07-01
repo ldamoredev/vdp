@@ -113,6 +113,10 @@ export const dailyReviewState = tasksSchema.table(
     plannedAt: timestamp("planned_at", { withTimezone: true }),
     morningBriefRequestedAt: timestamp("morning_brief_requested_at", { withTimezone: true }),
     eveningBriefRequestedAt: timestamp("evening_brief_requested_at", { withTimezone: true }),
+    // D6b: keyed to the Monday-dated row for the current ISO week, not "today" —
+    // a per-day table occasionally carrying a per-week flag, on purpose (avoids a
+    // second table for one timestamp).
+    weeklyPrepRequestedAt: timestamp("weekly_prep_requested_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

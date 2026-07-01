@@ -27,6 +27,7 @@ export interface DailyReviewState {
   plannedAt: string | null;
   morningBriefRequestedAt: string | null;
   eveningBriefRequestedAt: string | null;
+  weeklyPrepRequestedAt: string | null;
 }
 
 export type WalletReviewSignalKind =

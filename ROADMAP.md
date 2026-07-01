@@ -125,7 +125,7 @@ The agent layer is excellent but reactive and per-domain. Make it proactive: mor
 brief, weekly prep, "you left X pending". Pairs naturally with D2 (it is the brain of
 the command center). Respects the medical-no-LLM rule.
 
-**Status (June 2026): in progress — D6a shipped.** Builds directly on R3a/R3b
+**Status (June/July 2026): in progress — D6a and D6b shipped.** Builds directly on R3a/R3b
 (the brief mechanism) and D5c (the lazy-once-per-period pattern). Gate decisions and
 slice breakdown in the "D6: Proactive Agent" execution section below.
 
@@ -772,19 +772,47 @@ firing at most once per surface per day.
   confirm no second Groq call; same independently for `/review`) is the remaining
   step.
 
-### D6b. Weekly prep — NOT STARTED
+### D6b. Weekly prep — SHIPPED (2026-07-01)
 
-A week-ahead (Monday morning) or week-review (Sunday evening) framing, same mechanism
-as D6a but weekly cadence and reusing the Tasks agent's existing `get_weekly_summary`
-tool (already described in `system-prompt.ts`'s "## Resumen semanal" section) instead
-of `get_today_stats`/`get_end_of_day_review`.
+A week-ahead framing, same mechanism as D6a but weekly cadence and reusing the Tasks
+agent's existing `get_weekly_summary` tool (already described in `system-prompt.ts`'s
+"## Resumen semanal" section) instead of `get_today_stats`/`get_end_of_day_review`.
 
-- New `weekly_prep_requested_at` (or a `(year, week)` key) likely needs its own small
-  state, since `daily_review_state` is keyed per-day, not per-week — exact shape to
-  settle at implementation time, but same "persist once per period" gate as D6a.
-- A third trigger phrase + a small addition to `## Brief del día` (or a sibling
-  section) telling the agent to compose the weekly version from `get_weekly_summary`
-  when asked.
+- **Surface (owner decision):** `/home` only, on the first visit of each ISO week
+  (Monday if opened that day, otherwise whichever day the owner first opens `/home`
+  that week) — not `/review`. `get_weekly_summary` is inherently retrospective, so
+  "look back at the week that ended, open the new one with that context" fits the
+  forward/morning surface better than the evening close ritual.
+- **No new table.** `daily_review_state` is keyed by date, and an ISO week is uniquely
+  identified by its Monday's date, so `weekly_prep_requested_at` lives on the *same*
+  table, always read/written against the Monday-dated row for the current week (not
+  "today's" row, unless today is Monday) — an intentional semantic quirk (a per-day
+  row occasionally carrying a per-week flag) to avoid a second table/repository for
+  one timestamp. `HomePresenter` computes the week's Monday via a new
+  `getWeekStartISO()` helper (`apps/web/src/lib/format.ts`) and only fetches a second
+  `GetDailyReviewState` row when today isn't Monday (otherwise reuses the already-
+  loaded daily row). `markBriefRequested`'s existing narrow, idempotent command (D6a)
+  gained a third `'weekly'` surface value — no new command/route.
+- **Priority rule (accepted simplification):** if both the weekly prep and the daily
+  morning brief are due on the same `/home` visit (e.g. the first open on a Monday),
+  weekly wins — the daily brief resumes firing normally the next day. Deliberate, not
+  "smart merging" of two auto-fired turns into one; encoded directly in the pure
+  `shouldAutoFireBrief` gate (`ui/chat/auto-brief-gate.ts`, now also handling a
+  `'weekly'` surface).
+- **Backend:** new `## Prep semanal` system-prompt section, distinct from the existing
+  "Resumen semanal" (which stays for an explicit user-requested full report) — asks
+  for a short 3-6 line note (one retrospective highlight + one focus for the new
+  week) instead of the structured report. No new tool.
+- **Tests:** `getWeekStartISO` unit tests (mid-week, Monday, and the Sunday edge case
+  — 6 days back, not forward); repository/handler/e2e idempotency for the `'weekly'`
+  surface; `HomePresenter` tests for both the same-row (today is Monday) and
+  separately-fetched-row cases; `auto-brief-gate` tests for the new surface and the
+  weekly-over-morning priority rule. Full backend suite green (419 unit + 65
+  integration + 127 e2e) and web suite green (569 tests); both `apps/web` and
+  `server` `tsc --noEmit` clean.
+- **Verified:** automated only. Manual confirmation (open `/home` on a day where the
+  current week's Monday row has no `weekly_prep_requested_at` yet — the weekly prep
+  fires instead of the daily brief that visit) is the remaining step.
 
 ### D6c. "You left X pending" folded into the brief — NOT STARTED
 

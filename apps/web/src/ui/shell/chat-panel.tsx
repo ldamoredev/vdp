@@ -5,12 +5,17 @@ import { formatDistanceToNow } from "date-fns";
 import { History } from "lucide-react";
 import { useCore } from "@/CoreProvider";
 import { MarkDailyReviewBriefRequested } from "@/core/app/tasks/MarkDailyReviewBriefRequested";
-import { getTodayISO } from "@/lib/format";
+import { getTodayISO, getWeekStartISO } from "@/lib/format";
 import { useIsMobile } from "@/lib/use-breakpoint";
 import { domainHasAgent, domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
 import { useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
-import { synthesisBriefStore, useSynthesisBrief, useSynthesisBriefRequested } from "@/lib/synthesis-brief-store";
+import {
+  synthesisBriefStore,
+  useSynthesisBrief,
+  useSynthesisBriefRequested,
+  useSynthesisWeeklyBriefRequested,
+} from "@/lib/synthesis-brief-store";
 import { useTasksEvents } from "@/TasksEventsProvider";
 import { shouldAutoFireBrief } from "@/ui/chat/auto-brief-gate";
 import { ChatHeader } from "@/ui/chat/chat-header";
@@ -29,6 +34,10 @@ const HOME_BRIEF_PROMPT =
   "Redactá mi brief de inicio del día: priorizá foco, pendientes y señales en 3 a 6 líneas, sin relleno.";
 const REVIEW_BRIEF_PROMPT =
   "Redactá mi brief de cierre del día: priorizá qué se resolvió, qué quedó pendiente y señales relevantes, en 3 a 6 líneas, sin relleno.";
+// D6b: fixed trigger phrase for the weekly prep — see "## Prep semanal" in the
+// Tasks system prompt.
+const WEEKLY_PREP_PROMPT =
+  "Redactá mi prep semanal: un dato retrospectivo de la semana pasada y un foco concreto para esta semana, en 3 a 6 líneas, sin relleno.";
 
 const enabledDomains = domains.filter((d) => !d.disabled && domainHasAgent(d));
 
@@ -39,6 +48,7 @@ export function ChatPanel() {
   const core = useCore();
   const synthesisBrief = useSynthesisBrief(pathname);
   const briefAlreadyRequested = useSynthesisBriefRequested(pathname);
+  const weeklyBriefAlreadyRequested = useSynthesisWeeklyBriefRequested();
   const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
   // Outside a domain (home, review, settings) the chat stays available with a
@@ -94,6 +104,7 @@ export function ChatPanel() {
       hasDomainAgent: !!domainWithAgent,
       agentChatEnabled: agentChat.enabled,
       briefAlreadyRequested,
+      weeklyBriefAlreadyRequested,
       isLoadingHistory: chat.isLoadingHistory,
       hasMessages: chat.messages.length > 0,
       isStreaming: stream.isStreaming,
@@ -102,20 +113,23 @@ export function ChatPanel() {
     if (!surface || !domainWithAgent) return;
 
     firedRef.current = true;
-    void stream.sendMessage(
-      surface === "morning" ? HOME_BRIEF_PROMPT : REVIEW_BRIEF_PROMPT,
-      domainWithAgent.agentEndpoint,
-      chat.conversationId,
-    );
+    const prompt =
+      surface === "morning" ? HOME_BRIEF_PROMPT : surface === "evening" ? REVIEW_BRIEF_PROMPT : WEEKLY_PREP_PROMPT;
+    void stream.sendMessage(prompt, domainWithAgent.agentEndpoint, chat.conversationId);
+
     if (surface === "morning") synthesisBriefStore.setHomeBriefRequested(true);
-    else synthesisBriefStore.setReviewBriefRequested(true);
-    void core.execute(new MarkDailyReviewBriefRequested(getTodayISO(), surface)).catch(() => {});
+    else if (surface === "evening") synthesisBriefStore.setReviewBriefRequested(true);
+    else synthesisBriefStore.setWeeklyBriefRequested(true);
+
+    const markDate = surface === "weekly" ? getWeekStartISO(getTodayISO()) : getTodayISO();
+    void core.execute(new MarkDailyReviewBriefRequested(markDate, surface)).catch(() => {});
   }, [
     pathname,
     domainKey,
     domainWithAgent,
     agentChat.enabled,
     briefAlreadyRequested,
+    weeklyBriefAlreadyRequested,
     chat.isLoadingHistory,
     chat.messages.length,
     chat.conversationId,

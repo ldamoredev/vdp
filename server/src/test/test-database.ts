@@ -219,6 +219,7 @@ CREATE TABLE IF NOT EXISTS tasks.daily_review_state (
     planned_at TIMESTAMPTZ,
     morning_brief_requested_at TIMESTAMPTZ,
     evening_brief_requested_at TIMESTAMPTZ,
+    weekly_prep_requested_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -136,6 +136,7 @@ describe("tasks handlers (dispatched through the bus)", () => {
         plannedAt: "2026-06-13T09:00:00.000Z",
         morningBriefRequestedAt: null,
         eveningBriefRequestedAt: null,
+        weeklyPrepRequestedAt: null,
       };
 
       const saved = await core.execute(new SaveDailyReviewState(state));

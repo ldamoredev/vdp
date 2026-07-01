@@ -1,6 +1,7 @@
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
+  DailyReviewBriefSurface,
   DailyReviewState,
   DomainStat,
   Task as TaskDto,
@@ -48,6 +49,12 @@ const sampleNote: TaskNote = {
   type: "note",
   createdAt: "2026-06-13T08:00:00.000Z",
 };
+
+const BRIEF_SURFACE_FIELD = {
+  morning: "morningBriefRequestedAt",
+  evening: "eveningBriefRequestedAt",
+  weekly: "weeklyPrepRequestedAt",
+} as const satisfies Record<DailyReviewBriefSurface, keyof DailyReviewState>;
 
 /**
  * Records every call so handler tests can assert routing and argument
@@ -130,7 +137,7 @@ export class FakeTasksGateway implements TasksGateway {
     this.reviewState = state;
     return state;
   }
-  async markBriefRequested(date: string, surface: "morning" | "evening"): Promise<DailyReviewState> {
+  async markBriefRequested(date: string, surface: DailyReviewBriefSurface): Promise<DailyReviewState> {
     this.record("markBriefRequested", date, surface);
     const current: DailyReviewState = this.reviewState ?? {
       date,
@@ -143,8 +150,9 @@ export class FakeTasksGateway implements TasksGateway {
       plannedAt: null,
       morningBriefRequestedAt: null,
       eveningBriefRequestedAt: null,
+      weeklyPrepRequestedAt: null,
     };
-    const field = surface === "morning" ? "morningBriefRequestedAt" : "eveningBriefRequestedAt";
+    const field = BRIEF_SURFACE_FIELD[surface];
     this.reviewState = { ...current, [field]: current[field] ?? new Date().toISOString() };
     return this.reviewState;
   }

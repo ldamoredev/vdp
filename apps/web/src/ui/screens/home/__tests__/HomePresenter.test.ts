@@ -297,12 +297,66 @@ describe("HomePresenter", () => {
       plannedAt: null,
       morningBriefRequestedAt: "2026-06-15T07:00:00.000Z",
       eveningBriefRequestedAt: null,
+      weeklyPrepRequestedAt: null,
     };
 
     presenter.start();
     await flush();
 
     expect(synthesisBriefStore.getState().homeBriefRequested).toBe(true);
+    presenter.stop();
+  });
+
+  it("reflects the weekly-prep flag from the same row when today is Monday (D6b)", async () => {
+    // beforeEach sets 2026-06-15, a Monday — weekStart === today, no second fetch needed.
+    const { presenter, tasks } = build();
+    tasks.reviewState = {
+      date: "2026-06-15",
+      acknowledgedSignalIds: [],
+      watchedCategoryIds: [],
+      note: "",
+      openedAt: null,
+      completedAt: null,
+      focusTaskId: null,
+      plannedAt: null,
+      morningBriefRequestedAt: null,
+      eveningBriefRequestedAt: null,
+      weeklyPrepRequestedAt: "2026-06-15T07:00:00.000Z",
+    };
+
+    presenter.start();
+    await flush();
+
+    expect(synthesisBriefStore.getState().weeklyBriefRequested).toBe(true);
+    presenter.stop();
+  });
+
+  it("fetches the Monday row separately and reflects its weekly flag when today isn't Monday (D6b)", async () => {
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z")); // Wednesday; that week's Monday is 2026-06-15
+    const { presenter, tasks } = build();
+    const getReviewState = vi.spyOn(tasks, "getReviewState").mockImplementation(async (date: string) =>
+      date === "2026-06-15"
+        ? {
+            date,
+            acknowledgedSignalIds: [],
+            watchedCategoryIds: [],
+            note: "",
+            openedAt: null,
+            completedAt: null,
+            focusTaskId: null,
+            plannedAt: null,
+            morningBriefRequestedAt: null,
+            eveningBriefRequestedAt: null,
+            weeklyPrepRequestedAt: "2026-06-15T07:00:00.000Z",
+          }
+        : null,
+    );
+
+    presenter.start();
+    await flush();
+
+    expect(getReviewState.mock.calls.map((call) => call[0])).toContain("2026-06-15");
+    expect(synthesisBriefStore.getState().weeklyBriefRequested).toBe(true);
     presenter.stop();
   });
 

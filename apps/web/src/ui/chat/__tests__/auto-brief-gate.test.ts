@@ -8,6 +8,9 @@ function baseArgs(overrides: Partial<AutoBriefGateArgs> = {}): AutoBriefGateArgs
     hasDomainAgent: true,
     agentChatEnabled: true,
     briefAlreadyRequested: false,
+    // Default true so existing morning/evening-only tests aren't affected by
+    // the D6b weekly priority rule unless they opt in.
+    weeklyBriefAlreadyRequested: true,
     isLoadingHistory: false,
     hasMessages: false,
     isStreaming: false,
@@ -50,5 +53,27 @@ describe("shouldAutoFireBrief", () => {
 
   it("never fires twice in the same mount", () => {
     expect(shouldAutoFireBrief(baseArgs({ alreadyFiredThisMount: true }))).toBeNull();
+  });
+
+  it("fires the weekly surface on /home when it hasn't been requested this ISO week", () => {
+    expect(shouldAutoFireBrief(baseArgs({ weeklyBriefAlreadyRequested: false }))).toBe("weekly");
+  });
+
+  it("prioritizes weekly over morning on the same /home visit", () => {
+    expect(
+      shouldAutoFireBrief(baseArgs({ weeklyBriefAlreadyRequested: false, briefAlreadyRequested: false })),
+    ).toBe("weekly");
+  });
+
+  it("falls back to morning once the weekly prep for this ISO week is already requested", () => {
+    expect(
+      shouldAutoFireBrief(baseArgs({ weeklyBriefAlreadyRequested: true, briefAlreadyRequested: false })),
+    ).toBe("morning");
+  });
+
+  it("never considers the weekly surface on /review", () => {
+    expect(
+      shouldAutoFireBrief(baseArgs({ pathname: "/review", weeklyBriefAlreadyRequested: false })),
+    ).toBe("evening");
   });
 });

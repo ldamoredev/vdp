@@ -120,6 +120,7 @@ export interface DailyReviewState {
   plannedAt: string | null;
   morningBriefRequestedAt: string | null;
   eveningBriefRequestedAt: string | null;
+  weeklyPrepRequestedAt: string | null;
 }
 
-export type DailyReviewBriefSurface = "morning" | "evening";
+export type DailyReviewBriefSurface = "morning" | "evening" | "weekly";

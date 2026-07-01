@@ -27,10 +27,12 @@ export const saveDailyReviewStateSchema = z.object({
   plannedAt: z.string().datetime().nullable().default(null),
   morningBriefRequestedAt: z.string().datetime().nullable().default(null),
   eveningBriefRequestedAt: z.string().datetime().nullable().default(null),
+  weeklyPrepRequestedAt: z.string().datetime().nullable().default(null),
 });
 
-// D6a: narrow write, idempotent — never touches the rest of the ritual state.
-export const dailyReviewBriefSurfaceEnum = z.enum(["morning", "evening"]);
+// D6a/D6b: narrow write, idempotent — never touches the rest of the ritual state.
+// "weekly" is keyed to the Monday-dated row for the current ISO week, not "today".
+export const dailyReviewBriefSurfaceEnum = z.enum(["morning", "evening", "weekly"]);
 
 export const markDailyReviewBriefRequestedSchema = z.object({
   date: localDateStringSchema,

@@ -222,6 +222,7 @@ describe("ReviewPresenter", () => {
       plannedAt: null,
       morningBriefRequestedAt: null,
       eveningBriefRequestedAt: "2026-06-13T20:00:00.000Z",
+      weeklyPrepRequestedAt: null,
     };
 
     presenter.start();

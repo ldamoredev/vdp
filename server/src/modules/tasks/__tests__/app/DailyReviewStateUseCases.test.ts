@@ -38,6 +38,7 @@ describe('Daily review state use cases', () => {
             plannedAt: '2026-06-21T09:00:00.000Z',
             morningBriefRequestedAt: null,
             eveningBriefRequestedAt: null,
+            weeklyPrepRequestedAt: null,
         };
         const ctx = setupTasksCQBusTest();
         ctx.tasks.seed([createTask({ id: state.focusTaskId! })]);
@@ -63,6 +64,7 @@ describe('Daily review state use cases', () => {
             plannedAt: '2026-06-21T09:00:00.000Z',
             morningBriefRequestedAt: null,
             eveningBriefRequestedAt: null,
+            weeklyPrepRequestedAt: null,
         };
 
         await expect(
@@ -101,5 +103,23 @@ describe('Daily review state use cases', () => {
 
         expect(result.morningBriefRequestedAt).toBeTruthy();
         expect(result.eveningBriefRequestedAt).toBeTruthy();
+    });
+
+    it('marks the weekly prep requested once, keyed to the Monday date (D6b)', async () => {
+        const repo = new FakeDailyReviewStateRepository();
+        const handler = new MarkDailyReviewBriefRequestedCommandHandler(repo);
+
+        const first = await handler.handle(
+            new MarkDailyReviewBriefRequestedCommand('2026-06-29', 'weekly'),
+            identity,
+        );
+        const second = await handler.handle(
+            new MarkDailyReviewBriefRequestedCommand('2026-06-29', 'weekly'),
+            identity,
+        );
+
+        expect(first.weeklyPrepRequestedAt).toBeTruthy();
+        expect(second.weeklyPrepRequestedAt).toBe(first.weeklyPrepRequestedAt);
+        expect(second.morningBriefRequestedAt).toBeNull();
     });
 });

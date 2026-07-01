@@ -1,6 +1,7 @@
 import type {
   CarryOverAllResult,
   CarryOverRateResponse,
+  DailyReviewBriefSurface,
   DailyReviewState,
   DomainStat,
   TaskBoardStatus,
@@ -71,7 +72,7 @@ export interface TasksGateway {
   getReview(date?: string): Promise<TaskReview>;
   getReviewState(date: string): Promise<DailyReviewState | null>;
   saveReviewState(state: DailyReviewState): Promise<DailyReviewState>;
-  markBriefRequested(date: string, surface: "morning" | "evening"): Promise<DailyReviewState>;
+  markBriefRequested(date: string, surface: DailyReviewBriefSurface): Promise<DailyReviewState>;
   getRecentInsights(limit?: number): Promise<TaskInsight[]>;
   listNotes(taskId: string): Promise<TaskNote[]>;
   addNote(taskId: string, content: string, type?: TaskNoteType): Promise<TaskNote>;

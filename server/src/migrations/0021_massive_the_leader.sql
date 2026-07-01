@@ -1,0 +1,1 @@
+ALTER TABLE "tasks"."daily_review_state" ADD COLUMN "weekly_prep_requested_at" timestamp with time zone;

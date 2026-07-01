@@ -14,9 +14,10 @@ export type DailyReviewStateRecord = {
     plannedAt: string | null;
     morningBriefRequestedAt: string | null;
     eveningBriefRequestedAt: string | null;
+    weeklyPrepRequestedAt: string | null;
 };
 
-export type DailyReviewBriefSurface = 'morning' | 'evening';
+export type DailyReviewBriefSurface = 'morning' | 'evening' | 'weekly';
 
 export abstract class DailyReviewStateRepository {
     abstract get(userId: string, date: string): Promise<DailyReviewStateRecord | null>;

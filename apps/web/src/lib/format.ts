@@ -60,6 +60,12 @@ export function addLocalDaysISO(date: string, days: number): string {
   return localDateISO(d);
 }
 
+/** Monday of the ISO week containing `date` (YYYY-MM-DD, local time). D6b. */
+export function getWeekStartISO(date: string): string {
+  const daysSinceMonday = (new Date(`${date}T00:00:00`).getDay() + 6) % 7;
+  return addLocalDaysISO(date, -daysSinceMonday);
+}
+
 /** Formats a Date as YYYY-MM-DD using local timezone (not UTC). */
 function localDateISO(d: Date): string {
   const y = d.getFullYear();

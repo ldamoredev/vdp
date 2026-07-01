@@ -821,6 +821,25 @@ describe('Tasks API — E2E', () => {
             expect(evening.json().morningBriefRequestedAt).toBe(first.json().morningBriefRequestedAt);
             expect(evening.json().eveningBriefRequestedAt).toBeTruthy();
         });
+
+        it('marks the weekly prep requested for the Monday-keyed row (D6b)', async () => {
+            const monday = '2026-06-29';
+
+            const first = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/review/brief-requested',
+                payload: { date: monday, surface: 'weekly' },
+            });
+            expect(first.statusCode).toBe(200);
+            expect(first.json().weeklyPrepRequestedAt).toBeTruthy();
+
+            const second = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/tasks/review/brief-requested',
+                payload: { date: monday, surface: 'weekly' },
+            });
+            expect(second.json().weeklyPrepRequestedAt).toBe(first.json().weeklyPrepRequestedAt);
+        });
     });
 
     // ─── Validation & lifecycle errors ─────────────

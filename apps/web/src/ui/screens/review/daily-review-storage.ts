@@ -19,6 +19,7 @@ export function createEmptyDailyReviewState(date: string): DailyReviewState {
     plannedAt: null,
     morningBriefRequestedAt: null,
     eveningBriefRequestedAt: null,
+    weeklyPrepRequestedAt: null,
   };
 }
 
@@ -63,5 +64,9 @@ export function mergePersistedDailyReviewState(
       typeof persisted.eveningBriefRequestedAt === "string" || persisted.eveningBriefRequestedAt === null
         ? (persisted.eveningBriefRequestedAt ?? base.eveningBriefRequestedAt)
         : base.eveningBriefRequestedAt,
+    weeklyPrepRequestedAt:
+      typeof persisted.weeklyPrepRequestedAt === "string" || persisted.weeklyPrepRequestedAt === null
+        ? (persisted.weeklyPrepRequestedAt ?? base.weeklyPrepRequestedAt)
+        : base.weeklyPrepRequestedAt,
   };
 }

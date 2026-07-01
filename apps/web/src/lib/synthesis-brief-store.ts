@@ -9,6 +9,8 @@ interface SynthesisBriefState {
   // real data has loaded.
   homeBriefRequested: boolean;
   reviewBriefRequested: boolean;
+  // D6b: same default-true reasoning, keyed to the current ISO week (not a pathname).
+  weeklyBriefRequested: boolean;
 }
 
 const store = createStore<SynthesisBriefState>({
@@ -16,6 +18,7 @@ const store = createStore<SynthesisBriefState>({
   review: null,
   homeBriefRequested: true,
   reviewBriefRequested: true,
+  weeklyBriefRequested: true,
 });
 
 export const synthesisBriefStore = {
@@ -27,6 +30,8 @@ export const synthesisBriefStore = {
     store.setState((state) => ({ ...state, homeBriefRequested: requested })),
   setReviewBriefRequested: (requested: boolean) =>
     store.setState((state) => ({ ...state, reviewBriefRequested: requested })),
+  setWeeklyBriefRequested: (requested: boolean) =>
+    store.setState((state) => ({ ...state, weeklyBriefRequested: requested })),
   subscribe: store.subscribe,
   getState: store.getState,
 };
@@ -55,4 +60,13 @@ export function useSynthesisBriefRequested(pathname: string): boolean {
   if (pathname === "/home") return state.homeBriefRequested;
   if (pathname === "/review") return state.reviewBriefRequested;
   return true;
+}
+
+/** Whether this ISO week's weekly prep was already requested (D6b, /home only). */
+export function useSynthesisWeeklyBriefRequested(): boolean {
+  return useSyncExternalStore(
+    synthesisBriefStore.subscribe,
+    () => synthesisBriefStore.getState().weeklyBriefRequested,
+    () => synthesisBriefStore.getState().weeklyBriefRequested,
+  );
 }

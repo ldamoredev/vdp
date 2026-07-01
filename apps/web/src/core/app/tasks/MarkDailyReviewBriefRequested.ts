@@ -1,12 +1,12 @@
 import { Command, RequestHandler } from "@nbottarini/cqbus";
-import type { DailyReviewState } from "@vdp/shared";
+import type { DailyReviewBriefSurface, DailyReviewState } from "@vdp/shared";
 
 import type { TasksGateway } from "../../domain/tasks/TasksGateway";
 
 export class MarkDailyReviewBriefRequested extends Command<DailyReviewState> {
   constructor(
     readonly date: string,
-    readonly surface: "morning" | "evening",
+    readonly surface: DailyReviewBriefSurface,
   ) {
     super();
   }
