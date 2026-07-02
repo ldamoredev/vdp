@@ -12,6 +12,7 @@ import { ListClientsQuery, ListClientsQueryHandler } from './app/ListClientsQuer
 import { ListProjectsQuery, ListProjectsQueryHandler } from './app/ListProjectsQuery';
 import { ListTimeEntriesQuery, ListTimeEntriesQueryHandler } from './app/ListTimeEntriesQuery';
 import { LogTimeEntryCommand, LogTimeEntryCommandHandler } from './app/LogTimeEntryCommand';
+import { UnarchiveProjectCommand, UnarchiveProjectCommandHandler } from './app/UnarchiveProjectCommand';
 import { UpdateClientCommand, UpdateClientCommandHandler } from './app/UpdateClientCommand';
 import { UpdateProjectCommand, UpdateProjectCommandHandler } from './app/UpdateProjectCommand';
 import { UpdateTimeEntryCommand, UpdateTimeEntryCommandHandler } from './app/UpdateTimeEntryCommand';
@@ -50,6 +51,9 @@ export class ProjectsModuleRuntime {
         );
         this.deps.bus.registerHandler(ArchiveProjectCommand, () =>
             new ArchiveProjectCommandHandler(this.projectRepository()),
+        );
+        this.deps.bus.registerHandler(UnarchiveProjectCommand, () =>
+            new UnarchiveProjectCommandHandler(this.projectRepository()),
         );
         this.deps.bus.registerHandler(AssignTaskToProjectCommand, () =>
             new AssignTaskToProjectCommandHandler(this.projectRepository(), this.taskRepository()),

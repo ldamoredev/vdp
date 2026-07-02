@@ -31,6 +31,7 @@ import { ListClientsQuery } from '../../app/ListClientsQuery';
 import { ListProjectsQuery } from '../../app/ListProjectsQuery';
 import { ListTimeEntriesQuery } from '../../app/ListTimeEntriesQuery';
 import { LogTimeEntryCommand } from '../../app/LogTimeEntryCommand';
+import { UnarchiveProjectCommand } from '../../app/UnarchiveProjectCommand';
 import { UpdateClientCommand } from '../../app/UpdateClientCommand';
 import { UpdateProjectCommand } from '../../app/UpdateProjectCommand';
 import { UpdateTimeEntryCommand } from '../../app/UpdateTimeEntryCommand';
@@ -70,6 +71,7 @@ export class ProjectsController extends HttpController {
             .post('/', { body: createProjectSchema }, this.createProject)
             .put('/:id', { params: projectIdParamsSchema, body: updateProjectSchema }, this.updateProject)
             .post('/:id/archive', { params: projectIdParamsSchema }, this.archiveProject)
+            .post('/:id/unarchive', { params: projectIdParamsSchema }, this.unarchiveProject)
             .post('/:id/tasks', { params: projectIdParamsSchema, body: assignTaskToProjectSchema }, this.assignTask);
     }
 
@@ -225,6 +227,18 @@ export class ProjectsController extends HttpController {
     }) => {
         const project = assertFound(
             await this.bus.execute(new ArchiveProjectCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Project not found',
+        );
+        return reply.send(project);
+    };
+
+    private readonly unarchiveProject: RouteContextHandler<ProjectIdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const project = assertFound(
+            await this.bus.execute(new UnarchiveProjectCommand(params!.id), executionContextFromAuth(request.auth)),
             'Project not found',
         );
         return reply.send(project);

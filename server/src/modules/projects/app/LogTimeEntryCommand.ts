@@ -3,6 +3,7 @@ import { Command, Identity, RequestHandler } from '@nbottarini/cqbus';
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
 import { DomainHttpError, NotFoundHttpError } from '../../common/http/errors';
 import { TaskRepository } from '../../tasks/domain/TaskRepository';
+import { Project } from '../domain/Project';
 import { ProjectRepository } from '../domain/ProjectRepository';
 import { TimeEntry } from '../domain/TimeEntry';
 import { TimeEntryRepository } from '../domain/TimeEntryRepository';
@@ -30,7 +31,14 @@ export class LogTimeEntryCommandHandler implements RequestHandler<LogTimeEntryCo
 
     async handle(command: LogTimeEntryCommand, identity: Identity): Promise<TimeEntry> {
         const { userId } = requireUserIdentity(identity);
-        await assertProjectAndTask(userId, command.input.projectId, command.input.taskId ?? null, this.projects, this.tasks);
+        const project = await assertProjectAndTask(
+            userId,
+            command.input.projectId,
+            command.input.taskId ?? null,
+            this.projects,
+            this.tasks,
+        );
+        if (!project.isActive()) throw new DomainHttpError('Cannot log time on an archived project');
         return this.entries.createTimeEntry(userId, command.input);
     }
 }
@@ -41,11 +49,12 @@ export async function assertProjectAndTask(
     taskId: string | null,
     projects: ProjectRepository,
     tasks: TaskRepository,
-) {
+): Promise<Project> {
     const project = await projects.getProject(userId, projectId);
     if (!project) throw new NotFoundHttpError('Project not found');
-    if (!taskId) return;
+    if (!taskId) return project;
     const task = await tasks.getTask(userId, taskId);
     if (!task) throw new NotFoundHttpError('Task not found');
     if (task.projectId !== projectId) throw new DomainHttpError('Task does not belong to project');
+    return project;
 }

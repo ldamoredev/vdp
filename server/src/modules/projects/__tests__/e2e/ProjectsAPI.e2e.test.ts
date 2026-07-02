@@ -97,6 +97,63 @@ describe('Projects API — E2E', () => {
         expect(archiveResponse.json()).toMatchObject({ id: created.id, status: 'archived' });
     });
 
+    it('unarchives a project back to active', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+
+        await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/archive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const unarchived = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/unarchive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        expect(unarchived.statusCode).toBe(200);
+        expect(unarchived.json()).toMatchObject({ id: project.id, status: 'active', archivedAt: null });
+    });
+
+    it('rejects logging time on an archived project but allows it again after unarchiving', async () => {
+        const project = await createProjectAs(PRIMARY_TEST_USER.id);
+        await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/archive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        const blocked = await logTimeAs(PRIMARY_TEST_USER.id, project.id);
+
+        await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/unarchive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const allowed = await logTimeAs(PRIMARY_TEST_USER.id, project.id);
+
+        expect(blocked).toMatchObject({ error: 'DOMAIN_ERROR', message: 'Cannot log time on an archived project' });
+        expect(allowed).toMatchObject({ projectId: project.id, minutes: 60 });
+    });
+
+    it('does not let a user unarchive another users project', async () => {
+        const project = await createProjectAs(SECONDARY_TEST_USER.id);
+        await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/archive`,
+            headers: asUser(SECONDARY_TEST_USER.id),
+        });
+
+        const unarchive = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/projects/${project.id}/unarchive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        expect(unarchive.statusCode).toBe(404);
+        expect(unarchive.json()).toMatchObject({ error: 'NOT_FOUND', message: 'Project not found' });
+    });
+
     it('assigns and unassigns an existing task to the project board', async () => {
         const project = await createProjectAs(PRIMARY_TEST_USER.id);
         const task = await createTaskAs(PRIMARY_TEST_USER.id, 'Build board presenter');

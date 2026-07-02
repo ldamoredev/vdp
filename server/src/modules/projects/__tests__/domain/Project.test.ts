@@ -36,6 +36,37 @@ describe('Project', () => {
         vi.useRealTimers();
     });
 
+    it('is idempotent when archiving an already archived project', () => {
+        const project = activeProject();
+        project.archive();
+        const firstArchivedAt = project.archivedAt;
+
+        project.archive();
+
+        expect(project.archivedAt).toBe(firstArchivedAt);
+    });
+
+    it('unarchives an archived project, clearing archivedAt', () => {
+        const project = activeProject();
+        project.archive();
+
+        project.unarchive();
+
+        expect(project.status).toBe('active');
+        expect(project.isActive()).toBe(true);
+        expect(project.archivedAt).toBeNull();
+    });
+
+    it('is a no-op when unarchiving an already active project', () => {
+        const project = activeProject();
+        const updatedAt = project.updatedAt;
+
+        project.unarchive();
+
+        expect(project.status).toBe('active');
+        expect(project.updatedAt).toBe(updatedAt);
+    });
+
     it('updates and clears the hourly rate', () => {
         const project = Project.fromSnapshot({
             id: 'project-1',
@@ -87,3 +118,22 @@ describe('Project', () => {
             .toThrow('Invalid project status');
     });
 });
+
+function activeProject(): Project {
+    const now = new Date('2026-06-13T08:00:00.000Z');
+    return Project.fromSnapshot({
+        id: 'p1',
+        kind: 'work',
+        outcome: 'Ship R7',
+        nextAction: 'Wire archive',
+        focus: 'Projects',
+        clientId: null,
+        client: null,
+        hourlyRate: null,
+        rateCurrency: 'ARS',
+        status: 'active',
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+    });
+}

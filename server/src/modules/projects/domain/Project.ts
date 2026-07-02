@@ -46,6 +46,13 @@ export class Project {
         this.updatedAt = new Date();
     }
 
+    unarchive() {
+        if (this.status === 'active') return;
+        this.status = 'active';
+        this.archivedAt = null;
+        this.updatedAt = new Date();
+    }
+
     isActive(): boolean {
         return this.status === 'active';
     }
