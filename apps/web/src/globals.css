@@ -1023,3 +1023,34 @@ body::after {
   background: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--foreground);
 }
+
+/* ============================================
+   PRINT (hours report export → PDF)
+   Force a light, ink-friendly rendering of the print document. The toolbar
+   is hidden via Tailwind's `print:hidden`; here we neutralize the dark theme
+   so the report prints black-on-white and its borders stay visible on paper.
+   ============================================ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  .print-document {
+    border: none !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    padding: 0 !important;
+  }
+  .print-document * {
+    color: #111111 !important;
+  }
+  .print-document th,
+  .print-document td,
+  .print-document header,
+  .print-document footer {
+    border-color: #cccccc !important;
+  }
+}

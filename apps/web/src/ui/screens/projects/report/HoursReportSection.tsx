@@ -1,4 +1,4 @@
-import { BarChart3 } from "lucide-react";
+import { BarChart3, FileDown } from "lucide-react";
 import { Link } from "react-router";
 
 import { StateCard } from "@/ui/primitives/state-card";
@@ -52,6 +52,14 @@ export function HoursReportSection() {
           <button type="submit" className="btn-secondary min-h-10">
             Generar
           </button>
+          <Link
+            to={`/projects/report/print?from=${vm.fromDate}&to=${vm.toDate}`}
+            className={`btn-secondary min-h-10 ${vm.rows.length === 0 ? "pointer-events-none opacity-50" : ""}`}
+            aria-disabled={vm.rows.length === 0}
+          >
+            <FileDown size={16} />
+            Exportar PDF
+          </Link>
         </form>
       </header>
 

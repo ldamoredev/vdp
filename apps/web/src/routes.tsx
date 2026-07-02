@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 
+import { AuthGate } from "@/ui/shell/auth-gate";
 import DomainError from "@/ui/shell/domain-error";
 import DomainLayout from "@/ui/shell/domain-layout";
 import NotFound from "@/ui/shell/not-found";
@@ -14,6 +15,7 @@ import { InboxScreen } from "@/ui/screens/inbox/InboxScreen";
 import { PeopleScreen } from "@/ui/screens/people/PeopleScreen";
 import { ProjectsScreen } from "@/ui/screens/projects/ProjectsScreen";
 import { ProjectHistoryScreen } from "@/ui/screens/projects/history/ProjectHistoryScreen";
+import { HoursReportPrintScreen } from "@/ui/screens/projects/report/print/HoursReportPrintScreen";
 import ReviewScreen from "@/ui/screens/review/ReviewScreen";
 import SettingsScreen from "@/ui/screens/settings/SettingsScreen";
 import { StudyScreen } from "@/ui/screens/study/StudyScreen";
@@ -35,6 +37,17 @@ import { WorkScreen } from "@/ui/screens/work/WorkScreen";
 export const router = createBrowserRouter([
   { path: "/", element: <LandingScreen />, errorElement: <RootError /> },
   { path: "/login", element: <LoginScreen />, errorElement: <RootError /> },
+  {
+    // Auth-gated but rendered without the app chrome, so it prints clean and
+    // flows across pages (see the @media print rules in globals.css).
+    path: "/projects/report/print",
+    element: (
+      <AuthGate>
+        <HoursReportPrintScreen />
+      </AuthGate>
+    ),
+    errorElement: <RootError />,
+  },
   {
     element: <DomainLayout />,
     errorElement: <RootError />,
