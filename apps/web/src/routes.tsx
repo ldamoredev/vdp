@@ -13,6 +13,7 @@ import { ObjectivesScreen } from "@/ui/screens/objectives/ObjectivesScreen";
 import { InboxScreen } from "@/ui/screens/inbox/InboxScreen";
 import { PeopleScreen } from "@/ui/screens/people/PeopleScreen";
 import { ProjectsScreen } from "@/ui/screens/projects/ProjectsScreen";
+import { ProjectHistoryScreen } from "@/ui/screens/projects/history/ProjectHistoryScreen";
 import ReviewScreen from "@/ui/screens/review/ReviewScreen";
 import SettingsScreen from "@/ui/screens/settings/SettingsScreen";
 import { StudyScreen } from "@/ui/screens/study/StudyScreen";
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
           { path: "/inbox", element: <InboxScreen /> },
           { path: "/people", element: <PeopleScreen /> },
           { path: "/projects", element: <ProjectsScreen /> },
+          { path: "/projects/history", element: <ProjectHistoryScreen /> },
           { path: "/work", element: <WorkScreen /> },
           { path: "/study", element: <StudyScreen /> },
         ],

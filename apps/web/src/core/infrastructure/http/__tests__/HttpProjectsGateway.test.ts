@@ -188,6 +188,18 @@ describe("HttpProjectsGateway", () => {
     expect(http.calls[0]).toMatchObject({ method: "POST", url: "/projects/p1/archive", body: {} });
   });
 
+  it("unarchives a project", async () => {
+    const http = new FakeHttpClient({
+      "POST /projects/p1/unarchive": projectDto({ status: "active", archivedAt: null }),
+    });
+
+    const project = await new HttpProjectsGateway(http).unarchiveProject("p1");
+
+    expect(project.status).toBe("active");
+    expect(project.archivedAt).toBeNull();
+    expect(http.calls[0]).toMatchObject({ method: "POST", url: "/projects/p1/unarchive", body: {} });
+  });
+
   it("assigns a task to a project board column", async () => {
     const http = new FakeHttpClient({ "POST /projects/p1/tasks": taskDto() });
 

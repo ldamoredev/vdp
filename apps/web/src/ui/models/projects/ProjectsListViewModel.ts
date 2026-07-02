@@ -18,6 +18,7 @@ export interface ProjectsListViewModel {
   isLoading: boolean;
   error: string | null;
   selectedProjectId: string | null;
+  canArchiveSelected: boolean;
   projects: ProjectListItemVM[];
   clientOptions: ClientOptionVM[];
   form: {

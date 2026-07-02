@@ -1,4 +1,5 @@
-import { Plus } from "lucide-react";
+import { Archive, History, Plus } from "lucide-react";
+import { Link } from "react-router";
 
 import { ModulePage } from "@/ui/primitives/module-page";
 import { StateCard } from "@/ui/primitives/state-card";
@@ -24,10 +25,31 @@ export function ProjectsScreen() {
             Outcome, próxima acción y foco semanal. Las cards del board son las mismas tasks de siempre.
           </p>
         </div>
-        <button type="button" onClick={() => presenter.openForm()} className="btn-primary">
-          <Plus size={16} />
-          Nuevo proyecto
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/projects/history" className="btn-secondary">
+            <History size={16} />
+            Historial
+          </Link>
+          {vm.selectedProjectId && (
+            <button
+              type="button"
+              disabled={!vm.canArchiveSelected}
+              onClick={() => {
+                if (window.confirm("¿Archivar este proyecto? Saldrá de la lista activa y del board.")) {
+                  void presenter.archiveSelected();
+                }
+              }}
+              className="btn-secondary"
+            >
+              <Archive size={16} />
+              Archivar
+            </button>
+          )}
+          <button type="button" onClick={() => presenter.openForm()} className="btn-primary">
+            <Plus size={16} />
+            Nuevo proyecto
+          </button>
+        </div>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">

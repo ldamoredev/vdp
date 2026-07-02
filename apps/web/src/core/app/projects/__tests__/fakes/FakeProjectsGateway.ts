@@ -140,7 +140,34 @@ export class FakeProjectsGateway implements ProjectsGateway {
 
   async archiveProject(id: string): Promise<Project> {
     this.record("archiveProject", id);
-    return Project.from({ ...projectDto, id, status: "archived", archivedAt: "2026-06-13T09:00:00.000Z" });
+    return this.replaceStatus(id, "archived", "2026-06-13T09:00:00.000Z");
+  }
+
+  async unarchiveProject(id: string): Promise<Project> {
+    this.record("unarchiveProject", id);
+    return this.replaceStatus(id, "active", null);
+  }
+
+  /** Rebuilds the matching project with a new lifecycle status and reflects it in the store. */
+  private replaceStatus(id: string, status: "active" | "archived", archivedAt: string | null): Project {
+    const existing = this.projects.find((project) => project.id === id) ?? Project.from(projectDto);
+    const updated = Project.from({
+      id,
+      kind: existing.kind,
+      outcome: existing.outcome,
+      nextAction: existing.nextAction,
+      focus: existing.focus,
+      clientId: existing.clientId,
+      client: existing.client,
+      hourlyRate: existing.hourlyRate,
+      rateCurrency: existing.rateCurrency,
+      status,
+      archivedAt,
+      createdAt: existing.createdAt,
+      updatedAt: existing.updatedAt,
+    });
+    this.projects = this.projects.map((project) => (project.id === id ? updated : project));
+    return updated;
   }
 
   async assignTaskToProject(projectId: string, input: AssignTaskToProjectInput): Promise<Task> {

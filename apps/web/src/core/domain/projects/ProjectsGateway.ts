@@ -62,6 +62,7 @@ export interface ProjectsGateway {
   createProject(input: CreateProjectInput): Promise<Project>;
   updateProject(id: string, input: UpdateProjectInput): Promise<Project>;
   archiveProject(id: string): Promise<Project>;
+  unarchiveProject(id: string): Promise<Project>;
   assignTaskToProject(projectId: string, input: AssignTaskToProjectInput): Promise<Task>;
   listTimeEntries(filters?: TimeEntryFilters): Promise<TimeEntry[]>;
   logTimeEntry(input: LogTimeEntryInput): Promise<TimeEntry>;

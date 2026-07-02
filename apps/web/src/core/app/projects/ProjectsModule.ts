@@ -13,6 +13,7 @@ import { ListClients, ListClientsHandler } from "./ListClients";
 import { ListProjects, ListProjectsHandler } from "./ListProjects";
 import { ListTimeEntries, ListTimeEntriesHandler } from "./ListTimeEntries";
 import { LogTimeEntry, LogTimeEntryHandler } from "./LogTimeEntry";
+import { UnarchiveProject, UnarchiveProjectHandler } from "./UnarchiveProject";
 import { UpdateClient, UpdateClientHandler } from "./UpdateClient";
 import { UpdateProject, UpdateProjectHandler } from "./UpdateProject";
 import { UpdateTimeEntry, UpdateTimeEntryHandler } from "./UpdateTimeEntry";
@@ -32,6 +33,7 @@ export class ProjectsModule implements CoreModule {
     core.bus.registerHandler(CreateProject, () => new CreateProjectHandler(gateway));
     core.bus.registerHandler(UpdateProject, () => new UpdateProjectHandler(gateway));
     core.bus.registerHandler(ArchiveProject, () => new ArchiveProjectHandler(gateway));
+    core.bus.registerHandler(UnarchiveProject, () => new UnarchiveProjectHandler(gateway));
     core.bus.registerHandler(AssignTaskToProject, () => new AssignTaskToProjectHandler(gateway));
     core.bus.registerHandler(ListTimeEntries, () => new ListTimeEntriesHandler(gateway));
     core.bus.registerHandler(LogTimeEntry, () => new LogTimeEntryHandler(gateway));

@@ -57,12 +57,63 @@ describe("ProjectsListPresenter", () => {
     await flush();
 
     expect(presenter.model.selectedProjectId).toBe("active");
+    expect(presenter.model.projects).toHaveLength(1);
+    expect(presenter.model.projects.map((project) => project.id)).not.toContain("archived");
     expect(presenter.model.projects[0]).toMatchObject({
       id: "active",
       kindLabel: "Trabajo",
       clientLabel: "Acme",
       isSelected: true,
     });
+    expect(presenter.model.canArchiveSelected).toBe(true);
+  });
+
+  it("archives the selected project and drops it from the active list", async () => {
+    const gateway = new FakeProjectsGateway();
+    gateway.projects = [
+      Project.from({
+        id: "keep",
+        kind: "work",
+        outcome: "Keep",
+        nextAction: "Next",
+        focus: "Now",
+        clientId: null,
+        client: null,
+        hourlyRate: null,
+        rateCurrency: "ARS",
+        status: "active",
+        archivedAt: null,
+        createdAt: "2026-06-10T08:00:00.000Z",
+        updatedAt: "2026-06-10T08:00:00.000Z",
+      }),
+      Project.from({
+        id: "drop",
+        kind: "work",
+        outcome: "Drop",
+        nextAction: "Next",
+        focus: "Now",
+        clientId: null,
+        client: null,
+        hourlyRate: null,
+        rateCurrency: "ARS",
+        status: "active",
+        archivedAt: null,
+        createdAt: "2026-06-13T08:00:00.000Z",
+        updatedAt: "2026-06-13T08:00:00.000Z",
+      }),
+    ];
+    const presenter = new ProjectsListPresenter(vi.fn(), coreWith(gateway));
+    presenter.init(undefined);
+    presenter.start();
+    await flush();
+
+    // "drop" sorts first (newer updatedAt) and is the default selection.
+    expect(presenter.model.selectedProjectId).toBe("drop");
+    await presenter.archiveSelected();
+
+    expect(gateway.callsTo("archiveProject")[0].args).toEqual(["drop"]);
+    expect(presenter.model.projects.map((project) => project.id)).toEqual(["keep"]);
+    expect(presenter.model.selectedProjectId).toBe("keep");
   });
 
   it("creates a project and selects it", async () => {

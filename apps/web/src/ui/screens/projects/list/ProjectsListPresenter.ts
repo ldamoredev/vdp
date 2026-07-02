@@ -1,6 +1,7 @@
 import { ChangeFunc, PresenterBase } from "@nbottarini/react-presenter";
 
 import type { Core } from "@/core/Core";
+import { ArchiveProject } from "@/core/app/projects/ArchiveProject";
 import { CreateProject } from "@/core/app/projects/CreateProject";
 import { ListClients } from "@/core/app/projects/ListClients";
 import { ListProjects } from "@/core/app/projects/ListProjects";
@@ -25,6 +26,7 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
   private clients: Client[] = [];
   private selectedProjectId: string | null = null;
   private isLoading = true;
+  private isArchiving = false;
   private error: string | null = null;
   private form: ProjectFormState = {
     kind: "work" as const,
@@ -57,6 +59,24 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
     if (this.selectedProjectId === id) return;
     this.selectedProjectId = id;
     this.refresh();
+  }
+
+  /** Archives the currently selected project; it drops from the active list and the next active one is selected. */
+  async archiveSelected(): Promise<void> {
+    const id = this.selectedProjectId;
+    if (!id || this.isArchiving) return;
+    this.isArchiving = true;
+    this.refresh();
+    try {
+      await this.core.execute(new ArchiveProject(id));
+      this.selectedProjectId = null;
+      await this.load();
+    } catch {
+      this.error = "No pudimos archivar el proyecto.";
+    } finally {
+      this.isArchiving = false;
+      this.refresh();
+    }
   }
 
   openForm(): void {
@@ -155,8 +175,9 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
       ]);
       this.projects = sortProjects(projects);
       this.clients = sortClients(clients);
-      if (!this.selectedProjectId || !this.projects.some((project) => project.id === this.selectedProjectId)) {
-        this.selectedProjectId = this.projects[0]?.id ?? null;
+      const active = this.projects.filter((project) => project.isActive);
+      if (!this.selectedProjectId || !active.some((project) => project.id === this.selectedProjectId)) {
+        this.selectedProjectId = active[0]?.id ?? null;
       }
       this.error = null;
     } catch {
@@ -198,11 +219,13 @@ export class ProjectsListPresenter extends PresenterBase<ProjectsListViewModel> 
 
   private buildModel(): ProjectsListViewModel {
     const activeClients = this.clients.filter((client) => client.isActive);
+    const activeProjects = this.projects.filter((project) => project.isActive);
     return {
       isLoading: this.isLoading,
       error: this.error,
       selectedProjectId: this.selectedProjectId,
-      projects: this.projects.map((project) => ({
+      canArchiveSelected: this.selectedProjectId !== null && !this.isArchiving,
+      projects: activeProjects.map((project) => ({
         id: project.id,
         outcome: project.outcome,
         nextAction: project.nextAction,

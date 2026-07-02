@@ -103,6 +103,7 @@ export const domains: DomainConfig[] = [
     aiDescription: "Sin agente en D3a.",
     navItems: [
       { href: "/projects", label: "Proyectos", icon: LayoutDashboard },
+      { href: "/projects/history", label: "Historial", icon: History },
     ],
   },
   {

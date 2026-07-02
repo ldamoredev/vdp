@@ -18,6 +18,7 @@ import { ListProjects } from "../ListProjects";
 import { ListTimeEntries } from "../ListTimeEntries";
 import { LogTimeEntry } from "../LogTimeEntry";
 import { ProjectsModule } from "../ProjectsModule";
+import { UnarchiveProject } from "../UnarchiveProject";
 import { UpdateClient } from "../UpdateClient";
 import { UpdateProject } from "../UpdateProject";
 import { UpdateTimeEntry } from "../UpdateTimeEntry";
@@ -57,11 +58,14 @@ describe("projects handlers (dispatched through the bus)", () => {
     }));
     await core.execute(new UpdateProject("p1", { focus: "New focus" }));
     const archived = await core.execute(new ArchiveProject("p1"));
+    const unarchived = await core.execute(new UnarchiveProject("p1"));
 
     expect(gateway.callsTo("createProject")[0].args[0]).toMatchObject({ outcome: "Outcome" });
     expect(gateway.callsTo("updateProject")[0].args).toEqual(["p1", { focus: "New focus" }]);
     expect(gateway.callsTo("archiveProject")[0].args).toEqual(["p1"]);
     expect(archived.status).toBe("archived");
+    expect(gateway.callsTo("unarchiveProject")[0].args).toEqual(["p1"]);
+    expect(unarchived.status).toBe("active");
   });
 
   it("routes task assignment through the projects gateway", async () => {

@@ -84,6 +84,11 @@ export class HttpProjectsGateway implements ProjectsGateway {
     return Project.from(body);
   }
 
+  async unarchiveProject(id: string): Promise<Project> {
+    const { body } = await this.http.post<ProjectDto>(`${P}/${id}/unarchive`, {});
+    return Project.from(body);
+  }
+
   async assignTaskToProject(projectId: string, input: AssignTaskToProjectInput): Promise<Task> {
     const { body } = await this.http.post<TaskDto>(`${P}/${projectId}/tasks`, input);
     return Task.from(body);
