@@ -4,6 +4,7 @@ import type {
   Category as CategoryDto,
   ExchangeRate as ExchangeRateDto,
   Investment as InvestmentDto,
+  Loan as LoanDto,
   SavingsGoal as SavingsGoalDto,
   Transaction as TransactionDto,
   WalletTransactionListResponse,
@@ -13,6 +14,7 @@ import type { Account } from "../../domain/wallet/Account";
 import type { Category, CategoryType } from "../../domain/wallet/Category";
 import type { ExchangeRate } from "../../domain/wallet/ExchangeRate";
 import { Investment } from "../../domain/wallet/Investment";
+import { Loan } from "../../domain/wallet/Loan";
 import { SavingsGoal } from "../../domain/wallet/SavingsGoal";
 import { Transaction, type WalletTransactionFilters } from "../../domain/wallet/Transaction";
 import type {
@@ -28,9 +30,11 @@ import type {
   CreateCategoryInput,
   CreateExchangeRateInput,
   CreateInvestmentInput,
+  CreateLoanInput,
   CreateRecurringTransactionInput,
   CreateSavingsGoalInput,
   CreateTransactionInput,
+  RegisterLoanPaymentInput,
   TransactionList,
   UpdateAccountInput,
   UpdateInvestmentInput,
@@ -130,6 +134,32 @@ export class HttpWalletGateway implements WalletGateway {
   async contributeSavings(id: string, input: ContributeSavingsInput): Promise<SavingsGoal> {
     const { body } = await this.http.post<SavingsGoalDto>(`${W}/savings/${id}/contribute`, input);
     return SavingsGoal.from(body);
+  }
+
+  // ─── Loans ───────────────────────────────────────────────
+  async getLoans(): Promise<Loan[]> {
+    const { body } = await this.http.get<{ loans: LoanDto[] }>(`${W}/loans`);
+    return body.loans.map(Loan.from);
+  }
+
+  async createLoan(input: CreateLoanInput): Promise<Loan> {
+    const { body } = await this.http.post<LoanDto>(`${W}/loans`, input);
+    return Loan.from(body);
+  }
+
+  async registerLoanPayment(id: string, input: RegisterLoanPaymentInput): Promise<Loan> {
+    const { body } = await this.http.post<LoanDto>(`${W}/loans/${id}/payments`, input);
+    return Loan.from(body);
+  }
+
+  async markLoanRepaid(id: string): Promise<Loan> {
+    const { body } = await this.http.post<LoanDto>(`${W}/loans/${id}/repay`, {});
+    return Loan.from(body);
+  }
+
+  async forgiveLoan(id: string): Promise<Loan> {
+    const { body } = await this.http.post<LoanDto>(`${W}/loans/${id}/forgive`, {});
+    return Loan.from(body);
   }
 
   // ─── Investments ─────────────────────────────────────────

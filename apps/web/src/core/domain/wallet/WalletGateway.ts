@@ -1,9 +1,10 @@
-import type { Currency } from "@vdp/shared";
+import type { Currency, LoanDirection } from "@vdp/shared";
 
 import type { Account, AccountType } from "./Account";
 import type { Category, CategoryType } from "./Category";
 import type { ExchangeRate, ExchangeRateType } from "./ExchangeRate";
 import type { Investment, InvestmentType } from "./Investment";
+import type { Loan } from "./Loan";
 import type { SavingsGoal } from "./SavingsGoal";
 import type { Transaction, WalletTransactionFilters } from "./Transaction";
 import type { RecurringTransaction } from "./RecurringTransaction";
@@ -49,6 +50,21 @@ export interface ContributeSavingsInput {
   amount: string;
   note?: string;
   date?: string;
+}
+
+export interface CreateLoanInput {
+  direction: LoanDirection;
+  counterparty: string;
+  principal: string;
+  currency: Currency;
+  date: string;
+  dueDate?: string | null;
+  note?: string | null;
+}
+export interface RegisterLoanPaymentInput {
+  amount: string;
+  date: string;
+  note?: string | null;
 }
 
 export interface CreateInvestmentInput {
@@ -116,6 +132,13 @@ export interface WalletGateway {
   createSavingsGoal(input: CreateSavingsGoalInput): Promise<SavingsGoal>;
   updateSavingsGoal(id: string, input: UpdateSavingsGoalInput): Promise<SavingsGoal>;
   contributeSavings(id: string, input: ContributeSavingsInput): Promise<SavingsGoal>;
+
+  // loans
+  getLoans(): Promise<Loan[]>;
+  createLoan(input: CreateLoanInput): Promise<Loan>;
+  registerLoanPayment(id: string, input: RegisterLoanPaymentInput): Promise<Loan>;
+  markLoanRepaid(id: string): Promise<Loan>;
+  forgiveLoan(id: string): Promise<Loan>;
 
   // investments
   getInvestments(): Promise<Investment[]>;

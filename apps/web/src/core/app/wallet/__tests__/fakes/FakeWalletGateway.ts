@@ -3,6 +3,7 @@ import type {
   Category as CategoryDto,
   ExchangeRate as ExchangeRateDto,
   Investment as InvestmentDto,
+  Loan as LoanDto,
   SavingsGoal as SavingsGoalDto,
   Transaction as TransactionDto,
 } from "@vdp/shared";
@@ -11,6 +12,7 @@ import type { Account } from "../../../../domain/wallet/Account";
 import type { Category, CategoryType } from "../../../../domain/wallet/Category";
 import type { ExchangeRate } from "../../../../domain/wallet/ExchangeRate";
 import { Investment } from "../../../../domain/wallet/Investment";
+import { Loan } from "../../../../domain/wallet/Loan";
 import { SavingsGoal } from "../../../../domain/wallet/SavingsGoal";
 import { Transaction, type WalletTransactionFilters } from "../../../../domain/wallet/Transaction";
 import type {
@@ -26,9 +28,11 @@ import type {
   CreateCategoryInput,
   CreateExchangeRateInput,
   CreateInvestmentInput,
+  CreateLoanInput,
   CreateRecurringTransactionInput,
   CreateSavingsGoalInput,
   CreateTransactionInput,
+  RegisterLoanPaymentInput,
   TransactionList,
   UpdateAccountInput,
   UpdateInvestmentInput,
@@ -77,6 +81,23 @@ const savingsDto: SavingsGoalDto = {
   deadline: null,
   isCompleted: false,
   createdAt: "2026-06-14T08:00:00.000Z",
+};
+
+const loanDto: LoanDto = {
+  id: "l1",
+  direction: "lent",
+  counterparty: "Marco",
+  principal: "1000.00",
+  currency: "USD",
+  date: "2026-06-01",
+  dueDate: null,
+  note: null,
+  status: "open",
+  payments: [],
+  outstanding: "1000.00",
+  paidTotal: "0.00",
+  createdAt: "2026-06-01T08:00:00.000Z",
+  updatedAt: "2026-06-01T08:00:00.000Z",
 };
 
 const investmentDto: InvestmentDto = {
@@ -179,6 +200,28 @@ export class FakeWalletGateway implements WalletGateway {
   async contributeSavings(id: string, input: ContributeSavingsInput): Promise<SavingsGoal> {
     this.record("contributeSavings", id, input);
     return SavingsGoal.from(savingsDto);
+  }
+
+  // loans
+  async getLoans(): Promise<Loan[]> {
+    this.record("getLoans");
+    return [Loan.from(loanDto)];
+  }
+  async createLoan(input: CreateLoanInput): Promise<Loan> {
+    this.record("createLoan", input);
+    return Loan.from({ ...loanDto, ...input, id: "created", payments: [], outstanding: input.principal, paidTotal: "0.00" });
+  }
+  async registerLoanPayment(id: string, input: RegisterLoanPaymentInput): Promise<Loan> {
+    this.record("registerLoanPayment", id, input);
+    return Loan.from({ ...loanDto, id, outstanding: "600.00", paidTotal: input.amount });
+  }
+  async markLoanRepaid(id: string): Promise<Loan> {
+    this.record("markLoanRepaid", id);
+    return Loan.from({ ...loanDto, id, status: "repaid" });
+  }
+  async forgiveLoan(id: string): Promise<Loan> {
+    this.record("forgiveLoan", id);
+    return Loan.from({ ...loanDto, id, status: "forgiven", outstanding: "0.00" });
   }
 
   // investments

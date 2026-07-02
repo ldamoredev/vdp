@@ -1,12 +1,14 @@
 import { HttpClient, HttpMethods, HttpRequest, HttpResponse } from "@nbottarini/abstract-http-client";
 import type {
   Investment as InvestmentDto,
+  Loan as LoanDto,
   SavingsGoal as SavingsGoalDto,
   Transaction as TransactionDto,
 } from "@vdp/shared";
 import { describe, expect, it } from "vitest";
 
 import { Investment } from "../../../domain/wallet/Investment";
+import { Loan } from "../../../domain/wallet/Loan";
 import { SavingsGoal } from "../../../domain/wallet/SavingsGoal";
 import { Transaction } from "../../../domain/wallet/Transaction";
 import { HttpWalletGateway } from "../HttpWalletGateway";
@@ -158,6 +160,42 @@ describe("HttpWalletGateway", () => {
     const updated = await gateway.contributeSavings("s1", { amount: "250" });
     expect(updated).toBeInstanceOf(SavingsGoal);
     expect(updated.current).toBe(500);
+  });
+
+  it("maps loans to domain models and unwraps the list envelope", async () => {
+    const loan: LoanDto = {
+      id: "l1",
+      direction: "lent",
+      counterparty: "Marco",
+      principal: "1000.00",
+      currency: "USD",
+      date: "2026-06-01",
+      dueDate: null,
+      note: null,
+      status: "open",
+      payments: [],
+      outstanding: "1000.00",
+      paidTotal: "0.00",
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z",
+    };
+    const http = new FakeHttpClient({
+      "GET /wallet/loans": { loans: [loan] },
+      "POST /wallet/loans/l1/payments": { ...loan, outstanding: "600.00", paidTotal: "400.00" },
+      "POST /wallet/loans/l1/forgive": { ...loan, status: "forgiven", outstanding: "0.00" },
+    });
+    const gateway = new HttpWalletGateway(http);
+
+    const list = await gateway.getLoans();
+    expect(list[0]).toBeInstanceOf(Loan);
+    expect(list[0].outstanding).toBe("1000.00");
+
+    const paid = await gateway.registerLoanPayment("l1", { amount: "400.00", date: "2026-06-10" });
+    expect(paid.outstanding).toBe("600.00");
+
+    const forgiven = await gateway.forgiveLoan("l1");
+    expect(forgiven.status).toBe("forgiven");
+    expect(http.calls.at(-1)).toMatchObject({ method: HttpMethods.POST, url: "/wallet/loans/l1/forgive", body: {} });
   });
 
   it("maps investments to domain models", async () => {

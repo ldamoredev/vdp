@@ -7,6 +7,11 @@ import { CreateAccount, CreateAccountHandler } from "./CreateAccount";
 import { CreateCategory, CreateCategoryHandler } from "./CreateCategory";
 import { CreateExchangeRate, CreateExchangeRateHandler } from "./CreateExchangeRate";
 import { CreateInvestment, CreateInvestmentHandler } from "./CreateInvestment";
+import { CreateLoan, CreateLoanHandler } from "./CreateLoan";
+import { ForgiveLoan, ForgiveLoanHandler } from "./ForgiveLoan";
+import { GetLoans, GetLoansHandler } from "./GetLoans";
+import { MarkLoanRepaid, MarkLoanRepaidHandler } from "./MarkLoanRepaid";
+import { RegisterLoanPayment, RegisterLoanPaymentHandler } from "./RegisterLoanPayment";
 import { CreateSavingsGoal, CreateSavingsGoalHandler } from "./CreateSavingsGoal";
 import { CreateTransaction, CreateTransactionHandler } from "./CreateTransaction";
 import { DeleteAccount, DeleteAccountHandler } from "./DeleteAccount";
@@ -64,6 +69,13 @@ export class WalletModule implements CoreModule {
     core.bus.registerHandler(CreateSavingsGoal, () => new CreateSavingsGoalHandler(gateway));
     core.bus.registerHandler(UpdateSavingsGoal, () => new UpdateSavingsGoalHandler(gateway));
     core.bus.registerHandler(ContributeSavings, () => new ContributeSavingsHandler(gateway));
+
+    // loans
+    core.bus.registerHandler(GetLoans, () => new GetLoansHandler(gateway));
+    core.bus.registerHandler(CreateLoan, () => new CreateLoanHandler(gateway));
+    core.bus.registerHandler(RegisterLoanPayment, () => new RegisterLoanPaymentHandler(gateway));
+    core.bus.registerHandler(MarkLoanRepaid, () => new MarkLoanRepaidHandler(gateway));
+    core.bus.registerHandler(ForgiveLoan, () => new ForgiveLoanHandler(gateway));
 
     // investments
     core.bus.registerHandler(GetInvestments, () => new GetInvestmentsHandler(gateway));

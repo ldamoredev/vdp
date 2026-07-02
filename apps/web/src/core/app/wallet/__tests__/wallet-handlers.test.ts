@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Core } from "../../../Core";
 import { Investment } from "../../../domain/wallet/Investment";
+import { Loan } from "../../../domain/wallet/Loan";
 import { SavingsGoal } from "../../../domain/wallet/SavingsGoal";
 import { Transaction } from "../../../domain/wallet/Transaction";
 import { ContributeSavings } from "../ContributeSavings";
@@ -9,6 +10,11 @@ import { CreateAccount } from "../CreateAccount";
 import { CreateCategory } from "../CreateCategory";
 import { CreateExchangeRate } from "../CreateExchangeRate";
 import { CreateInvestment } from "../CreateInvestment";
+import { CreateLoan } from "../CreateLoan";
+import { ForgiveLoan } from "../ForgiveLoan";
+import { GetLoans } from "../GetLoans";
+import { MarkLoanRepaid } from "../MarkLoanRepaid";
+import { RegisterLoanPayment } from "../RegisterLoanPayment";
 import { CreateSavingsGoal } from "../CreateSavingsGoal";
 import { CreateTransaction } from "../CreateTransaction";
 import { DeleteAccount } from "../DeleteAccount";
@@ -112,6 +118,35 @@ describe("wallet handlers (dispatched through the bus)", () => {
       expect(contributed).toBeInstanceOf(SavingsGoal);
       expect(gateway.callsTo("updateSavingsGoal")[0].args).toEqual(["s1", { name: "Viaje 2" }]);
       expect(gateway.callsTo("contributeSavings")[0].args).toEqual(["s1", { amount: "250" }]);
+    });
+  });
+
+  describe("loans", () => {
+    it("Get / Create / RegisterPayment / MarkRepaid / Forgive forward args and map to models", async () => {
+      const gateway = new FakeWalletGateway();
+      const core = coreWith(gateway);
+
+      const list = await core.execute(new GetLoans());
+      const created = await core.execute(
+        new CreateLoan({
+          direction: "lent",
+          counterparty: "Marco",
+          principal: "1000.00",
+          currency: "USD",
+          date: "2026-06-01",
+        }),
+      );
+      const paid = await core.execute(new RegisterLoanPayment("l1", { amount: "400.00", date: "2026-06-10" }));
+      const repaid = await core.execute(new MarkLoanRepaid("l1"));
+      const forgiven = await core.execute(new ForgiveLoan("l1"));
+
+      expect(list[0]).toBeInstanceOf(Loan);
+      expect(created).toBeInstanceOf(Loan);
+      expect(gateway.callsTo("createLoan")[0].args[0]).toMatchObject({ counterparty: "Marco" });
+      expect(gateway.callsTo("registerLoanPayment")[0].args).toEqual(["l1", { amount: "400.00", date: "2026-06-10" }]);
+      expect(paid.outstanding).toBe("600.00");
+      expect(repaid.status).toBe("repaid");
+      expect(forgiven.status).toBe("forgiven");
     });
   });
 
