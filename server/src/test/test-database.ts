@@ -319,6 +319,31 @@ CREATE TABLE IF NOT EXISTS wallet.savings_contributions (
     note VARCHAR(255)
 );
 
+CREATE TABLE IF NOT EXISTS wallet.loans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    direction VARCHAR(10) NOT NULL,
+    counterparty VARCHAR(120) NOT NULL,
+    principal NUMERIC(15, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
+    date DATE NOT NULL,
+    due_date DATE,
+    note VARCHAR(255),
+    status VARCHAR(10) NOT NULL DEFAULT 'open',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS wallet.loan_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    loan_id UUID NOT NULL REFERENCES wallet.loans(id) ON DELETE CASCADE,
+    amount NUMERIC(15, 2) NOT NULL,
+    date DATE NOT NULL,
+    note VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS wallet.investments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -477,6 +502,8 @@ CREATE INDEX IF NOT EXISTS tx_category_date_idx ON wallet.transactions(category_
 CREATE INDEX IF NOT EXISTS tx_transfer_to_account_idx ON wallet.transactions(transfer_to_account_id);
 CREATE INDEX IF NOT EXISTS sc_goal_id_idx ON wallet.savings_contributions(goal_id);
 CREATE INDEX IF NOT EXISTS sc_transaction_id_idx ON wallet.savings_contributions(transaction_id);
+CREATE INDEX IF NOT EXISTS loans_owner_user_idx ON wallet.loans(owner_user_id);
+CREATE INDEX IF NOT EXISTS loan_payments_loan_id_idx ON wallet.loan_payments(loan_id);
 CREATE INDEX IF NOT EXISTS investments_owner_user_idx ON wallet.investments(owner_user_id);
 CREATE INDEX IF NOT EXISTS investments_account_id_idx ON wallet.investments(account_id);
 CREATE UNIQUE INDEX IF NOT EXISTS exchange_rate_unique_idx
@@ -591,6 +618,8 @@ export class TestDatabase {
                     health.mood_check_ins,
                     wallet.wallet_insights,
                     wallet.recurring_transactions,
+                    wallet.loan_payments,
+                    wallet.loans,
                     wallet.savings_contributions,
                     wallet.transactions,
                     wallet.investments,

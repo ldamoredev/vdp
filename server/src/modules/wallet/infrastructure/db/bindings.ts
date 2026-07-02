@@ -8,6 +8,7 @@ import { InvestmentRepository } from '../../domain/InvestmentRepository';
 import { ExchangeRateRepository } from '../../domain/ExchangeRateRepository';
 import { WalletInsightRepository } from '../../domain/WalletInsightRepository';
 import { RecurringTransactionRepository } from '../../domain/RecurringTransactionRepository';
+import { LoanRepository } from '../../domain/LoanRepository';
 import { DrizzleAccountRepository } from './DrizzleAccountRepository';
 import { DrizzleTransactionRepository } from './DrizzleTransactionRepository';
 import { DrizzleCategoryRepository } from './DrizzleCategoryRepository';
@@ -16,6 +17,7 @@ import { DrizzleInvestmentRepository } from './DrizzleInvestmentRepository';
 import { DrizzleExchangeRateRepository } from './DrizzleExchangeRateRepository';
 import { DrizzleWalletInsightRepository } from './DrizzleWalletInsightRepository';
 import { DrizzleRecurringTransactionRepository } from './DrizzleRecurringTransactionRepository';
+import { DrizzleLoanRepository } from './DrizzleLoanRepository';
 
 export function registerWalletRepositories(registry: RepositoryRegistry, db: Database): void {
     registry.register(AccountRepository, () => new DrizzleAccountRepository(db));
@@ -26,4 +28,5 @@ export function registerWalletRepositories(registry: RepositoryRegistry, db: Dat
     registry.register(ExchangeRateRepository, () => new DrizzleExchangeRateRepository(db));
     registry.register(WalletInsightRepository, () => new DrizzleWalletInsightRepository(db));
     registry.register(RecurringTransactionRepository, () => new DrizzleRecurringTransactionRepository(db));
+    registry.register(LoanRepository, () => new DrizzleLoanRepository(db));
 }

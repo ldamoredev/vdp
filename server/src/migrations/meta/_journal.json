@@ -155,6 +155,13 @@
       "when": 1782918705969,
       "tag": "0021_massive_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783014201545,
+      "tag": "0022_vengeful_talisman",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { DrizzleSavingsGoalRepository } from '../../infrastructure/db/DrizzleSav
 import { DrizzleInvestmentRepository } from '../../infrastructure/db/DrizzleInvestmentRepository';
 import { DrizzleExchangeRateRepository } from '../../infrastructure/db/DrizzleExchangeRateRepository';
 import { DrizzleWalletInsightRepository } from '../../infrastructure/db/DrizzleWalletInsightRepository';
+import { DrizzleLoanRepository } from '../../infrastructure/db/DrizzleLoanRepository';
 const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 import { testDb } from '../../../../test/test-database';
 
@@ -15,6 +16,7 @@ const transactionRepo = new DrizzleTransactionRepository(testDb as never);
 const savingsGoalRepo = new DrizzleSavingsGoalRepository(testDb as never);
 const investmentRepo = new DrizzleInvestmentRepository(testDb as never);
 const exchangeRateRepo = new DrizzleExchangeRateRepository(testDb as never);
+const loanRepo = new DrizzleLoanRepository(testDb as never);
 
 beforeEach(async () => {
     await testDb.truncate();
@@ -318,6 +320,70 @@ describe('Drizzle wallet repositories', () => {
 
             const mepRates = (await exchangeRateRepo.findAll()).filter((rate) => rate.type === 'mep');
             expect(mepRates).toHaveLength(2);
+        });
+    });
+
+    describe('loans', () => {
+        it('creates a loan, appends payments, and round-trips outstanding + status', async () => {
+            const created = await loanRepo.createLoan(userId, {
+                direction: 'lent',
+                counterparty: 'Marco',
+                principal: '1000.00',
+                currency: 'USD',
+                date: '2026-06-01',
+                dueDate: '2026-12-31',
+                note: 'prestamo',
+            });
+
+            const listed = await loanRepo.listLoans(userId);
+            expect(listed).toHaveLength(1);
+            expect(listed[0].outstanding()).toBe('1000.00');
+
+            const loan = (await loanRepo.getLoan(userId, created.id))!;
+            loan.registerPayment({ amount: '400.00', date: '2026-06-10', note: 'primer pago' });
+            await loanRepo.save(userId, loan);
+
+            const reloaded = (await loanRepo.getLoan(userId, created.id))!;
+            expect(reloaded.payments).toHaveLength(1);
+            expect(reloaded.payments[0].amount).toBe('400.00');
+            expect(reloaded.outstanding()).toBe('600.00');
+            expect(reloaded.status).toBe('open');
+            expect(reloaded.dueDate).toBe('2026-12-31');
+        });
+
+        it('marks a loan repaid once payments cover the principal and does not double-insert payments', async () => {
+            const created = await loanRepo.createLoan(userId, {
+                direction: 'borrowed',
+                counterparty: 'Ana',
+                principal: '500.00',
+                currency: 'ARS',
+                date: '2026-06-01',
+            });
+
+            const loan = (await loanRepo.getLoan(userId, created.id))!;
+            loan.registerPayment({ amount: '500.00', date: '2026-06-05' });
+            await loanRepo.save(userId, loan);
+            // Saving again must not duplicate the already-persisted payment (append-only).
+            await loanRepo.save(userId, loan);
+
+            const reloaded = (await loanRepo.getLoan(userId, created.id))!;
+            expect(reloaded.payments).toHaveLength(1);
+            expect(reloaded.status).toBe('repaid');
+            expect(reloaded.outstanding()).toBe('0.00');
+        });
+
+        it('does not expose loans across users', async () => {
+            const created = await loanRepo.createLoan(userId, {
+                direction: 'lent',
+                counterparty: 'Marco',
+                principal: '1000.00',
+                currency: 'USD',
+                date: '2026-06-01',
+            });
+
+            const otherUserId = '00000000-0000-0000-0000-0000000000ff';
+            await expect(loanRepo.getLoan(otherUserId, created.id)).resolves.toBeNull();
+            await expect(loanRepo.listLoans(otherUserId)).resolves.toHaveLength(0);
         });
     });
 });

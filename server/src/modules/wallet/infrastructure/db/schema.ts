@@ -126,6 +126,43 @@ export const savingsContributions = walletSchema.table(
   ]
 );
 
+// Loans (R9): money lent to / borrowed from a counterparty, with partial repayments
+export const loans = walletSchema.table(
+  "loans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    direction: varchar("direction", { length: 10 }).notNull(),
+    counterparty: varchar("counterparty", { length: 120 }).notNull(),
+    principal: decimal("principal", { precision: 15, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    date: date("date").notNull(),
+    dueDate: date("due_date"),
+    note: varchar("note", { length: 255 }),
+    status: varchar("status", { length: 10 }).notNull().default("open"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("loans_owner_user_idx").on(table.ownerUserId)]
+);
+
+// Loan payments: append-only partial repayments against a loan
+export const loanPayments = walletSchema.table(
+  "loan_payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    loanId: uuid("loan_id")
+      .notNull()
+      .references(() => loans.id, { onDelete: "cascade" }),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+    date: date("date").notNull(),
+    note: varchar("note", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("loan_payments_loan_id_idx").on(table.loanId)]
+);
+
 // Investments
 export const investments = walletSchema.table("investments", {
   id: uuid("id").primaryKey().defaultRandom(),
