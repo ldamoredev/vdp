@@ -60,6 +60,21 @@ export interface ShellNavState {
 
 export const domains: DomainConfig[] = [
   {
+    key: "inbox",
+    label: "Bandeja",
+    subtitle: "Inbox",
+    icon: Inbox,
+    iconLetter: "B",
+    agentEndpoint: null,
+    chatPlaceholder: "Capturá algo...",
+    chatWelcome: "La bandeja todavía no tiene agente propio",
+    chatDescription: "Capturá cualquier cosa y triala a un módulo después.",
+    aiDescription: "Sin agente en D5a.",
+    navItems: [
+      { href: "/inbox", label: "Bandeja", icon: LayoutDashboard },
+    ],
+  },
+  {
     key: "tasks",
     label: "Tasks",
     subtitle: "Tareas",
@@ -73,6 +88,21 @@ export const domains: DomainConfig[] = [
     navItems: [
       { href: "/tasks", label: "Hoy", icon: LayoutDashboard },
       { href: "/tasks/history", label: "Historial", icon: History },
+    ],
+  },
+  {
+    key: "projects",
+    label: "Projects",
+    subtitle: "Dirección",
+    icon: FolderKanban,
+    iconLetter: "P",
+    agentEndpoint: null,
+    chatPlaceholder: "Planificá un proyecto...",
+    chatWelcome: "Projects todavía no tiene agente propio",
+    chatDescription: "El board usa tus tasks existentes como fuente de verdad.",
+    aiDescription: "Sin agente en D3a.",
+    navItems: [
+      { href: "/projects", label: "Proyectos", icon: LayoutDashboard },
     ],
   },
   {
@@ -116,21 +146,6 @@ export const domains: DomainConfig[] = [
     ],
   },
   {
-    key: "projects",
-    label: "Projects",
-    subtitle: "Dirección",
-    icon: FolderKanban,
-    iconLetter: "P",
-    agentEndpoint: null,
-    chatPlaceholder: "Planificá un proyecto...",
-    chatWelcome: "Projects todavía no tiene agente propio",
-    chatDescription: "El board usa tus tasks existentes como fuente de verdad.",
-    aiDescription: "Sin agente en D3a.",
-    navItems: [
-      { href: "/projects", label: "Proyectos", icon: LayoutDashboard },
-    ],
-  },
-  {
     key: "objectives",
     label: "Metas",
     subtitle: "Objetivos",
@@ -143,21 +158,6 @@ export const domains: DomainConfig[] = [
     aiDescription: "Sin agente en D4a.",
     navItems: [
       { href: "/objectives", label: "Metas", icon: LayoutDashboard },
-    ],
-  },
-  {
-    key: "inbox",
-    label: "Bandeja",
-    subtitle: "Inbox",
-    icon: Inbox,
-    iconLetter: "B",
-    agentEndpoint: null,
-    chatPlaceholder: "Capturá algo...",
-    chatWelcome: "La bandeja todavía no tiene agente propio",
-    chatDescription: "Capturá cualquier cosa y triala a un módulo después.",
-    aiDescription: "Sin agente en D5a.",
-    navItems: [
-      { href: "/inbox", label: "Bandeja", icon: LayoutDashboard },
     ],
   },
   {

@@ -28,6 +28,19 @@ describe("shell navigation state", () => {
     });
   });
 
+  it("orders enabled domains for the shell: inbox, tasks, projects, wallet, health, objectives", () => {
+    const enabledOrder = domains.filter((domain) => !domain.disabled).map((domain) => domain.key);
+    expect(enabledOrder).toEqual(["inbox", "tasks", "projects", "wallet", "health", "objectives"]);
+  });
+
+  it("keeps the disabled demo domains last", () => {
+    const disabledOrder = domains.filter((domain) => domain.disabled).map((domain) => domain.key);
+    expect(disabledOrder).toEqual(["people", "work", "study"]);
+    const firstDisabledIndex = domains.findIndex((domain) => domain.disabled);
+    const lastEnabledIndex = domains.map((domain) => domain.disabled).lastIndexOf(false);
+    expect(firstDisabledIndex).toBeGreaterThan(lastEnabledIndex);
+  });
+
   it("keeps medical records as a health section, not a domain", () => {
     expect(domains.map((domain) => domain.key)).not.toContain("medical");
     expect(getShellNavState("/health/medical")).toEqual({
