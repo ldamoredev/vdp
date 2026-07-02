@@ -28,31 +28,13 @@ brief as concrete nudges. Medical stays off the LLM by design.
 All six product directions scoped in mid-2026 (D1–D6: cross-domain density, the Today
 command center, Work/Projects, Life Goals, Universal Inbox, the proactive agent) have
 shipped; the codebase and commit history are the record. One item from that era stays
-deliberately parked (R4, at the bottom). The active backlog is R8–R10 below, in
+deliberately parked (R4, at the bottom). The active backlog is R9–R10 below, in
 priority order — one per session, per the working agreement in `AGENTS.md`.
 
 ## Next Up (scoped July 2026)
 
-Ordered cheapest-first so the quick wins land before the big builds: one medium
-session that extends an existing surface (R8), then two full feature builds (R9, R10).
-
-### R8. Hours report → PDF export
-
-The hours report exists (`GetProjectHoursReportQuery` backend,
-`HoursReportSection` + presenter web-side, filtered by client/project/week). Add an
-export of the currently-viewed report.
-
-- Recommended approach: a print-friendly rendering + browser print-to-PDF — a
-  dedicated `@media print` stylesheet (or a clean `/projects/report/print` route)
-  with client, project, period, entries table, total hours, and expected income per
-  currency. Zero new dependencies, matches the "no new abstractions" rule.
-- Fallback if the print output isn't controllable enough: a small client-side PDF
-  lib (e.g. `pdf-lib`) generating the same content. Decide at session start; do NOT
-  reach for server-side/headless-browser PDF generation.
-- The export honors whatever filters the presenter has active ("segun el proyecto
-  que estoy parado") — it exports the current view, not a global dump.
-- Verification: typecheck + presenter test for the export view model + manual
-  print-to-PDF smoke in the browser.
+Two full feature builds left: a new Wallet sub-section (R9) and the Superadmin
+layer (R10).
 
 ### R9. Wallet: Préstamos (loans) section
 
