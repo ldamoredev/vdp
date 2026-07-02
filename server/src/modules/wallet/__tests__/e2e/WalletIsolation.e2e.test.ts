@@ -207,4 +207,47 @@ describe('Wallet API — Cross-user isolation', () => {
             message: 'Transaction not found',
         });
     });
+
+    it('does not read, pay, or forgive another user loan', async () => {
+        const created = await testApp.app.inject({
+            method: 'POST',
+            url: '/api/v1/wallet/loans',
+            headers: asUser(SECONDARY_TEST_USER.id),
+            payload: {
+                direction: 'lent',
+                counterparty: 'Marco',
+                principal: '1000.00',
+                currency: 'USD',
+                date: '2026-06-01',
+            },
+        });
+        const loanId = created.json().id;
+
+        const read = await testApp.app.inject({
+            method: 'GET',
+            url: `/api/v1/wallet/loans/${loanId}`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const pay = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/wallet/loans/${loanId}/payments`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+            payload: { amount: '100.00', date: '2026-06-10' },
+        });
+        const forgive = await testApp.app.inject({
+            method: 'POST',
+            url: `/api/v1/wallet/loans/${loanId}/forgive`,
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+        const list = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/v1/wallet/loans',
+            headers: asUser(PRIMARY_TEST_USER.id),
+        });
+
+        expect(read.statusCode).toBe(404);
+        expect(pay.statusCode).toBe(404);
+        expect(forgive.statusCode).toBe(404);
+        expect(list.json().loans).toHaveLength(0);
+    });
 });

@@ -39,6 +39,13 @@ import { AccountRepository } from './domain/AccountRepository';
 import { TransactionRepository } from './domain/TransactionRepository';
 import { CategoryRepository } from './domain/CategoryRepository';
 import { SavingsGoalRepository } from './domain/SavingsGoalRepository';
+import { LoanRepository } from './domain/LoanRepository';
+import { CreateLoanCommand, CreateLoanCommandHandler } from './app/CreateLoanCommand';
+import { ListLoansQuery, ListLoansQueryHandler } from './app/ListLoansQuery';
+import { GetLoanQuery, GetLoanQueryHandler } from './app/GetLoanQuery';
+import { RegisterLoanPaymentCommand, RegisterLoanPaymentCommandHandler } from './app/RegisterLoanPaymentCommand';
+import { MarkLoanRepaidCommand, MarkLoanRepaidCommandHandler } from './app/MarkLoanRepaidCommand';
+import { ForgiveLoanCommand, ForgiveLoanCommandHandler } from './app/ForgiveLoanCommand';
 import { InvestmentRepository } from './domain/InvestmentRepository';
 import { ExchangeRateRepository } from './domain/ExchangeRateRepository';
 import { RecurringTransactionRepository } from './domain/RecurringTransactionRepository';
@@ -143,6 +150,24 @@ export class WalletModuleRuntime {
         );
         this.deps.bus.registerHandler(ContributeSavingsCommand, () =>
             new ContributeSavingsCommandHandler(this.savingsGoalRepository(), this.transactionRepository()),
+        );
+        this.deps.bus.registerHandler(ListLoansQuery, () =>
+            new ListLoansQueryHandler(this.loanRepository()),
+        );
+        this.deps.bus.registerHandler(GetLoanQuery, () =>
+            new GetLoanQueryHandler(this.loanRepository()),
+        );
+        this.deps.bus.registerHandler(CreateLoanCommand, () =>
+            new CreateLoanCommandHandler(this.loanRepository()),
+        );
+        this.deps.bus.registerHandler(RegisterLoanPaymentCommand, () =>
+            new RegisterLoanPaymentCommandHandler(this.loanRepository()),
+        );
+        this.deps.bus.registerHandler(MarkLoanRepaidCommand, () =>
+            new MarkLoanRepaidCommandHandler(this.loanRepository()),
+        );
+        this.deps.bus.registerHandler(ForgiveLoanCommand, () =>
+            new ForgiveLoanCommandHandler(this.loanRepository()),
         );
         this.deps.bus.registerHandler(GetInvestmentsQuery, () =>
             new GetInvestmentsQueryHandler(this.investmentRepository()),
@@ -271,6 +296,10 @@ export class WalletModuleRuntime {
 
     private savingsGoalRepository(): SavingsGoalRepository {
         return this.deps.repositories.get(SavingsGoalRepository);
+    }
+
+    private loanRepository(): LoanRepository {
+        return this.deps.repositories.get(LoanRepository);
     }
 
     private investmentRepository(): InvestmentRepository {

@@ -67,6 +67,35 @@ export interface SavingsGoal {
   updatedAt?: string;
 }
 
+export type LoanDirection = "lent" | "borrowed";
+export type LoanStatus = "open" | "repaid" | "forgiven";
+
+export interface LoanPayment {
+  id: string;
+  amount: string;
+  date: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface Loan {
+  id: string;
+  direction: LoanDirection;
+  counterparty: string;
+  principal: string;
+  currency: Currency;
+  date: string;
+  dueDate: string | null;
+  note: string | null;
+  status: LoanStatus;
+  payments: LoanPayment[];
+  // Server-computed enrichments (per-currency; never summed across currencies).
+  outstanding: string;
+  paidTotal: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Investment {
   id: string;
   name: string;

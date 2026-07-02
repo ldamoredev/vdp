@@ -230,6 +230,93 @@ describe('Wallet API — E2E', () => {
         });
     });
 
+    describe('loans', () => {
+        async function createLoan(data: Record<string, unknown> = {}) {
+            return testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/wallet/loans',
+                payload: {
+                    direction: 'lent',
+                    counterparty: 'Marco',
+                    principal: '1000.00',
+                    currency: 'USD',
+                    date: '2026-06-01',
+                    dueDate: '2026-12-31',
+                    ...data,
+                },
+            });
+        }
+
+        it('creates a loan, lists it, and registers a partial payment', async () => {
+            const created = await createLoan();
+            expect(created.statusCode).toBe(201);
+            expect(created.json()).toMatchObject({
+                direction: 'lent',
+                status: 'open',
+                outstanding: '1000.00',
+                paidTotal: '0.00',
+            });
+            const loanId = created.json().id;
+
+            const list = await testApp.app.inject({ method: 'GET', url: '/api/v1/wallet/loans' });
+            expect(list.json().loans).toHaveLength(1);
+
+            const paid = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/wallet/loans/${loanId}/payments`,
+                payload: { amount: '400.00', date: '2026-06-10', note: 'primer pago' },
+            });
+            expect(paid.statusCode).toBe(200);
+            expect(paid.json()).toMatchObject({ outstanding: '600.00', status: 'open' });
+            expect(paid.json().payments).toHaveLength(1);
+        });
+
+        it('auto-marks a loan repaid once payments cover the principal', async () => {
+            const loanId = (await createLoan({ principal: '500.00' })).json().id;
+
+            const paid = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/wallet/loans/${loanId}/payments`,
+                payload: { amount: '500.00', date: '2026-06-05' },
+            });
+
+            expect(paid.json()).toMatchObject({ status: 'repaid', outstanding: '0.00' });
+        });
+
+        it('forgives an open loan', async () => {
+            const loanId = (await createLoan()).json().id;
+
+            const forgiven = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/wallet/loans/${loanId}/forgive`,
+            });
+
+            expect(forgiven.json()).toMatchObject({ status: 'forgiven', outstanding: '0.00' });
+        });
+
+        it('rejects a payment on a repaid loan with 422', async () => {
+            const loanId = (await createLoan()).json().id;
+            await testApp.app.inject({ method: 'POST', url: `/api/v1/wallet/loans/${loanId}/repay` });
+
+            const blocked = await testApp.app.inject({
+                method: 'POST',
+                url: `/api/v1/wallet/loans/${loanId}/payments`,
+                payload: { amount: '100.00', date: '2026-06-10' },
+            });
+
+            expect(blocked.statusCode).toBe(422);
+            expect(blocked.json()).toMatchObject({ error: 'DOMAIN_ERROR' });
+        });
+
+        it('returns 404 for a missing loan', async () => {
+            const missing = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/wallet/loans/00000000-0000-0000-0000-0000000000aa',
+            });
+            expect(missing.statusCode).toBe(404);
+        });
+    });
+
     describe('investments', () => {
         it('creates, updates, and lists investments', async () => {
             const { body: account } = await createAccount({ currency: 'USD', type: 'investment' });

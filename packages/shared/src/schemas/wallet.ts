@@ -87,6 +87,24 @@ export const createSavingsGoalSchema = z.object({
 
 export const updateSavingsGoalSchema = createSavingsGoalSchema.partial();
 
+const loanDirectionEnum = z.enum(["lent", "borrowed"]);
+
+export const createLoanSchema = z.object({
+  direction: loanDirectionEnum,
+  counterparty: z.string().min(1).max(120),
+  principal: z.string().refine((v) => parseFloat(v) > 0, "Principal must be positive"),
+  currency: currencyEnum,
+  date: dateStringSchema,
+  dueDate: nullableDateStringSchema,
+  note: z.string().max(255).nullable().optional(),
+});
+
+export const registerLoanPaymentSchema = z.object({
+  amount: z.string().refine((v) => parseFloat(v) > 0, "Amount must be positive"),
+  date: dateStringSchema,
+  note: z.string().max(255).nullable().optional(),
+});
+
 export const createContributionSchema = z.object({
   goalId: uuidSchema,
   transactionId: uuidSchema.nullable().optional(),

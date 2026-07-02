@@ -11,6 +11,8 @@ import {
     createInvestmentSchema,
     updateInvestmentSchema,
     createRecurringTransactionSchema,
+    createLoanSchema,
+    registerLoanPaymentSchema,
 } from '@vdp/shared';
 import { CQBus } from '@nbottarini/cqbus';
 import { z } from 'zod';
@@ -50,6 +52,13 @@ import { UpdateAccountCommand } from '../../app/UpdateAccountCommand';
 import { UpdateInvestmentCommand } from '../../app/UpdateInvestmentCommand';
 import { UpdateSavingsGoalCommand } from '../../app/UpdateSavingsGoalCommand';
 import { UpdateTransactionCommand } from '../../app/UpdateTransactionCommand';
+import { ListLoansQuery } from '../../app/ListLoansQuery';
+import { GetLoanQuery } from '../../app/GetLoanQuery';
+import { CreateLoanCommand } from '../../app/CreateLoanCommand';
+import { RegisterLoanPaymentCommand } from '../../app/RegisterLoanPaymentCommand';
+import { MarkLoanRepaidCommand } from '../../app/MarkLoanRepaidCommand';
+import { ForgiveLoanCommand } from '../../app/ForgiveLoanCommand';
+import { toLoanResponse } from './loan-response';
 
 const idParamsSchema = z.object({ id: z.string().uuid() });
 const categoryQuerySchema = z.object({ type: z.string().optional() });
@@ -83,6 +92,8 @@ type ContributionBody = z.infer<typeof contributionBodySchema>;
 type CreateInvestmentBody = z.input<typeof createInvestmentSchema>;
 type UpdateInvestmentBody = z.input<typeof updateInvestmentSchema>;
 type CreateExchangeRateBody = z.infer<typeof createExchangeRateBodySchema>;
+type CreateLoanBody = z.input<typeof createLoanSchema>;
+type RegisterLoanPaymentBody = z.input<typeof registerLoanPaymentSchema>;
 
 export class WalletController extends HttpController {
     readonly prefix = '/api/v1/wallet';
@@ -97,6 +108,7 @@ export class WalletController extends HttpController {
         this.registerTransactionRoutes(routes);
         this.registerStatsRoutes(routes);
         this.registerSavingsRoutes(routes);
+        this.registerLoanRoutes(routes);
         this.registerInvestmentRoutes(routes);
         this.registerExchangeRateRoutes(routes);
         this.registerRecurringRoutes(routes);
@@ -138,6 +150,16 @@ export class WalletController extends HttpController {
             .post('/savings', { body: createSavingsGoalSchema }, this.createSavingsGoal)
             .put('/savings/:id', { params: idParamsSchema, body: updateSavingsGoalSchema }, this.updateSavingsGoal)
             .post('/savings/:id/contribute', { params: idParamsSchema, body: contributionBodySchema }, this.contributeSavings);
+    }
+
+    private registerLoanRoutes(routes: RouteRegister): void {
+        routes
+            .get('/loans', this.listLoans)
+            .post('/loans', { body: createLoanSchema }, this.createLoan)
+            .get('/loans/:id', { params: idParamsSchema }, this.getLoan)
+            .post('/loans/:id/payments', { params: idParamsSchema, body: registerLoanPaymentSchema }, this.registerLoanPayment)
+            .post('/loans/:id/repay', { params: idParamsSchema }, this.markLoanRepaid)
+            .post('/loans/:id/forgive', { params: idParamsSchema }, this.forgiveLoan);
     }
 
     private registerInvestmentRoutes(routes: RouteRegister): void {
@@ -412,6 +434,89 @@ export class WalletController extends HttpController {
             'Savings goal not found',
         );
         return reply.send(updated);
+    };
+
+    // ─── Loans ────────────────────────────────────────────
+
+    private readonly listLoans = async (request: FastifyRequest, reply: FastifyReply) => {
+        const loans = await this.bus.execute(new ListLoansQuery(), executionContextFromAuth(request.auth));
+        return reply.send({ loans: loans.map(toLoanResponse) });
+    };
+
+    private readonly createLoan: RouteContextHandler<undefined, undefined, CreateLoanBody> = async ({
+        request,
+        body,
+        reply,
+    }) => {
+        const loan = await this.bus.execute(
+            new CreateLoanCommand({
+                direction: body!.direction,
+                counterparty: body!.counterparty,
+                principal: body!.principal,
+                currency: body!.currency,
+                date: body!.date,
+                dueDate: body!.dueDate ?? null,
+                note: body!.note ?? null,
+            }),
+            executionContextFromAuth(request.auth),
+        );
+        return sendCreated(reply, toLoanResponse(loan));
+    };
+
+    private readonly getLoan: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const loan = assertFound(
+            await this.bus.execute(new GetLoanQuery(params!.id), executionContextFromAuth(request.auth)),
+            'Loan not found',
+        );
+        return reply.send(toLoanResponse(loan));
+    };
+
+    private readonly registerLoanPayment: RouteContextHandler<IdParams, undefined, RegisterLoanPaymentBody> = async ({
+        request,
+        params,
+        body,
+        reply,
+    }) => {
+        const loan = assertFound(
+            await this.bus.execute(
+                new RegisterLoanPaymentCommand(params!.id, {
+                    amount: body!.amount,
+                    date: body!.date,
+                    note: body!.note ?? null,
+                }),
+                executionContextFromAuth(request.auth),
+            ),
+            'Loan not found',
+        );
+        return reply.send(toLoanResponse(loan));
+    };
+
+    private readonly markLoanRepaid: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const loan = assertFound(
+            await this.bus.execute(new MarkLoanRepaidCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Loan not found',
+        );
+        return reply.send(toLoanResponse(loan));
+    };
+
+    private readonly forgiveLoan: RouteContextHandler<IdParams, undefined, undefined> = async ({
+        request,
+        params,
+        reply,
+    }) => {
+        const loan = assertFound(
+            await this.bus.execute(new ForgiveLoanCommand(params!.id), executionContextFromAuth(request.auth)),
+            'Loan not found',
+        );
+        return reply.send(toLoanResponse(loan));
     };
 
     // ─── Investments ──────────────────────────────────────
