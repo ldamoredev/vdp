@@ -328,6 +328,7 @@ No agent yet — direction/board layer, no chat surface.
 | `POST` | `/api/v1/projects` | Create project |
 | `PUT` | `/api/v1/projects/:id` | Update project |
 | `POST` | `/api/v1/projects/:id/archive` | Archive project |
+| `POST` | `/api/v1/projects/:id/unarchive` | Unarchive project (back to active) |
 | `POST` | `/api/v1/projects/:id/tasks` | Assign a task to the project (body: taskId, boardStatus?) |
 | `GET` | `/api/v1/projects/clients` | List clients |
 | `POST` | `/api/v1/projects/clients` | Create client |

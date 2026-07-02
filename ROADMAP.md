@@ -28,46 +28,13 @@ brief as concrete nudges. Medical stays off the LLM by design.
 All six product directions scoped in mid-2026 (D1–D6: cross-domain density, the Today
 command center, Work/Projects, Life Goals, Universal Inbox, the proactive agent) have
 shipped; the codebase and commit history are the record. One item from that era stays
-deliberately parked (R4, at the bottom). The active backlog is R6–R10 below, in
+deliberately parked (R4, at the bottom). The active backlog is R8–R10 below, in
 priority order — one per session, per the working agreement in `AGENTS.md`.
 
 ## Next Up (scoped July 2026)
 
-Ordered cheapest-first so the quick wins land before the big builds: one small
-session (R6), two medium ones that extend existing surfaces (R7, R8), then two
-full feature builds (R9, R10).
-
-### R6. Reorder module navigation
-
-Tiny UI session. New order: **Bandeja (inbox), Tasks, Projects, Wallet, Health,
-Metas (objectives)**, then the disabled demos (People, Work, Study).
-
-- Reorder the `domains` array in `apps/web/src/lib/navigation.ts` — lookups use
-  `find()` by key, so order only affects rendering.
-- Check for tests or components that assert the current order (shell nav, mobile nav)
-  and update them.
-- Verification: `pnpm typecheck:web` + web unit tests + a browser smoke of the shell.
-
-### R7. Projects: archive surface + project history
-
-Backend archive already exists end-to-end: `Project` has `status`
-(`active|archived`) + `archivedAt`, `ArchiveProjectCommand` is registered, and the
-web core has `ArchiveProject`. `ListProjects` returns all statuses. What's missing is
-the product surface:
-
-- Expose an archive action on the project card/detail in
-  `apps/web/src/ui/screens/projects/` (confirm-guarded; archived projects drop out of
-  the active list and the board).
-- Add a "Historial" view (nav item under Projects) listing archived projects with
-  `archivedAt`, outcome, client, and total logged hours — a read of what already
-  comes back from `ListProjects`, filtered client-side by the presenter.
-- Add an `UnarchiveProjectCommand` (backend + web) so archiving is reversible from
-  the history view — mirror of the archive command, plus `Project.unarchive()`.
-- Decide what archived means for time entries and task links: keep them readable
-  (history/report), block new logging against archived projects.
-- Tests: entity unit tests for unarchive, presenter tests for the history filter,
-  e2e archive→history→unarchive flow. Cross-user isolation already covered by the
-  Projects e2e pattern.
+Ordered cheapest-first so the quick wins land before the big builds: one medium
+session that extends an existing surface (R8), then two full feature builds (R9, R10).
 
 ### R8. Hours report → PDF export
 
