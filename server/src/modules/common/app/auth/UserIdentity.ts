@@ -1,7 +1,7 @@
 import { Identity } from '@nbottarini/cqbus';
 
-import { AuthContext } from '../../http/AuthContext';
-import { UnauthorizedHttpError } from '../../http/errors';
+import { AuthContext, UserRole } from '../../http/AuthContext';
+import { ForbiddenHttpError, UnauthorizedHttpError } from '../../http/errors';
 
 export class UserIdentity implements Identity {
     readonly isAuthenticated = true;
@@ -30,7 +30,8 @@ export class UserIdentity implements Identity {
         return this.displayName ?? this.email ?? this.userId;
     }
 
-    get role(): 'user' | null {
+    get role(): UserRole | null {
+        if (this.roles.includes('superadmin')) return 'superadmin';
         return this.roles.includes('user') ? 'user' : null;
     }
 
@@ -49,4 +50,10 @@ export class UserIdentity implements Identity {
 export function requireUserIdentity(identity: Identity): UserIdentity {
     if (identity instanceof UserIdentity) return identity;
     throw new UnauthorizedHttpError('Not authenticated');
+}
+
+export function requireSuperadmin(identity: Identity): UserIdentity {
+    const user = requireUserIdentity(identity);
+    if (user.role !== 'superadmin') throw new ForbiddenHttpError('Superadmin required');
+    return user;
 }

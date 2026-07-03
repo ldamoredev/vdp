@@ -1,9 +1,11 @@
+import { UserRole } from '../../common/http/AuthContext';
+
 export type UserRecord = {
     id: string;
     email: string;
     displayName: string;
     passwordHash: string;
-    role: 'user';
+    role: UserRole;
     isActive: boolean;
     lastLoginAt: Date | null;
     createdAt: Date;
@@ -14,7 +16,7 @@ export type CreateUserData = {
     email: string;
     displayName: string;
     passwordHash: string;
-    role?: 'user';
+    role?: UserRole;
 };
 
 export abstract class UserRepository {

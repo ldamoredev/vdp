@@ -31,7 +31,7 @@ export class TestApp {
                 isAuthenticated: true,
                 userId: user.id,
                 sessionId: 'test-session',
-                role: 'user' as const,
+                role: user.role ?? 'user',
                 email: user.email,
                 displayName: user.displayName,
             };

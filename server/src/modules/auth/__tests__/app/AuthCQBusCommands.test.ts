@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Identity } from '@nbottarini/cqbus';
 
 import { AuthContext } from '../../../common/http/AuthContext';
-import { UserIdentity } from '../../../common/app/auth/UserIdentity';
+import { requireSuperadmin, UserIdentity } from '../../../common/app/auth/UserIdentity';
+import { ForbiddenHttpError, UnauthorizedHttpError } from '../../../common/http/errors';
 import { AuthenticatedUser } from '../../services/AuthenticatedUser';
 import { ChangePasswordCommand, ChangePasswordCommandHandler } from '../../app/ChangePasswordCommand';
 import { GetCurrentUserQuery, GetCurrentUserQueryHandler } from '../../app/GetCurrentUserQuery';
@@ -22,6 +24,19 @@ const authContext: AuthContext = {
 };
 
 const identity = UserIdentity.fromAuthContext(authContext)!;
+const superadminIdentity = new UserIdentity(
+    'admin-1',
+    'admin@example.com',
+    'Admin User',
+    ['superadmin'],
+);
+const anonymous = {
+    isAuthenticated: false,
+    authenticationType: 'none',
+    roles: [],
+    properties: {},
+    name: 'anonymous',
+} as Identity;
 
 const user: AuthenticatedUser = {
     id: 'user-1',
@@ -34,6 +49,17 @@ describe('auth CQBus commands', () => {
     it('preserves the current session id in UserIdentity', () => {
         expect(identity.userId).toBe('user-1');
         expect(identity.sessionId).toBe('session-1');
+    });
+
+    it('resolves a superadmin identity role', () => {
+        expect(superadminIdentity.role).toBe('superadmin');
+        expect(superadminIdentity.properties.role).toBe('superadmin');
+    });
+
+    it('requires a superadmin identity for privileged operations', () => {
+        expect(requireSuperadmin(superadminIdentity)).toBe(superadminIdentity);
+        expect(() => requireSuperadmin(identity)).toThrow(ForbiddenHttpError);
+        expect(() => requireSuperadmin(anonymous)).toThrow(UnauthorizedHttpError);
     });
 
     it('returns the current user from identity', async () => {

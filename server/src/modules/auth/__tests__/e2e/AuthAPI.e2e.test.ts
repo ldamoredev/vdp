@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 
 import { TestDatabase } from '../../../../test/test-database';
+import { users } from '../../infrastructure/db/schema';
 import { TestApp } from './TestApp';
 
 const testDb = new TestDatabase();
@@ -232,6 +234,34 @@ describe('Auth API — E2E', () => {
             },
         });
         expect(second.body.sessionToken).toBeTypeOf('string');
+    });
+
+    it('returns superadmin role after a persisted role promotion', async () => {
+        const registered = await registerUser({
+            email: 'admin@vdp.local',
+            displayName: 'Admin User',
+        });
+        expect(registered.status).toBe(200);
+
+        await testDb.query
+            .update(users)
+            .set({ role: 'superadmin' })
+            .where(eq(users.email, 'admin@vdp.local'));
+
+        const me = await testApp.app.inject({
+            method: 'GET',
+            url: '/api/auth/me',
+            headers: { 'x-session-token': registered.body.sessionToken as string },
+        });
+
+        expect(me.statusCode).toBe(200);
+        expect(me.json()).toMatchObject({
+            user: {
+                email: 'admin@vdp.local',
+                displayName: 'Admin User',
+                role: 'superadmin',
+            },
+        });
     });
 
     it('updates the current user profile', async () => {

@@ -14,7 +14,7 @@ import { UpdateProfile } from '../../services/UpdateProfile';
 import { ChangePassword } from '../../services/ChangePassword';
 import { GetSecurityOverview } from '../../services/GetSecurityOverview';
 import { LogoutOtherSessions } from '../../services/LogoutOtherSessions';
-import { auditLogs, sessions } from '../../infrastructure/db/schema';
+import { auditLogs, sessions, users } from '../../infrastructure/db/schema';
 import { ConflictHttpError } from '../../../common/http/errors';
 import { testDb } from '../../../../test/test-database';
 
@@ -60,6 +60,28 @@ describe('Auth persistence integration', () => {
 
             const updated = await userRepo.findById(created.id);
             expect(updated?.lastLoginAt?.toISOString()).toBe(loginAt.toISOString());
+        });
+
+        it('round-trips superadmin roles and defaults unknown roles to user', async () => {
+            const superadmin = await createPersistedUser({ email: 'admin@vdp.local' });
+            await testDb.query
+                .update(users)
+                .set({ role: 'superadmin' })
+                .where(eq(users.id, superadmin.id));
+
+            await expect(userRepo.findById(superadmin.id)).resolves.toMatchObject({
+                role: 'superadmin',
+            });
+
+            const unknownRole = await createPersistedUser({ email: 'unknown-role@vdp.local' });
+            await testDb.query
+                .update(users)
+                .set({ role: 'owner' })
+                .where(eq(users.id, unknownRole.id));
+
+            await expect(userRepo.findById(unknownRole.id)).resolves.toMatchObject({
+                role: 'user',
+            });
         });
 
         it('updates profile fields and password hash', async () => {

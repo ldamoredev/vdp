@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { Database } from '../../../common/base/db/Database';
+import { UserRole } from '../../../common/http/AuthContext';
 import { CreateUserData, UserRecord, UserRepository } from '../../domain/UserRepository';
 import { users } from './schema';
 
@@ -73,6 +74,10 @@ export class DrizzleUserRepository extends UserRepository {
 function toUserRecord(row: typeof users.$inferSelect): UserRecord {
     return {
         ...row,
-        role: 'user',
+        role: parseUserRole(row.role),
     };
+}
+
+function parseUserRole(role: string): UserRole {
+    return role === 'superadmin' ? 'superadmin' : 'user';
 }

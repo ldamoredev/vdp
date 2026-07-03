@@ -4,7 +4,7 @@ export type CurrentUser = {
   id: string;
   email: string;
   displayName: string;
-  role: "user";
+  role: "user" | "superadmin";
 };
 
 type MeResponse = {

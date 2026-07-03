@@ -660,9 +660,9 @@ export class TestDatabase {
             for (const user of users) {
                 await client.query(
                     `INSERT INTO core.users (id, email, display_name, password_hash, role, is_active)
-                     VALUES ($1, $2, $3, 'test-password-hash', 'user', TRUE)
+                     VALUES ($1, $2, $3, 'test-password-hash', $4, TRUE)
                      ON CONFLICT (id) DO NOTHING`,
-                    [user.id, user.email, user.displayName],
+                    [user.id, user.email, user.displayName, user.role ?? 'user'],
                 );
             }
         } finally {

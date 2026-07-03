@@ -1,12 +1,13 @@
 import { Identity, Query, RequestHandler } from '@nbottarini/cqbus';
 
 import { requireUserIdentity } from '../../common/app/auth/UserIdentity';
+import { UserRole } from '../../common/http/AuthContext';
 
 export type CurrentUser = {
     id: string;
     email: string | null;
     displayName: string | null;
-    role: 'user' | null;
+    role: UserRole | null;
 };
 
 export type CurrentUserResponse = {
