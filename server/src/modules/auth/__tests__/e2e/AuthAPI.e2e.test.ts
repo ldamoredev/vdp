@@ -99,6 +99,34 @@ async function logoutOthers(sessionToken: string) {
     return { status: response.statusCode, body: response.json() };
 }
 
+async function promoteToSuperadmin(email: string) {
+    await testDb.query
+        .update(users)
+        .set({ role: 'superadmin' })
+        .where(eq(users.email, email));
+}
+
+async function getAdminSettings(sessionToken?: string) {
+    const response = await testApp.app.inject({
+        method: 'GET',
+        url: '/api/v1/admin/settings',
+        headers: sessionToken ? { 'x-session-token': sessionToken } : undefined,
+    });
+
+    return { status: response.statusCode, body: response.json() };
+}
+
+async function updateAdminSettings(sessionToken: string | undefined, payload: Record<string, unknown>) {
+    const response = await testApp.app.inject({
+        method: 'PUT',
+        url: '/api/v1/admin/settings',
+        headers: sessionToken ? { 'x-session-token': sessionToken } : undefined,
+        payload,
+    });
+
+    return { status: response.statusCode, body: response.json() };
+}
+
 describe('Auth API — E2E', () => {
     it('reports setup status before and after the first registration', async () => {
         const before = await testApp.app.inject({ method: 'GET', url: '/api/auth/setup' });
@@ -243,10 +271,7 @@ describe('Auth API — E2E', () => {
         });
         expect(registered.status).toBe(200);
 
-        await testDb.query
-            .update(users)
-            .set({ role: 'superadmin' })
-            .where(eq(users.email, 'admin@vdp.local'));
+        await promoteToSuperadmin('admin@vdp.local');
 
         const me = await testApp.app.inject({
             method: 'GET',
@@ -261,6 +286,53 @@ describe('Auth API — E2E', () => {
                 displayName: 'Admin User',
                 role: 'superadmin',
             },
+        });
+    });
+
+    it('allows only superadmins to read and update app settings', async () => {
+        const admin = await registerUser({
+            email: 'admin@vdp.local',
+            displayName: 'Admin User',
+        });
+        await promoteToSuperadmin('admin@vdp.local');
+
+        const normal = await registerUser({
+            email: 'normal@vdp.local',
+            displayName: 'Normal User',
+        });
+
+        await expect(getAdminSettings()).resolves.toMatchObject({
+            status: 401,
+            body: { error: 'UNAUTHORIZED' },
+        });
+        await expect(getAdminSettings(normal.body.sessionToken as string)).resolves.toMatchObject({
+            status: 403,
+            body: { error: 'FORBIDDEN' },
+        });
+
+        await expect(getAdminSettings(admin.body.sessionToken as string)).resolves.toEqual({
+            status: 200,
+            body: {
+                registrationEnabled: true,
+                chatEnabledForUsers: true,
+            },
+        });
+
+        await expect(
+            updateAdminSettings(admin.body.sessionToken as string, { chatEnabledForUsers: false }),
+        ).resolves.toEqual({
+            status: 200,
+            body: {
+                registrationEnabled: true,
+                chatEnabledForUsers: false,
+            },
+        });
+
+        await expect(
+            updateAdminSettings(normal.body.sessionToken as string, { registrationEnabled: false }),
+        ).resolves.toMatchObject({
+            status: 403,
+            body: { error: 'FORBIDDEN' },
         });
     });
 

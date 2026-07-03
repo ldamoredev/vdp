@@ -2,6 +2,7 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as authSchema from '../modules/auth/infrastructure/db/schema';
 import * as agentSchema from '../modules/common/infrastructure/agents/schema';
+import * as settingsSchema from '../modules/common/infrastructure/settings/schema';
 import * as walletSchema from '../modules/wallet/infrastructure/db/schema';
 import * as projectsSchema from '../modules/projects/infrastructure/db/schema';
 import * as objectivesSchema from '../modules/objectives/infrastructure/db/schema';
@@ -56,6 +57,13 @@ CREATE TABLE IF NOT EXISTS core.audit_logs (
     resource_id VARCHAR(255),
     metadata JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS core.app_settings (
+    key VARCHAR(60) PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_by UUID REFERENCES core.users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS core.agent_conversations (
@@ -561,6 +569,7 @@ export class TestDatabase {
             schema: {
                 ...authSchema,
                 ...agentSchema,
+                ...settingsSchema,
                 ...walletSchema,
                 ...projectsSchema,
                 ...objectivesSchema,
@@ -592,6 +601,7 @@ export class TestDatabase {
                 client,
                 `TRUNCATE
                     core.audit_logs,
+                    core.app_settings,
                     core.sessions,
                     core.users,
                     core.agent_messages,

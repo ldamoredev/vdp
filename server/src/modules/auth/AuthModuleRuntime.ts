@@ -4,6 +4,7 @@ import { UserRepository } from './domain/UserRepository';
 import { SessionRepository } from './domain/SessionRepository';
 import { AuditLogRepository } from './domain/AuditLogRepository';
 import { ChangePasswordCommand, ChangePasswordCommandHandler } from './app/ChangePasswordCommand';
+import { GetAppSettingsQuery, GetAppSettingsQueryHandler } from './app/GetAppSettingsQuery';
 import { GetCurrentUserQuery, GetCurrentUserQueryHandler } from './app/GetCurrentUserQuery';
 import { GetSecurityOverviewQuery, GetSecurityOverviewQueryHandler } from './app/GetSecurityOverviewQuery';
 import { GetSetupStatusQuery, GetSetupStatusQueryHandler } from './app/GetSetupStatusQuery';
@@ -11,7 +12,9 @@ import { LoginUserCommand, LoginUserCommandHandler } from './app/LoginUserComman
 import { LogoutOtherSessionsCommand, LogoutOtherSessionsCommandHandler } from './app/LogoutOtherSessionsCommand';
 import { LogoutUserCommand, LogoutUserCommandHandler } from './app/LogoutUserCommand';
 import { RegisterUserCommand, RegisterUserCommandHandler } from './app/RegisterUserCommand';
+import { UpdateAppSettingsCommand, UpdateAppSettingsCommandHandler } from './app/UpdateAppSettingsCommand';
 import { UpdateProfileCommand, UpdateProfileCommandHandler } from './app/UpdateProfileCommand';
+import { AppSettingsRepository } from '../common/base/settings/AppSettingsRepository';
 import { PasswordService } from './services/PasswordService';
 import { SessionService } from './services/SessionService';
 import { GetSetupStatus } from './services/GetSetupStatus';
@@ -25,6 +28,7 @@ import { GetSecurityOverview } from './services/GetSecurityOverview';
 import { LogoutOtherSessions } from './services/LogoutOtherSessions';
 import { HttpController } from '../common/http/HttpController';
 import { AuthController } from './infrastructure/http/AuthController';
+import { AdminController } from './infrastructure/http/AdminController';
 
 export class AuthModuleRuntime {
     private readonly passwordService: PasswordService;
@@ -42,6 +46,10 @@ export class AuthModuleRuntime {
 
         bus.registerHandler(GetSetupStatusQuery, () => new GetSetupStatusQueryHandler(this.getSetupStatus()));
         bus.registerHandler(GetCurrentUserQuery, () => new GetCurrentUserQueryHandler());
+        bus.registerHandler(GetAppSettingsQuery, () => new GetAppSettingsQueryHandler(this.appSettingsRepository()));
+        bus.registerHandler(UpdateAppSettingsCommand, () =>
+            new UpdateAppSettingsCommandHandler(this.appSettingsRepository(), this.auditLogRepository()),
+        );
         bus.registerHandler(RegisterUserCommand, () => new RegisterUserCommandHandler(this.registerUser()));
         bus.registerHandler(LoginUserCommand, () => new LoginUserCommandHandler(this.loginUser()));
         bus.registerHandler(LogoutUserCommand, () => new LogoutUserCommandHandler(this.logoutUser()));
@@ -66,7 +74,10 @@ export class AuthModuleRuntime {
     }
 
     createControllers(): HttpController[] {
-        return [new AuthController(this.deps.bus)];
+        return [
+            new AuthController(this.deps.bus),
+            new AdminController(this.deps.bus),
+        ];
     }
 
     private getSetupStatus(): GetSetupStatus {
@@ -127,5 +138,9 @@ export class AuthModuleRuntime {
 
     private auditLogRepository(): AuditLogRepository {
         return this.deps.repositories.get(AuditLogRepository);
+    }
+
+    private appSettingsRepository(): AppSettingsRepository {
+        return this.deps.repositories.get(AppSettingsRepository);
     }
 }

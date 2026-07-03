@@ -1,6 +1,7 @@
 import { Database } from './common/base/db/Database';
 import { RepositoryRegistry } from './common/base/db/RepositoryRegistry';
 import { registerAgentRepositories } from './common/infrastructure/agents/bindings';
+import { registerSettingsRepositories } from './common/infrastructure/settings/bindings';
 import { registerAuthRepositories } from './auth/infrastructure/db/bindings';
 import { registerTasksRepositories } from './tasks/infrastructure/db/bindings';
 import { registerWalletRepositories } from './wallet/infrastructure/db/bindings';
@@ -20,6 +21,7 @@ import { registerInboxRepositories } from './inbox/infrastructure/db/bindings';
 export function createDefaultRepositoryRegistry(db: Database): RepositoryRegistry {
     const registry = new RepositoryRegistry();
     registerAgentRepositories(registry, db);
+    registerSettingsRepositories(registry, db);
     registerAuthRepositories(registry, db);
     registerTasksRepositories(registry, db);
     registerWalletRepositories(registry, db);
