@@ -1,9 +1,9 @@
 ---
-name: create-service-api
+name: create-handler-api
 description: Scaffold one backend API use case in an existing server module using the CQBus pattern (Command/Query + RequestHandler in app/, runtime handler registration, thin HTTP controller, shared Zod contracts, and tests). Use when the owner asks to add a backend command/query, service/use case, or endpoint to a domain.
 ---
 
-# create-service-api
+# create-handler-api
 
 Scaffolds a single backend use case in an existing `server/src/modules/{domain}` module. The API is CQBus-first: one `Command<T>` or `Query<T>` plus one `RequestHandler`, registered by the module runtime and called by a thin controller. `services/` may still hold reusable collaborators that handlers compose; the only HTTP surface is a thin controller that builds the request and executes the bus.
 
@@ -61,7 +61,7 @@ Scaffolds a single backend use case in an existing `server/src/modules/{domain}`
 - Cross-user isolation covered if the use case touches user-owned data.
 - No `userId` in Command/Query constructor, body/query/params, or tool input; handler derives it from `identity`.
 - Controller uses `executionContextFromAuth(request.auth)`.
-- Handler registered in `registerHandlers()`; no `RequestHandlerNotRegisteredError` risk.
+- **Handler registered in `registerHandlers()`** — the easiest step to skip and it only fails at runtime with `RequestHandlerNotRegisteredError` (typecheck won't catch it). After adding the handler, grep the runtime for the request name to confirm the `bus.registerHandler(...)` line exists, and keep an e2e that exercises the new route so a missing registration fails a test, not production.
 - No cross-currency sums.
 - Response shape lives in `@vdp/shared`, not redefined.
 

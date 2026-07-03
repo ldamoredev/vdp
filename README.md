@@ -263,6 +263,19 @@ Base URL: `/api/v1`
 | `DELETE` | `/api/v1/wallet/recurring/:id` | Delete recurring rule |
 | `POST` | `/api/v1/wallet/recurring/materialize` | Materialize due occurrences into real transactions |
 
+### Wallet — Loans
+
+Money lent to / borrowed from a counterparty, with append-only partial repayments. Amounts are per-currency; `outstanding`/`paidTotal` are server-computed.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/wallet/loans` | List loans |
+| `POST` | `/api/v1/wallet/loans` | Create loan (body: direction, counterparty, principal, currency, date, dueDate?, note?) |
+| `GET` | `/api/v1/wallet/loans/:id` | Get single loan |
+| `POST` | `/api/v1/wallet/loans/:id/payments` | Register a partial repayment (body: amount, date, note?) |
+| `POST` | `/api/v1/wallet/loans/:id/repay` | Mark loan repaid |
+| `POST` | `/api/v1/wallet/loans/:id/forgive` | Forgive loan |
+
 ### Wallet — Agent
 
 | Method | Path | Description |
@@ -430,7 +443,7 @@ if you want to point them at your own collector.
 Active PostgreSQL schemas, one per domain module:
 - `core` — users, sessions, audit logs, agent_conversations, agent_messages, file_blobs
 - `tasks` — tasks, task_notes, task_embeddings, task_insights, daily_review_state
-- `wallet` — accounts, categories, transactions, savings, investments, exchange rates, recurring transactions, wallet_insights
+- `wallet` — accounts, categories, transactions, savings, investments, exchange rates, recurring transactions, loans, loan_payments, wallet_insights
 - `health` — habits, habit_logs, counters, counter_attempts, goals, weight_entries, mood_check_ins
 - `medical` — private medical records + attachments (no agent, by design)
 - `projects` — projects, clients, time_entries

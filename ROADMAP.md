@@ -28,35 +28,12 @@ brief as concrete nudges. Medical stays off the LLM by design.
 All six product directions scoped in mid-2026 (D1–D6: cross-domain density, the Today
 command center, Work/Projects, Life Goals, Universal Inbox, the proactive agent) have
 shipped; the codebase and commit history are the record. One item from that era stays
-deliberately parked (R4, at the bottom). The active backlog is R9–R10 below, in
-priority order — one per session, per the working agreement in `AGENTS.md`.
+deliberately parked (R4, at the bottom). The active backlog is R10 below, per the
+working agreement in `AGENTS.md`.
 
 ## Next Up (scoped July 2026)
 
-Two full feature builds left: a new Wallet sub-section (R9) and the Superadmin
-layer (R10).
-
-### R9. Wallet: Préstamos (loans) section
-
-New Wallet sub-section for money lent and borrowed. Full feature through the
-per-feature gate; likely one session backend + one frontend.
-
-- Domain: `Loan` aggregate in `wallet/domain/` — direction (`lent|borrowed`),
-  counterparty name, principal amount + currency, date, optional due date, note,
-  status (`open|repaid|forgiven`), plus `LoanPayment` child records (partial
-  repayments with date + amount). Per-currency ALWAYS — never sum ARS+USD; outstanding
-  balance = principal − payments, computed per loan.
-- Backend: rich-entity style (status transitions live on the entity), CQBus
-  Create/List/Get/RegisterPayment/MarkRepaid/Forgive commands + queries, routes under
-  `/api/v1/wallet/loans`, the three synchronized DB changes (schema + `SETUP_SQL` +
-  `TRUNCATE`), fake repo, cross-user isolation tests. Follow `create-aggregate` and
-  `create-service-api` skills.
-- Frontend: `/wallet/loans` nav item ("Prestamos"), screen with open/closed split,
-  outstanding-per-currency summary wearing `.font-data`, quick payment registration.
-  Follow `create-service-web` + `create-presenter-web`.
-- Explicitly out of scope for the first slice: auto-creating Wallet transactions from
-  loan payments (suggest-don't-write applies; a deep-link to the pre-filled
-  transaction form is enough), agent tools, and insights. Revisit after daily use.
+One full feature build left: the Superadmin layer (R10).
 
 ### R10. Superadmin
 

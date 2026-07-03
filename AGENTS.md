@@ -55,7 +55,7 @@ The repo ships seven reusable workflows as `SKILL.md` files. They apply to **any
 The skills:
 
 - `code-review` and `tdd-workflow` are **process guards** — apply them automatically (review the diff before any commit/push; drive changes test-first). `code-review` findings are warnings that block the commit/push until reported to the owner.
-- `create-service-api`, `create-service-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are **generators** — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
+- `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are **generators** — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
 
 ## Working Agreement (how sessions run)
 
@@ -168,7 +168,7 @@ The active migrations create these PostgreSQL schemas:
 - `projects`: projects direction aggregate (`work|personal`) used by the project board, client catalog, and time entries for hours reporting; task rows link to projects through nullable `project_id`.
 - `objectives`: Life Goals objectives with explicit periods, typed metric source, target/unit, manual value, optional currency, and lifecycle. Progress is computed read-time in the web presenter, not in backend SQL; achieved status is persisted lazily when read-time progress reaches the target.
 - `inbox`: universal capture items (`inbox_items`) with raw text, optional note, status, and `routed_to`/`triaged_at` (stamped on triage). No cross-module reads or writes; triage routes via web deep-links to existing create surfaces.
-- `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights.
+- `wallet`: accounts, categories, transactions, savings goals, savings contributions, investments, exchange rates, wallet insights, loans + loan payments (money lent/borrowed with append-only partial repayments and per-currency outstanding).
 - `health`: habits, habit logs, counters, counter attempts, goals, mood check-ins, weight entries.
 - `medical`: records and attachments. This is a database namespace owned by the Health medical section, not a standalone backend module.
 

@@ -26,7 +26,7 @@ Skills in `.claude/skills/` auto-trigger for Claude Code:
 - `code-review` — always-on guard: review the working-tree diff before ANY commit or
   push; findings block until reported to the owner.
 - `tdd-workflow` — always-on guard: drive changes test-first (unit/social tests).
-- `create-service-api`, `create-service-web`, `create-presenter-web`,
+- `create-handler-api`, `create-handler-web`, `create-presenter-web`,
   `create-aggregate`, `create-agent-tool` — generators; follow the matching one when
   scaffolding that kind of unit.
 

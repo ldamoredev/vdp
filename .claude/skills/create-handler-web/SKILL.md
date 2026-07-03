@@ -1,11 +1,11 @@
 ---
-name: create-service-web
+name: create-handler-web
 description: Scaffold one frontend application use case (a CQBus Command/Query + handler over the module gateway, registered in the module, with a fake-gateway unit test) and, when needed, the gateway port method + HTTP impl. Use when the owner asks to add a frontend use case or wire a new API call into the Core.
 ---
 
-# create-service-web
+# create-handler-web
 
-Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-service-api` so the api↔web use-case vocabulary stays 1:1. Based on the migrated Health/Tasks/Wallet modules; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
+Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-handler-api` so the api↔web use-case vocabulary stays 1:1. Based on the migrated Health/Tasks/Wallet modules; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
 
 ## Inputs (ask if missing)
 
@@ -27,7 +27,8 @@ Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `
 - Handlers are **thin**: one file per use case, one gateway call. No domain logic in the handler (that's the domain models / presenter).
 - Reads return domain models; writes return `void` unless a flow needs the result.
 - **No React anywhere under `core/`.**
-- The new handler must be registered in `{Module}Module`, and the module must be in `createAppCore` — otherwise `RequestHandlerNotRegisteredError` at runtime (unit tests with hand-built Cores won't catch a missing `createAppCore` registration; `createAppCore.test.ts` does).
+- **The new handler MUST be registered in `{Module}Module`** (`core.bus.registerHandler(UseCase, () => new UseCaseHandler(gateway))`), and the module must be in `createAppCore` — otherwise `RequestHandlerNotRegisteredError` at runtime. This is the step most easily skipped: typecheck stays green and the module's `{module}-handlers.test.ts` passes (it builds its own Core), so the gap only shows up in the running app. After adding the handler, grep `{Module}Module.ts` for the `registerHandler(UseCase` line to confirm it exists.
+- **The dev server won't pick up a new registration via HMR.** `createAppCore` runs once inside `CoreProvider`'s `useState`, so the running Core is memoized from app boot; hot-reloading a screen does NOT re-run module registration. A new handler throws `RequestHandlerNotRegisteredError` in the running app even when the code is correct — do a **hard reload** (or restart `pnpm dev`) before concluding a registration is broken.
 - Reuse `@vdp/shared` wire types in the gateway; never redefine response shapes.
 - `Http{Module}Gateway` is the anti-corruption boundary: map DTOs into domain models there, not in presenters or handlers.
 - Application tests should dispatch through a real `Core` + `{Module}Module(fakeGateway)`, not instantiate handlers directly; this catches registration drift and keeps the bus path honest.
