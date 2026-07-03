@@ -203,9 +203,11 @@ export class FakeWalletGateway implements WalletGateway {
   }
 
   // loans
+  /** Overridable so presenter tests can seed an open/closed mix. */
+  loanList: Loan[] = [Loan.from(loanDto)];
   async getLoans(): Promise<Loan[]> {
     this.record("getLoans");
-    return [Loan.from(loanDto)];
+    return this.loanList;
   }
   async createLoan(input: CreateLoanInput): Promise<Loan> {
     this.record("createLoan", input);

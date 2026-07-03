@@ -11,7 +11,8 @@ export type WalletScreenKey =
   | "accounts"
   | "categories"
   | "savings"
-  | "investments";
+  | "investments"
+  | "loans";
 
 export interface WalletEmptyStateCopy {
   title: string;
@@ -29,6 +30,7 @@ const screenIntros: Record<WalletScreenKey, string> = {
   categories: "Categorías claras para capturar y revisar gastos sin fricción",
   savings: "Objetivos con progreso, contexto y acciones visibles",
   investments: "Posiciones activas con retorno y estado fáciles de leer",
+  loans: "Plata que prestaste o te prestaron, con saldo pendiente por moneda",
 };
 
 const emptyStates: Record<WalletScreenKey, WalletEmptyStateCopy> = {
@@ -65,6 +67,10 @@ const emptyStates: Record<WalletScreenKey, WalletEmptyStateCopy> = {
   investments: {
     title: "Todavía no hay inversiones",
     body: "Cuando cargues una posición, vas a poder seguir retorno, monto y estado desde esta vista.",
+  },
+  loans: {
+    title: "Todavía no hay préstamos",
+    body: "Registrá plata que prestaste o te prestaron para seguir el saldo pendiente y los pagos.",
   },
 };
 

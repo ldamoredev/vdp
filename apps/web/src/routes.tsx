@@ -27,6 +27,7 @@ import { DashboardScreen } from "@/ui/screens/wallet/dashboard/DashboardScreen";
 import { InvestmentsScreen } from "@/ui/screens/wallet/investments/InvestmentsScreen";
 import { RecurringScreen } from "@/ui/screens/wallet/recurring/RecurringScreen";
 import { SavingsScreen } from "@/ui/screens/wallet/savings/SavingsScreen";
+import { LoansScreen } from "@/ui/screens/wallet/loans/LoansScreen";
 import { StatsScreen } from "@/ui/screens/wallet/stats/StatsScreen";
 import { TransactionFormScreen } from "@/ui/screens/wallet/transactions/TransactionFormScreen";
 import { TransactionsScreen } from "@/ui/screens/wallet/transactions/TransactionsScreen";
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
           { path: "/wallet/investments", element: <InvestmentsScreen /> },
           { path: "/wallet/recurring", element: <RecurringScreen /> },
           { path: "/wallet/savings", element: <SavingsScreen /> },
+          { path: "/wallet/loans", element: <LoansScreen /> },
           { path: "/wallet/stats", element: <StatsScreen /> },
           { path: "/wallet/transactions", element: <TransactionsScreen /> },
           { path: "/wallet/transactions/new", element: <TransactionFormScreen /> },
