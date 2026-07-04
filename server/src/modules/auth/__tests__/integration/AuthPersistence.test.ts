@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { DrizzleUserRepository } from '../../infrastructure/db/DrizzleUserRepository';
 import { DrizzleSessionRepository } from '../../infrastructure/db/DrizzleSessionRepository';
 import { DrizzleAuditLogRepository } from '../../infrastructure/db/DrizzleAuditLogRepository';
+import { DrizzleAppSettingsRepository } from '../../../common/infrastructure/settings/DrizzleAppSettingsRepository';
 import { PasswordService } from '../../services/PasswordService';
 import { SessionService } from '../../services/SessionService';
 import { RegisterUser } from '../../services/RegisterUser';
@@ -21,6 +22,7 @@ import { testDb } from '../../../../test/test-database';
 const userRepo = new DrizzleUserRepository(testDb as never);
 const sessionRepo = new DrizzleSessionRepository(testDb as never);
 const auditLogRepo = new DrizzleAuditLogRepository(testDb as never);
+const settingsRepo = new DrizzleAppSettingsRepository(testDb as never);
 const passwordService = new PasswordService();
 const sessionService = new SessionService(sessionRepo);
 
@@ -212,7 +214,7 @@ describe('Auth persistence integration', () => {
 
     describe('RegisterUser / LoginUser / LogoutUser', () => {
         it('allows registration after users already exist and writes an audit log', async () => {
-            const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService, settingsRepo);
 
             const first = await registerUser.execute({
                 email: 'first@vdp.local',
@@ -251,7 +253,7 @@ describe('Auth persistence integration', () => {
         });
 
         it('rejects duplicate email registration', async () => {
-            const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService);
+            const registerUser = new RegisterUser(userRepo, auditLogRepo, passwordService, sessionService, settingsRepo);
 
             await registerUser.execute({
                 email: 'duplicate@vdp.local',

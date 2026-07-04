@@ -5,6 +5,7 @@ import { WalletModule } from "@/core/app/wallet/WalletModule";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
 import { ObjectivesModule } from "@/core/app/objectives/ObjectivesModule";
 import { InboxModule } from "@/core/app/inbox/InboxModule";
+import { AdminModule } from "@/core/app/admin/AdminModule";
 
 /**
  * App composition root: builds the Core and registers every feature module's
@@ -20,5 +21,6 @@ export function createAppCore(options: AppCoreOptions = {}): Core {
     .use(new WalletModule())
     .use(new ProjectsModule())
     .use(new ObjectivesModule())
-    .use(new InboxModule());
+    .use(new InboxModule())
+    .use(new AdminModule());
 }

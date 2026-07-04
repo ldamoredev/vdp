@@ -1,5 +1,6 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { AppSettingsRepository } from '../common/base/settings/AppSettingsRepository';
 import { ContributeSavingsCommand, ContributeSavingsCommandHandler } from './app/ContributeSavingsCommand';
 import { CreateAccountCommand, CreateAccountCommandHandler } from './app/CreateAccountCommand';
 import { CreateCategoryCommand, CreateCategoryCommandHandler } from './app/CreateCategoryCommand';
@@ -253,7 +254,12 @@ export class WalletModuleRuntime {
     createControllers() {
         return [
             new WalletController(this.deps.bus),
-            new WalletAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
+            new WalletAgentController(
+                this.deps.agentRegistry,
+                this.agentRepository(),
+                this.deps.authContextStorage,
+                this.appSettingsRepository(),
+            ),
         ];
     }
 
@@ -322,5 +328,9 @@ export class WalletModuleRuntime {
 
     private agentRepository(): AgentRepository {
         return this.deps.repositories.get(AgentRepository);
+    }
+
+    private appSettingsRepository(): AppSettingsRepository {
+        return this.deps.repositories.get(AppSettingsRepository);
     }
 }

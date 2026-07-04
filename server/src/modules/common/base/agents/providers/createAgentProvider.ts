@@ -8,7 +8,8 @@ export type AgentChatUnavailableReason =
     | 'agent_provider_not_configured'
     | 'anthropic_not_configured'
     | 'openai_compatible_not_configured'
-    | 'ollama_not_configured';
+    | 'ollama_not_configured'
+    | 'chat_disabled_by_admin';
 
 export type AgentChatAvailability =
     | { enabled: true }

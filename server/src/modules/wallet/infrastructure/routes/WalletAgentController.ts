@@ -3,6 +3,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { AgentRegistry } from '../../../common/base/agents/AgentRegistry';
+import { AppSettingsRepository } from '../../../common/base/settings/AppSettingsRepository';
 import { HttpController, RouteRegister } from '../../../common/http/HttpController';
 import { agentChatBodySchema, createAgentChatHandler } from '../../../common/http/agent-chat';
 import { assertFound } from '../../../common/http/errors';
@@ -18,6 +19,7 @@ export class WalletAgentController extends HttpController {
         private agentRegistry: AgentRegistry,
         private agentRepository: AgentRepository,
         private authContextStorage: AuthContextStorage,
+        private appSettings: AppSettingsRepository,
     ) {
         super();
     }
@@ -30,6 +32,7 @@ export class WalletAgentController extends HttpController {
                 schema: agentChatBodySchema,
                 resolveAgent: () => this.agentRegistry.get('wallet'),
                 authContextStorage: this.authContextStorage,
+                appSettings: this.appSettings,
             }));
     }
 

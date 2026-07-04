@@ -2,8 +2,9 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { z, ZodType } from 'zod';
 import type { BaseAgent } from '../base/agents/BaseAgent';
 import { getAgentErrorCode, type AgentErrorCode } from '../base/agents/AgentError';
+import { AppSettingsRepository } from '../base/settings/AppSettingsRepository';
 import { AuthContextStorage } from './AuthContextStorage';
-import { ServiceUnavailableHttpError } from './errors';
+import { ForbiddenHttpError, ServiceUnavailableHttpError } from './errors';
 import { parseBody } from './validation';
 
 export const agentChatBodySchema = z.object({
@@ -17,6 +18,7 @@ type AgentChatHandlerOptions<TBody extends AgentChatBody> = {
     schema?: ZodType<TBody>;
     resolveAgent: (request: FastifyRequest, body: TBody) => BaseAgent | undefined;
     authContextStorage: AuthContextStorage;
+    appSettings: AppSettingsRepository;
     summarizeToolResult?: (result: string) => string;
 };
 
@@ -28,6 +30,11 @@ export function createAgentChatHandler<TBody extends AgentChatBody = AgentChatBo
 
     return async function agentChatHandler(request: FastifyRequest, reply: FastifyReply) {
         const body = parseBody(schema, request.body);
+        const settings = await options.appSettings.getSettings();
+        if (!settings.chatEnabledForUsers && request.auth?.role !== 'superadmin') {
+            throw new ForbiddenHttpError('Chat is disabled by the administrator');
+        }
+
         const agent = options.resolveAgent(request, body);
 
         if (!agent) {

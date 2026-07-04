@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentRepository } from '../../../common/base/agents/AgentRepository';
-const DEFAULT_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { AppSettingsRepository } from '../../../common/base/settings/AppSettingsRepository';
+import {
+    ALL_TEST_USERS,
+    PRIMARY_TEST_USER,
+    SUPERADMIN_TEST_USER,
+    TEST_USER_ID_HEADER,
+} from '../../../../test/testUsers';
 import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
 
@@ -13,7 +19,7 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(async () => {
-    await testDb.truncate();
+    await testDb.truncate({ users: ALL_TEST_USERS });
 });
 
 afterAll(async () => {
@@ -459,13 +465,39 @@ describe('Wallet API — E2E', () => {
             }
         });
 
+        it('blocks chat for normal users when admin disables user chat but not for superadmins', async () => {
+            const settings = testApp.core.getRepository(AppSettingsRepository);
+            await settings.updateSettings({ chatEnabledForUsers: false }, SUPERADMIN_TEST_USER.id);
+
+            const normalUser = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/wallet/agent/chat',
+                payload: { message: 'Como vengo este mes?' },
+            });
+
+            expect(normalUser.statusCode).toBe(403);
+            expect(normalUser.json()).toMatchObject({
+                error: 'FORBIDDEN',
+                message: 'Chat is disabled by the administrator',
+            });
+
+            const superadmin = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/wallet/agent/chat',
+                headers: { [TEST_USER_ID_HEADER]: SUPERADMIN_TEST_USER.id },
+                payload: { message: 'Como vengo este mes?' },
+            });
+
+            expect(superadmin.statusCode).not.toBe(403);
+        });
+
         it('returns wallet conversations and messages only for the wallet domain', async () => {
             const agentRepository = testApp.core.getRepository(AgentRepository);
-            const conversation = await agentRepository.createConversation(DEFAULT_TEST_USER_ID, 'wallet', 'Wallet history');
+            const conversation = await agentRepository.createConversation(PRIMARY_TEST_USER.id, 'wallet', 'Wallet history');
             await agentRepository.createMessage(conversation.id, 'user', 'Resumen');
             await agentRepository.createAgentMessage(conversation.id, 'assistant', 'Aca va tu resumen', null);
 
-            await agentRepository.createConversation(DEFAULT_TEST_USER_ID, 'tasks', 'Task history');
+            await agentRepository.createConversation(PRIMARY_TEST_USER.id, 'tasks', 'Task history');
 
             const conversationsResponse = await testApp.app.inject({
                 method: 'GET',

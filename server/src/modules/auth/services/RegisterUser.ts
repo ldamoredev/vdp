@@ -1,6 +1,7 @@
 import { UserRepository, UserRecord } from '../domain/UserRepository';
 import { AuditLogRepository } from '../domain/AuditLogRepository';
-import { ConflictHttpError } from '../../common/http/errors';
+import { AppSettingsRepository } from '../../common/base/settings/AppSettingsRepository';
+import { ConflictHttpError, ForbiddenHttpError } from '../../common/http/errors';
 import { PasswordService } from './PasswordService';
 import { SessionService } from './SessionService';
 import { AuthenticatedUser } from './AuthenticatedUser';
@@ -11,6 +12,7 @@ export class RegisterUser {
         private readonly auditLogs: AuditLogRepository,
         private readonly passwordService: PasswordService,
         private readonly sessionService: SessionService,
+        private readonly settings: AppSettingsRepository,
     ) {}
 
     async execute(input: {
@@ -18,6 +20,10 @@ export class RegisterUser {
         displayName: string;
         password: string;
     }): Promise<{ sessionToken: string; user: AuthenticatedUser }> {
+        if (!(await this.settings.getSettings()).registrationEnabled) {
+            throw new ForbiddenHttpError('Registration is disabled');
+        }
+
         const existing = await this.users.findByEmail(input.email.toLowerCase());
         if (existing) {
             throw new ConflictHttpError('Email already registered');

@@ -77,5 +77,8 @@ export function agentChatDisabledMessage(status: AgentChatStatus): string {
   if (status.reason === "agent_status_unavailable") {
     return "No se pudo confirmar la configuracion del chat IA.";
   }
+  if (status.reason === "chat_disabled_by_admin") {
+    return "El administrador desactivó el chat IA para tu cuenta.";
+  }
   return "Chat IA desactivado en este entorno.";
 }

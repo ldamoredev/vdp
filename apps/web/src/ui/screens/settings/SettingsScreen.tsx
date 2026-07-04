@@ -30,6 +30,7 @@ import {
   useCurrentUser,
 } from "@/lib/auth";
 import { ModulePage } from "@/ui/primitives/module-page";
+import { AdminSettingsSection } from "./admin/AdminSettingsSection";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -260,6 +261,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {currentUser?.role === "superadmin" && <AdminSettingsSection />}
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">

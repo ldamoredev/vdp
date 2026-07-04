@@ -10,6 +10,8 @@ import { DomainModuleDescriptor } from '../../base/modules/DomainModuleDescripto
 import { HttpController } from '../../http/HttpController';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { HttpMiddleWare } from '../../http/HttpMiddleWare';
+import { AppSettingsRepository } from '../../base/settings/AppSettingsRepository';
+import { FakeAppSettingsRepository } from '../fakes/FakeAppSettingsRepository';
 
 class FakeCore {
     public readonly eventBus = new EventBus();
@@ -21,6 +23,7 @@ class FakeCore {
         [UserRepository, new FakeUserRepository()],
         [SessionRepository, new FakeSessionRepository()],
         [AuditLogRepository, new FakeAuditLogRepository()],
+        [AppSettingsRepository, new FakeAppSettingsRepository()],
     ]);
 
     getControllers(): HttpController[] {

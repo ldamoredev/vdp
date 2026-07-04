@@ -7,6 +7,7 @@ import { AgentProviderRequest, AgentProviderResponse } from '../../../common/bas
 import { RepositoryProvider } from '../../../common/base/db/RepositoryProvider';
 import { EventBus } from '../../../common/base/event-bus/EventBus';
 import { AgentRegistry } from '../../../common/base/agents/AgentRegistry';
+import { AppSettingsRepository } from '../../../common/base/settings/AppSettingsRepository';
 import { ModuleContext } from '../../../common/base/modules/ModuleContext';
 import { SSEBroadcaster } from '../../../common/base/sse/SSEBroadcaster';
 import { NoOpLangfuseLLMTraceService } from '../../../common/infrastructure/observability/trace/langfuse/NoOpLangfuseLLMTraceService';
@@ -25,6 +26,7 @@ import { FakeTaskEmbeddingRepository } from '../fakes/FakeTaskEmbeddingRepositor
 import { FakeTaskNoteRepository } from '../fakes/FakeTaskNoteRepository';
 import { FakeTaskRepository } from '../fakes/FakeTaskRepository';
 import { FakeTaskInsightRepository } from '../fakes/FakeTaskInsightRepository';
+import { FakeAppSettingsRepository } from '../../../common/__tests__/fakes/FakeAppSettingsRepository';
 
 class FakeAgentProvider implements AgentProvider {
     readonly name = 'fake';
@@ -104,6 +106,7 @@ function createContext(): ModuleContext {
     repositories.register(TaskEmbeddingRepository, new FakeTaskEmbeddingRepository());
     repositories.register(AgentRepository, new FakeAgentRepository());
     repositories.register(TaskInsightRepository, new FakeTaskInsightRepository());
+    repositories.register(AppSettingsRepository, new FakeAppSettingsRepository());
     return {
         repositories,
         bus: new CQBus(),

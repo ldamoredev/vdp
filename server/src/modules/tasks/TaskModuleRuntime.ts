@@ -1,5 +1,6 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { AppSettingsRepository } from '../common/base/settings/AppSettingsRepository';
 import { ProjectRepository } from '../projects/domain/ProjectRepository';
 import { AddTaskNoteCommand, AddTaskNoteCommandHandler } from './app/AddTaskNoteCommand';
 import { CarryOverAllPendingCommand, CarryOverAllPendingCommandHandler } from './app/CarryOverAllPendingCommand';
@@ -164,7 +165,12 @@ export class TaskModuleRuntime {
     createControllers() {
         return [
             new TasksController(this.deps.bus),
-            new TasksAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
+            new TasksAgentController(
+                this.deps.agentRegistry,
+                this.agentRepository(),
+                this.deps.authContextStorage,
+                this.appSettingsRepository(),
+            ),
             new TaskInsightsSSEController(this.deps.sseBroadcaster, this.deps.insightsStore),
         ];
     }
@@ -275,5 +281,9 @@ export class TaskModuleRuntime {
 
     private agentRepository(): AgentRepository {
         return this.deps.repositories.get(AgentRepository);
+    }
+
+    private appSettingsRepository(): AppSettingsRepository {
+        return this.deps.repositories.get(AppSettingsRepository);
     }
 }

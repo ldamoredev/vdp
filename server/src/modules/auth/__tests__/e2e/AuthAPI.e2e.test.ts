@@ -336,6 +336,36 @@ describe('Auth API — E2E', () => {
         });
     });
 
+    it('blocks registration while registration is disabled and allows it again when re-enabled', async () => {
+        const admin = await registerUser({
+            email: 'admin@vdp.local',
+            displayName: 'Admin User',
+        });
+        await promoteToSuperadmin('admin@vdp.local');
+
+        const disabled = await updateAdminSettings(admin.body.sessionToken as string, { registrationEnabled: false });
+        expect(disabled.status).toBe(200);
+
+        const blocked = await registerUser({
+            email: 'blocked@vdp.local',
+            displayName: 'Blocked User',
+        });
+        expect(blocked).toMatchObject({
+            status: 403,
+            body: { error: 'FORBIDDEN' },
+        });
+
+        const enabled = await updateAdminSettings(admin.body.sessionToken as string, { registrationEnabled: true });
+        expect(enabled.status).toBe(200);
+
+        const allowed = await registerUser({
+            email: 'allowed@vdp.local',
+            displayName: 'Allowed User',
+        });
+        expect(allowed.status).toBe(200);
+        expect(allowed.body.user.email).toBe('allowed@vdp.local');
+    });
+
     it('updates the current user profile', async () => {
         const registered = await registerUser();
         const sessionToken = registered.body.sessionToken as string;

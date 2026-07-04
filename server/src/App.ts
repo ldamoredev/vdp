@@ -15,6 +15,7 @@ import { HttpController } from './modules/common/http/HttpController';
 import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
 import { HttpMiddleWare } from './modules/common/http/HttpMiddleWare';
+import { AppSettingsRepository } from './modules/common/base/settings/AppSettingsRepository';
 
 export class App {
     public app = Fastify({ logger: true });
@@ -92,7 +93,11 @@ export class App {
 
     private registerControllers() {
         const controllers: HttpController[] = [
-            new StatusController(this.core.agentRegistry, this.core.getModuleDescriptors()),
+            new StatusController(
+                this.core.agentRegistry,
+                this.core.getModuleDescriptors(),
+                this.core.getRepository(AppSettingsRepository),
+            ),
             ...this.core.getControllers(),
         ];
 

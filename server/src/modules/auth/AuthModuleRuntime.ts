@@ -90,6 +90,7 @@ export class AuthModuleRuntime {
             this.auditLogRepository(),
             this.passwordService,
             this.sessionService,
+            this.appSettingsRepository(),
         );
     }
 

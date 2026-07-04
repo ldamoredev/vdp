@@ -7,6 +7,7 @@ import { GetAccounts } from "@/core/app/wallet/GetAccounts";
 import { GetMedicalRecords } from "@/core/app/health/medical/GetMedicalRecords";
 import { ListProjects } from "@/core/app/projects/ListProjects";
 import { ListObjectives } from "@/core/app/objectives/ListObjectives";
+import { GetAppSettings } from "@/core/app/admin/GetAppSettings";
 import { createAppCore } from "@/createAppCore";
 
 /**
@@ -81,6 +82,15 @@ describe("createAppCore", () => {
     const result = await core.execute(new ListObjectives());
 
     expect(result).toEqual([]);
+  });
+
+  it("registers the admin handlers on the bus", async () => {
+    stubFetchOk({ registrationEnabled: true, chatEnabledForUsers: true });
+    const core = createAppCore();
+
+    const result = await core.execute(new GetAppSettings());
+
+    expect(result).toEqual({ registrationEnabled: true, chatEnabledForUsers: true });
   });
 
   it("registers the health medical handlers on the bus", async () => {

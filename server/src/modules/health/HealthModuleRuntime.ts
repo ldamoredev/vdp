@@ -1,5 +1,6 @@
 import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { AppSettingsRepository } from '../common/base/settings/AppSettingsRepository';
 import { FileStorage } from '../common/base/storage/FileStorage';
 import { ArchiveCounterCommand, ArchiveCounterCommandHandler } from './app/ArchiveCounterCommand';
 import { ArchiveHabitCommand, ArchiveHabitCommandHandler } from './app/ArchiveHabitCommand';
@@ -126,7 +127,12 @@ export class HealthModuleRuntime {
         return [
             new HealthController(this.deps.bus),
             new MedicalController(this.deps.bus),
-            new HealthAgentController(this.deps.agentRegistry, this.agentRepository(), this.deps.authContextStorage),
+            new HealthAgentController(
+                this.deps.agentRegistry,
+                this.agentRepository(),
+                this.deps.authContextStorage,
+                this.appSettingsRepository(),
+            ),
         ];
     }
 
@@ -181,5 +187,9 @@ export class HealthModuleRuntime {
 
     private agentRepository(): AgentRepository {
         return this.deps.repositories.get(AgentRepository);
+    }
+
+    private appSettingsRepository(): AppSettingsRepository {
+        return this.deps.repositories.get(AppSettingsRepository);
     }
 }
