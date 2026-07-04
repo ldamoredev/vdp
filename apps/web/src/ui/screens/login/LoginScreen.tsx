@@ -20,6 +20,11 @@ type AuthSuccessPayload = {
   user: CurrentUser;
 };
 
+type SetupPayload = {
+  hasUsers?: boolean;
+  registrationEnabled?: boolean;
+};
+
 async function waitForSessionConfirmation(): Promise<boolean> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const response = await fetch("/api/auth/me", {
@@ -49,6 +54,7 @@ export function LoginPageClient({
   const navigate = useNavigate();
   const [mode, setMode] = useState<"loading" | "login" | "register">("loading");
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,11 +67,13 @@ export function LoginPageClient({
     async function loadSetup() {
       try {
         const response = await fetch("/api/auth/setup", { cache: "no-store" });
-        const payload = (await response.json()) as { hasUsers?: boolean };
+        const payload = (await response.json()) as SetupPayload;
 
         if (!cancelled) {
           const nextHasUsers = Boolean(payload.hasUsers);
+          const nextRegistrationEnabled = payload.registrationEnabled !== false;
           setHasUsers(nextHasUsers);
+          setRegistrationEnabled(nextRegistrationEnabled);
           setMode(nextHasUsers ? "login" : "register");
         }
       } catch {
@@ -130,6 +138,7 @@ export function LoginPageClient({
 
   const isRegisterMode = mode === "register";
   const isLoadingMode = mode === "loading";
+  const isRegistrationPaused = isRegisterMode && !registrationEnabled;
   const title = isLoadingMode
     ? "Preparando acceso"
     : isRegisterMode
@@ -139,8 +148,12 @@ export function LoginPageClient({
     ? "Estamos revisando el estado de acceso de la app."
     : isRegisterMode
       ? hasUsers
-        ? "Abre tu espacio personal con email, nombre visible y una contraseña segura."
-        : "Crea la primera cuenta para empezar a usar VDP."
+        ? registrationEnabled
+          ? "Abre tu espacio personal con email, nombre visible y una contraseña segura."
+          : "El alta de cuentas nuevas no esta disponible en este momento."
+        : registrationEnabled
+          ? "Crea la primera cuenta para empezar a usar VDP."
+          : "El alta de cuentas nuevas no esta disponible en este momento."
       : "Ingresa con el email y la contraseña de tu cuenta.";
 
   return (
@@ -244,6 +257,7 @@ export function LoginPageClient({
                   placeholder="Como quieres que te veamos"
                   autoFocus
                   required
+                  disabled={isRegistrationPaused}
                   className="glass-input w-full px-4 py-2.5 text-sm"
                 />
               </label>
@@ -260,6 +274,7 @@ export function LoginPageClient({
                 placeholder="tu@email.com"
                 autoFocus={!isRegisterMode}
                 required
+                disabled={isRegistrationPaused}
                 className="glass-input w-full px-4 py-2.5 text-sm"
               />
             </label>
@@ -282,14 +297,23 @@ export function LoginPageClient({
                 placeholder={isRegisterMode ? "Crea una contraseña segura" : "Tu contraseña"}
                 required
                 minLength={8}
+                disabled={isRegistrationPaused}
                 className="glass-input w-full px-4 py-2.5 text-sm"
               />
             </label>
           </div>
 
           {isRegisterMode && (
-            <div className="rounded-xl px-4 py-3 text-[13px] leading-relaxed text-[var(--foreground-muted)] bg-[var(--hover-overlay)] border border-[var(--glass-border)]">
-              Al crear tu cuenta entraras directamente a tu espacio personal de tareas, wallet y chat.
+            <div
+              className={`rounded-xl px-4 py-3 text-[13px] leading-relaxed border ${
+                isRegistrationPaused
+                  ? "border-[var(--amber-soft-border)] bg-[var(--amber-soft-bg)] text-[var(--amber-soft-text)]"
+                  : "border-[var(--glass-border)] bg-[var(--hover-overlay)] text-[var(--foreground-muted)]"
+              }`}
+            >
+              {isRegistrationPaused
+                ? "Lo sentimos, el registro esta pausado por ahora."
+                : "Al crear tu cuenta entraras directamente a tu espacio personal de tareas, wallet y chat."}
             </div>
           )}
 
@@ -317,20 +341,27 @@ export function LoginPageClient({
             disabled={
               loading ||
               isLoadingMode ||
+              isRegistrationPaused ||
               !email ||
               !password ||
               (isRegisterMode && !displayName)
             }
             className="btn-primary w-full justify-center py-3 text-sm"
           >
-            {loading ? (isRegisterMode ? "Creando cuenta..." : "Entrando...") : title}
+            {isRegistrationPaused
+              ? "Registro pausado"
+              : loading
+                ? (isRegisterMode ? "Creando cuenta..." : "Entrando...")
+                : title}
           </button>
 
           {!isLoadingMode && (
             <p className="text-center text-xs text-[var(--muted)] leading-relaxed">
-              {isRegisterMode
-                ? "Tu sesion se iniciara automaticamente despues de crear la cuenta."
-                : "Si todavia no tienes cuenta, puedes crearla desde esta misma pantalla."}
+              {isRegistrationPaused
+                ? "Vuelve mas tarde o pide acceso a quien administra VDP."
+                : isRegisterMode
+                  ? "Tu sesion se iniciara automaticamente despues de crear la cuenta."
+                  : "Si todavia no tienes cuenta, puedes crearla desde esta misma pantalla."}
             </p>
           )}
         </form>

@@ -131,7 +131,7 @@ describe('Auth API — E2E', () => {
     it('reports setup status before and after the first registration', async () => {
         const before = await testApp.app.inject({ method: 'GET', url: '/api/auth/setup' });
         expect(before.statusCode).toBe(200);
-        expect(before.json()).toEqual({ hasUsers: false });
+        expect(before.json()).toEqual({ hasUsers: false, registrationEnabled: true });
 
         const registered = await registerUser();
         expect(registered.status).toBe(200);
@@ -140,7 +140,7 @@ describe('Auth API — E2E', () => {
 
         const after = await testApp.app.inject({ method: 'GET', url: '/api/auth/setup' });
         expect(after.statusCode).toBe(200);
-        expect(after.json()).toEqual({ hasUsers: true });
+        expect(after.json()).toEqual({ hasUsers: true, registrationEnabled: true });
     });
 
     it('covers register, login, me, logout, and revoked-session access', async () => {
@@ -345,6 +345,10 @@ describe('Auth API — E2E', () => {
 
         const disabled = await updateAdminSettings(admin.body.sessionToken as string, { registrationEnabled: false });
         expect(disabled.status).toBe(200);
+
+        const setupWhileDisabled = await testApp.app.inject({ method: 'GET', url: '/api/auth/setup' });
+        expect(setupWhileDisabled.statusCode).toBe(200);
+        expect(setupWhileDisabled.json()).toMatchObject({ registrationEnabled: false });
 
         const blocked = await registerUser({
             email: 'blocked@vdp.local',

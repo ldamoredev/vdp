@@ -4,6 +4,7 @@ import { GetSetupStatus } from '../services/GetSetupStatus';
 
 export type SetupStatus = {
     hasUsers: boolean;
+    registrationEnabled: boolean;
 };
 
 export class GetSetupStatusQuery extends Query<SetupStatus> {}

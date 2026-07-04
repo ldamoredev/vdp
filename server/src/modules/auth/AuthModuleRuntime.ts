@@ -81,7 +81,7 @@ export class AuthModuleRuntime {
     }
 
     private getSetupStatus(): GetSetupStatus {
-        return new GetSetupStatus(this.userRepository());
+        return new GetSetupStatus(this.userRepository(), this.appSettingsRepository());
     }
 
     private registerUser(): RegisterUser {

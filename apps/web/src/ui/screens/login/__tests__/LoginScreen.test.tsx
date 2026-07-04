@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { clearCurrentUser, setAuthenticatedUser, navigate } = vi.hoisted(() => ({
   clearCurrentUser: vi.fn(),
@@ -26,6 +26,11 @@ describe("LoginScreen", () => {
     setAuthenticatedUser.mockReset();
     navigate.mockReset();
     vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("clears any stale client user before a login request can fail", async () => {
@@ -54,5 +59,25 @@ describe("LoginScreen", () => {
     expect(clearOrder).toBeLessThan(loginOrder);
     expect(setAuthenticatedUser).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("keeps registration disabled with a clear paused message when setup says registration is closed", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ hasUsers: true, registrationEnabled: false }),
+    } as Response);
+
+    render(<LoginPageClient nextPath="/tasks" />);
+
+    await screen.findByRole("heading", { name: "Bienvenido de nuevo" });
+    fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    expect(await screen.findByText("Lo sentimos, el registro esta pausado por ahora.")).toBeTruthy();
+    expect(screen.getByLabelText("Nombre visible")).toHaveProperty("disabled", true);
+    expect(screen.getByLabelText("Email")).toHaveProperty("disabled", true);
+    expect(screen.getByPlaceholderText("Crea una contraseña segura")).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Registro pausado" })).toHaveProperty("disabled", true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
