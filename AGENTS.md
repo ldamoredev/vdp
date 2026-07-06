@@ -47,7 +47,7 @@ new features will not work in production until their migrations run there.
 
 ## Skills
 
-The repo ships seven reusable workflows as `SKILL.md` files. They apply to **any** agent working here, not just Claude Code. Each is a self-contained markdown doc (procedure + hard rules + verification) that references this file and the architecture docs rather than restating rules.
+The repo ships eight reusable workflows as `SKILL.md` files. They apply to **any** agent working here, not just Claude Code. Each is a self-contained markdown doc (procedure + hard rules + verification) that references this file and the architecture docs rather than restating rules.
 
 - Location: `.claude/skills/{name}/SKILL.md`, mirrored at `.agents/skills/` (a symlink to the same files, so agents that look under `.agents/` find them; one source of truth, no drift). Local `.claude/` config (settings, launch) stays gitignored; only the skills are tracked.
 - **Codex and other non-Claude agents:** these are plain markdown — you will not auto-trigger them, so read the relevant `SKILL.md` and follow it when the task matches. Treat `code-review` and `tdd-workflow` as always-on guards.
@@ -55,6 +55,7 @@ The repo ships seven reusable workflows as `SKILL.md` files. They apply to **any
 The skills:
 
 - `code-review` and `tdd-workflow` are **process guards** — apply them automatically (review the diff before any commit/push; drive changes test-first). `code-review` findings are warnings that block the commit/push until reported to the owner.
+- `smoke-verify` is the **closing procedure** — the manual browser smoke + surgical cleanup that ends every feature session. Follow it after the automated verification ladder passes; its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules.
 - `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are **generators** — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
 
 ## Working Agreement (how sessions run)

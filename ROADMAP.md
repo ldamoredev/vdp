@@ -27,42 +27,15 @@ brief as concrete nudges. Medical stays off the LLM by design.
 
 All six product directions scoped in mid-2026 (D1–D6: cross-domain density, the Today
 command center, Work/Projects, Life Goals, Universal Inbox, the proactive agent) have
-shipped; the codebase and commit history are the record. One item from that era stays
-deliberately parked (R4, at the bottom). The active backlog is R10 below, per the
-working agreement in `AGENTS.md`.
+shipped, and the Superadmin layer (R10: role plumbing, app-settings flags, registration
+pause, chat gating, admin toggles UI) landed in July 2026; the codebase and commit
+history are the record. The scoped feature backlog is now empty — the next track gets
+scoped with the owner before any build starts. One item stays deliberately parked (R4,
+below).
 
-## Next Up (scoped July 2026)
-
-One full feature build left: the Superadmin layer (R10).
-
-### R10. Superadmin
-
-Biggest item — split into slices, likely two sessions. The `users` table already has
-a `role` varchar (default `'user'`), so no schema change for the role itself.
-
-- **R10a — Role plumbing + settings store.** Expose `role` through the auth context
-  and session/profile response; add a `requireRole('superadmin')` guard for
-  controllers (and surface role client-side via the session payload). Promote the
-  owner account via a forward-only migration or a one-off script. Add a
-  `core.app_settings` key/value table (three synchronized DB changes) with two flags:
-  `registrationEnabled` (default true) and `chatEnabledForUsers` (default true), plus
-  CQBus Get/Update handlers guarded by the role.
-- **R10b — Enforcement + admin UI.**
-  - Pause registration: `/api/auth/register` checks `registrationEnabled` → 403 with
-    a clear message; login stays open.
-  - Chat gating: agent chat routes check `chatEnabledForUsers` for non-superadmins;
-    the superadmin always has chat when an agent provider is configured (existing
-    provider detection). The web shell hides chat affordances for gated users —
-    flags reach the client through the session/bootstrap payload, not a public
-    endpoint.
-  - Admin surface: a settings section (e.g. `/settings/admin`), rendered only for
-    the superadmin, with the two toggles. No separate module — this lives in auth +
-    settings.
-- Tests: role-guard tests (user hits admin endpoint → 403), registration-paused e2e,
-  chat-gated e2e for a non-admin user, and cross-user isolation as always.
-- Explicitly deferred: user management (list/disable users), per-user chat toggles,
-  audit UI. "Acciones privilegiadas" beyond these two flags get scoped when a
-  concrete need appears.
+Explicitly deferred from the Superadmin layer, to be scoped only when a concrete need
+appears: user management (list/disable users), per-user chat toggles, audit UI, and
+any further "acciones privilegiadas" beyond the two shipped flags.
 
 ## Parked
 
