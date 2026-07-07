@@ -9,7 +9,9 @@ const nodeGlobals = {
   clearTimeout: "readonly",
   crypto: "readonly",
   fetch: "readonly",
+  performance: "readonly",
   process: "readonly",
+  setImmediate: "readonly",
   setInterval: "readonly",
   setTimeout: "readonly",
   URL: "readonly",
@@ -48,6 +50,8 @@ export default [
       "**/node_modules/**",
       "**/playwright-report/**",
       "**/test-results/**",
+      // Gitignored local design-system handoff bundle (not in CI checkout).
+      "docs/design/**",
     ],
   },
   js.configs.recommended,
@@ -73,6 +77,15 @@ export default [
   {
     files: ["server/**/*.ts", "packages/**/*.ts", "scripts/**/*.ts"],
     languageOptions: {
+      globals: nodeGlobals,
+    },
+  },
+  {
+    // Standalone Node scripts (e.g. the agent-model eval). Plain JS, so
+    // no-undef stays on — the Node globals block covers it.
+    files: ["scripts/**/*.{mjs,js}"],
+    languageOptions: {
+      sourceType: "module",
       globals: nodeGlobals,
     },
   },
