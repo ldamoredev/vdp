@@ -2,6 +2,7 @@ import { ModuleContext } from '../common/base/modules/ModuleContext';
 import { ArchiveObjectiveCommand, ArchiveObjectiveCommandHandler } from './app/ArchiveObjectiveCommand';
 import { CreateObjectiveCommand, CreateObjectiveCommandHandler } from './app/CreateObjectiveCommand';
 import { GetObjectiveQuery, GetObjectiveQueryHandler } from './app/GetObjectiveQuery';
+import { GetObjectivesOverviewQuery, GetObjectivesOverviewQueryHandler } from './app/GetObjectivesOverviewQuery';
 import { ListObjectivesQuery, ListObjectivesQueryHandler } from './app/ListObjectivesQuery';
 import { MarkObjectiveAchievedCommand, MarkObjectiveAchievedCommandHandler } from './app/MarkObjectiveAchievedCommand';
 import { UpdateObjectiveCommand, UpdateObjectiveCommandHandler } from './app/UpdateObjectiveCommand';
@@ -20,6 +21,9 @@ export class ObjectivesModuleRuntime {
         );
         this.deps.bus.registerHandler(ListObjectivesQuery, () =>
             new ListObjectivesQueryHandler(this.objectiveRepository()),
+        );
+        this.deps.bus.registerHandler(GetObjectivesOverviewQuery, () =>
+            new GetObjectivesOverviewQueryHandler(this.objectiveRepository(), this.deps.eventBus),
         );
         this.deps.bus.registerHandler(UpdateObjectiveCommand, () =>
             new UpdateObjectiveCommandHandler(this.objectiveRepository()),

@@ -1,0 +1,1 @@
+ALTER TABLE "objectives"."objectives" ADD COLUMN "last_deadline_notified" varchar(4) DEFAULT 'none' NOT NULL;

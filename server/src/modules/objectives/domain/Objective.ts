@@ -6,15 +6,18 @@ export type ObjectiveMetricSource =
     | 'health_habit_completions';
 export type ObjectiveStatus = 'active' | 'archived' | 'achieved';
 export type ObjectiveCurrency = 'ARS' | 'USD';
+/** Lazy deadline-notification stage; ordered none < t30 < t14. */
+export type ObjectiveDeadlineStage = 'none' | 't30' | 't14';
 
 const CURRENCY_SCOPED_SOURCES: readonly ObjectiveMetricSource[] = ['wallet_savings'];
 const TARGETED_SOURCES: readonly ObjectiveMetricSource[] = ['health_habit_completions'];
 
-type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status' | 'currency' | 'metricTargetId'> & {
+type ObjectiveSnapshotLike = Omit<ObjectiveSnapshot, 'metricSource' | 'status' | 'currency' | 'metricTargetId' | 'lastDeadlineNotified'> & {
     metricSource: string;
     status: string;
     currency?: string | null;
     metricTargetId?: string | null;
+    lastDeadlineNotified?: string;
 };
 
 export class Objective {
@@ -31,6 +34,7 @@ export class Objective {
         public manualValue: number | null,
         public currency: ObjectiveCurrency | null,
         public status: ObjectiveStatus,
+        public lastDeadlineNotified: ObjectiveDeadlineStage,
         public archivedAt: Date | null,
         public achievedAt: Date | null,
         public readonly createdAt: Date,
@@ -67,6 +71,11 @@ export class Objective {
         this.updatedAt = new Date();
     }
 
+    markDeadlineNotified(stage: ObjectiveDeadlineStage): void {
+        this.lastDeadlineNotified = stage;
+        this.updatedAt = new Date();
+    }
+
     archive(): void {
         if (this.status === 'archived') return;
         this.status = 'archived';
@@ -92,6 +101,7 @@ export class Objective {
             manualValue: this.manualValue,
             currency: this.currency,
             status: this.status,
+            lastDeadlineNotified: this.lastDeadlineNotified,
             archivedAt: this.archivedAt,
             achievedAt: this.achievedAt,
             createdAt: this.createdAt,
@@ -115,6 +125,7 @@ export class Objective {
             metricSource === 'manual' ? s.manualValue : null,
             Objective.resolveCurrency(metricSource, s.currency ?? null),
             Objective.parseStatus(s.status),
+            Objective.parseDeadlineStage(s.lastDeadlineNotified ?? 'none'),
             s.archivedAt,
             s.achievedAt,
             s.createdAt,
@@ -197,6 +208,17 @@ export class Objective {
                 throw new Error(`Invalid objective status: ${status}`);
         }
     }
+
+    private static parseDeadlineStage(stage: string): ObjectiveDeadlineStage {
+        switch (stage) {
+            case 'none':
+            case 't30':
+            case 't14':
+                return stage;
+            default:
+                throw new Error(`Invalid objective deadline stage: ${stage}`);
+        }
+    }
 }
 
 export type ObjectiveUpdate = {
@@ -224,6 +246,7 @@ export type ObjectiveSnapshot = {
     manualValue: number | null;
     currency: ObjectiveCurrency | null;
     status: ObjectiveStatus;
+    lastDeadlineNotified: ObjectiveDeadlineStage;
     archivedAt: Date | null;
     achievedAt: Date | null;
     createdAt: Date;

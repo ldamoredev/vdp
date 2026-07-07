@@ -24,6 +24,7 @@ export class FakeObjectiveRepository extends ObjectiveRepository {
             manualValue: data.metricSource === 'manual' ? data.manualValue ?? null : null,
             currency: data.metricSource === 'wallet_savings' ? data.currency ?? null : null,
             status: 'active',
+            lastDeadlineNotified: 'none',
             archivedAt: null,
             achievedAt: null,
             createdAt: now,

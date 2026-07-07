@@ -15,6 +15,7 @@ const baseSnapshot = {
     manualValue: null,
     currency: null,
     status: 'active',
+    lastDeadlineNotified: 'none',
     archivedAt: null,
     achievedAt: null,
     createdAt: new Date('2026-06-28T10:00:00.000Z'),
@@ -163,5 +164,25 @@ describe('Objective', () => {
             achievedAt: null,
             updatedAt: new Date('2026-06-28T10:00:00.000Z'),
         });
+    });
+
+    it('marks deadline notified and updates timestamp', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));
+        const objective = Objective.fromSnapshot(baseSnapshot);
+
+        objective.markDeadlineNotified('t14');
+
+        expect(objective.toSnapshot()).toMatchObject({
+            lastDeadlineNotified: 't14',
+            updatedAt: new Date('2026-06-28T12:00:00.000Z'),
+        });
+    });
+
+    it('rejects invalid deadline stages', () => {
+        expect(() => Objective.fromSnapshot({
+            ...baseSnapshot,
+            lastDeadlineNotified: 't7',
+        })).toThrow(/deadline stage/i);
     });
 });
