@@ -10,6 +10,7 @@ import { HabitStreakBroken } from '../../../health/domain/events/HabitStreakBrok
 import { HabitMilestone } from '../../../health/domain/events/HabitMilestone';
 import { CounterMilestone } from '../../../health/domain/events/CounterMilestone';
 import { GoalDeadlineApproaching } from '../../../health/domain/events/GoalDeadlineApproaching';
+import { ObjectiveDeadlineApproaching } from '../../../objectives/domain/events/ObjectiveDeadlineApproaching';
 import { todayISO } from '../../../common/base/time/dates';
 import { CreateTaskCommand } from '../../app/CreateTaskCommand';
 
@@ -313,5 +314,79 @@ describe('CrossDomainEventHandlers', () => {
 
         expect(addSpy).not.toHaveBeenCalled();
         expect(bus.execute).not.toHaveBeenCalled();
+    });
+
+    it('creates a warning insight and a decision task when an objective deadline approaches', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new ObjectiveDeadlineApproaching({
+            userId: 'test-user-id',
+            objectiveId: 'objective-1',
+            title: 'Lanzar producto',
+            periodEnd: '2026-09-30',
+            daysLeft: 10,
+            progress: 35,
+            target: 100,
+            unit: 'horas',
+            metricSource: 'projects_hours',
+        }));
+
+        expect(addSpy).toHaveBeenCalledOnce();
+        expect(addSpy.mock.calls[0][0]).toMatchObject({
+            userId: 'test-user-id',
+            type: 'warning',
+            title: 'Objetivo cerca del límite: "Lanzar producto"',
+        });
+        expect(addSpy.mock.calls[0][0].message).toContain('Vence en 10 días');
+        expect(addSpy.mock.calls[0][0].message).toContain('Progreso actual: 35 de 100 horas');
+        const metadata = addSpy.mock.calls[0][0].metadata as Record<string, unknown>;
+        expect(metadata.source).toBe('objectives.objective.deadline_approaching');
+        expect(metadata.actionHref).toBe('/objectives');
+
+        expect(bus.execute).toHaveBeenCalledOnce();
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
+        expect(taskData.title).toBe('Decidir objetivo: Lanzar producto');
+        expect(taskData.domain).toBe('trabajo');
+        expect(taskData.priority).toBe(2);
+        expect(taskData.scheduledDate).toBe(todayISO());
+    });
+
+    it('escalates the objective task to P3 at one day left and words overdue objectives', async () => {
+        await eventBus.emit(new ObjectiveDeadlineApproaching({
+            userId: 'test-user-id',
+            objectiveId: 'objective-1',
+            title: 'Lanzar producto',
+            periodEnd: '2026-09-10',
+            daysLeft: -2,
+            progress: null,
+            target: 100,
+            unit: 'horas',
+            metricSource: 'projects_hours',
+        }));
+
+        const command = bus.execute.mock.calls[0][0] as CreateTaskCommand;
+        const taskData = command.input;
+        expect(taskData.priority).toBe(3);
+        expect(taskData.description).toContain('Venció hace 2 días');
+    });
+
+    it('omits the progress number for cross-module objective sources', async () => {
+        const addSpy = vi.spyOn(insightsStore, 'addInsight');
+
+        await eventBus.emit(new ObjectiveDeadlineApproaching({
+            userId: 'test-user-id',
+            objectiveId: 'objective-1',
+            title: 'Lanzar producto',
+            periodEnd: '2026-09-30',
+            daysLeft: 10,
+            progress: null,
+            target: 100,
+            unit: 'horas',
+            metricSource: 'projects_hours',
+        }));
+
+        expect(addSpy.mock.calls[0][0].message).not.toContain('Progreso actual');
+        expect(addSpy.mock.calls[0][0].message).toContain('Progreso vinculado a projects_hours');
     });
 });
