@@ -304,6 +304,7 @@ Live signals handled by Tasks (`CrossDomainEventHandlers`):
 - `health.habit.milestone` → achievement insight.
 - `health.counter.milestone` → achievement insight (includes money-not-spent when the counter has a daily cost).
 - `health.goal.deadline_approaching` → decision task + warning insight.
+- `objectives.objective.deadline_approaching` → decision task + warning insight.
 
 Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
 
