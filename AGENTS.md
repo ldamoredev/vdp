@@ -353,6 +353,7 @@ A domain is only real when it matches the Tasks template:
 
 ## Conventions
 
+- Language: repository documentation (`README.md`, `ROADMAP.md`, `PRODUCT_ANALYSIS.md`, `AGENTS.md`, `docs/`, skills) is written in English. User-facing UI copy and agent system prompts stay in Spanish (rioplatense). Session chat with the owner may be in Spanish; committed docs must not be.
 - Dates: use `getTodayISO()` or `localDateISO()` from `@/lib/format`; never `new Date().toISOString().slice(0, 10)`.
 - Entities: immutable snapshots with `fromSnapshot()` and `toSnapshot()`.
 - Selectors: copy arrays before sorting.
