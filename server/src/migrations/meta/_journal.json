@@ -169,6 +169,13 @@
       "when": 1783089711703,
       "tag": "0023_brainy_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783453007387,
+      "tag": "0024_daily_goliath",
+      "breakpoints": true
     }
   ]
 }

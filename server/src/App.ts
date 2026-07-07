@@ -16,6 +16,8 @@ import { StatusController } from './modules/common/http/StatusController';
 import { httpErrorHandler } from './modules/common/http/errors';
 import { HttpMiddleWare } from './modules/common/http/HttpMiddleWare';
 import { AppSettingsRepository } from './modules/common/base/settings/AppSettingsRepository';
+import { UsageEventRepository } from './modules/common/base/usage/UsageEventRepository';
+import { UsageTrackingMiddleware } from './modules/common/infrastructure/usage/UsageTrackingMiddleware';
 
 export class App {
     public app = Fastify({ logger: true });
@@ -109,6 +111,9 @@ export class App {
     private registerMiddlewares() {
         const middlewares: HttpMiddleWare[] = [
             ...this.core.getMiddlewares(),
+            // App-level cross-cutting concern (like registerTimelineLogging):
+            // counts owner usage per surface/action/day from API responses.
+            new UsageTrackingMiddleware(this.core.getRepository(UsageEventRepository)),
         ];
 
         for (const middleware of middlewares) {

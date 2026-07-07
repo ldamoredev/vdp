@@ -66,6 +66,18 @@ CREATE TABLE IF NOT EXISTS core.app_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS core.usage_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
+    surface VARCHAR(40) NOT NULL,
+    action VARCHAR(120) NOT NULL,
+    occurred_on DATE NOT NULL,
+    count INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS usage_events_owner_key_day_idx
+    ON core.usage_events(owner_user_id, surface, action, occurred_on);
+
 CREATE TABLE IF NOT EXISTS core.agent_conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES core.users(id) ON DELETE CASCADE,
@@ -600,6 +612,7 @@ export class TestDatabase {
             await this.queryWithDeadlockRetry(
                 client,
                 `TRUNCATE
+                    core.usage_events,
                     core.audit_logs,
                     core.app_settings,
                     core.sessions,
