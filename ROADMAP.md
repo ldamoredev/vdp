@@ -51,30 +51,12 @@ any further privileged actions beyond the two shipped flags.
 
 ## Phase 1 — Strengthen the core (active)
 
-No new modules. Recommended order: F1.1 → F1.2 → F1.3 → F1.4 → F1.5; F1.6 whenever
-the owner unblocks billing. Each item is a self-contained session.
+No new modules. Recommended order: F1.2 → F1.3 → F1.4 → F1.5; F1.6 whenever the
+owner unblocks billing. Each item is a self-contained session.
 
-### F1.1 Verified backup + per-domain export
-
-**Why:** VDP's value is the longitudinal accumulation of real data (financial and
-medical) in a single Supabase DB. Data loss kills the product. This is the number one
-trust feature.
-
-**Scope:**
-- Backup script (`pg_dump`) against the prod DB, runnable by the owner (owner-run,
-  like deploys — never from a local session; the session delivers the script +
-  runbook, it does not run the backup). Simple retention (last N dumps).
-- Restore verification: a documented procedure, exercised once end-to-end against a
-  disposable local Postgres.
-- Per-active-domain JSON export (tasks, wallet, health incl. medical, projects,
-  objectives, inbox), owner-scoped, via script or authenticated endpoint — decide at
-  session start; a script is enough if it avoids new HTTP surface.
-
-**Out of scope:** backups UI, scheduled automatic backups (no cron by rule),
-selective import/restore.
-
-**Done when:** a full restore from a dump has been verified locally and every domain
-exports valid JSON. Documented as a runbook under `docs/`.
+F1.1 (verified backup + per-domain export) shipped and verified against prod on
+2026-07-07; runbook: `docs/operations/backup-restore.md`. Keep the backup cadence
+from the runbook (before every migration deploy, at least weekly).
 
 ### F1.2 Owner-usage instrumentation
 
