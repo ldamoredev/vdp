@@ -4,6 +4,7 @@ import { HttpObjectivesGateway } from "../../infrastructure/http/HttpObjectivesG
 import { ArchiveObjective, ArchiveObjectiveHandler } from "./ArchiveObjective";
 import { CreateObjective, CreateObjectiveHandler } from "./CreateObjective";
 import { GetObjective, GetObjectiveHandler } from "./GetObjective";
+import { GetObjectivesOverview, GetObjectivesOverviewHandler } from "./GetObjectivesOverview";
 import { ListObjectives, ListObjectivesHandler } from "./ListObjectives";
 import { MarkObjectiveAchieved, MarkObjectiveAchievedHandler } from "./MarkObjectiveAchieved";
 import { UpdateObjective, UpdateObjectiveHandler } from "./UpdateObjective";
@@ -15,6 +16,7 @@ export class ObjectivesModule implements CoreModule {
     const gateway = this.gateway ?? new HttpObjectivesGateway(core.httpClient);
 
     core.bus.registerHandler(ListObjectives, () => new ListObjectivesHandler(gateway));
+    core.bus.registerHandler(GetObjectivesOverview, () => new GetObjectivesOverviewHandler(gateway));
     core.bus.registerHandler(GetObjective, () => new GetObjectiveHandler(gateway));
     core.bus.registerHandler(CreateObjective, () => new CreateObjectiveHandler(gateway));
     core.bus.registerHandler(UpdateObjective, () => new UpdateObjectiveHandler(gateway));

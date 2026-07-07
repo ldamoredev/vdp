@@ -1,10 +1,11 @@
 import { HttpClient } from "@nbottarini/abstract-http-client";
-import type { Objective as ObjectiveDto } from "@vdp/shared";
+import type { Objective as ObjectiveDto, ObjectivesOverviewResponse } from "@vdp/shared";
 
 import { Objective } from "../../domain/objectives/Objective";
 import type {
   CreateObjectiveInput,
   ObjectivesGateway,
+  ObjectivesOverview,
   UpdateObjectiveInput,
 } from "../../domain/objectives/ObjectivesGateway";
 
@@ -16,6 +17,14 @@ export class HttpObjectivesGateway implements ObjectivesGateway {
   async listObjectives(): Promise<Objective[]> {
     const { body } = await this.http.get<{ objectives: ObjectiveDto[] }>(P);
     return body.objectives.map(Objective.from);
+  }
+
+  async getObjectivesOverview(): Promise<ObjectivesOverview> {
+    const { body } = await this.http.get<ObjectivesOverviewResponse>(`${P}/overview`);
+    return {
+      objectives: body.objectives.map(Objective.from),
+      date: body.date,
+    };
   }
 
   async getObjective(id: string): Promise<Objective | null> {

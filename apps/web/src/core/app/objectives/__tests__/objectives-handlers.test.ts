@@ -5,6 +5,7 @@ import { Objective } from "@/core/domain/objectives/Objective";
 import { ArchiveObjective } from "../ArchiveObjective";
 import { CreateObjective } from "../CreateObjective";
 import { GetObjective } from "../GetObjective";
+import { GetObjectivesOverview } from "../GetObjectivesOverview";
 import { ListObjectives } from "../ListObjectives";
 import { MarkObjectiveAchieved } from "../MarkObjectiveAchieved";
 import { ObjectivesModule } from "../ObjectivesModule";
@@ -30,6 +31,17 @@ describe("objectives handlers (dispatched through the bus)", () => {
     expect(gateway.callsTo("getObjective")[0].args).toEqual(["o1"]);
     expect(objectives[0]).toBeInstanceOf(Objective);
     expect(objective).toBeInstanceOf(Objective);
+  });
+
+  it("routes overview through the gateway and returns domain models", async () => {
+    const gateway = new FakeObjectivesGateway();
+    const core = coreWith(gateway);
+
+    const overview = await core.execute(new GetObjectivesOverview());
+
+    expect(gateway.callsTo("getObjectivesOverview")).toHaveLength(1);
+    expect(overview.objectives[0]).toBeInstanceOf(Objective);
+    expect(overview.date).toBe("2026-06-28");
   });
 
   it("routes create/update/archive commands", async () => {

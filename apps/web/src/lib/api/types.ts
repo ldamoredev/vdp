@@ -56,6 +56,7 @@ export type {
   ObjectiveMetricSource,
   ObjectiveStatus,
   Objective,
+  ObjectivesOverviewResponse,
   // Inbox
   InboxItemStatus,
   InboxItem,

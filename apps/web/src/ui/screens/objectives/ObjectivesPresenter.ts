@@ -5,7 +5,7 @@ import type { Core } from "@/core/Core";
 import { GetHabitsOverview } from "@/core/app/health/GetHabitsOverview";
 import { ArchiveObjective } from "@/core/app/objectives/ArchiveObjective";
 import { CreateObjective } from "@/core/app/objectives/CreateObjective";
-import { ListObjectives } from "@/core/app/objectives/ListObjectives";
+import { GetObjectivesOverview } from "@/core/app/objectives/GetObjectivesOverview";
 import { MarkObjectiveAchieved } from "@/core/app/objectives/MarkObjectiveAchieved";
 import { objectiveMetricSourceCatalog, resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { UpdateObjective } from "@/core/app/objectives/UpdateObjective";
@@ -218,10 +218,11 @@ export class ObjectivesPresenter extends PresenterBase<ObjectivesViewModel> {
     this.isLoading = true;
     this.refresh();
     try {
-      const [objectives, habitsOverview] = await Promise.all([
-        this.core.execute(new ListObjectives()),
+      const [overview, habitsOverview] = await Promise.all([
+        this.core.execute(new GetObjectivesOverview()),
         this.core.execute(new GetHabitsOverview()),
       ]);
+      const objectives = overview.objectives;
       this.habitOptions = habitsOverview.habits
         .filter((habit) => habit.archivedAt === null)
         .map((habit) => ({

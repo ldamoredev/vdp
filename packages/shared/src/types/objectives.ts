@@ -24,3 +24,8 @@ export interface Objective {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ObjectivesOverviewResponse {
+  objectives: Objective[];
+  date: string;
+}
