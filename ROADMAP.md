@@ -52,7 +52,18 @@ any further privileged actions beyond the two shipped flags.
 ## Phase 1 — Strengthen the core (active)
 
 No new modules. Recommended order: F1.2 → F1.3 → F1.4 → F1.5; F1.6 whenever the
-owner unblocks billing. Each item is a self-contained session.
+owner unblocks billing. Each item is a self-contained implementation session run
+per `docs/WORKFLOW.md` (feature branch + PR). One PR in flight at a time.
+
+Assignments (also the opencode bake-off, see WORKFLOW §opencode model policy):
+
+| Item | Agent |
+|---|---|
+| F1.2 | Codex GPT 5.5 |
+| F1.3 | opencode Kimi K2.7-code |
+| F1.4 | opencode GLM 5.2 |
+| F1.5 | Architect session (docs-only, on main) |
+| F1.6 | Architect session, after owner unblocks billing |
 
 F1.1 (verified backup + per-domain export) shipped and verified against prod on
 2026-07-07; runbook: `docs/operations/backup-restore.md`. Keep the backup cadence
@@ -168,6 +179,16 @@ smoke in prod. If the winner uses "tuteo", adjusting the system prompt builders 
 - **Phase 5 — Optional expansion:** People as a thin slice with a single signal
   ("no contact with X in N weeks → suggest task") only after validating the loop
   manually; Study/Work only with a concrete daily-loop case and F1.5 resolved.
+
+## Needs owner decision
+
+Agents: when an implementation session hits a product/scope question, append one
+bullet here — `YYYY-MM-DD — <question> — <one line of context> — recommendation:
+<yours>` — then keep going on what's decidable. The owner and the Architect triage
+this section; decided items get removed and their outcome lands in the relevant
+doc or ROADMAP item.
+
+(empty)
 
 ## Parked
 

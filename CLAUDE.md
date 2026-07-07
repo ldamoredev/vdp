@@ -11,13 +11,17 @@ live in [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.m
 
 ## Working agreement (short form)
 
-- Work directly on `main`. No branches or PRs unless the owner asks.
-- One ROADMAP feature per session, shipped complete through the per-feature gate,
-  then STOP and summarize.
-- Never commit or stage unless the owner explicitly says so. When they do: logical
-  commits (backend / frontend / docs), imperative messages explaining the why.
-- Verify locally before claiming done (see `AGENTS.md` §Verification), then a manual
-  browser smoke; clean up smoke data afterwards.
+Full protocol in [`docs/WORKFLOW.md`](./docs/WORKFLOW.md); rules in `AGENTS.md`
+§Working Agreement.
+
+- **Implementation session** (dev agent): one ROADMAP item, on a feature branch
+  (`feat/<item-id>-<slug>`), through the per-feature gate; verify → self
+  code-review → logical conventional commits → push branch → `gh pr create` →
+  STOP and summarize. Never push `main`, never merge, never deploy.
+- **Architect session** (owner + architect model): scoping, PR review, docs;
+  commits to `main` are docs/scoping-only and require the owner's explicit ask.
+- Blocked on a product decision → note it in `ROADMAP.md` §Needs owner decision
+  with a recommendation; continue with what's decidable.
 
 ## Skills
 
@@ -26,8 +30,8 @@ Skills in `.claude/skills/` auto-trigger for Claude Code:
 - `code-review` — always-on guard: review the working-tree diff before ANY commit or
   push; findings block until reported to the owner.
 - `tdd-workflow` — always-on guard: drive changes test-first (unit/social tests).
-- `smoke-verify` — closing procedure: the manual browser smoke + surgical cleanup
-  that ends every feature session (the owner uses the dev account with real data).
+- `smoke-verify` — pre-merge procedure: the manual browser smoke + surgical cleanup,
+  owner-run at PR review time (the owner uses the dev account with real data).
 - `create-handler-api`, `create-handler-web`, `create-presenter-web`,
   `create-aggregate`, `create-agent-tool` — generators; follow the matching one when
   scaffolding that kind of unit.

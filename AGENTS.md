@@ -55,16 +55,21 @@ The repo ships eight reusable workflows as `SKILL.md` files. They apply to **any
 The skills:
 
 - `code-review` and `tdd-workflow` are **process guards** — apply them automatically (review the diff before any commit/push; drive changes test-first). `code-review` findings are warnings that block the commit/push until reported to the owner.
-- `smoke-verify` is the **closing procedure** — the manual browser smoke + surgical cleanup that ends every feature session. Follow it after the automated verification ladder passes; its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules.
+- `smoke-verify` is the **pre-merge procedure** — the manual browser smoke + surgical cleanup, run by the owner during PR review when the feature has a UI surface (see `docs/WORKFLOW.md`). Its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules for every agent that touches the dev DB.
 - `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are **generators** — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
 
 ## Working Agreement (how sessions run)
 
-- Work directly on `main`. Never create branches or PRs unless the owner asks.
-- One ROADMAP feature per session, in `ROADMAP.md`'s order. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs), verify, then STOP and summarize for the owner.
-- Do not commit until the owner explicitly says so. When they do: split into logical commits (backend / frontend / docs), imperative messages explaining the why, then push to `main`.
+Roles, task routing, and the full session/PR/review protocol live in [`docs/WORKFLOW.md`](docs/WORKFLOW.md). The hard rules:
+
+- Two session types:
+  - **Implementation sessions** (any dev agent): work on a feature branch (`feat/<item-id>-<slug>`) cut from fresh `main`, one ROADMAP item per session. Commits on the feature branch are part of the dev flow (logical conventional commits, no per-commit permission needed). Close with: verification → self code-review → push branch → PR via `gh pr create` → STOP and summarize. Never push to `main`, never merge, never deploy.
+  - **Architect sessions** (owner + architect model): scoping, PR reviews, ROADMAP/docs edits. Direct commits to `main` are docs/scoping-only and still require the owner's explicit ask.
+- One ROADMAP feature per session, in `ROADMAP.md`'s order unless the owner assigns otherwise. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs) — a partial item is a failed session, not a smaller PR.
+- Blocked on a product/scope decision mid-session: append it to `ROADMAP.md` §Needs owner decision (date, question, context, your recommendation), keep going on what's decidable, stop only if fully blocked.
+- Merging is owner-only, after the Architect review (rebase-merge; never squash — it destroys the logical commit split).
 - `ROADMAP.md` is forward-looking only: it tracks what's left, not a history of what shipped. Once a feature ships, remove or condense its entry instead of accumulating a SHIPPED write-up — the commit history and code are the record of how and when something landed.
-- Local verification before claiming done, then a manual browser smoke against the real app. Clean up any smoke data you created in the dev DB afterwards.
+- Local verification before opening the PR (see §Verification). The browser smoke happens at review time (owner-run); if a session does create smoke data in the dev DB, clean it up surgically before closing.
 - Dev infrastructure: no docker-compose, no Redis, no Jaeger — the app processes run directly via `pnpm dev`/`tsx`/Vite. The only piece of local infra is Postgres: the real dev database is the `vdp-postgres-dev` docker container on port 55432 (`docker start vdp-postgres-dev`), credentials `vdp:vdp`, database `vdp`. Run migrations with `DATABASE_URL='postgresql://vdp:vdp@localhost:55432/vdp' pnpm db:migrate` from `server/`. The test suite (`db:test:up`/`test:integration`/`test:e2e`) uses a separate, ephemeral Postgres-only container via `docker-compose.test.yml` — unrelated to the dev database above.
 
 ## Commands
@@ -368,7 +373,7 @@ A domain is only real when it matches the Tasks template:
 - `.claude/dev-credentials.env` exists for local manual verification but must remain private.
 - Do not run destructive git commands or force pushes.
 - Do not edit committed migrations; generate a new migration.
-- Do not stage or commit unless the user explicitly asks.
+- Committing is scoped by branch: feature-branch commits are part of the dev flow; commits to `main` only when the owner explicitly asks. Never merge or push `main` from an implementation session.
 - If the working tree is dirty, preserve unrelated user changes.
 
 ## Verification
