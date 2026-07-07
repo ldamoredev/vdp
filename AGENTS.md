@@ -169,7 +169,7 @@ Do not rewrite a module from one style to the other without an explicit reason; 
 
 The active migrations create these PostgreSQL schemas:
 
-- `core`: users, sessions, audit logs, agent conversations, agent messages.
+- `core`: users, sessions, audit logs, agent conversations, agent messages, usage events (per-owner per-day per-action counters written fire-and-forget by `UsageTrackingMiddleware`; read with plain SQL — see `docs/operations/usage-instrumentation.md`).
 - `tasks`: tasks, task notes, task embeddings, task insights.
 - `projects`: projects direction aggregate (`work|personal`) used by the project board, client catalog, and time entries for hours reporting; task rows link to projects through nullable `project_id`.
 - `objectives`: Life Goals objectives with explicit periods, typed metric source, target/unit, manual value, optional currency, and lifecycle. Progress is computed read-time in the web presenter, not in backend SQL; achieved status is persisted lazily when read-time progress reaches the target.

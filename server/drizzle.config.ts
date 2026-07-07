@@ -6,6 +6,7 @@ export default defineConfig({
     "./src/modules/auth/infrastructure/db/schema.ts",
     "./src/modules/common/infrastructure/agents/schema.ts",
     "./src/modules/common/infrastructure/settings/schema.ts",
+    "./src/modules/common/infrastructure/usage/schema.ts",
     "./src/modules/wallet/infrastructure/db/schema.ts",
     "./src/modules/projects/infrastructure/db/schema.ts",
     "./src/modules/objectives/infrastructure/db/schema.ts",

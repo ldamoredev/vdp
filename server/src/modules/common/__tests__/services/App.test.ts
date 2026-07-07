@@ -11,7 +11,9 @@ import { HttpController } from '../../http/HttpController';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { HttpMiddleWare } from '../../http/HttpMiddleWare';
 import { AppSettingsRepository } from '../../base/settings/AppSettingsRepository';
+import { UsageEventRepository } from '../../base/usage/UsageEventRepository';
 import { FakeAppSettingsRepository } from '../fakes/FakeAppSettingsRepository';
+import { FakeUsageEventRepository } from '../fakes/FakeUsageEventRepository';
 
 class FakeCore {
     public readonly eventBus = new EventBus();
@@ -24,6 +26,7 @@ class FakeCore {
         [SessionRepository, new FakeSessionRepository()],
         [AuditLogRepository, new FakeAuditLogRepository()],
         [AppSettingsRepository, new FakeAppSettingsRepository()],
+        [UsageEventRepository, new FakeUsageEventRepository()],
     ]);
 
     getControllers(): HttpController[] {
