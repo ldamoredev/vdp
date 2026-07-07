@@ -25,13 +25,13 @@ function objectives(overrides: Partial<HomeObjectivesViewModel> = {}): HomeObjec
       {
         id: "o1",
         title: "Leer 12 libros",
-        periodLabel: "ene 2026 - dic 2026",
         sourceLabel: "Manual",
+        daysRemainingLabel: "Quedan 30 días",
         currentValueLabel: "3 libros",
         targetValueLabel: "12 libros",
         progressPercent: 25,
         progressLabel: "25%",
-        isCreatingTask: false,
+        createTaskHref: `/tasks?capturar=${encodeURIComponent("Avanzar en: Leer 12 libros")}`,
       },
     ],
     ...overrides,
@@ -39,25 +39,27 @@ function objectives(overrides: Partial<HomeObjectivesViewModel> = {}): HomeObjec
 }
 
 describe("ObjectivesNorthCard", () => {
-  it("renders active objectives and links to Metas", () => {
+  it("renders active objectives, days remaining and a capturar deep-link to Tasks", () => {
     const markup = renderToStaticMarkup(
-      createElement(ObjectivesNorthCard, { model: objectives(), onCreateTask: vi.fn() }),
+      createElement(ObjectivesNorthCard, { model: objectives() }),
     );
 
     expect(markup).toContain("Metas");
     expect(markup).toContain('href="/objectives"');
     expect(markup).toContain("Leer 12 libros");
+    expect(markup).toContain("Manual");
+    expect(markup).toContain("Quedan 30 días");
     expect(markup).toContain("25%");
     expect(markup).toContain("3 libros");
     expect(markup).toContain("12 libros");
-    expect(markup).toContain("Crear tarea para hoy");
+    expect(markup).toContain(`href="/tasks?capturar=${encodeURIComponent("Avanzar en: Leer 12 libros")}"`);
+    expect(markup).toContain("Capturar tarea");
   });
 
   it("renders an empty state when there are no active objectives", () => {
     const markup = renderToStaticMarkup(
       createElement(ObjectivesNorthCard, {
         model: objectives({ countLabel: "0 activas", items: [] }),
-        onCreateTask: vi.fn(),
       }),
     );
 

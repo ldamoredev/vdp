@@ -16,6 +16,7 @@ import type { Core } from "@/core/Core";
 import { ListObjectives } from "@/core/app/objectives/ListObjectives";
 import { resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
+import { formatDaysRemaining, objectiveCreateTaskHref } from "@/ui/screens/home/objectives-progress";
 import { CarryOverAll } from "@/core/app/tasks/CarryOverAll";
 import { CompleteTask } from "@/core/app/tasks/CompleteTask";
 import { CreateTask } from "@/core/app/tasks/CreateTask";
@@ -40,7 +41,6 @@ import {
   formatDateShort,
   formatMoney,
   formatRelative,
-  formatTaskDate,
   addLocalDaysISO,
   getTodayISO,
   getWeekStartISO,
@@ -276,7 +276,6 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   private loadingWalletRecentTransactions = true;
   private newTaskTitle = "";
   private creatingTask = false;
-  private creatingObjectiveTaskIds = new Set<string>();
   private createTaskError: string | null = null;
   private confirmingCarryOvers = false;
   private savingFocus = false;
@@ -329,28 +328,6 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
       this.createTaskError = "No se pudo agregar la tarea. Probá de nuevo.";
     } finally {
       this.creatingTask = false;
-      this.refresh();
-    }
-  }
-
-  async createTaskForObjective(objectiveId: string): Promise<void> {
-    if (this.creatingObjectiveTaskIds.has(objectiveId)) return;
-    const objective = this.objectives.find((candidate) => candidate.id === objectiveId);
-    if (!objective) return;
-
-    this.creatingObjectiveTaskIds.add(objectiveId);
-    this.refresh();
-
-    try {
-      await this.core.execute(new CreateTask({
-        title: `Avanzar en: ${objective.title}`,
-        scheduledDate: this.today,
-        priority: 2,
-      }));
-      await this.load();
-      await this.events.emitTasksChanged();
-    } finally {
-      this.creatingObjectiveTaskIds.delete(objectiveId);
       this.refresh();
     }
   }
@@ -682,13 +659,13 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
     return {
       id: objective.id,
       title: objective.title,
-      periodLabel: `${formatTaskDate(objective.periodStart)} - ${formatTaskDate(objective.periodEnd)}`,
       sourceLabel: sourceLabel(objective.metricSource),
+      daysRemainingLabel: formatDaysRemaining(objective.periodEnd, this.today),
       currentValueLabel: formatObjectiveValue(currentValue, objective.unit),
       targetValueLabel: formatObjectiveValue(objective.target, objective.unit),
       progressPercent,
       progressLabel: `${progressPercent}%`,
-      isCreatingTask: this.creatingObjectiveTaskIds.has(objective.id),
+      createTaskHref: objectiveCreateTaskHref(objective.title),
     };
   }
 

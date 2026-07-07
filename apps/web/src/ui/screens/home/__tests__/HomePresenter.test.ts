@@ -360,14 +360,14 @@ describe("HomePresenter", () => {
     presenter.stop();
   });
 
-  it("surfaces active objectives as the daily north", async () => {
+  it("surfaces active objectives as the daily north with days remaining and a capturar deep-link", async () => {
     const { presenter, objectives } = build();
     objectives.objectives = [
       Objective.from({
         id: "active-manual",
         title: "Leer 12 libros",
         periodStart: "2026-01-01",
-        periodEnd: "2026-12-31",
+        periodEnd: "2026-07-15",
         metricSource: "manual",
         metricTargetId: null,
         target: 12,
@@ -410,58 +410,15 @@ describe("HomePresenter", () => {
           id: "active-manual",
           title: "Leer 12 libros",
           sourceLabel: "Manual",
+          daysRemainingLabel: "Quedan 30 días",
           currentValueLabel: "3 libros",
           targetValueLabel: "12 libros",
           progressPercent: 25,
           progressLabel: "25%",
+          createTaskHref: `/tasks?capturar=${encodeURIComponent("Avanzar en: Leer 12 libros")}`,
         },
       ],
     });
-    presenter.stop();
-  });
-
-  it("creates a task for today from an active objective", async () => {
-    const { presenter, objectives, tasks, events } = build();
-    objectives.objectives = [
-      Objective.from({
-        id: "active-manual",
-        title: "Leer 12 libros",
-        periodStart: "2026-01-01",
-        periodEnd: "2026-12-31",
-        metricSource: "manual",
-        metricTargetId: null,
-        target: 12,
-        unit: "libros",
-        manualValue: 3,
-        currency: null,
-        status: "active",
-        archivedAt: null,
-        achievedAt: null,
-        createdAt: "2026-06-01T10:00:00.000Z",
-        updatedAt: "2026-06-14T10:00:00.000Z",
-      }),
-    ];
-    const createTask = vi.spyOn(tasks, "createTask").mockResolvedValue(
-      Task.from(taskDto({ id: "objective-task", title: "Avanzar en: Leer 12 libros" })),
-    );
-    const emit = vi.spyOn(events, "emitTasksChanged");
-
-    presenter.start();
-    await flush();
-
-    const creation = presenter.createTaskForObjective("active-manual");
-
-    expect(presenter.model.objectives.items[0].isCreatingTask).toBe(true);
-
-    await creation;
-
-    expect(createTask).toHaveBeenCalledWith({
-      title: "Avanzar en: Leer 12 libros",
-      scheduledDate: "2026-06-15",
-      priority: 2,
-    });
-    expect(emit).toHaveBeenCalled();
-    expect(presenter.model.objectives.items[0].isCreatingTask).toBe(false);
     presenter.stop();
   });
 

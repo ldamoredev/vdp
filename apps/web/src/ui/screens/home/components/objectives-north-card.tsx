@@ -1,15 +1,14 @@
 import { Link } from "react-router";
-import { ArrowRight, Loader2, Plus, Target } from "lucide-react";
+import { ArrowRight, Plus, Target } from "lucide-react";
 
 import { CollectionCard } from "@/ui/primitives/collection-card";
 import type { HomeObjectivesViewModel } from "@/ui/models/home/HomeViewModel";
 
 export interface ObjectivesNorthCardProps {
   readonly model: HomeObjectivesViewModel;
-  readonly onCreateTask: (objectiveId: string) => void;
 }
 
-export function ObjectivesNorthCard({ model, onCreateTask }: ObjectivesNorthCardProps) {
+export function ObjectivesNorthCard({ model }: ObjectivesNorthCardProps) {
   return (
     <CollectionCard
       title="Metas"
@@ -39,7 +38,7 @@ export function ObjectivesNorthCard({ model, onCreateTask }: ObjectivesNorthCard
                     {objective.title}
                   </p>
                   <p className="mt-1 truncate text-[11px] text-[var(--muted)]">
-                    {objective.sourceLabel} · {objective.periodLabel}
+                    {objective.sourceLabel} · <span className="font-data">{objective.daysRemainingLabel}</span>
                   </p>
                 </div>
                 <span className="shrink-0 font-data text-sm font-semibold text-[var(--foreground)]">
@@ -59,19 +58,13 @@ export function ObjectivesNorthCard({ model, onCreateTask }: ObjectivesNorthCard
                 <span className="font-data">{objective.targetValueLabel}</span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => onCreateTask(objective.id)}
-                disabled={objective.isCreatingTask}
-                className="btn-secondary mt-3 min-h-9 w-full justify-center text-xs disabled:opacity-50"
+              <Link
+                to={objective.createTaskHref}
+                className="btn-secondary mt-3 min-h-9 w-full justify-center text-xs"
               >
-                {objective.isCreatingTask ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Plus size={13} />
-                )}
-                Crear tarea para hoy
-              </button>
+                <Plus size={13} />
+                Capturar tarea
+              </Link>
             </article>
           ))}
         </div>
