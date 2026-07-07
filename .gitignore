@@ -28,3 +28,7 @@ apps/web/playwright-report/
 
 # Local design-system handoff bundle
 docs/design/
+
+# DB backups and owner data exports (personal data — never commit)
+backups/
+vdp-export-*/
