@@ -125,13 +125,14 @@ export interface HomeRhythmViewModel {
 export interface HomeObjectiveViewModel {
   readonly id: string;
   readonly title: string;
-  readonly periodLabel: string;
   readonly sourceLabel: string;
+  readonly daysRemainingLabel: string;
   readonly currentValueLabel: string;
   readonly targetValueLabel: string;
   readonly progressPercent: number;
   readonly progressLabel: string;
-  readonly isCreatingTask: boolean;
+  /** Pre-filled `?capturar=` deep-link to the Tasks create surface. F1.4. */
+  readonly createTaskHref: string;
 }
 
 export interface HomeObjectivesViewModel {
