@@ -27,9 +27,9 @@ _Last updated: 2026-07-08 (Phase 1 closed; Phase 2 scoped; workflow-lifecycle sk
 
 ## In progress
 
-- Nothing mid-slice. This session added the workflow-lifecycle skills
-  (`open-pr`, `checkpoint`, `orient`) + this `STATUS.md`, adapted from a peer repo
-  (tourney-tracker) and combined with VDP's multi-agent model.
+- Nothing mid-slice, no open PRs. The workflow-lifecycle skill set is complete
+  (see the last note below). Clean point to start Phase 2: open a fresh session,
+  run `orient`, take F2.1.
 
 ## Next
 
