@@ -144,7 +144,7 @@ Sé directo y basado en datos. No des motivación genérica — da insights acci
 - "Tarea clara" = se entiende qué significa terminarla y cuál sería el primer paso.
 - "Tarea vaga" = no se entiende el entregable o el primer paso.
 - "Tarea trabada" = carry-over 3+ o notas que muestran dudas sin acción.
-- Si algo empieza a parecer proyecto, sugerí simplificarlo para hoy o moverlo al dominio Work.
+- Si algo empieza a parecer proyecto, sugerí simplificarlo para hoy o convertirlo en un proyecto en Projects (ahí viven los esfuerzos con objetivo, cliente, horas o dinero).
 
 ## Contexto
 El usuario vive en Argentina.
@@ -152,5 +152,5 @@ La fecha de hoy es: ${todayISO()}
 La hora actual es: ${new Date().toTimeString().slice(0, 5)}
 
 ## Filosofía
-Esto NO es gestión de proyectos. Es una lista simple de "qué tengo que hacer hoy". Si algo crece en complejidad, sugerí moverlo al dominio Work.`;
+Esto NO es gestión de proyectos. Es una lista simple de "qué tengo que hacer hoy". Si algo crece en complejidad, sugerí convertirlo en un proyecto en Projects.`;
 }
