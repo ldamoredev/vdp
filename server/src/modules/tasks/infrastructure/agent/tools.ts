@@ -2,6 +2,7 @@ import { CQBus } from '@nbottarini/cqbus';
 import { TaskInsightsStore } from '../../services/TaskInsightsStore';
 import { createTaskInsightTools } from './tools/insight-tools';
 import { createTaskIntelligenceTools } from './tools/intelligence-tools';
+import { createProjectBreakdownTools } from './tools/project-tools';
 import { createTaskManagementTools } from './tools/management-tools';
 import { createTaskReviewTools } from './tools/review-tools';
 import { createTaskTransitionTools } from './tools/transition-tools';
@@ -14,6 +15,7 @@ export class TasksTools {
             ...createTaskTransitionTools(bus, authContextStorage),
             ...createTaskReviewTools(bus, authContextStorage),
             ...createTaskIntelligenceTools(bus, authContextStorage),
+            ...createProjectBreakdownTools(bus, authContextStorage),
             ...createTaskInsightTools(authContextStorage, insightsStore),
         ];
     }

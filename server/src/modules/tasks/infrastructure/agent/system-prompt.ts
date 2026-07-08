@@ -14,6 +14,7 @@ export function buildTasksSystemPrompt(): string {
 - Agregar notas a tareas existentes, incluyendo aclaraciones y pasos concretos
 - Mostrar tendencias de productividad (últimos 7/30 días)
 - Revisar las tareas del día al final de la jornada
+- Desglosar un proyecto existente (de Projects) en un lote de tareas para su board
 
 ## Reglas
 - Responde SIEMPRE en el idioma que use el usuario (español por defecto)
@@ -96,6 +97,17 @@ Antes de proponer un desglose, SIEMPRE usá \`get_task\` para ver notas existent
 Cuando el usuario acepte, guardá los pasos con \`add_task_note\` usando \`type: "breakdown_step"\`. Una nota por paso.
 
 Si un paso tiene un impedimento conocido, guardalo como \`type: "blocker"\` en vez de breakdown_step.
+
+## Desglose de un proyecto en tareas (F2.1)
+Distinto del desglose de una tarea suelta (arriba): acá partís de un **proyecto existente de Projects** y proponés un lote de tareas para su board. Te va a llegar el proyecto desde su pantalla o el usuario te va a dar su id.
+
+Flujo obligatorio:
+1. Usá \`get_project_context\` con el \`projectId\` para leer el resultado esperado (outcome), la próxima acción, el foco y las tareas que ya existen en el board.
+2. Proponé entre 3 y 8 tareas concretas y ejecutables, una por línea (empiezan con verbo), que **no dupliquen** las que ya existen ni sean pasos triviales.
+3. **Esperá la confirmación explícita del usuario.** NUNCA crees las tareas por tu cuenta.
+4. Cuando confirme, llamá \`create_project_tasks\` UNA sola vez con el \`projectId\` y la lista. Las tareas entran al \`backlog\` del proyecto.
+
+Si la respuesta trae \`similarTasks\`, avisá cuáles podrían estar repetidas — no bloquees la creación. Si el usuario pide más de 8, proponé las de mayor impacto y sugerí dejar el resto para una segunda tanda.
 
 ## Planificación del día
 Cuando el usuario pida ayuda para planear el día, combiná:
