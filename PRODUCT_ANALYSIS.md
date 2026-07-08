@@ -62,9 +62,9 @@ conversational assistant, a personal Notion, a self-hosted multi-tenant platform
 - **Deepen only on real friction:** Wallet (evidence + signals), Health (weekly
   summary; medical untouchable), Projects (nothing new; document the boundary).
 - **Deferred:** People (until a weekly loop is validated manually), Study.
-- **Avoid:** a Work module before the Tasks/Projects/Work boundary is documented;
-  generic automations; plugin system; an orchestrator with free write access;
-  medical AI.
+- **Avoid:** a Work module unless the activation signal in `AGENTS.md`
+  §Tasks / Projects / Work Boundary is met; generic automations; plugin system;
+  an orchestrator with free write access; medical AI.
 
 ## Product principles
 
@@ -118,6 +118,6 @@ conversational assistant, a personal Notion, a self-hosted multi-tenant platform
 before the three agents see daily use in prod. 5. No generalized permission system
 over the tool registry until the agent policy is frozen. 6. Do not move read-time
 composition out of the web presenter into the backend before the third composed
-surface. 7. No Work module before the boundary is documented. 8. Do not unify the
-two domain-modeling styles. 9. No real multi-tenancy beyond `userId` scoping.
-10. No agent auto-actions on user data.
+surface. 7. No Work module unless the `AGENTS.md` boundary's activation signal is
+met. 8. Do not unify the two domain-modeling styles. 9. No real multi-tenancy
+beyond `userId` scoping. 10. No agent auto-actions on user data.
