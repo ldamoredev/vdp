@@ -402,6 +402,13 @@ describe("HomePresenter", () => {
     presenter.start();
     await flush();
 
+    // The /home card must load objectives through the overview query, which is
+    // what fires the backend deadline-approaching detection (H2 lazy-on-load).
+    // Using the plain list here would leave the signal dormant on the daily
+    // surface. See docs/operations/objectives-deadline-signal.md.
+    expect(objectives.callsTo("getObjectivesOverview").length).toBeGreaterThanOrEqual(1);
+    expect(objectives.callsTo("listObjectives")).toHaveLength(0);
+
     expect(presenter.model.objectives).toMatchObject({
       href: "/objectives",
       countLabel: "1 activa",
