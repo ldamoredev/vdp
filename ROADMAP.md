@@ -195,6 +195,19 @@ create-time similarity check so a breakdown does not spam duplicates of tasks al
 on the project; new tasks default to the `backlog` column; auth-context and
 `localDateStringSchema` tool rules from AGENTS.md §Agent Architecture apply.
 
+Assignments (owner fills the agent when taking the item; one PR in flight):
+
+| Item | Agent | Status |
+|---|---|---|
+| F2.1 | _TBD_ | not started — take first |
+| F2.2 | _TBD_ | blocked on F2.1 |
+| F2.3 | — | deferred (owner decision) |
+
+To run one: point the agent at it with the dev-agent kickoff — "Read AGENTS.md and
+docs/WORKFLOW.md, then run an implementation session for ROADMAP item F2.1 per the
+dev-agent session protocol." F2.1 is an agent-tool session, so it also follows the
+`create-agent-tool` skill.
+
 ### F2.1 Agent project-breakdown capability (backend + prompt)
 
 **Why:** the capability that removes the friction. The Tasks agent can read a project
