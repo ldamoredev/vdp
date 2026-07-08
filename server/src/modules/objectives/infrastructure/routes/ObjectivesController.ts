@@ -10,6 +10,7 @@ import { RouteContextHandler } from '../../../common/http/routes';
 import { ArchiveObjectiveCommand } from '../../app/ArchiveObjectiveCommand';
 import { CreateObjectiveCommand } from '../../app/CreateObjectiveCommand';
 import { GetObjectiveQuery } from '../../app/GetObjectiveQuery';
+import { GetObjectivesOverviewQuery } from '../../app/GetObjectivesOverviewQuery';
 import { ListObjectivesQuery } from '../../app/ListObjectivesQuery';
 import { MarkObjectiveAchievedCommand } from '../../app/MarkObjectiveAchievedCommand';
 import { serializeObjective } from '../../app/serialize';
@@ -29,6 +30,7 @@ export class ObjectivesController extends HttpController {
     registerRoutes(routes: RouteRegister): void {
         routes
             .get('/', {}, this.listObjectives)
+            .get('/overview', {}, this.getObjectivesOverview)
             .get('/:id', { params: objectiveIdParamsSchema }, this.getObjective)
             .post('/', { body: createObjectiveSchema }, this.createObjective)
             .put('/:id', { params: objectiveIdParamsSchema, body: updateObjectiveSchema }, this.updateObjective)
@@ -45,6 +47,20 @@ export class ObjectivesController extends HttpController {
             executionContextFromAuth(request.auth),
         );
         return reply.send({ objectives: objectives.map(serializeObjective) });
+    };
+
+    private readonly getObjectivesOverview: RouteContextHandler<undefined, undefined, undefined> = async ({
+        request,
+        reply,
+    }) => {
+        const overview = await this.bus.execute(
+            new GetObjectivesOverviewQuery(),
+            executionContextFromAuth(request.auth),
+        );
+        return reply.send({
+            objectives: overview.objectives.map(serializeObjective),
+            date: overview.date,
+        });
     };
 
     private readonly getObjective: RouteContextHandler<ObjectiveIdParams, undefined, undefined> = async ({

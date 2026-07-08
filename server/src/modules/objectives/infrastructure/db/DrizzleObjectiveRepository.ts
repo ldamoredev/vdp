@@ -26,6 +26,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
                     ? String(data.manualValue)
                     : null,
                 currency: data.metricSource === 'wallet_savings' ? data.currency ?? null : null,
+                lastDeadlineNotified: 'none',
             })
             .returning();
 
@@ -67,6 +68,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
                 manualValue: snapshot.manualValue === null ? null : String(snapshot.manualValue),
                 currency: snapshot.currency,
                 status: snapshot.status,
+                lastDeadlineNotified: snapshot.lastDeadlineNotified,
                 archivedAt: snapshot.archivedAt,
                 achievedAt: snapshot.achievedAt,
                 updatedAt: snapshot.updatedAt,
@@ -91,6 +93,7 @@ export class DrizzleObjectiveRepository extends ObjectiveRepository {
             manualValue: row.manualValue === null ? null : Number(row.manualValue),
             currency: row.currency,
             status: row.status,
+            lastDeadlineNotified: row.lastDeadlineNotified,
             archivedAt: row.archivedAt,
             achievedAt: row.achievedAt,
             createdAt: row.createdAt,

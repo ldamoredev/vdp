@@ -127,4 +127,22 @@ describe('DrizzleObjectiveRepository', () => {
         });
         expect(saved?.archivedAt).toBeInstanceOf(Date);
     });
+
+    it('persists last deadline notified stage', async () => {
+        const objective = await repo.createObjective(userId, {
+            title: 'Manual score',
+            periodStart: '2026-01-01',
+            periodEnd: '2026-12-31',
+            metricSource: 'manual',
+            target: 10,
+            unit: 'puntos',
+            manualValue: 1,
+        });
+
+        objective.markDeadlineNotified('t14');
+        await repo.save(userId, objective);
+
+        const saved = await repo.getObjective(userId, objective.id);
+        expect(saved?.lastDeadlineNotified).toBe('t14');
+    });
 });

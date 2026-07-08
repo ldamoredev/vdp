@@ -19,6 +19,7 @@ export const objectives = objectivesSchema.table(
         manualValue: decimal('manual_value', { precision: 15, scale: 2 }),
         currency: varchar('currency', { length: 3 }),
         status: varchar('status', { length: 20 }).notNull().default('active'),
+        lastDeadlineNotified: varchar('last_deadline_notified', { length: 4 }).notNull().default('none'),
         archivedAt: timestamp('archived_at', { withTimezone: true }),
         achievedAt: timestamp('achieved_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

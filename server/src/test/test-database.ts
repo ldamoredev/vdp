@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS objectives.objectives (
     manual_value NUMERIC(15, 2),
     currency VARCHAR(3),
     status VARCHAR(20) NOT NULL DEFAULT 'active',
+    last_deadline_notified VARCHAR(4) NOT NULL DEFAULT 'none',
     archived_at TIMESTAMPTZ,
     achieved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

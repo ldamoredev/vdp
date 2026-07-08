@@ -4,6 +4,7 @@ import { Objective } from "../../../../domain/objectives/Objective";
 import type {
   CreateObjectiveInput,
   ObjectivesGateway,
+  ObjectivesOverview,
   UpdateObjectiveInput,
 } from "../../../../domain/objectives/ObjectivesGateway";
 
@@ -45,6 +46,14 @@ export class FakeObjectivesGateway implements ObjectivesGateway {
   async listObjectives(): Promise<Objective[]> {
     this.record("listObjectives");
     return this.objectives;
+  }
+
+  async getObjectivesOverview(): Promise<ObjectivesOverview> {
+    this.record("getObjectivesOverview");
+    return {
+      objectives: this.objectives,
+      date: "2026-06-28",
+    };
   }
 
   async getObjective(id: string): Promise<Objective | null> {

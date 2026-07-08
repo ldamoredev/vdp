@@ -83,6 +83,18 @@ describe("HttpObjectivesGateway", () => {
     expect(http.calls[0]).toMatchObject({ method: "GET", url: "/objectives" });
   });
 
+  it("loads the overview and maps DTOs to domain models", async () => {
+    const http = new FakeHttpClient({
+      "GET /objectives/overview": { objectives: [objectiveDto()], date: "2026-06-28" },
+    });
+
+    const overview = await new HttpObjectivesGateway(http).getObjectivesOverview();
+
+    expect(overview.objectives[0]).toBeInstanceOf(Objective);
+    expect(overview.date).toBe("2026-06-28");
+    expect(http.calls[0]).toMatchObject({ method: "GET", url: "/objectives/overview" });
+  });
+
   it("creates and updates objectives with the expected body", async () => {
     const http = new FakeHttpClient({
       "POST /objectives": objectiveDto({ id: "created", metricSource: "manual", manualValue: 2 }),

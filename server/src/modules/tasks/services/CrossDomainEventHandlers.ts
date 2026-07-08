@@ -12,6 +12,7 @@ import { HabitStreakBrokenPayload } from '../../health/domain/events/HabitStreak
 import { HabitMilestonePayload } from '../../health/domain/events/HabitMilestone';
 import { CounterMilestonePayload } from '../../health/domain/events/CounterMilestone';
 import { GoalDeadlineApproachingPayload } from '../../health/domain/events/GoalDeadlineApproaching';
+import { ObjectiveDeadlineApproachingPayload } from '../../objectives/domain/events/ObjectiveDeadlineApproaching';
 import { CreateTaskCommand } from '../app/CreateTaskCommand';
 import { CreateTaskData } from '../domain/TaskRepository';
 
@@ -49,6 +50,9 @@ export class CrossDomainEventHandlers implements EventSubscriber {
         this.eventBus.on('health.goal.deadline_approaching', (event: DomainEvent) => {
             this.handleGoalDeadlineApproaching(event.payload as GoalDeadlineApproachingPayload);
         });
+        this.eventBus.on('objectives.objective.deadline_approaching', (event: DomainEvent) => {
+            this.handleObjectiveDeadlineApproaching(event.payload as ObjectiveDeadlineApproachingPayload);
+        });
     }
 
     private handleGoalDeadlineApproaching(payload: GoalDeadlineApproachingPayload): void {
@@ -85,6 +89,50 @@ export class CrossDomainEventHandlers implements EventSubscriber {
                 domain: 'health',
             },
             'cross-domain: failed to create goal deadline task',
+        );
+    }
+
+    private handleObjectiveDeadlineApproaching(payload: ObjectiveDeadlineApproachingPayload): void {
+        const deadlineLine = payload.daysLeft < 0
+            ? `Venció hace ${Math.abs(payload.daysLeft)} día${Math.abs(payload.daysLeft) === 1 ? '' : 's'} (${payload.periodEnd}).`
+            : payload.daysLeft === 0
+                ? `Vence HOY (${payload.periodEnd}).`
+                : `Vence en ${payload.daysLeft} día${payload.daysLeft === 1 ? '' : 's'} (${payload.periodEnd}).`;
+
+        const progressLine = payload.progress !== null
+            ? `Progreso actual: ${payload.progress} de ${payload.target} ${payload.unit}.`
+            : `Progreso vinculado a ${payload.metricSource ?? 'su fuente'}; se actualiza automáticamente.`;
+
+        this.insightsStore.addInsight({
+            userId: payload.userId,
+            type: 'warning',
+            title: `Objetivo cerca del límite: "${payload.title}"`,
+            message: `${deadlineLine} ${progressLine} Decidilo: acelerarlo, ajustarlo o soltarlo — pero que no venza solo.`,
+            metadata: {
+                source: 'objectives.objective.deadline_approaching',
+                objectiveId: payload.objectiveId,
+                periodEnd: payload.periodEnd,
+                daysLeft: payload.daysLeft,
+                progress: payload.progress,
+                target: payload.target,
+                unit: payload.unit,
+                actionHref: '/objectives',
+                actionLabel: 'Ver objetivos',
+            },
+        });
+
+        this.createTaskFromEvent(
+            payload.userId,
+            {
+                title: `Decidir objetivo: ${payload.title}`,
+                description:
+                    `${deadlineLine} ${progressLine} Esta tarea existe para que el objetivo no venza ` +
+                    `sin una decisión: acelerarlo, ajustar el alcance o soltarlo a conciencia.`,
+                priority: payload.daysLeft <= 1 ? 3 : 2,
+                scheduledDate: todayISO(),
+                domain: 'trabajo',
+            },
+            'cross-domain: failed to create objective deadline task',
         );
     }
 

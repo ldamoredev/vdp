@@ -176,6 +176,13 @@
       "when": 1783453007387,
       "tag": "0024_daily_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1783456269539,
+      "tag": "0025_skinny_the_executioner",
+      "breakpoints": true
     }
   ]
 }
