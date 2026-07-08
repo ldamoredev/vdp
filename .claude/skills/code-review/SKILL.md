@@ -9,8 +9,19 @@ Reviews the current change for design, repo-rule, and test problems before it is
 
 ## When to run
 
-- Automatically **before any `git commit` or `git push`** of non-trivial code (skip pure docs/config typo fixes).
-- Whenever the owner asks to review the diff or a module.
+- Automatically **before any `git commit` or `git push`** of non-trivial code, and as the `open-pr` skill's gate before a PR.
+- Whenever the owner asks to review the diff or a module, and during the Architect's PR review (`docs/WORKFLOW.md`).
+
+## Effort tiers
+
+Match the review effort to the diff's risk — don't run a heavy pass on a copy tweak, don't wave through an auth change. Default to **medium**.
+
+- **content-only** — the diff is only CSS, copy/emoji, comments, or docs/skills (`**.md`, `.claude/**`). **Skip review**; state that you skipped it and why. (This is also `open-pr`'s trivial path — direct push, no PR.)
+- **medium** (default) — a routine, slice-sized code diff. Run **the three passes below inline**. This is what a dev agent runs on its own diff and what the Architect runs on a normal PR.
+- **high** — a large diff, or one touching a **risk surface**: auth-context, money aggregation (currency), medical isolation, a migration / schema change, or a new cross-module coupling. The Architect escalates to the **fan-out** below. A dev agent that finds itself on a risk surface says so in the PR body so the Architect knows to go high.
+- **ultra** — the owner-invoked `/code-review ultra` cloud review. Cannot be launched from a session; only the owner triggers it, typically on a big or risky PR (`/code-review ultra <PR#>`).
+
+The severity model and three passes are the same at every tier; the tier changes *how much machinery* runs, not what counts as a finding.
 
 ## Severity model (single level)
 
@@ -61,6 +72,18 @@ These are hard rules — a violation is a warning. Source of truth is [AGENTS.md
 - Test quality: FIRST (fast, isolated, repeatable, self-validating, timely), one behavior per test, readable Given-When-Then, descriptive names.
 - Fakes vs. real DB placement correct; cross-user isolation present where required.
 - For a bugfix: is there a regression test that fails without the fix?
+
+## High-effort fan-out (Architect only)
+
+For the `high` tier, spread the three passes across parallel finder agents — but with a hard-won safety recipe. **The failure to avoid:** finder agents spawned with no `model` set inherit the parent's (expensive) model and re-explore the repo unbounded, burning the session budget with nothing to show. Never do that.
+
+1. **Build one bundle in the scratchpad:** a filtered diff (exclude generated noise — migration snapshot/meta JSON, lockfiles) + a short context card (change intent, the governing AGENTS.md rule, a file map). Every finder gets the *same* bundle — a pure `input → findings` function, not its own repo exploration.
+2. **Pick 4–8 angles** the diff actually needs: correctness, removed guards/invariants, cross-file callers (including surfaces the diff doesn't touch but that consume changed types), reuse/simplification, conventions. Mechanical angles (naming, conventions) → a cheap model; substantive ones (correctness, invariants, callers) → a mid model.
+3. **Spawn one Agent per angle**, each with: an **explicit `model`** (never omitted/inherited); the bundle from step 1; a **per-angle file allowlist (~4 files max)** — no Grep, no git, no free exploration; and an instruction that its final message is a **JSON array of findings only**.
+4. **Verify every candidate inline** in the Architect session — it already holds full context, so don't spawn per-candidate verifiers. Read the actual file; confirm or reject.
+5. **Report** only findings that survived verification, most-severe first — same shape as a medium review.
+
+`ultra` is different and not this: it's the owner-triggered cloud review, never launched from here.
 
 ## Output format
 

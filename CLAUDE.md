@@ -35,6 +35,8 @@ Skills in `.claude/skills/` auto-trigger for Claude Code:
 - `checkpoint` / `orient` — session continuity via `STATUS.md`: `checkpoint` writes
   in-flight state at session end (use when wrapping up or a chat gets long), `orient`
   reads it at session start ("where were we?"). `STATUS.md` ≠ `ROADMAP.md` ≠ memory.
+- `workflow-retro` — Architect-only: periodic audit of the workflow itself (skills,
+  hooks, docs, memory); prune rules that stopped paying rent. Run on "retro".
 - `smoke-verify` — pre-merge procedure: the manual browser smoke + surgical cleanup,
   owner-run at PR review time (the owner uses the dev account with real data).
 - `create-handler-api`, `create-handler-web`, `create-presenter-web`,

@@ -17,6 +17,24 @@ Red → green → refactor, one small step at a time:
 
 Stop condition: **do not write the next layer until the current one is green.** Don't batch five tests then implement; go one behavior at a time.
 
+## Spec-first: state the behavior before the test
+
+Before writing the first test, make the slice's *decisions* explicit — they're what a reviewer (or the owner) actually needs to see, not just the code:
+
+- **The ROADMAP item is the pre-approved spec.** Its why/scope/done-when is the behavior contract; you don't re-open it for live approval. Work inside it. If it's ambiguous or you discover it's wrong mid-slice, surface that (escalate to `ROADMAP.md` §Needs owner decision) rather than guessing forward.
+- **State the behavior in plain language**, then **list the planned test titles** — the executable examples that define the concept's meaning — before writing them. One behavior per title. This is the cheapest place to catch a wrong assumption.
+- **Vocabulary check.** Reuse the domain terms already in `AGENTS.md` / the code; don't coin a near-synonym for a concept that already has a name. A genuinely new *core concept* (a new entity, state, or rule) is an owner-facing decision — name it in the PR body, or escalate if it reshapes the model.
+
+## Export-delta: surface interface decisions, don't bury them
+
+In a solo repo this is a live pause; here it's a **surfacing rule**, since dev agents run autonomously. If green or refactor introduces or changes an **exported symbol beyond what the ROADMAP item implied** — a public method, a port/repository interface method, a shared `@vdp/shared` type, an agent-tool registry entry — do not slip it in silently:
+
+- Call it out explicitly in the PR body: the symbol, why it emerged, and the alternative of keeping it inline/private.
+- If the new interface is a real product or cross-module decision (a new shared contract, a new agent capability, a schema-shaping type), escalate to `ROADMAP.md` §Needs owner decision instead of deciding it alone.
+- Internal-only choices (private helpers, local names) don't need surfacing — just note them in the session summary.
+
+Interface decisions are the owner's even when discovered mid-loop. The `code-review` skill's review is the backstop, but it's cheaper to flag the delta than to have it found at review.
+
 ## What to test first, by change type
 
 Follow the layers outward; each has a natural test style and double:
@@ -46,6 +64,10 @@ Regression-test-first: write a test that reproduces the bug and fails, then fix 
 ## Verification ladder
 
 Targeted first, broaden as risk warrants: the single new test file → the module's suite → `pnpm typecheck` → full `pnpm --filter @vdp/web test` / `pnpm --filter @vdp/server test:unit` → DB-backed suites only when the code touches the DB. Don't run the whole pyramid for a one-line change.
+
+## Report decisions, not just actions
+
+When the slice is green, the session summary (and the PR body via `open-pr`) reports *decisions*, not a transcript: names chosen (with rejected alternatives worth knowing), the interface shape settled beyond the item, edge cases the spec didn't cover and how they were resolved, anything deferred or surfaced as a surprise, and the verification that was run. A new domain term that stuck is proposed for `AGENTS.md` here, reviewed per that file's rule.
 
 ## Reference reading
 

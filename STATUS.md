@@ -51,9 +51,9 @@ _Last updated: 2026-07-08 (Phase 1 closed; Phase 2 scoped; workflow-lifecycle sk
 - **Open owner decisions:** paid LLM model (F1.6, blocked on OpenCode billing);
   whether to promote Objectives to an agent (Phase 4 — validate with F1.2 first);
   mobile/PWA priority (decide with F1.2).
-- **Workflow-skill synthesis in progress:** `open-pr`/`checkpoint`/`orient` added
-  this session. Deferred for a later Architect session: enriching `tdd-workflow`
-  with a spec-approval gate + export-delta pause; adding code-review effort tiers +
-  the safe review fan-out recipe; a `workflow-retro` skill; considering
-  `.dependency-cruiser` for compile-time module boundaries. Adopt incrementally,
-  then run a retro to prune what didn't pay rent.
+- **Workflow-skill synthesis (done this session):** added `open-pr`, `checkpoint`,
+  `orient`; enriched `tdd-workflow` (spec-first framing + export-delta surfacing) and
+  `code-review` (effort tiers content/medium/high/ultra + safe fan-out recipe); added
+  `workflow-retro` (Architect-only). Still open: consider `.dependency-cruiser` for
+  compile-time module boundaries (not urgent — Tasks↔Projects is the only coupling);
+  run a `workflow-retro` in a few weeks to prune whatever didn't pay rent.

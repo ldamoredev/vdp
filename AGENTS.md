@@ -74,6 +74,9 @@ The skills, by category:
 - **Session lifecycle:** `tdd-workflow` builds a slice → `open-pr` closes it into a reviewable PR (always stops at the PR; never merges — merge is owner-only). `checkpoint` writes in-flight state to `STATUS.md` at session end; `orient` reads it (+ cross-checks git) at session start. `STATUS.md` is the model-agnostic continuity note — distinct from `ROADMAP.md` (milestones) and from any agent's private memory (model/machine facts).
 - **Pre-merge procedure:** `smoke-verify` — the manual browser smoke + surgical cleanup, run by the owner during PR review when the feature has a UI surface (see `docs/WORKFLOW.md`). Its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules for every agent that touches the dev DB.
 - **Generators:** `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
+- **Meta (Architect only):** `workflow-retro` — periodic audit of the workflow machinery (skills, hooks, permissions, docs, memory) for friction and rules that stopped paying rent; pruning is half the job.
+
+`code-review` runs at a tier matched to the diff's risk (content-only skips / medium inline / high fan-out / owner-only `ultra` cloud); `tdd-workflow` carries a spec-first framing and an export-delta surfacing rule for interface decisions.
 
 ## Working Agreement (how sessions run)
 
