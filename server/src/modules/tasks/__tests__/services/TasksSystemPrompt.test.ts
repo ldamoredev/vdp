@@ -20,4 +20,14 @@ describe('buildTasksSystemPrompt', () => {
         vi.setSystemTime(new Date(2026, 5, 12, 0, 5, 0));
         expect(buildTasksSystemPrompt()).toContain('La fecha de hoy es: 2026-06-12');
     });
+
+    // Routing must match the canonical Tasks/Projects/Work boundary in AGENTS.md:
+    // a project-like effort goes to Projects, not to the inactive Work module.
+    it('routes project-like work to Projects, not the Work module', () => {
+        const prompt = buildTasksSystemPrompt();
+
+        expect(prompt).toContain('Projects');
+        expect(prompt).not.toContain('dominio Work');
+        expect(prompt).not.toContain('moverlo al dominio Work');
+    });
 });
