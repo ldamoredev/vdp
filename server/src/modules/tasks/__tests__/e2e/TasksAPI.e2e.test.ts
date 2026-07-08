@@ -383,6 +383,67 @@ describe('Tasks API — E2E', () => {
                 chatSpy.mockRestore();
             }
         });
+
+        it('breaks an existing project into board tasks via the create_project_tasks tool (Tasks + Projects)', async () => {
+            const agent = testApp.core.agentRegistry.get('tasks');
+            if (!agent) throw new Error('Tasks agent not registered');
+
+            // Set up an existing project through the Projects module (same Core, same user).
+            const projectRes = await testApp.app.inject({
+                method: 'POST',
+                url: '/api/v1/projects',
+                payload: { kind: 'work', outcome: 'Lanzar la v1', nextAction: 'Escribir el plan', focus: 'MVP' },
+            });
+            expect(projectRes.statusCode).toBe(201);
+            const projectId = projectRes.json().id;
+
+            const provider = new ScriptedAgentProvider([
+                {
+                    text: '',
+                    toolCalls: [
+                        {
+                            id: 'call-1',
+                            name: 'create_project_tasks',
+                            input: {
+                                projectId,
+                                tasks: [{ title: 'Comprar dominio' }, { title: 'Diseñar landing', priority: 3 }],
+                            },
+                        },
+                    ],
+                    stopReason: 'tool_use',
+                },
+                { text: 'Listo, agregué las tareas al proyecto.', toolCalls: [], stopReason: 'end_turn' },
+            ]);
+            const swap = withScriptedProvider(agent, provider);
+
+            try {
+                const res = await testApp.app.inject({
+                    method: 'POST',
+                    url: '/api/v1/tasks/agent/chat',
+                    payload: { message: 'Desglosá este proyecto en tareas' },
+                });
+
+                expect(res.statusCode).toBe(200);
+                expect(res.body).toContain('"event":"tool_use","tool":"create_project_tasks"');
+                expect(res.body).toContain('"event":"tool_result","tool":"create_project_tasks"');
+                expect(res.body).toContain('"event":"done"');
+
+                // Both tasks landed on the project's backlog for the requesting user.
+                const list = await testApp.app.inject({ method: 'GET', url: '/api/v1/tasks' });
+                const projectTasks = list
+                    .json()
+                    .tasks.filter((task: { projectId: string | null }) => task.projectId === projectId);
+                expect(projectTasks.map((t: { title: string }) => t.title).sort()).toEqual([
+                    'Comprar dominio',
+                    'Diseñar landing',
+                ]);
+                for (const task of projectTasks) {
+                    expect(task.boardStatus).toBe('backlog');
+                }
+            } finally {
+                swap.restore();
+            }
+        });
     });
 
     describe('GET /api/v1/tasks/agent/conversations', () => {

@@ -20,6 +20,7 @@ import { Logger } from '../../../common/base/observability/logging/Logger';
 import { NoOpLogger } from '../../../common/infrastructure/observability/logging/NoOpLogger';
 import { AuthContextStorage } from '../../../common/http/AuthContextStorage';
 import { TaskModule } from '../../TaskModule';
+import { ProjectsModule } from '../../../projects/ProjectsModule';
 import { TEST_DATABASE_CONNECTION_STRING } from '../../../../test/test-database';
 
 export class TestCoreConfiguration implements CoreConfig {
@@ -40,6 +41,11 @@ export class TestCoreConfiguration implements CoreConfig {
         this.agentProvider = new OllamaAgentProvider();
         this.embeddingProvider = new NoOpEmbeddingProvider();
         this.authContextStorage = new AuthContextStorage();
-        this.moduleFactories = [(context) => new TaskModule(context)];
+        // Projects is booted alongside Tasks so the project-breakdown agent tools
+        // (get_project_context / create_project_tasks) resolve real Projects handlers.
+        this.moduleFactories = [
+            (context) => new TaskModule(context),
+            (context) => new ProjectsModule(context),
+        ];
     }
 }
