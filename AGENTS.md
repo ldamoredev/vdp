@@ -34,6 +34,22 @@ Inactive domains:
 
 Do not treat inactive domains as real product surfaces until they pass the full backend/frontend gate in this file.
 
+### Tasks / Projects / Work Boundary
+
+`Tasks.domain = "work"`, Projects, and the future Work module are deliberately separate. Use this table as the canonical routing rule before adding work-related features:
+
+| Surface | Current status | Owns | Use it when... | Do not put here |
+|---|---|---|---|---|
+| Tasks with `domain: "work"` | Active Task records with an optional domain label. | Executable daily work-items: title, description, priority, schedule date, status, carry-over, notes, optional `projectId`, and board column. | The item is a concrete action the owner can do or decide in the daily loop, even if it is professional work: "review PR #42", "send invoice", "call client", "draft proposal outline". | Project direction, client catalogs, billing rates, time accounting, income projections, career records, calendar/email state. |
+| Projects | Active project-operations layer. | Directed efforts with `kind` (`work|personal`), outcome, next action, focus, client catalog, legacy client text, optional hourly rate/currency, lifecycle, project board assignment, time entries, hours reports, and expected-income links to Wallet. | The work has an outcome that spans more than one daily task, needs client/rate/money context, needs logged minutes, or belongs on a project board. | A second work-item store. Projects must use Tasks for executable items through `task.projectId` + `boardStatus`. |
+| Work | Inactive: disabled placeholder frontend page only, no backend module. | Nothing today. | Activate only when a concrete daily-loop need appears that neither Tasks nor Projects can own without distortion: e.g. persistent professional context or integrations such as calendar/email/career artifacts that are not task execution, project direction, clients, rates, time, or Wallet income. | Anything already covered by Tasks or Projects. Do not create Work by reflex just because a feature is professional. |
+
+How they coexist:
+
+- Tasks is the only work-item store. A project board item is still a Task, linked by nullable `projectId` and ordered by `boardStatus`; do not duplicate tasks inside Projects or future Work.
+- Projects may synchronously validate/write Tasks only for the accepted Tasks↔Projects coupling documented in §Synchronous Cross-Module Reads: project assignment, board columns, and optional task linkage on time entries.
+- Today there is no product justification for a backend Work module: Tasks already covers executable work actions, Projects covers directed project operations and money/time context, and the existing Work page is mock-only.
+
 ## Current Sequencing
 
 Follow `ROADMAP.md` for priority — it is forward-looking only (shipped work is not
