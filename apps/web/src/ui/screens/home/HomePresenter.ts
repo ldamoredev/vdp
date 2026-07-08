@@ -13,7 +13,7 @@ import type {
 } from "@/lib/api/types";
 
 import type { Core } from "@/core/Core";
-import { ListObjectives } from "@/core/app/objectives/ListObjectives";
+import { GetObjectivesOverview } from "@/core/app/objectives/GetObjectivesOverview";
 import { resolveObjectiveCurrentValue } from "@/core/app/objectives/metric-sources";
 import { GetHoursReport } from "@/core/app/projects/GetHoursReport";
 import { formatDaysRemaining, objectiveCreateTaskHref } from "@/ui/screens/home/objectives-progress";
@@ -635,7 +635,11 @@ export class HomePresenter extends PresenterBase<HomeViewModel> {
   }
 
   private async loadObjectives(): Promise<{ objectives: Objective[]; values: Map<string, number> }> {
-    const objectives = sortObjectives(await this.core.execute(new ListObjectives()))
+    // Load through the overview query, not the plain list: the overview is what
+    // triggers the backend deadline-approaching detection (H2 lazy-on-load), so
+    // the signal fires on /home — the daily surface — not only on /objectives.
+    const overview = await this.core.execute(new GetObjectivesOverview());
+    const objectives = sortObjectives(overview.objectives)
       .filter((objective) => objective.isActive);
     const values = await Promise.all(
       objectives.map(async (objective) => [objective.id, await resolveObjectiveCurrentValue(objective, this.core)] as const),
