@@ -51,19 +51,19 @@ any further privileged actions beyond the two shipped flags.
 
 ## Phase 1 — Strengthen the core (active)
 
-No new modules. Recommended order: F1.2 → F1.3 → F1.4 → F1.5; F1.6 whenever the
-owner unblocks billing. Each item is a self-contained implementation session run
-per `docs/WORKFLOW.md` (feature branch + PR). One PR in flight at a time.
+No new modules. Each item is a self-contained implementation session run per
+`docs/WORKFLOW.md` (feature branch + PR). One PR in flight at a time.
 
 Assignments (also the opencode bake-off, see WORKFLOW §opencode model policy):
 
-| Item | Agent |
-|---|---|
-| F1.2 | Codex GPT 5.5 |
-| F1.3 | opencode Kimi K2.7-code |
-| F1.4 | opencode GLM 5.2 |
-| F1.5 | Architect session (docs-only, on main) |
-| F1.6 | Architect session, after owner unblocks billing |
+| Item | Agent | Status |
+|---|---|---|
+| F1.2 | Codex GPT 5.5 | shipped (usage_events) |
+| F1.3 | opencode Kimi K2.7-code | shipped (deadline signal) |
+| F1.4 | opencode GLM 5.2 | shipped (objectives on /home) |
+| F1.5 | Codex GPT 5.5 | active — Tasks/Projects/Work boundary doc |
+| F1.6 | Architect session | deferred — parked until owner unblocks billing |
+| F1.7 | any dev agent | flaky web-context tests |
 
 F1.1 (verified backup + per-domain export) shipped and verified against prod on
 2026-07-07; runbook: `docs/operations/backup-restore.md`. Keep the backup cadence
@@ -147,17 +147,29 @@ is the source of truth (CLAUDE.md rule).
 
 **Done when:** the table is in AGENTS.md and no other doc contradicts it.
 
-### F1.6 Paid LLM model (blocked on billing — owner)
+### F1.6 Paid LLM model — DEFERRED (parked until owner unblocks billing)
 
-**Why:** `mimo-v2.5-free` is interim (~3s/call, "tuteo" register, free tier). The
-paid candidates in the OpenCode Go plan are blocked by `CreditsError`.
-
-**Scope:** once the owner resolves billing: run
+Parked by the owner on 2026-07-08. `mimo-v2.5-free` stays as the interim prod model
+(~3s/call, "tuteo" register). When billing is resolved: run
 `scripts/agent-model-eval.mjs eval kimi-k2.7-code minimax-m3 deepseek-v4-flash
 qwen3.6-plus`, compare against the mimo baseline (5/5, ~2.9s), pick by correct
 tool-calling first and latency second, update `OPENAI_COMPAT_MODEL` on Railway and
-smoke in prod. If the winner uses "tuteo", adjusting the system prompt builders for
+smoke in prod. If the winner uses "tuteo", adjusting the system-prompt builders for
 "voseo" is a separate, optional item.
+
+### F1.7 Stabilize the flaky web-context tests
+
+**Why:** `apps/web/src/__tests__/provider-contexts.test.tsx` and
+`apps/web/src/ui/screens/tasks/dashboard/__tests__/tasks-dashboard-context.test.tsx`
+time out (~17-18s) under full-suite parallel load — they pass in isolation. They are
+StrictMode double-invoke idempotency tests, unrelated to any feature; they can red a
+green PR and erode trust in CI.
+
+**Scope:** find why they time out only under parallel load (likely a real timer / act
+flush or a too-tight timeout), fix the test (not the product code unless a genuine
+idempotency bug surfaces), and confirm 10 consecutive full-suite runs are green.
+
+**Done when:** `pnpm --filter @vdp/web test` passes reliably; no `-t` isolation needed.
 
 ## Later phases (scope with the owner on arrival)
 
