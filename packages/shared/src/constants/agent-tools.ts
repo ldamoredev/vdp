@@ -31,6 +31,9 @@ export const TASKS_AGENT_TOOL_NAMES = [
   // cross-domain context
   "get_wallet_context",
   "get_weekly_summary",
+  // projects — breakdown
+  "get_project_context",
+  "create_project_tasks",
 ] as const;
 
 export type TasksAgentToolName = (typeof TASKS_AGENT_TOOL_NAMES)[number];
