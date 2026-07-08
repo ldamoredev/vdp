@@ -199,8 +199,8 @@ Assignments (owner fills the agent when taking the item; one PR in flight):
 
 | Item | Agent | Status |
 |---|---|---|
-| F2.1 | _TBD_ | not started — take first |
-| F2.2 | _TBD_ | blocked on F2.1 |
+| F2.1 | Claude Code Opus 4.8 | shipped (PR #9) — get_project_context + create_project_tasks |
+| F2.2 | _TBD_ | not started — take next |
 | F2.3 | — | deferred (owner decision) |
 
 To run one: point the agent at it with the dev-agent kickoff — "Read AGENTS.md and

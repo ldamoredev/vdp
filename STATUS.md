@@ -5,10 +5,21 @@ In-flight session state — the model-agnostic continuity note. Distinct from
 (model/machine facts). Written by the `checkpoint` skill at session end, read by
 `orient` at session start. Keep it short; trim resolved notes.
 
-_Last updated: 2026-07-08 (Phase 1 closed; Phase 2 scoped; workflow-lifecycle skills added)_
+_Last updated: 2026-07-08 (F2.1 shipped + merged; F2.2 next)_
 
 ## Done (recent)
 
+- **F2.1 — agent project-breakdown capability** shipped & merged (PR #9): the
+  Tasks agent turns an existing Projects project into a batch of board tasks on
+  one confirmation. Two new tools in `server/.../tasks/infrastructure/agent/tools/project-tools.ts`
+  — `get_project_context` (reads project direction + existing board tasks over the
+  CQBus) and `create_project_tasks` (ownership guard up front, then 1–8 drafts via
+  `CreateTaskCommand` into `backlog`, capped at 8, reusing the similarity check).
+  System prompt gained a "desglose de proyecto" suggest-then-confirm workflow.
+  `projectId` is a validated tool param (not conversation-scoped) — no
+  conversation-context plumbing exists and `CreateTaskCommand` already rejects
+  non-owned projects. Tasks e2e config now boots `ProjectsModule` alongside
+  `TaskModule`.
 - **Phase 1 complete** except F1.6 (deferred): F1.1 verified backup + per-domain
   export (`docs/operations/backup-restore.md`, backup verified against prod via
   the Supabase session pooler); F1.2 owner-usage instrumentation
@@ -27,18 +38,18 @@ _Last updated: 2026-07-08 (Phase 1 closed; Phase 2 scoped; workflow-lifecycle sk
 
 ## In progress
 
-- Nothing mid-slice, no open PRs. The workflow-lifecycle skill set is complete
-  (see the last note below). Clean point to start Phase 2: open a fresh session,
-  run `orient`, take F2.1.
+- Nothing mid-slice, no open PRs. F2.1 merged; clean point to take F2.2.
 
 ## Next
 
-1. **Phase 2 — Project task breakdown** (active, `ROADMAP.md`): the Tasks agent
-   proposes a batch of tasks for an existing project and creates them on one owner
-   confirmation. Ordered slices: **F2.1** (agent breakdown capability — batch tool
-   + prompt; `create-agent-tool` skill applies), then **F2.2** (breakdown entry
-   point from a project screen). F2.3 (per-task edit) deferred by owner. Owner
-   assigns the agent per item in the ROADMAP Phase 2 table; one PR in flight.
+1. **F2.2 — breakdown entry point from a project (frontend)** (`ROADMAP.md`
+   Phase 2, now unblocked): on the project detail surface, a "Desglosar en tareas
+   (IA)" action that opens the **Tasks** agent chat seeded with the project (starter
+   message + the project id/context the F2.1 tools need). Key wrinkle: Projects has
+   no agent, so the chat panel is gated off there today (`chat-panel.tsx` /
+   `domainHasAgent`) — this entry must make the Tasks agent available from a project
+   without pretending Projects has its own agent, scoped to this entry point.
+   Presenter + humble view + a presenter test. F2.3 (per-task edit) deferred by owner.
 2. **Phase 2 backlog** (deprioritized by F1.2 signal): command palette (`Ctrl+K`);
    Objectives weekly retro; Health weekly summary.
 
@@ -51,9 +62,11 @@ _Last updated: 2026-07-08 (Phase 1 closed; Phase 2 scoped; workflow-lifecycle sk
 - **Open owner decisions:** paid LLM model (F1.6, blocked on OpenCode billing);
   whether to promote Objectives to an agent (Phase 4 — validate with F1.2 first);
   mobile/PWA priority (decide with F1.2).
-- **Workflow-skill synthesis (done this session):** added `open-pr`, `checkpoint`,
-  `orient`; enriched `tdd-workflow` (spec-first framing + export-delta surfacing) and
-  `code-review` (effort tiers content/medium/high/ultra + safe fan-out recipe); added
-  `workflow-retro` (Architect-only). Still open: consider `.dependency-cruiser` for
-  compile-time module boundaries (not urgent — Tasks↔Projects is the only coupling);
-  run a `workflow-retro` in a few weeks to prune whatever didn't pay rent.
+- **F2.2 depends on the F2.1 seed contract:** the F2.1 tools take `projectId` as a
+  tool param and there is deliberately no `list_projects` tool, so a cold chat can't
+  resolve a project by name. F2.2 is the intended path — it must seed the Tasks-agent
+  chat with the project id (+ a starter message) from the project screen.
+- **Workflow:** module-boundary enforcement (`.dependency-cruiser`) still worth
+  considering, less optional now that Tasks reads Projects at runtime (still via CQBus
+  queries, the accepted style — not a direct dependency). Run a `workflow-retro` in a
+  few weeks to prune whatever didn't pay rent.
