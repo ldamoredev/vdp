@@ -171,12 +171,99 @@ idempotency bug surfaces), and confirm 10 consecutive full-suite runs are green.
 
 **Done when:** `pnpm --filter @vdp/web test` passes reliably; no `-t` isolation needed.
 
+## Phase 2 — Project task breakdown (active)
+
+Chosen 2026-07-08 from the F1.2 usage signal (Tasks+Projects is the daily surface;
+Objectives/Health barely touched) plus owner friction: turning a project into a set
+of board tasks is tedious one-by-one. The bet — the **Tasks agent** (which already
+owns task creation) proposes a batch of tasks for an **existing project** and, on one
+owner confirmation, creates them assigned to that project + board column. This is the
+VDP-native answer to the "Notion + MCP board loading" pattern the owner flagged,
+kept inside VDP (its board/ritual is the product) and inside the suggest-then-write
+rule (batch HITL), instead of exposing an MCP server for an external agent client.
+
+Grounding (verified on main): `CreateTaskCommand` already accepts `projectId` +
+`boardStatus` and validates project ownership (defaults `backlog`); the gap is only
+that the agent's `create_task` tool does not expose them. Projects has no agent — this
+capability lives on the **Tasks** agent. Each item is a self-contained session per
+`docs/WORKFLOW.md`. One PR in flight at a time; F2.1 before F2.2.
+
+Cross-cutting rules for all F2 items: the agent **proposes first, creates only on
+explicit owner confirmation** (never auto-write); cap a proposal at a sane count
+(~3–8) to keep confirmation meaningful and the board calm; reuse the existing
+create-time similarity check so a breakdown does not spam duplicates of tasks already
+on the project; new tasks default to the `backlog` column; auth-context and
+`localDateStringSchema` tool rules from AGENTS.md §Agent Architecture apply.
+
+### F2.1 Agent project-breakdown capability (backend + prompt)
+
+**Why:** the capability that removes the friction. The Tasks agent can read a project
+and create a batch of tasks assigned to it, in one round-trip and one confirmation.
+
+**Scope:**
+- A new agent tool (e.g. `create_project_tasks`) that takes a project and a list of
+  task drafts (title, optional priority) and creates them via `CreateTaskCommand`
+  with `projectId` + `boardStatus: backlog`, returning the created list. Add it to
+  the typed registry in `packages/shared/src/constants/agent-tools.ts` first.
+- A read path so the agent can propose good tasks without duplicating existing ones:
+  either a `get_project_context` tool (project outcome, next action, existing tasks —
+  the accepted Tasks→Projects read) or project context seeded into the conversation.
+- **Design decision for the session (escalate if it needs conversation-context
+  plumbing):** prefer scoping the active `projectId` to the conversation so the LLM
+  never handles the UUID; a validated `projectId` tool param is acceptable as a
+  fallback since `CreateTaskCommand` already rejects projects the user does not own.
+- Tasks agent system-prompt workflow rule: given a project, propose 3–8 concrete,
+  board-ready tasks (one line each), then **wait for explicit confirmation** before
+  calling the batch tool. Keep it Spanish (agent-prompt language rule).
+- Tests: tool factory over CQBus + auth context; cross-user isolation (a user cannot
+  create tasks into another user's project); prompt still builds per-chat.
+
+**Out of scope:** creating the project itself (breakdown starts from an existing
+project); per-task editing before create (F2.3); board-column intelligence beyond
+`backlog`.
+
+**Done when:** in a chat, given an existing project, the agent proposes a task list
+and — only after the owner confirms — creates them assigned to the project's board,
+verified by unit tests on the tool + an e2e that boots Tasks + Projects.
+
+### F2.2 Breakdown entry point from a project (frontend)
+
+**Why:** the capability needs a one-tap door where the owner already works — the
+project screen — not a cold chat.
+
+**Scope:**
+- On the project detail surface, a "Desglosar en tareas (IA)" action that opens the
+  agent chat with the **Tasks** agent, seeded with the project (starter message +
+  the project context/id the F2.1 tool needs).
+- Resolve chat availability on the Projects screen: Projects has no agent, so the
+  chat panel is gated off there today (`chat-panel.tsx` / `domainHasAgent`). This
+  entry must make the Tasks agent available from a project without pretending
+  Projects has its own agent. Keep the change scoped to this entry point.
+- Presenter/humble-view work + a presenter test.
+
+**Out of scope:** redesigning the project screen; a bespoke proposal UI (F2.3 — the
+first cut confirms conversationally in the chat).
+
+**Done when:** from a project, one tap opens the seeded Tasks-agent chat ready to
+propose the breakdown, no regression to the project screen or the existing chat.
+
+### F2.3 Reviewable proposal + per-task edit — DEFERRED
+
+Owner decision (2026-07-08): ship the batch-confirm flow first (F2.1+F2.2). Add a
+reviewable proposal card — edit/remove/reorder drafts before creating, per-task
+instead of all-or-nothing — only if the conversational batch confirm proves too
+coarse in daily use. Do not build speculatively.
+
+## Phase 2 backlog (deprioritized by the F1.2 signal, revisit later)
+
+The earlier Phase-2 candidates now rank below the breakdown flow because usage shows
+their surfaces are barely touched: **command palette** on `Ctrl+K` (capture→inbox,
+jump, complete, log) — still attractive for micro-capture friction, the natural
+second F2 track; **Objectives weekly retro** and **Health weekly summary** — hold
+until F1.2 data shows those surfaces earn daily use (today they do not).
+
 ## Later phases (scope with the owner on arrival)
 
-- **Phase 2 — Deepen existing modules:** Objectives weekly retro (trend vs. target,
-  last 4 weeks); Health weekly summary (mood × completions × weight, one-tap
-  actions); a real command palette on `Ctrl+K` (capture→inbox, jump, complete, log —
-  today it only toggles the chat). Priorities driven by F1.2 data.
 - **Phase 3 — Cross-domain intelligence:** composed read-time dashboard (Objectives ×
   Wallet × Health × Projects, one-tap action per tile); auto-generated quarter/year
   in review. Rule: an insight without an attached decision does not get built. At

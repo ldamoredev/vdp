@@ -60,7 +60,9 @@ conversational assistant, a personal Notion, a self-hosted multi-tenant platform
 
 - **Core:** Tasks, Objectives (to be promoted), Inbox, Home/Review (the ritual).
 - **Deepen only on real friction:** Wallet (evidence + signals), Health (weekly
-  summary; medical untouchable), Projects (nothing new; document the boundary).
+  summary; medical untouchable), Projects (boundary documented in AGENTS.md; Phase 2
+  adds agent-assisted project→board task breakdown — the first real depth, driven by
+  the F1.2 signal that Tasks+Projects is the daily surface).
 - **Deferred:** People (until a weekly loop is validated manually), Study.
 - **Avoid:** a Work module unless the activation signal in `AGENTS.md`
   §Tasks / Projects / Work Boundary is met; generic automations; plugin system;
