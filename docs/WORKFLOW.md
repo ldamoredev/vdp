@@ -45,16 +45,16 @@ provider (`OPENAI_COMPAT_MODEL`) is a separate concern — see ROADMAP F1.6.
    gate in AGENTS.md (backend + shared contracts + frontend + tests + migration +
    docs) — a partial item is a failed session, not a smaller PR.
 3. Run the verification ladder (AGENTS.md §Verification), targeted first.
-4. Self-review the diff with the `code-review` skill; fix or explicitly note
-   accepted findings in the PR body.
-5. Commit in logical conventional commits (hook-enforced format; imperative
-   messages explaining the why). Committing/pushing **on the feature branch** needs
-   no per-commit permission — protection lives at the merge.
-6. Push the branch and open the PR: `gh pr create --fill` (the repo PR template
-   drives the body). CI runs the full ladder on every PR.
-7. **STOP.** Summarize for the owner: what shipped, what was verified and how,
-   anything noted for review. Never merge, never push `main`, never deploy, never
-   touch prod data.
+4. **Close with the `open-pr` skill:** it self-reviews the diff (`code-review`,
+   findings block), commits logical conventional commits, pushes the branch, opens
+   the PR — and STOPS there. Never merge, never push `main`, never deploy, never
+   touch prod data. Merge is owner-only after the Architect review below.
+5. Summarize for the owner: what shipped, what was verified and how, anything noted
+   for review.
+
+Session continuity: at session start, `orient` reads `STATUS.md` + git to say where
+things stand; at session end (or when a chat gets long), `checkpoint` writes the
+in-flight state back to `STATUS.md` so the next session — any model — resumes cold.
 
 **Escalation — when a product/scope decision appears mid-session:**
 Append it to `ROADMAP.md` §Needs owner decision as one bullet: date, the question,

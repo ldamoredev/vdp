@@ -30,6 +30,11 @@ Skills in `.claude/skills/` auto-trigger for Claude Code:
 - `code-review` — always-on guard: review the working-tree diff before ANY commit or
   push; findings block until reported to the owner.
 - `tdd-workflow` — always-on guard: drive changes test-first (unit/social tests).
+- `open-pr` — close a verified slice into a reviewable PR; ALWAYS stops at the PR,
+  never merges (merge is owner-only after Architect review).
+- `checkpoint` / `orient` — session continuity via `STATUS.md`: `checkpoint` writes
+  in-flight state at session end (use when wrapping up or a chat gets long), `orient`
+  reads it at session start ("where were we?"). `STATUS.md` ≠ `ROADMAP.md` ≠ memory.
 - `smoke-verify` — pre-merge procedure: the manual browser smoke + surgical cleanup,
   owner-run at PR review time (the owner uses the dev account with real data).
 - `create-handler-api`, `create-handler-web`, `create-presenter-web`,

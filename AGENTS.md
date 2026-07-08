@@ -63,16 +63,17 @@ new features will not work in production until their migrations run there.
 
 ## Skills
 
-The repo ships eight reusable workflows as `SKILL.md` files. They apply to **any** agent working here, not just Claude Code. Each is a self-contained markdown doc (procedure + hard rules + verification) that references this file and the architecture docs rather than restating rules.
+The repo ships reusable workflows as `SKILL.md` files. They apply to **any** agent working here, not just Claude Code. Each is a self-contained markdown doc (procedure + hard rules + verification) that references this file and the architecture docs rather than restating rules.
 
 - Location: `.claude/skills/{name}/SKILL.md`, mirrored at `.agents/skills/` (a symlink to the same files, so agents that look under `.agents/` find them; one source of truth, no drift). Local `.claude/` config (settings, launch) stays gitignored; only the skills are tracked.
 - **Codex and other non-Claude agents:** these are plain markdown — you will not auto-trigger them, so read the relevant `SKILL.md` and follow it when the task matches. Treat `code-review` and `tdd-workflow` as always-on guards.
 
-The skills:
+The skills, by category:
 
-- `code-review` and `tdd-workflow` are **process guards** — apply them automatically (review the diff before any commit/push; drive changes test-first). `code-review` findings are warnings that block the commit/push until reported to the owner.
-- `smoke-verify` is the **pre-merge procedure** — the manual browser smoke + surgical cleanup, run by the owner during PR review when the feature has a UI surface (see `docs/WORKFLOW.md`). Its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules for every agent that touches the dev DB.
-- `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` are **generators** — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
+- **Guards** (apply automatically): `code-review` (review the diff before any commit/push; findings block until reported to the owner) and `tdd-workflow` (drive changes test-first).
+- **Session lifecycle:** `tdd-workflow` builds a slice → `open-pr` closes it into a reviewable PR (always stops at the PR; never merges — merge is owner-only). `checkpoint` writes in-flight state to `STATUS.md` at session end; `orient` reads it (+ cross-checks git) at session start. `STATUS.md` is the model-agnostic continuity note — distinct from `ROADMAP.md` (milestones) and from any agent's private memory (model/machine facts).
+- **Pre-merge procedure:** `smoke-verify` — the manual browser smoke + surgical cleanup, run by the owner during PR review when the feature has a UI surface (see `docs/WORKFLOW.md`). Its dev-data rules (the owner uses the dev account with real data — never bulk-delete) are hard rules for every agent that touches the dev DB.
+- **Generators:** `create-handler-api`, `create-handler-web`, `create-presenter-web`, `create-aggregate`, `create-agent-tool` — follow the matching one when scaffolding that kind of unit. They carry the exact file lists and hard rules.
 
 ## Working Agreement (how sessions run)
 
