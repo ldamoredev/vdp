@@ -304,7 +304,7 @@ Live signals handled by Tasks (`CrossDomainEventHandlers`):
 - `health.habit.milestone` → achievement insight.
 - `health.counter.milestone` → achievement insight (includes money-not-spent when the counter has a daily cost).
 - `health.goal.deadline_approaching` → decision task + warning insight.
-- `objectives.objective.deadline_approaching` → decision task + warning insight.
+- `objectives.objective.deadline_approaching` → decision task + warning insight. Lazy-on-load H2 detection lives in the Objectives overview query, triggered when either `/objectives` or `/home` loads (both call `GetObjectivesOverview`). See `docs/operations/objectives-deadline-signal.md` for thresholds and the non-manual-progress limitation.
 
 Live signals handled by Wallet (`WalletCrossDomainEventHandlers`):
 
