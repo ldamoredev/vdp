@@ -8,7 +8,7 @@ import { MarkDailyReviewBriefRequested } from "@/core/app/tasks/MarkDailyReviewB
 import { getTodayISO, getWeekStartISO } from "@/lib/format";
 import { useIsMobile } from "@/lib/use-breakpoint";
 import { domainHasAgent, domains, getDomainConfig, getDomainFromPathname, type DomainKey } from "@/lib/navigation";
-import { useChatOpen } from "@/lib/chat-store";
+import { chatStore, useChatLaunchRequest, useChatOpen } from "@/lib/chat-store";
 import { agentChatDisabledMessage, useAgentChatStatus } from "@/lib/agent-chat-status";
 import {
   synthesisBriefStore,
@@ -20,6 +20,7 @@ import { useTasksEvents } from "@/TasksEventsProvider";
 import { shouldAutoFireBrief } from "@/ui/chat/auto-brief-gate";
 import { ChatHeader } from "@/ui/chat/chat-header";
 import { ConversationList } from "@/ui/chat/conversation-list";
+import { getLaunchRequestAgentDomainKey, resolveLaunchRequestDomainKey } from "@/ui/chat/launch-request";
 import { MessageBubble } from "@/ui/chat/message-bubble";
 import { useChatConversations } from "@/ui/chat/use-chat-conversations";
 import { useChatStream } from "@/ui/chat/use-chat-stream";
@@ -51,11 +52,18 @@ export function ChatPanel() {
   const weeklyBriefAlreadyRequested = useSynthesisWeeklyBriefRequested();
   const tasksEvents = useTasksEvents();
   const agentChat = useAgentChatStatus();
+  const launchRequest = useChatLaunchRequest();
   // Outside a domain (home, review, settings) the chat stays available with a
   // user-selectable agent; inside a domain the route decides.
   const routeDomainKey = getDomainFromPathname(pathname);
   const [fallbackDomainKey, setFallbackDomainKey] = useState<DomainKey>("tasks");
-  const domainKey = routeDomainKey ?? fallbackDomainKey;
+  const [launchedDomainKey, setLaunchedDomainKey] = useState<DomainKey | null>(null);
+  const domainKey = resolveLaunchRequestDomainKey({
+    launchRequest,
+    launchedDomainKey,
+    routeDomainKey,
+    fallbackDomainKey,
+  });
   const domain = getDomainConfig(domainKey) ?? null;
   const domainWithAgent = domain && domainHasAgent(domain) ? domain : null;
   const domainChatEnabled = agentChat.enabled && !!domainWithAgent;
@@ -85,6 +93,41 @@ export function ChatPanel() {
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
+
+  useEffect(() => {
+    setLaunchedDomainKey(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) setLaunchedDomainKey(null);
+  }, [isOpen]);
+
+  const handledLaunchRequestRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!launchRequest || handledLaunchRequestRef.current === launchRequest.id) return;
+    const requestDomainKey = getLaunchRequestAgentDomainKey(launchRequest);
+    if (!requestDomainKey || !domainWithAgent || domainKey !== requestDomainKey) return;
+    if (!agentChat.enabled || chat.isLoadingHistory || stream.isStreaming) return;
+
+    handledLaunchRequestRef.current = launchRequest.id;
+    setLaunchedDomainKey(requestDomainKey);
+    if (launchRequest.newConversation) {
+      chat.startNewConversation();
+    }
+    chatStore.consumeLaunchRequest(launchRequest.id);
+    void stream.sendMessage(
+      launchRequest.starterMessage,
+      domainWithAgent.agentEndpoint,
+      launchRequest.newConversation ? undefined : chat.conversationId,
+    );
+  }, [
+    launchRequest,
+    domainKey,
+    domainWithAgent,
+    agentChat.enabled,
+    chat,
+    stream,
+  ]);
 
   // D6a: auto-fire the R3b brief once per day per surface, instead of waiting
   // for the manual click. Runs even while the panel is visually closed (this
