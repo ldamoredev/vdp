@@ -20,6 +20,10 @@ export interface ProjectBoardViewModel {
   projectId: string | null;
   title: string;
   subtitle: string;
+  breakdownAction: {
+    label: string;
+    isDisabled: boolean;
+  };
   isLoading: boolean;
   error: string | null;
   columns: ProjectBoardColumnVM[];

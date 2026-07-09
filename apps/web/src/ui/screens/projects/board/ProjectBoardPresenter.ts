@@ -7,6 +7,7 @@ import { GetProject } from "@/core/app/projects/GetProject";
 import { ListTasks } from "@/core/app/tasks/ListTasks";
 import type { Project } from "@/core/domain/projects/Project";
 import { sortExecutionQueue, type Task } from "@/core/domain/tasks/Task";
+import { chatStore } from "@/lib/chat-store";
 import type {
   ProjectBoardColumnId,
   ProjectBoardViewModel,
@@ -19,6 +20,20 @@ const COLUMNS: readonly { id: ProjectBoardColumnId; title: string; emptyText: st
   { id: "done", title: "Hecho", emptyText: "Todavía no hay tareas cerradas en este proyecto." },
 ];
 
+export interface ProjectBreakdownChatOpener {
+  openProjectBreakdown(project: Project): void;
+}
+
+const defaultBreakdownChatOpener: ProjectBreakdownChatOpener = {
+  openProjectBreakdown: (project) => {
+    chatStore.openWithLaunchRequest({
+      domainKey: "tasks",
+      newConversation: true,
+      starterMessage: buildProjectBreakdownStarterMessage(project),
+    });
+  },
+};
+
 export class ProjectBoardPresenter extends PresenterBase<ProjectBoardViewModel> {
   private project: Project | null = null;
   private tasks: Task[] = [];
@@ -30,6 +45,7 @@ export class ProjectBoardPresenter extends PresenterBase<ProjectBoardViewModel> 
     onChange: ChangeFunc,
     private readonly core: Core,
     private readonly projectId: string | null,
+    private readonly breakdownChatOpener: ProjectBreakdownChatOpener = defaultBreakdownChatOpener,
   ) {
     super(onChange);
   }
@@ -44,6 +60,11 @@ export class ProjectBoardPresenter extends PresenterBase<ProjectBoardViewModel> 
 
   reload(): Promise<void> {
     return this.load();
+  }
+
+  startBreakdownChat(): void {
+    if (!this.project) return;
+    this.breakdownChatOpener.openProjectBreakdown(this.project);
   }
 
   moveTask(taskId: string, boardStatus: TaskBoardStatus | null): Promise<void> {
@@ -96,6 +117,10 @@ export class ProjectBoardPresenter extends PresenterBase<ProjectBoardViewModel> 
       subtitle: this.project
         ? `${this.project.focus} · Próximo: ${this.project.nextAction}`
         : "Seleccioná un proyecto para ver su board.",
+      breakdownAction: {
+        label: "Desglosar en tareas (IA)",
+        isDisabled: !this.project,
+      },
       isLoading: this.isLoading,
       error: this.error,
       columns: COLUMNS.map((column) => {
@@ -123,4 +148,16 @@ function statusLabel(status: Task["status"]): string {
   if (status === "in_progress") return "En progreso";
   if (status === "done") return "Hecha";
   return "Descartada";
+}
+
+function buildProjectBreakdownStarterMessage(project: Project): string {
+  return [
+    "Quiero desglosar este proyecto en tareas concretas para el board.",
+    `projectId: "${project.id}"`,
+    `Outcome: ${project.outcome}`,
+    `Proxima accion: ${project.nextAction}`,
+    `Foco: ${project.focus}`,
+    "Usa get_project_context con ese projectId para revisar el proyecto y las tareas existentes.",
+    "Proponeme 3 a 8 tareas para backlog y espera mi confirmacion antes de crear nada.",
+  ].join("\n");
 }

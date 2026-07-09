@@ -1,14 +1,41 @@
 import { useSyncExternalStore } from "react";
 import { createStore } from "./create-store";
 
-const store = createStore(false);
+export interface ChatLaunchRequest {
+  id: string;
+  domainKey: string;
+  starterMessage: string;
+  newConversation: boolean;
+}
+
+export type NewChatLaunchRequest = Omit<ChatLaunchRequest, "id">;
+
+const openStore = createStore(false);
+const launchRequestStore = createStore<ChatLaunchRequest | null>(null);
+let nextLaunchRequestId = 0;
 
 export const chatStore = {
-  getIsOpen: store.getState,
-  toggle: () => store.setState((open) => !open),
-  open: () => store.setState(true),
-  close: () => store.setState(false),
-  subscribe: store.subscribe,
+  getIsOpen: openStore.getState,
+  toggle: () => openStore.setState((open) => !open),
+  open: () => openStore.setState(true),
+  close: () => openStore.setState(false),
+  subscribe: openStore.subscribe,
+  getLaunchRequest: launchRequestStore.getState,
+  subscribeToLaunchRequest: launchRequestStore.subscribe,
+  openWithLaunchRequest: (request: NewChatLaunchRequest) => {
+    nextLaunchRequestId += 1;
+    launchRequestStore.setState({
+      ...request,
+      id: `chat-launch-${nextLaunchRequestId}`,
+    });
+    openStore.setState(true);
+  },
+  consumeLaunchRequest: (id: string) => {
+    const request = launchRequestStore.getState();
+    if (!request || request.id !== id) return null;
+    launchRequestStore.setState(null);
+    return request;
+  },
 };
 
 export function useChatOpen() {
@@ -16,5 +43,13 @@ export function useChatOpen() {
     chatStore.subscribe,
     chatStore.getIsOpen,
     chatStore.getIsOpen
+  );
+}
+
+export function useChatLaunchRequest() {
+  return useSyncExternalStore(
+    chatStore.subscribeToLaunchRequest,
+    chatStore.getLaunchRequest,
+    chatStore.getLaunchRequest
   );
 }

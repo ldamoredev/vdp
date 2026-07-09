@@ -1,5 +1,5 @@
 import type { Task as TaskDto } from "@vdp/shared";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Core } from "@/core/Core";
 import { ProjectsModule } from "@/core/app/projects/ProjectsModule";
@@ -7,7 +7,8 @@ import { FakeProjectsGateway } from "@/core/app/projects/__tests__/fakes/FakePro
 import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { Task } from "@/core/domain/tasks/Task";
-import { ProjectBoardPresenter } from "../ProjectBoardPresenter";
+import { chatStore } from "@/lib/chat-store";
+import { ProjectBoardPresenter, type ProjectBreakdownChatOpener } from "../ProjectBoardPresenter";
 
 function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
   return {
@@ -30,7 +31,13 @@ function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function build(tasks: TaskDto[]) {
+function clearChatLaunchRequest() {
+  const request = chatStore.getLaunchRequest();
+  if (request) chatStore.consumeLaunchRequest(request.id);
+  chatStore.close();
+}
+
+async function build(tasks: TaskDto[], opener?: ProjectBreakdownChatOpener) {
   const projectsGateway = new FakeProjectsGateway();
   const tasksGateway = new FakeTasksGateway();
   vi.spyOn(tasksGateway, "listTasks").mockResolvedValue({ tasks: tasks.map(Task.from), total: tasks.length });
@@ -40,7 +47,7 @@ async function build(tasks: TaskDto[]) {
   })
     .use(new ProjectsModule(projectsGateway))
     .use(new TasksModule(tasksGateway));
-  const presenter = new ProjectBoardPresenter(vi.fn(), core, "p1");
+  const presenter = new ProjectBoardPresenter(vi.fn(), core, "p1", opener);
   presenter.init(undefined);
   presenter.start();
   await flush();
@@ -48,6 +55,10 @@ async function build(tasks: TaskDto[]) {
 }
 
 describe("ProjectBoardPresenter", () => {
+  afterEach(() => {
+    clearChatLaunchRequest();
+  });
+
   it("loads tasks through the task read path and groups by board status", async () => {
     const { presenter, tasksGateway } = await build([
       taskDto({ id: "backlog", boardStatus: "backlog" }),
@@ -77,5 +88,44 @@ describe("ProjectBoardPresenter", () => {
       "p1",
       { taskId: "t1", boardStatus: "doing" },
     ]);
+  });
+
+  it("opens the Tasks agent seeded with the selected project for breakdown", async () => {
+    const opener = { openProjectBreakdown: vi.fn() };
+    const { presenter } = await build([taskDto({ id: "t1" })], opener);
+
+    presenter.startBreakdownChat();
+
+    expect(presenter.model.breakdownAction).toEqual({
+      label: "Desglosar en tareas (IA)",
+      isDisabled: false,
+    });
+    expect(opener.openProjectBreakdown).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "p1",
+        outcome: "Ship D3a",
+        nextAction: "Wire board",
+        focus: "Projects",
+      }),
+    );
+  });
+
+  it("seeds a new Tasks-agent conversation with project context by default", async () => {
+    clearChatLaunchRequest();
+    const { presenter } = await build([taskDto({ id: "t1" })]);
+
+    presenter.startBreakdownChat();
+
+    expect(chatStore.getLaunchRequest()).toEqual({
+      id: expect.any(String),
+      domainKey: "tasks",
+      newConversation: true,
+      starterMessage: expect.stringContaining('projectId: "p1"'),
+    });
+    const starterMessage = chatStore.getLaunchRequest()!.starterMessage;
+    expect(starterMessage).toContain("Outcome: Ship D3a");
+    expect(starterMessage).toContain("Proxima accion: Wire board");
+    expect(starterMessage).toContain("Foco: Projects");
+    expect(starterMessage).toContain("espera mi confirmacion antes de crear");
   });
 });
