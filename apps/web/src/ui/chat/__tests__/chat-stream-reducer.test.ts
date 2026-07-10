@@ -81,6 +81,46 @@ describe("applyStreamEvent", () => {
     });
   });
 
+  it("attaches a structured project-task proposal to its tool result", () => {
+    let messages = applyStreamEvent(
+      baseMessages(),
+      {
+        event: "tool_use",
+        tool: "propose_project_tasks",
+        input: { projectId: "project-1" },
+      },
+      context,
+    );
+    messages = applyStreamEvent(
+      messages,
+      {
+        event: "tool_result",
+        tool: "propose_project_tasks",
+        result: JSON.stringify({
+          projectId: "project-1",
+          tasks: [
+            { title: "Uno", priority: 2 },
+            { title: "Dos", priority: 3 },
+            { title: "Tres", priority: 1 },
+          ],
+        }),
+      },
+      context,
+    );
+
+    expect(messages[2]).toMatchObject({
+      pending: false,
+      proposal: {
+        projectId: "project-1",
+        tasks: [
+          { id: "draft-1", title: "Uno", priority: 2 },
+          { id: "draft-2", title: "Dos", priority: 3 },
+          { id: "draft-3", title: "Tres", priority: 1 },
+        ],
+      },
+    });
+  });
+
   it("leaves messages unchanged when tool_result has no matching tool message", () => {
     const messages = baseMessages();
     const next = applyStreamEvent(

@@ -8,6 +8,7 @@ const TASK_MUTATION_TOOLS = [
   "carry_over_task",
   "discard_task",
   "carry_over_all_pending",
+  "create_project_tasks",
 ] as const satisfies readonly TasksAgentToolName[];
 
 function isTaskMutationTool(tool: string): tool is (typeof TASK_MUTATION_TOOLS)[number] {

@@ -22,6 +22,10 @@ import { ChatHeader } from "@/ui/chat/chat-header";
 import { ConversationList } from "@/ui/chat/conversation-list";
 import { getLaunchRequestAgentDomainKey, resolveLaunchRequestDomainKey } from "@/ui/chat/launch-request";
 import { MessageBubble } from "@/ui/chat/message-bubble";
+import {
+  buildProjectTaskProposalConfirmation,
+  isProjectTaskProposalResolved,
+} from "@/ui/chat/project-task-proposal";
 import { useChatConversations } from "@/ui/chat/use-chat-conversations";
 import { useChatStream } from "@/ui/chat/use-chat-stream";
 
@@ -299,9 +303,21 @@ export function ChatPanel() {
           </div>
         )}
 
-        {domainChatEnabled && chat.messages.map((message) => (
+        {domainChatEnabled && chat.messages.map((message, index) => (
           <div key={message.id}>
-            <MessageBubble message={message} />
+            <MessageBubble
+              message={message}
+              proposalResolved={isProjectTaskProposalResolved(chat.messages, index)}
+              proposalSending={stream.isStreaming}
+              onConfirmProjectTaskProposal={(proposal) => {
+                if (!domainWithAgent) return;
+                void stream.sendMessage(
+                  buildProjectTaskProposalConfirmation(proposal),
+                  domainWithAgent.agentEndpoint,
+                  chat.conversationId,
+                );
+              }}
+            />
           </div>
         ))}
         <div ref={messagesEndRef} />
