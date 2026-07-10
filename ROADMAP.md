@@ -40,73 +40,23 @@ evaluation remains parked below; harness: `scripts/agent-model-eval.mjs`.
 
 ## Current sequencing
 
-The active slice is **F2.3 — reviewable project-task proposal**. The owner activated
-it on 2026-07-10 after the project-breakdown capability and its project-screen entry
-point were in daily-use shape. One feature per implementation session, through the
-per-feature gate in `AGENTS.md`, then stop at the PR per `docs/WORKFLOW.md`.
+Phase 2's project-breakdown flow is complete: F2.3 shipped on 2026-07-10 (PR #11)
+after the owner smoke. There is no active implementation slice. Next up, in owner
+priority order:
 
-## Phase 2 — Project task breakdown (active)
+1. **Projects agent — TO SCOPE (owner direction, 2026-07-10).** Promote Projects
+   from agent-less to its own domain agent. Scope with the Architect before
+   activating a slice: tool surface (read-first — direction, board, time, reports —
+   applying the write gradient), the boundary with the Tasks agent (task creation
+   and project breakdown stay Tasks-owned), entry points, and prompt identity. This
+   pulls the Phase 4 "domain agents" line forward deliberately; the interim
+   `mimo-v2.5-free` model already serves Tasks/Wallet/Health chat, so a read-first
+   Projects agent need not block on F1.6.
+2. **F2.3 UI polish** (see Phase 2 backlog) once the owner details the visual
+   issues seen during the smoke.
 
-The Tasks agent owns task creation; Projects owns project direction and the board.
-The existing flow starts from a Projects board, opens a seeded Tasks-agent chat,
-reads the project context, proposes 3–8 tasks, waits for explicit confirmation, and
-creates the confirmed batch in `backlog`. F2.3 replaces the fragile free-text review
-step with a structured, editable proposal while preserving that ownership boundary
-and the suggest-then-write rule.
-
-### F2.3 Reviewable proposal + per-task edit — NEXT
-
-**Why:** conversational confirmation proves the core flow, but a batch is easier to
-trust when the owner can inspect and adjust the exact titles and priorities before
-the single write. This is HITL quality, not a new planning surface.
-
-**Behavior contract:**
-
-- After `get_project_context`, the Tasks agent emits a structured proposal through a
-  new read-only `propose_project_tasks` tool. It accepts the `projectId` plus 3–8
-  drafts (`title`, optional `priority`), validates the owner-scoped project and the
-  drafts through auth-derived CQBus context, and returns the normalized proposal.
-  It never writes Tasks or Projects data.
-- The chat renders that tool result as a Tasks-owned proposal card. The owner can
-  edit title/priority, remove drafts, and reorder them. Keep the interaction calm and
-  dependency-free; move-up/down controls are sufficient — no drag-and-drop library.
-- The card is reconstructible from persisted tool results when conversation history
-  reloads. Editing state may remain client-local; there is no proposal aggregate,
-  table, or server-side draft lifecycle.
-- Confirming the card sends a machine-authored explicit confirmation message into
-  the same Tasks conversation containing the exact `projectId` and final ordered
-  drafts. The Tasks prompt must then call the existing `create_project_tasks` tool
-  exactly once with that exact list. The final list may contain 1–8 drafts after
-  removals.
-- Dismissing/cancelling the card performs no write. Closing the chat, navigating
-  away, or losing the stream before confirmation must also create nothing.
-- The created-result card reports the number of tasks created and surfaces any
-  `similarTasks` warnings already returned by `create_project_tasks`; task-change
-  synchronization refreshes the project board.
-
-**Required implementation shape:**
-
-- Add `propose_project_tasks` to the shared typed agent-tool registry first, then
-  implement it through the `create-agent-tool` skill with auth-derived CQBus context.
-- Update the per-chat Tasks system-prompt builder to use
-  `get_project_context → propose_project_tasks → wait → create_project_tasks`.
-- Keep proposal parsing and editing under `ui/chat`; do not add a Projects agent or
-  move chat state into the Projects presenter. Extend the existing stream/persisted
-  message mapping with typed proposal data instead of parsing assistant prose.
-- Tests: read-only proposal-tool validation and cross-user isolation; prompt
-  contract; stream + persisted-history mapping; proposal editing/reordering/removal;
-  exact confirmation payload; no write before confirmation; and an e2e Tasks +
-  Projects flow through final creation.
-
-**Out of scope:** creating or editing the Project; task descriptions, dates, or board
-column selection; a generic agent-card framework; a new batch HTTP API; proposal
-persistence; autonomous creation; partial writes before the final confirmation; and
-redesigning the project board or global chat.
-
-**Done when:** from a project board, the Tasks agent produces a structured proposal
-card; the owner can edit/remove/reorder it; no task exists before confirmation; one
-confirmation creates exactly the final 1–8 drafts in project `backlog`; the board
-refreshes; and the automated flow plus owner-run browser smoke pass.
+One feature per implementation session, through the per-feature gate in `AGENTS.md`,
+then stop at the PR per `docs/WORKFLOW.md`.
 
 ## Parked prerequisite
 
@@ -125,6 +75,10 @@ Voseo tuning, if needed, is a separate optional prompt change.
 
 ## Phase 2 backlog
 
+- **F2.3 UI polish** — the owner flagged visual issues in the proposal-card UI
+  during the F2.3 smoke (2026-07-10); specifics pending an owner walkthrough.
+  Bundle with it the accepted limitation that card dismissal resets on a full page
+  reload (client-local state; no proposal persistence by design).
 - **Command palette (`Ctrl+K`)** — capture to Inbox, jump, complete, and log. Natural
   next candidate after F2.3 if daily use confirms micro-capture friction.
 - **Objectives weekly retro** and **Health weekly summary** — hold until usage data
