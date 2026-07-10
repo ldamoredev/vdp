@@ -7,8 +7,10 @@ import { CreateTaskCommand } from '../../../app/CreateTaskCommand';
 import { GetTasksQuery } from '../../../app/GetTasksQuery';
 import { TASK_PRIORITIES, jsonTool } from './shared';
 
-// Upper bound of the 3–8 breakdown rule: a batch larger than this makes the
-// single confirmation meaningless and floods the board.
+// Bounds of the 3–8 breakdown rule: fewer drafts is not a breakdown worth a
+// review card; a larger batch makes the single confirmation meaningless and
+// floods the board. Creation still accepts 1–8 because the user can remove
+// drafts from the proposal before confirming.
 const MIN_PROPOSAL_TASKS = 3;
 const MAX_BREAKDOWN_TASKS = 8;
 
