@@ -24,6 +24,7 @@ import { getLaunchRequestAgentDomainKey, resolveLaunchRequestDomainKey } from "@
 import { MessageBubble } from "@/ui/chat/message-bubble";
 import {
   buildProjectTaskProposalConfirmation,
+  buildProposalMessageKeys,
   isProjectTaskProposalResolved,
 } from "@/ui/chat/project-task-proposal";
 import { useChatConversations } from "@/ui/chat/use-chat-conversations";
@@ -303,23 +304,28 @@ export function ChatPanel() {
           </div>
         )}
 
-        {domainChatEnabled && chat.messages.map((message, index) => (
-          <div key={message.id}>
-            <MessageBubble
-              message={message}
-              proposalResolved={isProjectTaskProposalResolved(chat.messages, index)}
-              proposalSending={stream.isStreaming}
-              onConfirmProjectTaskProposal={(proposal) => {
-                if (!domainWithAgent) return;
-                void stream.sendMessage(
-                  buildProjectTaskProposalConfirmation(proposal),
-                  domainWithAgent.agentEndpoint,
-                  chat.conversationId,
-                );
-              }}
-            />
-          </div>
-        ))}
+        {domainChatEnabled && (() => {
+          const messageKeys = buildProposalMessageKeys(chat.messages, chat.conversationId);
+          return chat.messages.map((message, index) => (
+            <div key={messageKeys[index]}>
+              <MessageBubble
+                message={message}
+                proposalResolved={isProjectTaskProposalResolved(chat.messages, index)}
+                proposalSending={stream.isStreaming}
+                onConfirmProjectTaskProposal={
+                  domainWithAgent
+                    ? (proposal) =>
+                        void stream.sendMessage(
+                          buildProjectTaskProposalConfirmation(proposal),
+                          domainWithAgent.agentEndpoint,
+                          chat.conversationId,
+                        )
+                    : undefined
+                }
+              />
+            </div>
+          ));
+        })()}
         <div ref={messagesEndRef} />
       </div>
 

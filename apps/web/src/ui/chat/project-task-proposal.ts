@@ -24,6 +24,8 @@ export function parseProjectTaskProposal(value: unknown): ProjectTaskProposal | 
   if (!isRecord(parsed) || typeof parsed.projectId !== "string" || !Array.isArray(parsed.tasks)) {
     return null;
   }
+  // The propose tool guarantees 3–8 drafts; this parser only enforces the
+  // create-time bound of 1–8 so a valid persisted result never fails to render.
   if (parsed.projectId.trim() === "" || parsed.tasks.length === 0 || parsed.tasks.length > 8) {
     return null;
   }
@@ -104,6 +106,23 @@ export function buildProjectTaskProposalConfirmation(proposal: ProjectTaskPropos
     `tasks: ${JSON.stringify(tasks)}`,
     "Usá create_project_tasks una sola vez con este projectId y esta lista exacta. No agregues, elimines, reescribas ni reordenes tareas.",
   ].join("\n");
+}
+
+// React keys for the chat message list. Proposal cards hold local edit state
+// (drafts, dismissed, submitted) that must survive the history reload after
+// each stream, which replaces every message id with its DB record id. Messages
+// are append-only within a conversation, so "nth proposal of conversation X"
+// is a stable identity across reloads; everything else keys by message id.
+export function buildProposalMessageKeys(
+  messages: readonly { id: string; proposal?: unknown }[],
+  conversationId: string | undefined,
+): string[] {
+  let ordinal = 0;
+  return messages.map((message) =>
+    message.proposal
+      ? `${conversationId ?? "new"}:project-task-proposal-${++ordinal}`
+      : message.id,
+  );
 }
 
 export function isProjectTaskProposalResolved(
