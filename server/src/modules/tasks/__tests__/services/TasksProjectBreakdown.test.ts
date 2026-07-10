@@ -99,6 +99,74 @@ describe('Tasks agent — project breakdown', () => {
         });
     });
 
+    describe('propose_project_tasks', () => {
+        it('returns a normalized proposal without creating tasks', async () => {
+            const { tasks, projects, authContextStorage, tool } = harness;
+            const project = await seedProject(projects, OWNER);
+            authenticate(authContextStorage, OWNER);
+
+            const result = JSON.parse(
+                await tool('propose_project_tasks').execute({
+                    projectId: project.id,
+                    tasks: [
+                        { title: '  Comprar dominio  ' },
+                        { title: 'Diseñar landing', priority: 3 },
+                        { title: 'Publicar primera versión', priority: 1 },
+                    ],
+                }),
+            );
+
+            expect(result).toEqual({
+                projectId: project.id,
+                tasks: [
+                    { title: 'Comprar dominio', priority: 2 },
+                    { title: 'Diseñar landing', priority: 3 },
+                    { title: 'Publicar primera versión', priority: 1 },
+                ],
+            });
+            expect(tasks.size).toBe(0);
+        });
+
+        it('rejects proposals outside the 3 to 8 draft range', async () => {
+            const { projects, authContextStorage, tool } = harness;
+            const project = await seedProject(projects, OWNER);
+            authenticate(authContextStorage, OWNER);
+
+            const tooShort = JSON.parse(
+                await tool('propose_project_tasks').execute({
+                    projectId: project.id,
+                    tasks: [{ title: 'Uno' }, { title: 'Dos' }],
+                }),
+            );
+            const tooLong = JSON.parse(
+                await tool('propose_project_tasks').execute({
+                    projectId: project.id,
+                    tasks: Array.from({ length: 9 }, (_, index) => ({ title: `Tarea ${index + 1}` })),
+                }),
+            );
+
+            expect(tooShort.error).toContain('3 and 8');
+            expect(tooLong.error).toContain('3 and 8');
+        });
+
+        it('does not expose a proposal for another user\'s project', async () => {
+            const { tasks, projects, authContextStorage, tool } = harness;
+            const project = await seedProject(projects, OWNER);
+            authenticate(authContextStorage, OTHER);
+
+            const result = JSON.parse(
+                await tool('propose_project_tasks').execute({
+                    projectId: project.id,
+                    tasks: [{ title: 'Uno' }, { title: 'Dos' }, { title: 'Tres' }],
+                }),
+            );
+
+            expect(result.error).toBeTruthy();
+            expect(result.tasks).toBeUndefined();
+            expect(tasks.size).toBe(0);
+        });
+    });
+
     describe('create_project_tasks', () => {
         it('creates the drafts into the project backlog and returns them', async () => {
             const { tasks, projects, authContextStorage, tool } = harness;

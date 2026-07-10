@@ -9,6 +9,7 @@ import { TASK_PRIORITIES, jsonTool } from './shared';
 
 // Upper bound of the 3–8 breakdown rule: a batch larger than this makes the
 // single confirmation meaningless and floods the board.
+const MIN_PROPOSAL_TASKS = 3;
 const MAX_BREAKDOWN_TASKS = 8;
 
 export function createProjectBreakdownTools(bus: CQBus, authContextStorage: AuthContextStorage) {
@@ -20,7 +21,7 @@ export function createProjectBreakdownTools(bus: CQBus, authContextStorage: Auth
             description:
                 'Read an existing project before proposing a task breakdown. Returns its direction (outcome, next action, ' +
                 'focus, kind, client) and the tasks already on its board, so the proposal does not duplicate what exists. ' +
-                'Always call this before create_project_tasks.',
+                'Always call this before propose_project_tasks.',
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -52,10 +53,63 @@ export function createProjectBreakdownTools(bus: CQBus, authContextStorage: Auth
             },
         }),
         jsonTool({
+            name: 'propose_project_tasks',
+            description:
+                'Present a structured, reviewable task proposal for an existing project without creating anything. ' +
+                'Call this after get_project_context with 3 to 8 concrete drafts. The user can edit, remove, and reorder ' +
+                'the returned tasks in the chat before explicitly confirming them.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    projectId: { type: 'string', description: 'ID of the existing project to break down' },
+                    tasks: {
+                        type: 'array',
+                        description: 'Between 3 and 8 task drafts for owner review; this tool does not create them',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                title: { type: 'string', description: 'Task title — a concrete, board-ready action' },
+                                priority: {
+                                    type: 'number',
+                                    enum: TASK_PRIORITIES,
+                                    description: 'Priority: 1=low, 2=medium, 3=high. Default: 2',
+                                },
+                            },
+                            required: ['title'],
+                        },
+                    },
+                },
+                required: ['projectId', 'tasks'],
+            },
+            execute: async (input) => {
+                const drafts = input.tasks;
+                if (!Array.isArray(drafts) || drafts.length < MIN_PROPOSAL_TASKS || drafts.length > MAX_BREAKDOWN_TASKS) {
+                    return { error: `Provide between ${MIN_PROPOSAL_TASKS} and ${MAX_BREAKDOWN_TASKS} task drafts.` };
+                }
+                if (drafts.some((draft) => typeof draft?.title !== 'string' || draft.title.trim() === '')) {
+                    return { error: 'Every task needs a non-empty title.' };
+                }
+                if (drafts.some((draft) => draft.priority !== undefined && !TASK_PRIORITIES.includes(draft.priority))) {
+                    return { error: 'Every priority must be 1, 2, or 3.' };
+                }
+
+                const project = await bus.execute(new GetProjectQuery(input.projectId), executionContext());
+                if (!project) return { error: 'Project not found' };
+
+                return {
+                    projectId: project.id,
+                    tasks: drafts.map((draft) => ({
+                        title: draft.title.trim(),
+                        priority: draft.priority ?? 2,
+                    })),
+                };
+            },
+        }),
+        jsonTool({
             name: 'create_project_tasks',
             description:
                 'Create a batch of tasks on an existing project board (backlog column). ' +
-                'Only call this AFTER the user explicitly confirms the proposed list — never on your own initiative. ' +
+                'Only call this AFTER the user explicitly confirms the structured proposal — never on your own initiative. ' +
                 'Accepts between 1 and 8 task drafts. Each task is checked for duplicates and the response flags any ' +
                 'similar existing tasks. Returns the created tasks.',
             inputSchema: {
