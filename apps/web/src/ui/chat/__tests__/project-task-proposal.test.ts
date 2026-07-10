@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildProjectTaskProposalConfirmation,
+  buildProposalMessageKeys,
   canConfirmProjectTaskProposal,
   isProjectTaskProposalResolved,
   moveProjectTaskProposalDraft,
@@ -136,5 +137,44 @@ describe("project task proposal", () => {
     ];
 
     expect(isProjectTaskProposalResolved(messages, 0)).toBe(false);
+  });
+
+  it("keeps the same key for a proposal across stream and persisted message ids", () => {
+    const proposal = parseProjectTaskProposal(rawProposal)!;
+    const streamed = [
+      { id: "1720000000000", proposal: undefined },
+      { id: "1720000000001", proposal: undefined },
+      { id: "tool-1720000000002", proposal },
+    ];
+    const persisted = [
+      { id: "user-record-1", proposal: undefined },
+      { id: "assistant-record-1", proposal: undefined },
+      { id: "tool-record-1", proposal },
+    ];
+
+    const streamedKeys = buildProposalMessageKeys(streamed, "conversation-1");
+    const persistedKeys = buildProposalMessageKeys(persisted, "conversation-1");
+
+    expect(streamedKeys[2]).toBe(persistedKeys[2]);
+    expect(streamedKeys[0]).toBe("1720000000000");
+    expect(persistedKeys[0]).toBe("user-record-1");
+  });
+
+  it("scopes proposal keys by conversation and ordinal", () => {
+    const proposal = parseProjectTaskProposal(rawProposal)!;
+    const messages = [
+      { id: "a", proposal },
+      { id: "b", proposal: undefined },
+      { id: "c", proposal },
+    ];
+
+    const keys = buildProposalMessageKeys(messages, "conversation-1");
+    const otherConversation = buildProposalMessageKeys(messages, "conversation-2");
+    const newConversation = buildProposalMessageKeys(messages, undefined);
+
+    expect(keys[0]).not.toBe(keys[2]);
+    expect(keys[0]).not.toBe(otherConversation[0]);
+    expect(newConversation[0]).not.toBe(keys[0]);
+    expect(keys[1]).toBe("b");
   });
 });
