@@ -5,7 +5,8 @@ description: Architect-only retrospective on the AGENT WORKFLOW itself (not the 
 
 # workflow-retro
 
-The self-reflection loop, run on demand by the **Architect** (Opus + owner). Its
+The self-reflection loop, run on demand by the **Architect** (owner + any approved
+Architect model listed in `AGENTS.md`). Its
 subject is the *workflow*, not the product: `checkpoint` closes a session's product
 state; this closes its process debt. An instruction set that only grows eventually
 degrades the agents it steers — so this skill treats **pruning as half the job**,

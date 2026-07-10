@@ -84,7 +84,7 @@ Roles, task routing, and the full session/PR/review protocol live in [`docs/WORK
 
 - Two session types:
   - **Implementation sessions** (any dev agent): work on a feature branch (`feat/<item-id>-<slug>`) cut from fresh `main`, one ROADMAP item per session. Commits on the feature branch are part of the dev flow (logical conventional commits, no per-commit permission needed). Close with: verification → self code-review → push branch → PR via `gh pr create` → STOP and summarize. Never push to `main`, never merge, never deploy.
-  - **Architect sessions** (owner + architect model): scoping, PR reviews, ROADMAP/docs edits. Direct commits to `main` are docs/scoping-only and still require the owner's explicit ask.
+  - **Architect sessions** (owner + one approved Architect model): scoping, PR reviews, ROADMAP/docs edits. The approved Architect models are Claude Code **Opus 4.8**, **Fable 5**, and Codex **GPT-5.6 Sol**; all three hold the same role, responsibilities, and review authority. Direct commits to `main` are docs/scoping-only and still require the owner's explicit ask.
 - One ROADMAP feature per session, in `ROADMAP.md`'s order unless the owner assigns otherwise. Ship it complete through the per-feature gate (backend + shared contracts + frontend + tests + migration + docs) — a partial item is a failed session, not a smaller PR.
 - Blocked on a product/scope decision mid-session: append it to `ROADMAP.md` §Needs owner decision (date, question, context, your recommendation), keep going on what's decidable, stop only if fully blocked.
 - Merging is owner-only, after the Architect review (rebase-merge; never squash — it destroys the logical commit split).

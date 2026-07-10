@@ -8,12 +8,14 @@ session runs**. If they ever conflict, AGENTS.md wins — fix it first, then thi
 
 | Role | Who | Responsibilities |
 |---|---|---|
-| **Architect** | Claude Code **Opus 4.8** + the owner | Product/architecture decisions, scoping ROADMAP items, reviewing every PR, triaging §Needs owner decision, docs on `main`. Does not implement features except live with the owner. |
+| **Architect** | Claude Code **Opus 4.8** · **Fable 5** · Codex **GPT-5.6 Sol**, each paired with the owner | Product/architecture decisions, scoping ROADMAP items, reviewing every PR, triaging §Needs owner decision, docs on `main`. Does not implement features except live with the owner. |
 | **Dev agents** | Claude Code **Sonnet 5** · Codex **GPT 5.5** · opencode **Kimi K2.7-code / GLM 5.2** | One ROADMAP item per session, on a feature branch, delivered as a PR. Senior-dev autonomy inside the item's scope; zero authority over scope, product, or `main`. |
 | **Owner** | Human | Assigns items, runs browser smokes, decides §Needs owner decision, merges PRs, deploys, runs backups. |
 
 Note: this table is about **coding agents working on the repo**. VDP's *in-app* LLM
 provider (`OPENAI_COMPAT_MODEL`) is a separate concern — see ROADMAP F1.6.
+Opus 4.8, Fable 5, and GPT-5.6 Sol are equivalent occupants of the Architect role;
+choosing one does not change the workflow, authority boundaries, or owner-only gates.
 
 ## Task routing
 

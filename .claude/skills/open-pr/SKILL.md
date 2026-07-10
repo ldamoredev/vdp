@@ -22,7 +22,8 @@ reads the change as a PR diff, not an editor deep-dive or a terminal code dump.
 ## The hard VDP rule: stop at the PR, never merge
 
 This is where VDP differs from a solo repo. An implementation session **always
-stops at the open PR** and hands to the Architect review (owner + Opus). It
+stops at the open PR** and hands to the Architect review (owner + any approved
+Architect model listed in `AGENTS.md`). It
 **never** merges, never `--merge`, never pushes `main`, never deploys. Merge is
 owner-only, after review, rebase-merge (AGENTS.md §Working Agreement,
 `docs/WORKFLOW.md` §Review & merge). "Ship it" and "merge it" are different

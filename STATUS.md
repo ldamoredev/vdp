@@ -27,10 +27,9 @@ _Last updated: 2026-07-08 (F2.1 shipped + merged; F2.2 next)_
   F1.3 objectives deadline signal; F1.4 objectives on `/home`; F1.5
   Tasks/Projects/Work boundary (`AGENTS.md`); F1.7 flaky web-context tests
   stabilized.
-- **Multi-agent workflow** established: `docs/WORKFLOW.md` (Architect = Opus 4.8 +
-  owner; dev agents = Sonnet 5 / Codex GPT 5.5 / opencode Kimi K2.7-code | GLM 5.2;
-  feature branch → PR → owner rebase-merge). `main` is branch-protected (CI
-  required). PR template in `.github/`.
+- **Multi-agent workflow** established: `docs/WORKFLOW.md` owns the current role
+  matrix and model roster; feature branch → PR → owner rebase-merge. `main` is
+  branch-protected (CI required). PR template in `.github/`.
 - **Prod agent chat live** on vdpapp.com.ar for the owner only: OpenCode Zen
   (openai-compatible), interim model `mimo-v2.5-free`.
 - **Follow-ups shipped:** objectives deadline signal now fires on `/home` load

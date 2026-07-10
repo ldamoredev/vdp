@@ -18,8 +18,10 @@ Full protocol in [`docs/WORKFLOW.md`](./docs/WORKFLOW.md); rules in `AGENTS.md`
   (`feat/<item-id>-<slug>`), through the per-feature gate; verify → self
   code-review → logical conventional commits → push branch → `gh pr create` →
   STOP and summarize. Never push `main`, never merge, never deploy.
-- **Architect session** (owner + architect model): scoping, PR review, docs;
-  commits to `main` are docs/scoping-only and require the owner's explicit ask.
+- **Architect session** (owner + an approved Architect model: Claude Code Opus 4.8,
+  Fable 5, or Codex GPT-5.6 Sol): scoping, PR review, docs; all three models hold
+  the same Architect role. Commits to `main` are docs/scoping-only and require the
+  owner's explicit ask.
 - Blocked on a product decision → note it in `ROADMAP.md` §Needs owner decision
   with a recommendation; continue with what's decidable.
 
