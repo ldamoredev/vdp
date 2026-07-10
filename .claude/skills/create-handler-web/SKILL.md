@@ -5,11 +5,12 @@ description: Scaffold one frontend application use case (a CQBus Command/Query +
 
 # create-handler-web
 
-Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-handler-api` so the api↔web use-case vocabulary stays 1:1. Based on the migrated Health/Tasks/Wallet modules; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
+Scaffolds one frontend use case in `apps/web/src/core/app/{module}`, mirroring `create-handler-api` so the api↔web use-case vocabulary stays 1:1. Based on the migrated Health/Tasks/Wallet/Projects/Objectives/Inbox/Admin modules; see [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (steps 2–3).
 
 ## Inputs (ask if missing)
 
-- **module** (health/tasks/wallet are migrated; review/home/etc. as they migrate).
+- **module** (health, tasks, wallet, projects, objectives, inbox, and admin are
+  migrated; home/review/login/landing/settings-shell remain legacy).
 - **use case name** (`ArchiveGoal`) and whether it's a **Query** (read → returns a view/model) or **Command** (write → usually `void`; return a model only if a flow needs it immediately, like `CompleteGoal`).
 - inputs and the gateway operation it calls.
 

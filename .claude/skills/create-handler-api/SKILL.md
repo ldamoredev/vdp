@@ -9,7 +9,7 @@ Scaffolds a single backend use case in an existing `server/src/modules/{domain}`
 
 ## Inputs (ask if missing)
 
-- **domain** (existing module: tasks, wallet, health, auth).
+- **domain** (existing module: auth, tasks, wallet, health, projects, objectives, or inbox).
 - **use case name** (imperative: `ArchiveGoal`, `GetWeeklySummary`).
 - whether it is a **Command** (write/mutation) or **Query** (read).
 - **inputs/outputs** and which repositories/services it needs.

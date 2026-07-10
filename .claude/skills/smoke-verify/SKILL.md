@@ -1,14 +1,14 @@
 ---
 name: smoke-verify
-description: How to run the manual browser smoke that closes every feature session, and how to clean up after it. Invoke automatically after local verification passes and before claiming a feature done, or when the owner asks for a live smoke. Hard rules on dev data — the owner uses the dev account with real data, so cleanup must be surgical.
+description: Owner-run pre-merge browser smoke for a PR with a UI surface, including surgical cleanup. Invoke during Architect review when the owner asks for the live smoke; do not auto-run it inside a dev-agent implementation session. Hard rules on dev data — the owner uses the dev account with real data.
 ---
 
 # smoke-verify
 
-The working agreement (CLAUDE.md / AGENTS.md §Working Agreement) requires a manual
-browser smoke against the real app before a feature is claimed done, after the
-automated verification ladder (AGENTS.md §Verification) is green. This is the
-procedure and its hard rules.
+The working agreement (`AGENTS.md` / `docs/WORKFLOW.md`) places the manual browser
+smoke in **owner + Architect PR review**, after the dev agent has opened a verified
+PR. It is not part of the dev-agent `tdd-workflow → open-pr` closing path. This is
+the owner-run procedure and its hard rules.
 
 ## Preconditions
 
@@ -28,8 +28,8 @@ procedure and its hard rules.
   the transcript; `.claude/dev-credentials.env` stays private (AGENTS.md §Safety).
   If login cannot be performed, hand the owner a precise manual checklist instead
   and say exactly what remains unverified.
-- Agent chat only works locally with an LLM provider configured; production has
-  none, so never "verify" agent behavior against prod.
+- Agent chat requires a local LLM provider configuration for a local smoke.
+  Production chat exists, but local sessions never smoke or mutate production.
 
 ## What to smoke
 

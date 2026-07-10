@@ -268,9 +268,9 @@ The frontend is a Vite SPA (no SSR) that mirrors the backend module pattern with
 
 ```text
 main.tsx          Entry: mounts <WebApp/> under React StrictMode.
-WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
+WebApp.tsx        ThemeProvider + CoreProvider + TasksEventsProvider + thin Providers wrapper + RouterProvider.
 routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
-createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).
+createAppCore.ts  App composition root: Health + Tasks + Wallet + Projects + Objectives + Inbox + Admin modules.
 core/             NO React under here (grep/lint enforced): domain/{m}, app/{m} (Command/Query+handlers
                   + {M}Module), infrastructure/http (Http{M}Gateway + FetchHttpClient).
 ui/               All React: primitives/ (design-system leaves), shell/ (chrome + auth-gate),
@@ -288,7 +288,12 @@ Import direction rules:
 - `ui/` may import `core/` (via `useCore()`/the bus), `lib/`, and `@vdp/shared`. A screen owns its own presenter/VM; cross-section coordination goes through `ui/events`, never by reaching into another screen's internals.
 - `routes.tsx` and entrypoints may import anything.
 
-Migration status: **health, tasks, wallet, projects, objectives, inbox** are fully on this pattern (no React Query). **home, review, login, landing, settings** are legacy (React Query / plain components) relocated under `ui/screens/*` as-is; **people, study, work** have a presenter returning mock data. React Query (`QueryClientProvider` in `lib/providers.tsx`) stays only for the not-yet-migrated modules.
+Migration status: **health, tasks, wallet, projects, objectives, inbox**, plus the
+admin-settings section, are fully on this pattern. **home, review, login, landing,
+and the settings shell** remain legacy plain/local components under `ui/screens/*`;
+**people, study, work** have presenters returning mock data. React Query has been
+fully removed from the application; `lib/providers.tsx` is now a thin neutral
+wrapper, and shell/chat use their own hooks and external stores.
 
 API response types for active domains live in `packages/shared/src/types/` and are re-exported through `apps/web/src/lib/api/types.ts`. Do not redefine server response shapes in web code. Agent tool names live in `packages/shared/src/constants/agent-tools.ts`; server tool definitions and web tool handling both type against that registry.
 
@@ -298,7 +303,7 @@ Auth is cookie-native on the backend: `/api/auth/login` and `/api/auth/register`
 
 ## Frontend UI Rules
 
-- Stack: Vite, React 19, react-router 7, TailwindCSS v4, React Query v5, `lucide-react`.
+- Stack: Vite, React 19, react-router 7, TailwindCSS v4, `lucide-react`.
 - Do not add Shadcn/Radix component libraries.
 - Use existing primitives and feature patterns before adding new abstractions.
 - Keep operational/product screens dense, calm, and usable; do not turn app surfaces into marketing pages.

@@ -5,7 +5,7 @@ description: Scaffold a frontend presenter + ViewModel + humble view for one scr
 
 # create-presenter-web
 
-Scaffolds the UI layer for one **section** of a screen, following the migrated Health/Tasks/Wallet modules. One presenter + ViewModel per sub-domain — never one God-presenter. See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 4 — UI).
+Scaffolds the UI layer for one **section** of a screen, following the migrated Health/Tasks/Wallet/Projects/Objectives/Inbox/Admin modules. One presenter + ViewModel per sub-domain — never one God-presenter. See [ARCHITECTURE.md](../../../docs/architecture/ARCHITECTURE.md) §4 (step 4 — UI).
 
 ## Inputs (ask if missing)
 
@@ -40,4 +40,4 @@ Scaffolds the UI layer for one **section** of a screen, following the migrated H
 
 ## Verification
 
-`pnpm typecheck:web` → `vitest run src/ui/screens/{module}` → full `pnpm --filter @vdp/web test` → `pnpm lint` → grep no-React under `core/` → `vite build` → browser smoke. Then `code-review`.
+`pnpm typecheck:web` → `vitest run src/ui/screens/{module}` → full `pnpm --filter @vdp/web test` → `pnpm lint` → grep no-React under `core/` → `pnpm --filter @vdp/web build`. Then `code-review` and `open-pr`; the owner runs `smoke-verify` during PR review.

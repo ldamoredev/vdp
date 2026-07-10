@@ -1,71 +1,58 @@
 # STATUS
 
 In-flight session state — the model-agnostic continuity note. Distinct from
-`ROADMAP.md` (milestone sequencing) and from any agent's private memory
-(model/machine facts). Written by the `checkpoint` skill at session end, read by
-`orient` at session start. Keep it short; trim resolved notes.
+`ROADMAP.md` (milestone sequencing) and from any agent's private memory. Written by
+`checkpoint`, read by `orient`; keep it short and prune resolved notes.
 
-_Last updated: 2026-07-08 (F2.1 shipped + merged; F2.2 next)_
+_Last updated: 2026-07-10 (F2.2 shipped; F2.3 activated and scoped next)_
 
 ## Done (recent)
 
-- **F2.1 — agent project-breakdown capability** shipped & merged (PR #9): the
-  Tasks agent turns an existing Projects project into a batch of board tasks on
-  one confirmation. Two new tools in `server/.../tasks/infrastructure/agent/tools/project-tools.ts`
-  — `get_project_context` (reads project direction + existing board tasks over the
-  CQBus) and `create_project_tasks` (ownership guard up front, then 1–8 drafts via
-  `CreateTaskCommand` into `backlog`, capped at 8, reusing the similarity check).
-  System prompt gained a "desglose de proyecto" suggest-then-confirm workflow.
-  `projectId` is a validated tool param (not conversation-scoped) — no
-  conversation-context plumbing exists and `CreateTaskCommand` already rejects
-  non-owned projects. Tasks e2e config now boots `ProjectsModule` alongside
-  `TaskModule`.
-- **Phase 1 complete** except F1.6 (deferred): F1.1 verified backup + per-domain
-  export (`docs/operations/backup-restore.md`, backup verified against prod via
-  the Supabase session pooler); F1.2 owner-usage instrumentation
-  (`core.usage_events` + `UsageTrackingMiddleware`, `docs/operations/usage-instrumentation.md`);
-  F1.3 objectives deadline signal; F1.4 objectives on `/home`; F1.5
-  Tasks/Projects/Work boundary (`AGENTS.md`); F1.7 flaky web-context tests
-  stabilized.
-- **Multi-agent workflow** established: `docs/WORKFLOW.md` owns the current role
-  matrix and model roster; feature branch → PR → owner rebase-merge. `main` is
-  branch-protected (CI required). PR template in `.github/`.
-- **Prod agent chat live** on vdpapp.com.ar for the owner only: OpenCode Zen
-  (openai-compatible), interim model `mimo-v2.5-free`.
-- **Follow-ups shipped:** objectives deadline signal now fires on `/home` load
-  (PR #4); Tasks agent prompt routes project-like work to Projects (PR #6).
+- **F2.2 — project-screen breakdown entry point** shipped and merged (PR #10): the
+  Projects board opens a new Tasks-agent conversation seeded with the selected
+  project id and direction. Projects remains agentless; a one-shot chat launch
+  request pins Tasks while the proposal streams. Typecheck, 610 web tests, lint,
+  CI, and the owner-account browser smoke passed; smoke conversation data was
+  deleted by id.
+- **F2.1 — Tasks-agent project breakdown** shipped and merged (PR #9):
+  `get_project_context` reads project direction + existing board Tasks through
+  CQBus, and `create_project_tasks` creates one confirmed 1–8-task batch in project
+  `backlog`, with ownership validation and duplicate warnings.
+- Phase 1 is complete except the paid-model evaluation (F1.6), which remains parked
+  until OpenCode billing is unblocked. Usage instrumentation has been live since
+  2026-07-08; backups, Objectives deadline signals/home visibility, the
+  Tasks/Projects/Work boundary, and flaky-test stabilization are already shipped.
+- The multi-agent workflow is active; `docs/WORKFLOW.md` owns the role matrix.
+  Architect models are Claude Code Opus 4.8, Fable 5, and Codex GPT-5.6 Sol with
+  equal role boundaries; merge/deploy remain owner-only.
 
 ## In progress
 
-- Nothing mid-slice, no open PRs. F2.1 merged; clean point to take F2.2.
+- Nothing mid-slice. Documentation is reconciled with `main`; F2.3 product code has
+  not started yet. This is the clean handoff point for its implementation session.
 
 ## Next
 
-1. **F2.2 — breakdown entry point from a project (frontend)** (`ROADMAP.md`
-   Phase 2, now unblocked): on the project detail surface, a "Desglosar en tareas
-   (IA)" action that opens the **Tasks** agent chat seeded with the project (starter
-   message + the project id/context the F2.1 tools need). Key wrinkle: Projects has
-   no agent, so the chat panel is gated off there today (`chat-panel.tsx` /
-   `domainHasAgent`) — this entry must make the Tasks agent available from a project
-   without pretending Projects has its own agent, scoped to this entry point.
-   Presenter + humble view + a presenter test. F2.3 (per-task edit) deferred by owner.
-2. **Phase 2 backlog** (deprioritized by F1.2 signal): command palette (`Ctrl+K`);
-   Objectives weekly retro; Health weekly summary.
+1. **F2.3 — reviewable project-task proposal** (`ROADMAP.md`): add a read-only
+   structured proposal tool and a Tasks-chat card where the owner can edit priority
+   and title, remove drafts, reorder them, and explicitly confirm the exact final
+   batch. No Tasks write before confirmation; final creation continues through the
+   existing owner-scoped `create_project_tasks` tool.
+2. After F2.3 has real usage, reconsider the command palette (`Ctrl+K`). Objectives
+   weekly retro and Health weekly summary remain below that signal.
 
 ## Notes for next session
 
-- **F1.2 data is ~1 day old** (deployed 2026-07-08). Let it run ~2 weeks before
-  leaning on it; read deliberate signals (writes, agent opens, drill-downs) over
-  raw GETs, which are confounded by `/home` fan-out. Early read is consistent with
-  the owner's stated Tasks+Projects focus; Objectives barely touched.
-- **Open owner decisions:** paid LLM model (F1.6, blocked on OpenCode billing);
-  whether to promote Objectives to an agent (Phase 4 — validate with F1.2 first);
-  mobile/PWA priority (decide with F1.2).
-- **F2.2 depends on the F2.1 seed contract:** the F2.1 tools take `projectId` as a
-  tool param and there is deliberately no `list_projects` tool, so a cold chat can't
-  resolve a project by name. F2.2 is the intended path — it must seed the Tasks-agent
-  chat with the project id (+ a starter message) from the project screen.
-- **Workflow:** module-boundary enforcement (`.dependency-cruiser`) still worth
-  considering, less optional now that Tasks reads Projects at runtime (still via CQBus
-  queries, the accepted style — not a direct dependency). Run a `workflow-retro` in a
-  few weeks to prune whatever didn't pay rent.
+- Owner decision (2026-07-10): proceed with F2.3; it is no longer conditional or
+  deferred. Follow `tdd-workflow` plus `create-agent-tool`; close through `open-pr`.
+- F2.3 must use structured tool data, not parse assistant prose. The proposal is
+  read-only and reconstructible from persisted tool results; edits are client-local;
+  confirm sends the exact final drafts back into the same Tasks conversation; no
+  proposal table, generic card framework, Projects agent, or batch HTTP endpoint.
+- Usage data is still young. Let it accumulate for roughly two weeks before using it
+  to promote Objectives, prioritize mobile/PWA, or infer habits from raw `/home` GETs.
+- Open owner decisions: paid LLM model (blocked on billing), Objectives agent
+  promotion, and mobile/PWA priority.
+- Tasks↔Projects is the only accepted synchronous strong coupling and remains CQBus /
+  repository-interface scoped. Consider mechanical boundary enforcement only if
+  the documented rule starts being violated; do not add it speculatively.

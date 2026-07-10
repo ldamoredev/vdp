@@ -76,15 +76,15 @@ PostgreSQL schemas: `core` (users, sessions, audit, agent conversations/messages
 
 ## 4. Frontend architecture — `apps/web/`
 
-A Vite SPA that mirrors the backend module pattern with **presenters + a command/query bus (CQBus) + a `core/` composition root**. React Query is being retired module by module as part of this migration.
+A Vite SPA that mirrors the backend module pattern with **presenters + a command/query bus (CQBus) + a `core/` composition root**. React Query has been fully removed; migrated domains use presenters and the remaining legacy screens use local orchestration.
 
 ### Top-level layout of `apps/web/src/`
 
 ```text
 main.tsx          Entry: mounts <WebApp/> under React StrictMode.
-WebApp.tsx        ThemeProvider + CoreProvider + (TasksEventsProvider) + Providers + RouterProvider.
+WebApp.tsx        ThemeProvider + CoreProvider + TasksEventsProvider + thin Providers wrapper + RouterProvider.
 routes.tsx        Whole route tree (createBrowserRouter); each route renders a screen from ui/screens/*.
-createAppCore.ts  App composition root: new Core().use(HealthModule).use(TasksModule).use(WalletModule).use(ProjectsModule).use(ObjectivesModule).use(InboxModule).
+createAppCore.ts  App composition root: Health + Tasks + Wallet + Projects + Objectives + Inbox + Admin modules.
 CoreProvider.tsx  Exposes the Core via context (useCore()).
 
 core/             NO React anywhere under here (grep/lint enforced).
@@ -130,10 +130,10 @@ View → `presenter.method()` → `core.execute(new SomeCommand(...))` → CQBus
 
 | Module | State |
 |---|---|
-| health, tasks, wallet, projects, objectives, inbox | **Fully migrated** — core/ + presenters, no React Query. |
+| health, tasks, wallet, projects, objectives, inbox; settings/admin | **Fully migrated** — core/ + presenters. |
 | people, study, work | Moved to `ui/screens/*` with a **presenter returning mock data** (no backend yet — swap the presenter when one exists). |
-| home, review, login, landing, settings | **Legacy, relocated as-is** under `ui/screens/*` — still React Query / plain components, not yet on the presenter pattern. |
-| shell / chat | Legacy; `QueryClientProvider` stays app-wide in `lib/providers.tsx` for the not-yet-migrated modules. |
+| home, review, login, landing, settings shell | **Legacy plain/local components**, relocated under `ui/screens/*`; no React Query remains. |
+| shell / chat | Legacy custom hooks and external stores; `lib/providers.tsx` is a thin neutral wrapper. |
 
 ### UI conventions (essentials; full list in AGENTS.md)
 
@@ -160,6 +160,8 @@ Handled by Tasks (`tasks/services/CrossDomainEventHandlers.ts`):
 - `health.habit.streak_broken` → recovery task + warning insight.
 - `health.habit.milestone` / `health.counter.milestone` → achievement insight.
 - `health.goal.deadline_approaching` → decision task + warning insight.
+- `objectives.objective.deadline_approaching` → decision task + warning insight;
+  detection is lazy on Objectives overview load (including the `/home` composition).
 
 Handled by Wallet (`wallet/services/WalletCrossDomainEventHandlers.ts`):
 
@@ -175,7 +177,9 @@ New signals follow the same shape: emit from the source, subscribe in the reacti
 
 - **Vite SPA over Next.js.** No SSR need for a personal tool; Fastify serves the static build; single deploy. (Next App Router scaffolding fully removed.)
 - **Presenters + CQBus + `core/` mirroring the backend.** Keeps UI logic React-free and unit-testable, and the api↔web use-case vocabulary aligned. The owner's `@nbottarini` libraries (`cqbus`, `react-presenter`, `observable`, `abstract-http-client`) are used as published.
-- **React Query removed per module.** Presenters re-query after their own mutations; cross-section invalidation goes through `ui/events`. RQ remains only in not-yet-migrated modules.
+- **React Query fully removed.** Presenters re-query after their own mutations;
+  cross-section invalidation goes through `ui/events`; remaining legacy screens use
+  local hooks/state instead of a server-state cache.
 - **Flat `core/` + `ui/` + `lib/`.** After the migration, the old `pages/` / `components/` / `features/` split collapsed into `ui/` (screens, primitives, shell, chat, models, events) — one presentation layer, ownership-based placement.
 - **`FetchHttpClient`, not `@nbottarini/axios-http-client`** (the axios dep is CVE-bearing) — a thin fetch adapter over `@nbottarini/abstract-http-client`.
 

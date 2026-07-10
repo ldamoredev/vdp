@@ -89,11 +89,11 @@ Default dev model on the Go plan: **Kimi K2.7-code** (code-tuned, K2 lineage is
 the strongest open line for agentic coding). GLM 5.2 showed excellent analysis
 quality on this repo but is unproven here as an implementer.
 
-This default is provisional until the bake-off: F1.3 (Kimi K2.7-code) vs F1.4
-(GLM 5.2) — two comparable Objectives items. The Architect scores both PRs on:
-gate completeness, review findings count/severity, test quality, AGENTS.md rule
-adherence, and number of review round-trips. Winner becomes the opencode default;
-the loser stays as fallback for mechanical batch work.
+The F1.3 (Kimi K2.7-code) vs F1.4 (GLM 5.2) bake-off has run, but no final owner
+selection is recorded. Keep Kimi as the operational default and GLM as fallback
+until an Architect workflow retrospective scores the existing PRs on gate
+completeness, review findings, test quality, AGENTS.md adherence, and review
+round-trips. Do not rerun shipped product work solely to settle the model choice.
 
 ## Enforcement
 
