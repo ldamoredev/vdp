@@ -20,18 +20,21 @@ function build() {
 }
 
 describe("tasks chat sync bridge", () => {
-  it("reloads the dashboard store when an agent task mutation finishes", async () => {
-    const { events, gateway, store } = build();
-    const unsubscribe = store.start();
-    await flush();
-    const before = gateway.callsTo("listTasks").length;
+  it.each(["create_task", "create_project_tasks"])(
+    "reloads the dashboard store when the %s agent mutation finishes",
+    async (toolName) => {
+      const { events, gateway, store } = build();
+      const unsubscribe = store.start();
+      await flush();
+      const before = gateway.callsTo("listTasks").length;
 
-    emitTasksChangedForAgentTool("create_task", () => void events.emitTasksChanged());
-    await flush();
+      emitTasksChangedForAgentTool(toolName, () => void events.emitTasksChanged());
+      await flush();
 
-    expect(gateway.callsTo("listTasks").length).toBe(before + 1);
-    unsubscribe();
-  });
+      expect(gateway.callsTo("listTasks").length).toBe(before + 1);
+      unsubscribe();
+    },
+  );
 
   it("ignores read-only task tools", () => {
     const emit = vi.fn();

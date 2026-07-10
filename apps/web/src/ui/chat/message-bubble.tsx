@@ -1,13 +1,23 @@
 import { Link } from "react-router";
 import { Loader2, Wrench } from "lucide-react";
 import { getToolDisplayName } from "@/ui/chat/tool-actions";
+import { ProjectTaskProposalCard } from "@/ui/chat/project-task-proposal-card";
+import type { ProjectTaskProposal } from "@/ui/chat/project-task-proposal";
 import type { Message } from "./types";
 
 interface MessageBubbleProps {
   message: Message;
+  proposalResolved?: boolean;
+  proposalSending?: boolean;
+  onConfirmProjectTaskProposal?: (proposal: ProjectTaskProposal) => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  proposalResolved = false,
+  proposalSending = false,
+  onConfirmProjectTaskProposal,
+}: MessageBubbleProps) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
@@ -55,6 +65,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </a>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (message.proposal && onConfirmProjectTaskProposal) {
+    return (
+      <div className="pl-2 max-w-[96%]">
+        <ProjectTaskProposalCard
+          proposal={message.proposal}
+          isResolved={proposalResolved}
+          isSending={proposalSending}
+          onConfirm={onConfirmProjectTaskProposal}
+        />
       </div>
     );
   }

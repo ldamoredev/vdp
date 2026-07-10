@@ -37,6 +37,12 @@ describe("getToolDisplayName", () => {
       "Registrar cotizacion",
     );
   });
+
+  it("returns product labels for project breakdown tools", () => {
+    expect(getToolDisplayName("get_project_context")).toBe("Leer proyecto");
+    expect(getToolDisplayName("propose_project_tasks")).toBe("Revisar propuesta");
+    expect(getToolDisplayName("create_project_tasks")).toBe("Crear tareas del proyecto");
+  });
 });
 
 describe("parseToolAction", () => {
@@ -104,6 +110,29 @@ describe("parseToolAction", () => {
       title: "Review del dia",
       ctaLabel: "Abrir ritual diario",
       ctaHref: "/review",
+    });
+  });
+
+  it("summarizes a created project batch and surfaces similarity warnings", () => {
+    const action = parseToolAction(
+      "create_project_tasks",
+      JSON.stringify({
+        count: 2,
+        created: [
+          { title: "Comprar dominio" },
+          {
+            title: "Diseñar landing",
+            similarTasks: [{ content: "Diseñar landing inicial", matchPercent: 88 }],
+          },
+        ],
+      }),
+    );
+
+    expect(action).toEqual({
+      title: "2 tareas creadas en el proyecto",
+      detail: "Revisá 1 posible duplicado",
+      items: ["Diseñar landing → Diseñar landing inicial (88%)"],
+      tone: "warning",
     });
   });
 });

@@ -130,6 +130,12 @@ export function getToolDisplayName(tool: string) {
       return "Leer insights";
     case "mark_insights_read":
       return "Marcar insights";
+    case "get_project_context":
+      return "Leer proyecto";
+    case "propose_project_tasks":
+      return "Revisar propuesta";
+    case "create_project_tasks":
+      return "Crear tareas del proyecto";
     default:
       return tool;
   }
@@ -156,6 +162,41 @@ export function parseToolAction(tool: string, result?: string | null): ToolActio
       title: `Tarea creada: ${task.title}`,
       detail: parts.length > 0 ? parts.join(" · ") : "Agregada a tu lista",
       tone: "success",
+    };
+  }
+
+  if (tool === "propose_project_tasks" && isRecord(parsed)) {
+    const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    return {
+      title: "Propuesta lista para revisar",
+      detail: `${tasks.length} tarea${tasks.length === 1 ? "" : "s"} propuesta${tasks.length === 1 ? "" : "s"}`,
+      tone: "info",
+    };
+  }
+
+  if (tool === "create_project_tasks" && isRecord(parsed)) {
+    const created = Array.isArray(parsed.created) ? parsed.created : [];
+    const count = asNumber(parsed.count) ?? created.length;
+    const warnings = created.flatMap((task) => {
+      if (!isRecord(task) || !Array.isArray(task.similarTasks)) return [];
+      const title = asString(task.title) || "Tarea";
+      return task.similarTasks.flatMap((similar) => {
+        if (!isRecord(similar)) return [];
+        const content = asString(similar.content);
+        const matchPercent = asNumber(similar.matchPercent);
+        if (!content || matchPercent === undefined) return [];
+        return [`${title} → ${content} (${matchPercent}%)`];
+      });
+    });
+
+    return {
+      title: `${count} tarea${count === 1 ? "" : "s"} creada${count === 1 ? "" : "s"} en el proyecto`,
+      detail:
+        warnings.length > 0
+          ? `Revisá ${warnings.length} posible${warnings.length === 1 ? "" : "s"} duplicado${warnings.length === 1 ? "" : "s"}`
+          : "Agregadas al backlog",
+      ...(warnings.length > 0 ? { items: warnings } : {}),
+      tone: warnings.length > 0 ? "warning" : "success",
     };
   }
 

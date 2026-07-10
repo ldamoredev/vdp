@@ -1,4 +1,5 @@
 import type { ToolActionView } from "@/ui/chat/tool-actions";
+import type { ProjectTaskProposal } from "@/ui/chat/project-task-proposal";
 
 export interface Message {
   id: string;
@@ -8,6 +9,7 @@ export interface Message {
   action?: ToolActionView;
   pending?: boolean;
   toolInput?: Record<string, unknown>;
+  proposal?: ProjectTaskProposal;
   traceUrl?: string;
   interrupted?: boolean;
 }

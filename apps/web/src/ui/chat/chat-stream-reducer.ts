@@ -3,6 +3,7 @@ import {
   parseToolAction,
   type ToolActionView,
 } from "@/ui/chat/tool-actions";
+import { parseProjectTaskProposal } from "@/ui/chat/project-task-proposal";
 import type { Message } from "./types";
 
 export type ChatStreamEvent =
@@ -93,12 +94,17 @@ export function applyStreamEvent(
         event.tool,
         typeof event.result === "string" ? event.result : event.summary,
       );
+      const proposal =
+        event.tool === "propose_project_tasks"
+          ? parseProjectTaskProposal(event.result)
+          : null;
       const updated = [...messages];
       updated[toolIndex] = {
         ...updated[toolIndex],
         action,
         pending: false,
         content: action.detail || action.title,
+        ...(proposal ? { proposal } : {}),
       };
       return updated;
     }
