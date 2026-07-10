@@ -30,4 +30,13 @@ describe('buildTasksSystemPrompt', () => {
         expect(prompt).not.toContain('dominio Work');
         expect(prompt).not.toContain('moverlo al dominio Work');
     });
+
+    it('requires a structured project proposal before confirmed creation', () => {
+        const prompt = buildTasksSystemPrompt();
+
+        expect(prompt).toContain('get_project_context');
+        expect(prompt).toContain('propose_project_tasks');
+        expect(prompt).toContain('create_project_tasks');
+        expect(prompt).toContain('lista exacta');
+    });
 });

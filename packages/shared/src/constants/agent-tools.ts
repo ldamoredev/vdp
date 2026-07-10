@@ -33,6 +33,7 @@ export const TASKS_AGENT_TOOL_NAMES = [
   "get_weekly_summary",
   // projects — breakdown
   "get_project_context",
+  "propose_project_tasks",
   "create_project_tasks",
 ] as const;
 

@@ -43,6 +43,7 @@ describe('TasksTools', () => {
             'get_weekly_summary',
             'get_recommendations',
             'get_project_context',
+            'propose_project_tasks',
             'create_project_tasks',
         ]);
     });
