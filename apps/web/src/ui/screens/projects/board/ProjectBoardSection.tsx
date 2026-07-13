@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Search, Sparkles } from "lucide-react";
 
 import type { ProjectBoardColumnId } from "@/ui/models/projects/ProjectBoardViewModel";
 import { StateCard } from "@/ui/primitives/state-card";
@@ -30,15 +30,26 @@ export function ProjectBoardSection({ projectId }: { projectId: string | null })
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{vm.subtitle}</p>
         </div>
-        <button
-          type="button"
-          disabled={vm.breakdownAction.isDisabled}
-          onClick={() => presenter.startBreakdownChat()}
-          className="btn-secondary shrink-0"
-        >
-          <Sparkles size={16} />
-          {vm.breakdownAction.label}
-        </button>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <button
+            type="button"
+            disabled={vm.reviewAction.isDisabled}
+            onClick={() => presenter.startProjectReviewChat()}
+            className="btn-secondary shrink-0"
+          >
+            <Search size={16} />
+            {vm.reviewAction.label}
+          </button>
+          <button
+            type="button"
+            disabled={vm.breakdownAction.isDisabled}
+            onClick={() => presenter.startBreakdownChat()}
+            className="btn-secondary shrink-0"
+          >
+            <Sparkles size={16} />
+            {vm.breakdownAction.label}
+          </button>
+        </div>
       </header>
 
       <div className="p-5">

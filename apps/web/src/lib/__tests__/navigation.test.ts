@@ -59,4 +59,11 @@ describe("shell navigation state", () => {
       ]),
     );
   });
+
+  it("exposes Projects through its domain agent endpoint", () => {
+    expect(getDomainConfig("projects")).toMatchObject({
+      agentEndpoint: "/projects/agent/chat",
+      chatWelcome: "Hola! Soy tu analista de Projects",
+    });
+  });
 });

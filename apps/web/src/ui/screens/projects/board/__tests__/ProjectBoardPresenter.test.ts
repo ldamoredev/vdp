@@ -8,7 +8,7 @@ import { TasksModule } from "@/core/app/tasks/TasksModule";
 import { FakeTasksGateway } from "@/core/app/tasks/__tests__/fakes/FakeTasksGateway";
 import { Task } from "@/core/domain/tasks/Task";
 import { chatStore } from "@/lib/chat-store";
-import { ProjectBoardPresenter, type ProjectBreakdownChatOpener } from "../ProjectBoardPresenter";
+import { ProjectBoardPresenter, type ProjectChatOpener } from "../ProjectBoardPresenter";
 
 function taskDto(overrides: Partial<TaskDto> = {}): TaskDto {
   return {
@@ -37,7 +37,7 @@ function clearChatLaunchRequest() {
   chatStore.close();
 }
 
-async function build(tasks: TaskDto[], opener?: ProjectBreakdownChatOpener) {
+async function build(tasks: TaskDto[], opener?: ProjectChatOpener) {
   const projectsGateway = new FakeProjectsGateway();
   const tasksGateway = new FakeTasksGateway();
   vi.spyOn(tasksGateway, "listTasks").mockResolvedValue({ tasks: tasks.map(Task.from), total: tasks.length });
@@ -91,7 +91,7 @@ describe("ProjectBoardPresenter", () => {
   });
 
   it("opens the Tasks agent seeded with the selected project for breakdown", async () => {
-    const opener = { openProjectBreakdown: vi.fn() };
+    const opener = { openProjectBreakdown: vi.fn(), openProjectReview: vi.fn() };
     const { presenter } = await build([taskDto({ id: "t1" })], opener);
 
     presenter.startBreakdownChat();
@@ -101,6 +101,26 @@ describe("ProjectBoardPresenter", () => {
       isDisabled: false,
     });
     expect(opener.openProjectBreakdown).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "p1",
+        outcome: "Ship D3a",
+        nextAction: "Wire board",
+        focus: "Projects",
+      }),
+    );
+  });
+
+  it("opens the Projects agent seeded with the selected project for review", async () => {
+    const opener = { openProjectBreakdown: vi.fn(), openProjectReview: vi.fn() };
+    const { presenter } = await build([taskDto({ id: "t1" })], opener);
+
+    presenter.startProjectReviewChat();
+
+    expect(presenter.model.reviewAction).toEqual({
+      label: "Revisar proyecto (IA)",
+      isDisabled: false,
+    });
+    expect(opener.openProjectReview).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "p1",
         outcome: "Ship D3a",
@@ -127,5 +147,23 @@ describe("ProjectBoardPresenter", () => {
     expect(starterMessage).toContain("Proxima accion: Wire board");
     expect(starterMessage).toContain("Foco: Projects");
     expect(starterMessage).toContain("espera mi confirmacion antes de crear");
+  });
+
+  it("seeds a new Projects-agent conversation with an evidence review request by default", async () => {
+    clearChatLaunchRequest();
+    const { presenter } = await build([taskDto({ id: "t1" })]);
+
+    presenter.startProjectReviewChat();
+
+    expect(chatStore.getLaunchRequest()).toEqual({
+      id: expect.any(String),
+      domainKey: "projects",
+      newConversation: true,
+      starterMessage: expect.stringContaining('projectId: "p1"'),
+    });
+    const starterMessage = chatStore.getLaunchRequest()!.starterMessage;
+    expect(starterMessage).toContain("Revisa este proyecto con evidencia real");
+    expect(starterMessage).toContain("get_project_board");
+    expect(starterMessage).toContain("una decision util");
   });
 });

@@ -43,6 +43,13 @@ describe("getToolDisplayName", () => {
     expect(getToolDisplayName("propose_project_tasks")).toBe("Revisar propuesta");
     expect(getToolDisplayName("create_project_tasks")).toBe("Crear tareas del proyecto");
   });
+
+  it("returns product labels for Projects read tools", () => {
+    expect(getToolDisplayName("list_projects")).toBe("Ver proyectos");
+    expect(getToolDisplayName("get_project_board")).toBe("Revisar board");
+    expect(getToolDisplayName("list_project_time_entries")).toBe("Ver tiempo registrado");
+    expect(getToolDisplayName("get_project_hours_report")).toBe("Ver informe de horas");
+  });
 });
 
 describe("parseToolAction", () => {
