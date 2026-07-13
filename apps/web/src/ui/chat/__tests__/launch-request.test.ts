@@ -23,15 +23,26 @@ describe("resolveLaunchRequestDomainKey", () => {
     ).toBe("tasks");
   });
 
-  it("ignores launch requests for domains without an agent", () => {
+  it("lets a Projects review launch select its domain agent", () => {
     expect(
       resolveLaunchRequestDomainKey({
         launchRequest: request("projects"),
         launchedDomainKey: null,
-        routeDomainKey: "projects",
+        routeDomainKey: "wallet",
         fallbackDomainKey: "wallet",
       }),
     ).toBe("projects");
+  });
+
+  it("ignores launch requests for domains without an agent", () => {
+    expect(
+      resolveLaunchRequestDomainKey({
+        launchRequest: request("objectives"),
+        launchedDomainKey: null,
+        routeDomainKey: null,
+        fallbackDomainKey: "wallet",
+      }),
+    ).toBe("wallet");
   });
 
   it("keeps the launched agent selected after the request was consumed", () => {

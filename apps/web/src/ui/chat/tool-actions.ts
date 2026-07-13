@@ -136,6 +136,14 @@ export function getToolDisplayName(tool: string) {
       return "Revisar propuesta";
     case "create_project_tasks":
       return "Crear tareas del proyecto";
+    case "list_projects":
+      return "Ver proyectos";
+    case "get_project_board":
+      return "Revisar board";
+    case "list_project_time_entries":
+      return "Ver tiempo registrado";
+    case "get_project_hours_report":
+      return "Ver informe de horas";
     default:
       return tool;
   }

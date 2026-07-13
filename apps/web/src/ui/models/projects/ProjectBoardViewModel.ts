@@ -24,6 +24,10 @@ export interface ProjectBoardViewModel {
     label: string;
     isDisabled: boolean;
   };
+  reviewAction: {
+    label: string;
+    isDisabled: boolean;
+  };
   isLoading: boolean;
   error: string | null;
   columns: ProjectBoardColumnVM[];
