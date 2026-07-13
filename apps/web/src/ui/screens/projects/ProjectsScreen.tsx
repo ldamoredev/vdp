@@ -14,7 +14,7 @@ export function ProjectsScreen() {
   const vm = presenter.model;
 
   return (
-    <ModulePage width="6xl" spacing="6" className="domain-projects">
+    <ModulePage width="6xl" spacing="6" className="domain-projects @container/projects">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
@@ -52,7 +52,7 @@ export function ProjectsScreen() {
         </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid gap-5 @4xl/projects:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="space-y-4">
           {vm.form.isOpen && (
             <form

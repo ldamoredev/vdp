@@ -1,4 +1,4 @@
-import { ArrowRight, Search, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 
 import type { ProjectBoardColumnId } from "@/ui/models/projects/ProjectBoardViewModel";
 import { StateCard } from "@/ui/primitives/state-card";
@@ -20,7 +20,7 @@ export function ProjectBoardSection({ projectId }: { projectId: string | null })
 
   return (
     <section className="glass-card-static overflow-hidden">
-      <header className="flex flex-col gap-3 border-b border-[var(--divider)] p-5 sm:flex-row sm:items-start sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[var(--divider)] p-5">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)] text-[var(--muted)]">
             Board del proyecto
@@ -30,7 +30,7 @@ export function ProjectBoardSection({ projectId }: { projectId: string | null })
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{vm.subtitle}</p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={vm.reviewAction.isDisabled}
@@ -58,7 +58,10 @@ export function ProjectBoardSection({ projectId }: { projectId: string | null })
         ) : vm.isLoading && vm.columns.every((column) => column.count === 0) ? (
           <StateCard state="loading" skeletonLines={4} />
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div
+            aria-label="Columnas del board"
+            className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3"
+          >
             {vm.columns.map((column) => (
               <div
                 key={column.id}
@@ -80,24 +83,34 @@ export function ProjectBoardSection({ projectId }: { projectId: string | null })
                         className="rounded-[var(--radius-sm)] border border-[var(--glass-border)] bg-[var(--card)] p-3"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-medium leading-snug text-[var(--foreground)]">{task.title}</p>
+                          <p
+                            title={task.title}
+                            className="line-clamp-4 text-sm font-medium leading-snug text-[var(--foreground)]"
+                          >
+                            {task.title}
+                          </p>
                           <span className="font-data text-[11px] text-[var(--muted)]">{task.priorityLabel}</span>
                         </div>
                         <p className="mt-1 text-[11px] text-[var(--muted)]">{task.statusLabel}</p>
-                        <div className="mt-3 flex flex-wrap gap-1.5">
+                        <select
+                          aria-label={`Mover ${task.title}`}
+                          value=""
+                          disabled={task.isBusy}
+                          onChange={(event) => {
+                            const target = event.target.value as ProjectBoardColumnId;
+                            if (target) void presenter.moveTask(task.id, target);
+                          }}
+                          className="mt-3 min-h-9 w-full rounded-full border border-[var(--divider)] bg-[var(--card)] px-3 text-xs font-medium text-[var(--muted)] outline-none transition hover:text-[var(--foreground)] focus:border-[var(--accent)] disabled:opacity-50"
+                        >
+                          <option value="" disabled>
+                            Mover a…
+                          </option>
                           {NEXT_COLUMNS.filter((target) => target !== column.id).map((target) => (
-                            <button
-                              key={target}
-                              type="button"
-                              disabled={task.isBusy}
-                              onClick={() => void presenter.moveTask(task.id, target)}
-                              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--divider)] px-2.5 text-[11px] font-medium text-[var(--muted)] transition hover:text-[var(--foreground)] disabled:opacity-50"
-                            >
-                              <ArrowRight size={12} />
+                            <option key={target} value={target}>
                               {targetLabel(target)}
-                            </button>
+                            </option>
                           ))}
-                        </div>
+                        </select>
                       </article>
                     ))
                   )}
