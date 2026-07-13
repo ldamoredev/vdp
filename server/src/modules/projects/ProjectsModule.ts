@@ -23,11 +23,11 @@ export class ProjectsModule extends BaseModule {
     }
 
     protected registerEventHandlers() {
-        // Projects owns direction only in D3a; no cross-domain subscriptions yet.
+        // Projects currently owns no cross-domain reaction output.
     }
 
     protected registerAgents() {
-        // No Projects agent in D3a.
+        this.runtime.registerAgent();
     }
 
     getControllers(): HttpController[] {

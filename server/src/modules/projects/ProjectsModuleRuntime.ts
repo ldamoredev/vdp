@@ -1,4 +1,6 @@
+import { AgentRepository } from '../common/base/agents/AgentRepository';
 import { ModuleContext } from '../common/base/modules/ModuleContext';
+import { AppSettingsRepository } from '../common/base/settings/AppSettingsRepository';
 import { TaskRepository } from '../tasks/domain/TaskRepository';
 import { AssignTaskToProjectCommand, AssignTaskToProjectCommandHandler } from './app/AssignTaskToProjectCommand';
 import { ArchiveClientCommand, ArchiveClientCommandHandler } from './app/ArchiveClientCommand';
@@ -19,6 +21,8 @@ import { UpdateTimeEntryCommand, UpdateTimeEntryCommandHandler } from './app/Upd
 import { ClientRepository } from './domain/ClientRepository';
 import { ProjectRepository } from './domain/ProjectRepository';
 import { TimeEntryRepository } from './domain/TimeEntryRepository';
+import { ProjectsAgent } from './infrastructure/agent/ProjectsAgent';
+import { ProjectsAgentController } from './infrastructure/routes/ProjectsAgentController';
 import { ProjectsController } from './infrastructure/routes/ProjectsController';
 
 export class ProjectsModuleRuntime {
@@ -79,8 +83,30 @@ export class ProjectsModuleRuntime {
         );
     }
 
+    registerAgent(): void {
+        this.deps.agentRegistry.register(
+            new ProjectsAgent(
+                this.deps.bus,
+                this.deps.repositories,
+                this.deps.llmTraceService,
+                this.deps.traceService,
+                this.deps.agentProvider,
+                this.deps.logger,
+                this.deps.authContextStorage,
+            ),
+        );
+    }
+
     createControllers() {
-        return [new ProjectsController(this.deps.bus)];
+        return [
+            new ProjectsController(this.deps.bus),
+            new ProjectsAgentController(
+                this.deps.agentRegistry,
+                this.agentRepository(),
+                this.deps.authContextStorage,
+                this.appSettingsRepository(),
+            ),
+        ];
     }
 
     private clientRepository(): ClientRepository {
@@ -97,5 +123,13 @@ export class ProjectsModuleRuntime {
 
     private taskRepository(): TaskRepository {
         return this.deps.repositories.get(TaskRepository);
+    }
+
+    private agentRepository(): AgentRepository {
+        return this.deps.repositories.get(AgentRepository);
+    }
+
+    private appSettingsRepository(): AppSettingsRepository {
+        return this.deps.repositories.get(AppSettingsRepository);
     }
 }
