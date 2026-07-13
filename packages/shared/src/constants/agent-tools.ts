@@ -86,4 +86,17 @@ export const HEALTH_AGENT_TOOL_NAMES = [
 
 export type HealthAgentToolName = (typeof HEALTH_AGENT_TOOL_NAMES)[number];
 
-export type AgentToolName = TasksAgentToolName | WalletAgentToolName | HealthAgentToolName;
+export const PROJECTS_AGENT_TOOL_NAMES = [
+  "list_projects",
+  "get_project_board",
+  "list_project_time_entries",
+  "get_project_hours_report",
+] as const;
+
+export type ProjectsAgentToolName = (typeof PROJECTS_AGENT_TOOL_NAMES)[number];
+
+export type AgentToolName =
+  | TasksAgentToolName
+  | WalletAgentToolName
+  | HealthAgentToolName
+  | ProjectsAgentToolName;

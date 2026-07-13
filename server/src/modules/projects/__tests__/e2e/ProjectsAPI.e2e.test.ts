@@ -1,5 +1,6 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AgentRepository } from '../../../common/base/agents/AgentRepository';
 import { ALL_TEST_USERS, PRIMARY_TEST_USER, SECONDARY_TEST_USER, TEST_USER_ID_HEADER } from '../../../../test/testUsers';
 import { TestDatabase } from '../../../../test/test-database';
 import { TestApp } from './TestApp';
@@ -443,5 +444,126 @@ describe('Projects API — E2E', () => {
         });
 
         expect(report.json()).toMatchObject({ totalMinutes: 0, incomeTotals: [], rows: [] });
+    });
+
+    describe('Projects agent', () => {
+        it('registers the read-only Projects tool surface', () => {
+            const agent = testApp.core.agentRegistry.get('projects');
+
+            expect(agent?.tools.map((tool) => tool.name)).toEqual([
+                'list_projects',
+                'get_project_board',
+                'list_project_time_entries',
+                'get_project_hours_report',
+            ]);
+        });
+
+        it('streams text, tool events, and done from the Projects agent', async () => {
+            const agent = testApp.core.agentRegistry.get('projects');
+            if (!agent) throw new Error('Projects agent not registered');
+
+            const conversationId = '33333333-3333-3333-3333-333333333333';
+            const chatSpy = vi.spyOn(agent, 'chat').mockImplementation(async ({ callbacks }) => {
+                callbacks.onText('El foco no coincide con el board');
+                callbacks.onToolUse('get_project_board', { projectId: 'project-1' });
+                callbacks.onToolResult('get_project_board', JSON.stringify({ board: { doing: [] } }));
+                callbacks.onDone(conversationId);
+            });
+
+            try {
+                const response = await testApp.app.inject({
+                    method: 'POST',
+                    url: '/api/v1/projects/agent/chat',
+                    headers: asUser(PRIMARY_TEST_USER.id),
+                    payload: { message: 'Revisa mi proyecto' },
+                });
+
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toContain('text/event-stream');
+                expect(response.body).toContain('"event":"text","text":"El foco no coincide con el board"');
+                expect(response.body).toContain('"event":"tool_use","tool":"get_project_board"');
+                expect(response.body).toContain('"event":"tool_result","tool":"get_project_board"');
+                expect(response.body).toContain(`"event":"done","conversationId":"${conversationId}"`);
+                expect(response.body).toContain('data: [DONE]');
+            } finally {
+                chatSpy.mockRestore();
+            }
+        });
+
+        it('derives read-tool ownership from auth context instead of model input', async () => {
+            const agent = testApp.core.agentRegistry.get('projects');
+            if (!agent) throw new Error('Projects agent not registered');
+            const project = await createProjectAs(PRIMARY_TEST_USER.id);
+            const authContextStorage = testApp.core.getAuthContextStorage();
+
+            const otherUserResult = await authContextStorage.runWithContext({
+                isAuthenticated: true,
+                userId: SECONDARY_TEST_USER.id,
+                sessionId: 'secondary-session',
+                role: 'user',
+                email: SECONDARY_TEST_USER.email,
+                displayName: SECONDARY_TEST_USER.displayName,
+            }, () => agent.executeTool('get_project_board', {
+                projectId: project.id,
+                userId: PRIMARY_TEST_USER.id,
+            }));
+
+            const ownerResult = await authContextStorage.runWithContext({
+                isAuthenticated: true,
+                userId: PRIMARY_TEST_USER.id,
+                sessionId: 'owner-session',
+                role: 'user',
+                email: PRIMARY_TEST_USER.email,
+                displayName: PRIMARY_TEST_USER.displayName,
+            }, () => agent.executeTool('get_project_board', { projectId: project.id }));
+
+            expect(JSON.parse(otherUserResult)).toEqual({ error: 'Project not found' });
+            expect(JSON.parse(ownerResult).project).toMatchObject({ id: project.id, outcome: 'Ship D3a' });
+        });
+
+        it('isolates persisted Projects conversations by domain and owner', async () => {
+            const agentRepository = testApp.core.getRepository(AgentRepository);
+            const ownerConversation = await agentRepository.createConversation(
+                PRIMARY_TEST_USER.id,
+                'projects',
+                'Owner Projects review',
+            );
+            await agentRepository.createMessage(ownerConversation.id, 'user', 'Revisa el proyecto');
+            const otherConversation = await agentRepository.createConversation(
+                SECONDARY_TEST_USER.id,
+                'projects',
+                'Other owner review',
+            );
+            await agentRepository.createConversation(PRIMARY_TEST_USER.id, 'tasks', 'Tasks history');
+
+            const list = await testApp.app.inject({
+                method: 'GET',
+                url: '/api/v1/projects/agent/conversations',
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            const ownerMessages = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/projects/agent/conversations/${ownerConversation.id}/messages`,
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            const otherOwnerMessages = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/projects/agent/conversations/${otherConversation.id}/messages`,
+                headers: asUser(PRIMARY_TEST_USER.id),
+            });
+            const crossUserMessages = await testApp.app.inject({
+                method: 'GET',
+                url: `/api/v1/projects/agent/conversations/${ownerConversation.id}/messages`,
+                headers: asUser(SECONDARY_TEST_USER.id),
+            });
+
+            expect(list.statusCode).toBe(200);
+            expect(list.json()).toHaveLength(1);
+            expect(list.json()[0].title).toBe('Owner Projects review');
+            expect(ownerMessages.statusCode).toBe(200);
+            expect(ownerMessages.json()).toHaveLength(1);
+            expect(otherOwnerMessages.statusCode).toBe(404);
+            expect(crossUserMessages.statusCode).toBe(404);
+        });
     });
 });
