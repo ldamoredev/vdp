@@ -40,12 +40,17 @@ evaluation remains parked below; harness: `scripts/agent-model-eval.mjs`.
 
 ## Current sequencing
 
-There is no active implementation slice. Next, in owner priority order:
+Active implementation slice:
 
-1. **F2.3 UI polish** once the owner walks through the visual issues seen in the
-   proposal-card smoke; the behavior and persistence constraints are already fixed
-   in the Phase 2 backlog below.
-2. **Command palette (`Ctrl+K`)** only if daily use confirms micro-capture friction.
+1. **F2.3 Projects responsive UI polish** — keep the Projects workspace readable
+   when the desktop chat reduces its available width, and keep task cards compact
+   when titles are long. This is presentation-only: Tasks remain the work-item
+   store, board moves keep their existing command path, and proposal persistence is
+   unchanged.
+
+Next:
+
+1. **Command palette (`Ctrl+K`)** only if daily use confirms micro-capture friction.
    Objectives weekly retro and Health weekly summary remain below that signal.
 
 The Projects agent stays read-only until real use demonstrates which confirmed write,
@@ -71,10 +76,13 @@ Voseo tuning, if needed, is a separate optional prompt change.
 
 ## Phase 2 backlog
 
-- **F2.3 UI polish** — the owner flagged visual issues in the proposal-card UI
-  during the F2.3 smoke (2026-07-10); specifics pending an owner walkthrough.
-  Bundle with it the accepted limitation that card dismissal resets on a full page
-  reload (client-local state; no proposal persistence by design).
+- **F2.3 Projects responsive UI polish** — owner walkthrough completed on
+  2026-07-13: viewport breakpoints kept the project list and four-column board split
+  after the chat reduced the content area, causing overlap and very narrow task
+  cards. Make both layouts respond to their containers, clamp long task titles, and
+  replace the three repeated move pills with one compact destination control. Card
+  dismissal still resets on a full page reload (client-local state; no proposal
+  persistence by design).
 - **Projects agent confirmed writes** — hold until real use shows recurring friction.
   Candidates, in likely order, are logging time, updating project direction, and
   moving an existing board Task. Each needs its own confirmed-write slice. Task
